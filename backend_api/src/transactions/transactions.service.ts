@@ -5,12 +5,14 @@ import { transactions } from '../database/schema';
 import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto';
 import { formatPaginatedResponse, formatCurrency, formatDate } from '../common/utils/formatter.util';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     @Inject(DATABASE_CONNECTION) private readonly db: any,
-    private readonly notificationsService: NotificationsService
+    private readonly notificationsService: NotificationsService,
+    private readonly aiService: AiService,
   ) {}
 
   async create(userId: string, createTransactionDto: CreateTransactionDto) {
@@ -21,12 +23,21 @@ export class TransactionsService {
       amount: createTransactionDto.amount.toString(),
     }).returning();
     
-    // Fire-and-forget: do not await so response is returned immediately
+    // Fire-and-forget: notification
     void this.notificationsService.createAndBroadcast(
       userId,
       'New Transaction Recorded',
       `You have successfully recorded a ${newTransaction.type} of ${formatCurrency(newTransaction.amount)}.`,
       'transaction'
+    );
+
+    // Fire-and-forget: anomaly detection — does not block response
+    void this.aiService.detectAnomaly(
+      userId,
+      newTransaction.id,
+      newTransaction.categoryId,
+      Number(newTransaction.amount),
+      newTransaction.type,
     );
 
     return newTransaction;

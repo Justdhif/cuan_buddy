@@ -1,5 +1,5 @@
-import { NestFactory } from '@nestjs/core';
-import { Logger } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import compression = require('compression');
 import { AppModule } from './app.module';
@@ -15,6 +15,9 @@ async function bootstrap() {
 
   // Compression: reduces response payload by ~60-80%, saves network transfer & CPU on client
   app.use(compression());
+
+  // Global validation pipe — enforces DTO constraints (MaxLength, IsString, etc)
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
