@@ -33,7 +33,8 @@ export class BudgetsService {
       limitAmount: createBudgetDto.limitAmount.toString()
     }).returning();
 
-    await this.notificationsService.createAndBroadcast(
+    // Fire-and-forget: do not await so response is returned immediately
+    void this.notificationsService.createAndBroadcast(
       userId,
       'New Budget Created',
       `Budget for ${newBudget.monthYear} has been set to ${formatCurrency(newBudget.limitAmount)}.`,
@@ -81,8 +82,7 @@ export class BudgetsService {
   }
 
   async update(userId: string, id: string, updateBudgetDto: UpdateBudgetDto) {
-    await this.findOne(userId, id);
-    
+    // Optimized: single query — no separate findOne before update
     const updateData: any = { ...updateBudgetDto, updatedAt: new Date() };
     if (updateBudgetDto.limitAmount) updateData.limitAmount = updateBudgetDto.limitAmount.toString();
 
@@ -91,13 +91,17 @@ export class BudgetsService {
       .where(and(eq(budgets.id, id), eq(budgets.userId, userId)))
       .returning();
 
+    if (!updated) throw new NotFoundException('Budget not found');
     return updated;
   }
 
   async remove(userId: string, id: string) {
-    await this.findOne(userId, id);
-    await this.db.delete(budgets)
-      .where(and(eq(budgets.id, id), eq(budgets.userId, userId)));
+    // Optimized: single query — delete with ownership check
+    const [deleted] = await this.db.delete(budgets)
+      .where(and(eq(budgets.id, id), eq(budgets.userId, userId)))
+      .returning({ id: budgets.id });
+
+    if (!deleted) throw new NotFoundException('Budget not found');
     return { message: 'Budget removed successfully' };
   }
 }

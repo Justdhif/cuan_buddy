@@ -21,8 +21,8 @@ export class TransactionsService {
       amount: createTransactionDto.amount.toString(),
     }).returning();
     
-    // Realtime Notification
-    await this.notificationsService.createAndBroadcast(
+    // Fire-and-forget: do not await so response is returned immediately
+    void this.notificationsService.createAndBroadcast(
       userId,
       'New Transaction Recorded',
       `You have successfully recorded a ${newTransaction.type} of ${formatCurrency(newTransaction.amount)}.`,
@@ -88,9 +88,7 @@ export class TransactionsService {
   }
 
   async update(userId: string, id: string, updateTransactionDto: UpdateTransactionDto) {
-    // Check ownership
-    await this.findOne(userId, id);
-
+    // Optimized: single query — update with ownership check, no separate findOne
     const updateData: any = { ...updateTransactionDto, updatedAt: new Date() };
     if (updateTransactionDto.date) updateData.date = new Date(updateTransactionDto.date);
     if (updateTransactionDto.amount) updateData.amount = updateTransactionDto.amount.toString();
@@ -100,13 +98,17 @@ export class TransactionsService {
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
       .returning();
 
+    if (!updated) throw new NotFoundException('Transaction not found');
     return updated;
   }
 
   async remove(userId: string, id: string) {
-    await this.findOne(userId, id);
-    await this.db.delete(transactions)
-      .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
+    // Optimized: single query — delete with ownership check, no separate findOne
+    const [deleted] = await this.db.delete(transactions)
+      .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
+      .returning({ id: transactions.id });
+
+    if (!deleted) throw new NotFoundException('Transaction not found');
     return { message: 'Transaction removed successfully' };
   }
 }

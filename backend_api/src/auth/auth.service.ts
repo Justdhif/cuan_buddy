@@ -1,4 +1,9 @@
-import { Injectable, Inject, UnauthorizedException, ConflictException } from '@nestjs/common';
+﻿import {
+  Injectable,
+  Inject,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
@@ -15,56 +20,70 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.db.query.users.findFirst({
-      where: eq(users.email, registerDto.email),
-    });
-
-    if (existingUser) {
-      throw new ConflictException('Email already exists');
-    }
-
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    const newUser = await this.db.transaction(async (tx) => {
-      const [insertedUser] = await tx
-        .insert(users)
-        .values({
-          email: registerDto.email,
-          passwordHash: hashedPassword,
-        })
-        .returning();
+    try {
+      // Optimized: rely on DB unique constraint instead of a separate findFirst query
+      const newUser = await this.db.transaction(async (tx) => {
+        const [insertedUser] = await tx
+          .insert(users)
+          .values({
+            email: registerDto.email,
+            passwordHash: hashedPassword,
+          })
+          .returning({ id: users.id, email: users.email });
 
-      const avatarValue = registerDto.avatar 
-        || `https://api.dicebear.com/8.x/avataaars/svg?seed=${registerDto.fullName.replace(/\s+/g, '')}`;
+        const avatarValue =
+          registerDto.avatar ||
+          `https://api.dicebear.com/8.x/avataaars/svg?seed=${registerDto.fullName.replace(/\s+/g, '')}`;
 
-      await tx.insert(userProfiles).values({
-        userId: insertedUser.id,
-        fullName: registerDto.fullName,
-        avatar: avatarValue,
+        await tx.insert(userProfiles).values({
+          userId: insertedUser.id,
+          fullName: registerDto.fullName,
+          avatar: avatarValue,
+        });
+
+        return insertedUser;
       });
 
-      return insertedUser;
-    });
-
-    return this.generateTokens(newUser.id, newUser.email);
+      return this.generateTokens(newUser.id, newUser.email);
+    } catch (err: any) {
+      // PostgreSQL unique violation error code: 23505
+      if (err?.code === '23505' || err?.message?.includes('unique')) {
+        throw new ConflictException('Email already exists');
+      }
+      throw err;
+    }
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.db.query.users.findFirst({
-      where: eq(users.email, loginDto.email),
-    });
+    // Optimized: only select fields we actually need, not SELECT *
+    const [user] = await this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        passwordHash: users.passwordHash,
+      })
+      .from(users)
+      .where(eq(users.email, loginDto.email))
+      .limit(1);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    await this.db.update(users)
+    // Fire-and-forget: update lastLoginAt without blocking the response
+    void this.db
+      .update(users)
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
 
@@ -77,11 +96,10 @@ export class AuthService {
 
   private generateTokens(userId: string, email: string) {
     const payload = { sub: userId, email };
-    
+
     return {
       accessToken: this.jwtService.sign(payload),
-      // In a real app, you might want to use a different secret/expiration for refresh tokens
-      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }), 
+      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
     };
   }
 }
