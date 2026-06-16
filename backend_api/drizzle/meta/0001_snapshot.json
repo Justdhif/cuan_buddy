@@ -1,6 +1,6 @@
 {
-  "id": "d42fb940-02f6-4f19-85a1-9ac6ca1c073d",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "50b54c38-26cc-4591-99ed-f689e8e9a97f",
+  "prevId": "d42fb940-02f6-4f19-85a1-9ac6ca1c073d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -665,6 +665,18 @@
         "provider_id": {
           "name": "provider_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_otp": {
+          "name": "reset_otp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reset_otp_expires_at": {
+          "name": "reset_otp_expires_at",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },

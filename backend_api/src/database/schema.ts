@@ -6,9 +6,11 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
-  isVerified: boolean('is_verified').default(false).notNull(),
+  isActive: boolean('is_active').default(false).notNull(),
   provider: text('provider').default('local'),
   providerId: text('provider_id'),
+  resetOtp: text('reset_otp'),
+  resetOtpExpiresAt: timestamp('reset_otp_expires_at'),
   lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -81,4 +83,15 @@ export const notifications = pgTable('notifications', {
   message: text('message').notNull(),
   isRead: boolean('is_read').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const backupSettings = pgTable('backup_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
+  isEnabled: boolean('is_enabled').default(false).notNull(),
+  interval: text('interval').default('7d').notNull(), // '24h', '7d', '1m'
+  lastBackupAt: timestamp('last_backup_at'),
+  nextBackupAt: timestamp('next_backup_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { users, userProfiles, categories, transactions, budgets, savingsGoals, notifications } from './schema';
+import { users, userProfiles, categories, transactions, budgets, savingsGoals, notifications, backupSettings } from './schema';
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(userProfiles, {
@@ -10,6 +10,10 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   budgets: many(budgets),
   savingsGoals: many(savingsGoals),
   notifications: many(notifications),
+  backupSettings: one(backupSettings, {
+    fields: [users.id],
+    references: [backupSettings.userId],
+  }),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
@@ -56,6 +60,13 @@ export const savingsGoalsRelations = relations(savingsGoals, ({ one }) => ({
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const backupSettingsRelations = relations(backupSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [backupSettings.userId],
     references: [users.id],
   }),
 }));

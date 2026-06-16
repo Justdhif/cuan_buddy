@@ -1,8 +1,10 @@
-﻿import {
+import {
   Injectable,
   Inject,
   UnauthorizedException,
+  ForbiddenException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
@@ -11,12 +13,16 @@ import { DATABASE_CONNECTION } from '../database/database.module';
 import { users, userProfiles } from '../database/schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(DATABASE_CONNECTION) private readonly db: any,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -46,7 +52,18 @@ export class AuthService {
         return insertedUser;
       });
 
-      return this.generateTokens(newUser.id, newUser.email);
+      // Generate a verification token
+      const verificationToken = this.jwtService.sign(
+        { sub: newUser.id, purpose: 'verify_email' },
+        { expiresIn: '1h' },
+      );
+
+      // Send the email (fire-and-forget)
+      void this.emailService.sendVerificationEmail(newUser.email, verificationToken);
+
+      return {
+        message: 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi akun sebelum login.',
+      };
     } catch (err: any) {
       // PostgreSQL unique violation error code: 23505
       if (err?.code === '23505' || err?.message?.includes('unique')) {
@@ -63,6 +80,7 @@ export class AuthService {
         id: users.id,
         email: users.email,
         passwordHash: users.passwordHash,
+        isActive: users.isActive,
       })
       .from(users)
       .where(eq(users.email, loginDto.email))
@@ -70,6 +88,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isActive) {
+      throw new ForbiddenException('Akun belum aktif. Silakan cek email Anda untuk verifikasi.');
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -94,8 +116,105 @@ export class AuthService {
     return this.generateTokens(userId, email);
   }
 
+  async verifyEmail(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.purpose !== 'verify_email') {
+        throw new BadRequestException('Invalid verification token');
+      }
+
+      const [updatedUser] = await this.db
+        .update(users)
+        .set({ isActive: true, updatedAt: new Date() })
+        .where(eq(users.id, payload.sub))
+        .returning();
+
+      if (!updatedUser) {
+        throw new BadRequestException('User not found');
+      }
+
+      return { message: 'Akun Anda berhasil diverifikasi. Silakan login.' };
+    } catch (error) {
+      throw new BadRequestException('Token verifikasi tidak valid atau sudah kedaluwarsa.');
+    }
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    // 1. Check if user exists
+    const [user] = await this.db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.email, dto.email))
+      .limit(1);
+
+    // To prevent email enumeration, always return success even if not found
+    if (!user) {
+      return { message: 'Jika email terdaftar, kode OTP telah dikirimkan.' };
+    }
+
+    // 2. Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // Always 6 digits
+
+    // 3. Set expiration (15 minutes from now)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+    // 4. Update DB (fire-and-forget logic for speed, but here we wait to ensure it's saved)
+    await this.db
+      .update(users)
+      .set({
+        resetOtp: otp,
+        resetOtpExpiresAt: expiresAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    // 5. Send Email
+    void this.emailService.sendPasswordResetOtp(user.email, otp);
+
+    return { message: 'Jika email terdaftar, kode OTP telah dikirimkan.' };
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const [user] = await this.db
+      .select({
+        id: users.id,
+        resetOtp: users.resetOtp,
+        resetOtpExpiresAt: users.resetOtpExpiresAt,
+      })
+      .from(users)
+      .where(eq(users.email, dto.email))
+      .limit(1);
+
+    if (!user || user.resetOtp !== dto.otp) {
+      throw new BadRequestException('OTP tidak valid atau email salah.');
+    }
+
+    if (!user.resetOtpExpiresAt || new Date() > user.resetOtpExpiresAt) {
+      throw new BadRequestException('Kode OTP sudah kedaluwarsa.');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    // Update password and clear OTP
+    await this.db
+      .update(users)
+      .set({
+        passwordHash: hashedPassword,
+        resetOtp: null,
+        resetOtpExpiresAt: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    return { message: 'Password berhasil diubah. Silakan login dengan password baru.' };
+  }
+
   private generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+    // We embed isActive: true in the token because if they reached here, they are active.
+    // The JwtStrategy will check this payload.
+    const payload = { sub: userId, email, isActive: true };
 
     return {
       accessToken: this.jwtService.sign(payload),

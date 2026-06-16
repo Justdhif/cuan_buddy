@@ -1,4 +1,4 @@
-﻿import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -15,6 +15,8 @@ import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AiModule } from './ai/ai.module';
+import { BackupModule } from './backup/backup.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { AiModule } from './ai/ai.module';
     NotificationsModule,
     AnalyticsModule,
     AiModule,
+    BackupModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [
