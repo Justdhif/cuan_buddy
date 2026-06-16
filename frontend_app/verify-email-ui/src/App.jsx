@@ -9,8 +9,8 @@ function App() {
     const token = params.get("token");
 
     if (!token) {
-      setStatus("error");
-      setMessage("Verification token is missing from the URL.");
+      setStatus('idle');
+      setMessage('CuanBuddy Web Services are running successfully. This portal is used for secure email verifications.');
       return;
     }
 
@@ -73,24 +73,22 @@ function App() {
             </div>
           )}
 
-          {status === "success" && (
+          {status === 'success' && (
             <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.3)] animate-[bounce_1s_ease-in-out]">
-              <svg
-                className="w-10 h-10 text-emerald-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="3"
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
               </svg>
               {/* Sparkle effects */}
               <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-400 rounded-full animate-ping" />
               <div className="absolute -bottom-1 -left-2 w-3 h-3 bg-emerald-300 rounded-full animate-ping delay-150" />
+            </div>
+          )}
+
+          {status === 'idle' && (
+            <div className="w-20 h-20 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.3)] animate-[pulse_3s_ease-in-out_infinite]">
+              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </div>
           )}
 
@@ -114,10 +112,11 @@ function App() {
         </div>
 
         {/* Content */}
-        <h1 className="text-3xl font-bold tracking-tight mb-2 text-transparent bg-clip-text bg-linear-to-br from-white to-white/60">
-          {status === "loading" && "Authenticating"}
-          {status === "success" && "Verification Complete"}
-          {status === "error" && "Verification Failed"}
+        <h1 className="text-3xl font-bold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-white/60">
+          {status === 'loading' && 'Authenticating'}
+          {status === 'success' && 'Verification Complete'}
+          {status === 'error' && 'Verification Failed'}
+          {status === 'idle' && 'System Online'}
         </h1>
 
         <p className="text-slate-400 text-sm md:text-base leading-relaxed mb-8">
@@ -132,7 +131,13 @@ function App() {
 
         {status === 'error' && (
           <div className="w-full bg-white/5 border border-rose-500/30 text-rose-100 font-medium py-4 px-6 rounded-xl">
-            Please request a new verification link from the CuanBuddy app.
+            Please request a new verification link from the CuanBuddy mobile app.
+          </div>
+        )}
+
+        {status === 'idle' && (
+          <div className="w-full bg-white/5 border border-blue-500/30 text-blue-100 font-medium py-4 px-6 rounded-xl">
+            Waiting for a secure token to proceed.
           </div>
         )}
 
