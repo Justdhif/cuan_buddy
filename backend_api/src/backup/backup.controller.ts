@@ -19,7 +19,7 @@ export class BackupController {
   @Get('settings')
   @ApiOperation({ summary: 'Get backup settings' })
   getSettings(@Request() req: any) {
-    return this.backupService.getSettings(req.user.sub);
+    return this.backupService.getSettings(req.user.userId);
   }
 
   @ApiBearerAuth()
@@ -27,7 +27,7 @@ export class BackupController {
   @Put('settings')
   @ApiOperation({ summary: 'Update backup settings' })
   updateSettings(@Request() req: any, @Body() dto: UpdateBackupSettingsDto) {
-    return this.backupService.updateSettings(req.user.sub, dto.isEnabled, dto.interval);
+    return this.backupService.updateSettings(req.user.userId, dto.isEnabled, dto.interval);
   }
 
   @ApiBearerAuth()
@@ -35,7 +35,7 @@ export class BackupController {
   @Get('export')
   @ApiOperation({ summary: 'Export all data as ZIP' })
   exportAllAsZip(@Request() req: any, @Response() res: any) {
-    return this.backupService.exportAllAsZip(req.user.sub, res);
+    return this.backupService.exportAllAsZip(req.user.userId, res);
   }
 
   @ApiBearerAuth()
@@ -43,7 +43,7 @@ export class BackupController {
   @Get('export/:table')
   @ApiOperation({ summary: 'Export single table as Excel' })
   exportSingleTable(@Request() req: any, @Param('table') table: string, @Response() res: any) {
-    return this.backupService.exportSingleTable(req.user.sub, table, res);
+    return this.backupService.exportSingleTable(req.user.userId, table, res);
   }
 
   @Get('template/:table')
@@ -70,7 +70,7 @@ export class BackupController {
   })
   @UseInterceptors(FileInterceptor('file'))
   importData(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
-    return this.backupService.processImport(req.user.sub, file);
+    return this.backupService.processImport(req.user.userId, file);
   }
 
   // ─────────────────────────────────────────────
