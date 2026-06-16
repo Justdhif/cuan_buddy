@@ -4,7 +4,6 @@ import { DATABASE_CONNECTION } from '../database/database.module';
 import { users, backupSettings, transactions, budgets, savingsGoals, categories } from '../database/schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import * as ExcelJS from 'exceljs';
-import archiver = require('archiver');
 import { Response } from 'express';
 
 @Injectable()
@@ -129,6 +128,8 @@ export class BackupService {
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_backup.zip');
 
+    const archiverModule = await import('archiver');
+    const archiver = archiverModule.default || archiverModule;
     const archive = (archiver as any)('zip', { zlib: { level: 9 } }); // Maximum compression
     archive.pipe(res);
 
