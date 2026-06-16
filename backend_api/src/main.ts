@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import compression = require('compression');
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -16,8 +17,8 @@ async function bootstrap() {
   // Compression: reduces response payload by ~60-80%, saves network transfer & CPU on client
   app.use(compression());
 
-  // Global validation pipe — enforces DTO constraints (MaxLength, IsString, etc)
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // Global validation pipe — enforces DTO constraints (Zod)
+  app.useGlobalPipes(new ZodValidationPipe());
 
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
