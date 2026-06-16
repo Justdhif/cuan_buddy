@@ -30,27 +30,25 @@ export class AuthService {
 
     try {
       // Optimized: rely on DB unique constraint instead of a separate findFirst query
-      const newUser = await this.db.transaction(async (tx) => {
-        const [insertedUser] = await tx
-          .insert(users)
-          .values({
-            email: registerDto.email,
-            passwordHash: hashedPassword,
-          })
-          .returning({ id: users.id, email: users.email });
+      const [insertedUser] = await this.db
+        .insert(users)
+        .values({
+          email: registerDto.email,
+          passwordHash: hashedPassword,
+        })
+        .returning({ id: users.id, email: users.email });
 
-        const avatarValue =
-          registerDto.avatar ||
-          `https://api.dicebear.com/8.x/avataaars/svg?seed=${registerDto.fullName.replace(/\s+/g, '')}`;
+      const avatarValue =
+        registerDto.avatar ||
+        `https://api.dicebear.com/8.x/avataaars/svg?seed=${registerDto.fullName.replace(/\\s+/g, '')}`;
 
-        await tx.insert(userProfiles).values({
-          userId: insertedUser.id,
-          fullName: registerDto.fullName,
-          avatar: avatarValue,
-        });
-
-        return insertedUser;
+      await this.db.insert(userProfiles).values({
+        userId: insertedUser.id,
+        fullName: registerDto.fullName,
+        avatar: avatarValue,
       });
+
+      const newUser = insertedUser;
 
       // Generate a verification token
       const verificationToken = this.jwtService.sign(
@@ -62,7 +60,7 @@ export class AuthService {
       void this.emailService.sendVerificationEmail(newUser.email, verificationToken);
 
       return {
-        message: 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi akun sebelum login.',
+        message: 'Registration successful. Please check your email to verify your account before logging in.',
       };
     } catch (err: any) {
       // PostgreSQL unique violation error code: 23505
@@ -91,7 +89,7 @@ export class AuthService {
     }
 
     if (!user.isActive) {
-      throw new ForbiddenException('Akun belum aktif. Silakan cek email Anda untuk verifikasi.');
+      throw new ForbiddenException('Account is not active. Please check your email for verification.');
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -133,9 +131,9 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
 
-      return { message: 'Akun Anda berhasil diverifikasi. Silakan login.' };
+      return { message: 'Your account has been successfully verified. Please log in.' };
     } catch (error) {
-      throw new BadRequestException('Token verifikasi tidak valid atau sudah kedaluwarsa.');
+      throw new BadRequestException('Verification token is invalid or has expired.');
     }
   }
 
@@ -149,7 +147,7 @@ export class AuthService {
 
     // To prevent email enumeration, always return success even if not found
     if (!user) {
-      return { message: 'Jika email terdaftar, kode OTP telah dikirimkan.' };
+      return { message: 'If the email is registered, an OTP code has been sent.' };
     }
 
     // 2. Generate 6-digit OTP
@@ -172,7 +170,7 @@ export class AuthService {
     // 5. Send Email
     void this.emailService.sendPasswordResetOtp(user.email, otp);
 
-    return { message: 'Jika email terdaftar, kode OTP telah dikirimkan.' };
+    return { message: 'If the email is registered, an OTP code has been sent.' };
   }
 
   async resetPassword(dto: ResetPasswordDto) {
@@ -187,11 +185,11 @@ export class AuthService {
       .limit(1);
 
     if (!user || user.resetOtp !== dto.otp) {
-      throw new BadRequestException('OTP tidak valid atau email salah.');
+      throw new BadRequestException('Invalid OTP or incorrect email.');
     }
 
     if (!user.resetOtpExpiresAt || new Date() > user.resetOtpExpiresAt) {
-      throw new BadRequestException('Kode OTP sudah kedaluwarsa.');
+      throw new BadRequestException('OTP code has expired.');
     }
 
     // Hash new password
@@ -208,7 +206,7 @@ export class AuthService {
       })
       .where(eq(users.id, user.id));
 
-    return { message: 'Password berhasil diubah. Silakan login dengan password baru.' };
+    return { message: 'Password changed successfully. Please log in with your new password.' };
   }
 
   private generateTokens(userId: string, email: string) {
