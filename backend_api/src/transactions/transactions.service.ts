@@ -75,17 +75,14 @@ export class TransactionsService {
       dateFormatted: formatDate(t.date),
     }));
 
-    // Dynamic count query
-    const countQuery = sql`SELECT count(*) FROM ${transactions} WHERE ${transactions.userId} = ${userId}`;
-    if (startDate) countQuery.append(sql` AND ${transactions.date} >= ${new Date(startDate).toISOString()}`);
-    if (endDate) countQuery.append(sql` AND ${transactions.date} <= ${new Date(endDate).toISOString()}`);
-    if (categoryId) countQuery.append(sql` AND ${transactions.categoryId} = ${categoryId}`);
-    if (type) countQuery.append(sql` AND ${transactions.type} = ${type}`);
-    if (search) countQuery.append(sql` AND ${transactions.note} ILIKE ${`%${search}%`}`);
+    const countData = await this.db
+      .select({ count: sql`count(*)` })
+      .from(transactions)
+      .where(and(...conditions));
 
-    const [{ count }] = await this.db.execute(countQuery);
+    const totalCount = Number(countData[0].count);
 
-    return formatPaginatedResponse(formattedData, count, Number(page), Number(limit));
+    return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
   }
 
   async findOne(userId: string, id: string) {

@@ -31,6 +31,21 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
+  @Post('send-verification')
+  @ApiOperation({ summary: 'Send verification email' })
+  @ApiResponse({ status: 200, description: 'Verification email sent' })
+  async sendVerificationEmail(@Body('email') email: string) {
+    return this.authService.sendVerificationEmail(email);
+  }
+
+  @Get('status')
+  @ApiOperation({ summary: 'Check user activation status' })
+  @ApiQuery({ name: 'email', type: String, description: 'User email' })
+  @ApiResponse({ status: 200, description: 'User active status returned' })
+  async checkStatus(@Query('email') email: string) {
+    return this.authService.checkStatus(email);
+  }
+
   @Post('forgot-password')
   @ApiOperation({ summary: 'Request password reset OTP' })
   @ApiResponse({ status: 200, description: 'OTP sent if email exists' })

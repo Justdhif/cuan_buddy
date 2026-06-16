@@ -50,17 +50,8 @@ export class AuthService {
 
       const newUser = insertedUser;
 
-      // Generate a verification token
-      const verificationToken = this.jwtService.sign(
-        { sub: newUser.id, purpose: 'verify_email' },
-        { expiresIn: '1h' },
-      );
-
-      // Send the email (fire-and-forget)
-      void this.emailService.sendVerificationEmail(newUser.email, verificationToken);
-
       return {
-        message: 'Registration successful. Please check your email to verify your account before logging in.',
+        message: 'Registration successful. Please verify your email to log in.',
       };
     } catch (err: any) {
       // PostgreSQL unique violation error code: 23505
@@ -112,6 +103,47 @@ export class AuthService {
 
   async refresh(userId: string, email: string) {
     return this.generateTokens(userId, email);
+  }
+
+  async checkStatus(email: string) {
+    const [user] = await this.db
+      .select({ isActive: users.isActive })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return { isActive: user.isActive };
+  }
+
+  async sendVerificationEmail(email: string) {
+    const [user] = await this.db
+      .select({ id: users.id, isActive: users.isActive, email: users.email })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (user.isActive) {
+      throw new BadRequestException('Account is already verified');
+    }
+
+    // Generate a verification token
+    const verificationToken = this.jwtService.sign(
+      { sub: user.id, purpose: 'verify_email' },
+      { expiresIn: '1h' },
+    );
+
+    // Send the email
+    await this.emailService.sendVerificationEmail(user.email, verificationToken);
+
+    return { message: 'Verification email sent successfully.' };
   }
 
   async verifyEmail(token: string) {
