@@ -28,11 +28,14 @@ export class NotificationsService {
       createdAtFormatted: formatDate(n.createdAt),
     }));
 
-    const [{ count }] = await this.db.execute(
-      sql`SELECT count(*) FROM ${notifications} WHERE ${notifications.userId} = ${userId}`
-    );
+    const countData = await this.db
+      .select({ count: sql`count(*)` })
+      .from(notifications)
+      .where(eq(notifications.userId, userId));
 
-    return formatPaginatedResponse(formattedData, count, Number(page), Number(limit));
+    const totalCount = Number(countData[0].count);
+
+    return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
   }
 
   async markAsRead(userId: string, id: string) {

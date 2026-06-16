@@ -18,8 +18,9 @@ export class CategoriesService {
       offset: offset,
     });
 
-    const [{ count }] = await this.db.execute(sql`SELECT count(*) FROM ${categories}`);
-    return formatPaginatedResponse(data, count, Number(page), Number(limit));
+    const countData = await this.db.select({ count: sql`count(*)` }).from(categories);
+    const totalCount = Number(countData[0].count);
+    return formatPaginatedResponse(data, totalCount, Number(page), Number(limit));
   }
 
   async findOne(id: string) {

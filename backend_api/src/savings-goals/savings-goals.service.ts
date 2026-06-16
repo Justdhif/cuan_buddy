@@ -46,11 +46,14 @@ export class SavingsGoalsService {
       targetDateFormatted: formatDate(g.targetDate),
     }));
 
-    const [{ count }] = await this.db.execute(
-      sql`SELECT count(*) FROM ${savingsGoals} WHERE ${savingsGoals.userId} = ${userId}`
-    );
+    const countData = await this.db
+      .select({ count: sql`count(*)` })
+      .from(savingsGoals)
+      .where(eq(savingsGoals.userId, userId));
 
-    return formatPaginatedResponse(formattedData, count, Number(page), Number(limit));
+    const totalCount = Number(countData[0].count);
+
+    return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
   }
 
   async findOne(userId: string, slug: string) {

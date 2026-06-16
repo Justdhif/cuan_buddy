@@ -40,7 +40,7 @@ export class AuthService {
 
       const avatarValue =
         registerDto.avatar ||
-        `https://api.dicebear.com/8.x/avataaars/png?seed=${registerDto.fullName.toLowerCase().replace(/\s+/g, '-')}`;
+        `https://api.dicebear.com/8.x/avataaars/png?seed=${insertedUser.id}`;
 
       await this.db.insert(userProfiles).values({
         userId: insertedUser.id,
