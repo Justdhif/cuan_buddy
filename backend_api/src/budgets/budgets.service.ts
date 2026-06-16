@@ -64,11 +64,15 @@ export class BudgetsService {
     }));
 
     // Dynamic count query
-    const countQuery = sql`SELECT count(*) FROM ${budgets} WHERE ${budgets.userId} = ${userId}`;
-    if (monthYear) countQuery.append(sql` AND ${budgets.monthYear} = ${monthYear}`);
-    const [{ count }] = await this.db.execute(countQuery);
+    const countQuery = this.db
+      .select({ count: sql`count(*)` })
+      .from(budgets)
+      .where(and(...conditions));
 
-    return formatPaginatedResponse(formattedData, count, Number(page), Number(limit));
+    const countData = await countQuery;
+    const totalCount = Number(countData[0].count);
+
+    return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
   }
 
   async findOne(userId: string, id: string) {
