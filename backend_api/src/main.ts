@@ -1,5 +1,5 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import compression = require('compression');
 import { AppModule } from './app.module';
@@ -21,7 +21,9 @@ async function bootstrap() {
 
   app.enableCors();
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{ path: '/', method: RequestMethod.GET }],
+  });
 
   // Only expose Swagger in non-production to avoid overhead
   if (process.env.NODE_ENV !== 'production') {

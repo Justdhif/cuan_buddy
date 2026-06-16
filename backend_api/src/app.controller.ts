@@ -6,7 +6,12 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getHello() {
+    return {
+      status: true,
+      message: 'CuanBuddy API is running smoothly 🚀',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+    };
   }
 }
