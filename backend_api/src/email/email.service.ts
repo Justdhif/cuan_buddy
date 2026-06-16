@@ -4,7 +4,7 @@ import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private transporter?: nodemailer.Transporter;
   private readonly logger = new Logger(EmailService.name);
 
   private isProduction = process.env.NODE_ENV === 'production';
