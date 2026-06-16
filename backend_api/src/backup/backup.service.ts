@@ -129,7 +129,7 @@ export class BackupService {
     res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_backup.zip');
 
     const archiverModule = await import('archiver');
-    const archiver = archiverModule.default || archiverModule;
+    const archiver = (archiverModule as any).default || archiverModule;
     const archive = (archiver as any)('zip', { zlib: { level: 9 } }); // Maximum compression
     archive.pipe(res);
 
