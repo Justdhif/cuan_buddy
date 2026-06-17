@@ -2,8 +2,15 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, and, gte, lte, desc, ilike, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { transactions } from '../database/schema';
-import { CreateTransactionDto, UpdateTransactionDto } from './dto/transaction.dto';
-import { formatPaginatedResponse, formatCurrency, formatDate } from '../common/utils/formatter.util';
+import {
+  CreateTransactionDto,
+  UpdateTransactionDto,
+} from './dto/transaction.dto';
+import {
+  formatPaginatedResponse,
+  formatCurrency,
+  formatDate,
+} from '../common/utils/formatter.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
 
@@ -16,19 +23,22 @@ export class TransactionsService {
   ) {}
 
   async create(userId: string, createTransactionDto: CreateTransactionDto) {
-    const [newTransaction] = await this.db.insert(transactions).values({
-      userId,
-      ...createTransactionDto,
-      date: new Date(createTransactionDto.date),
-      amount: createTransactionDto.amount.toString(),
-    }).returning();
-    
+    const [newTransaction] = await this.db
+      .insert(transactions)
+      .values({
+        userId,
+        ...createTransactionDto,
+        date: new Date(createTransactionDto.date),
+        amount: createTransactionDto.amount.toString(),
+      })
+      .returning();
+
     // Fire-and-forget: notification
     void this.notificationsService.createAndBroadcast(
       userId,
       'New Transaction Recorded',
       `You have successfully recorded a ${newTransaction.type} of ${formatCurrency(newTransaction.amount)}.`,
-      'transaction'
+      'transaction',
     );
 
     // Fire-and-forget: anomaly detection — does not block response
@@ -44,9 +54,14 @@ export class TransactionsService {
   }
 
   async findAll(userId: string, query: any) {
-    const { 
-      startDate, endDate, categoryId, type, 
-      search, page = 1, limit = 10 
+    const {
+      startDate,
+      endDate,
+      categoryId,
+      type,
+      search,
+      page = 1,
+      limit = 10,
     } = query;
 
     const conditions = [eq(transactions.userId, userId)];
@@ -65,11 +80,11 @@ export class TransactionsService {
       limit: Number(limit),
       offset: offset,
       with: {
-        category: true
-      }
+        category: true,
+      },
     });
 
-    const formattedData = data.map(t => ({
+    const formattedData = data.map((t) => ({
       ...t,
       amountFormatted: formatCurrency(t.amount),
       dateFormatted: formatDate(t.date),
@@ -82,26 +97,38 @@ export class TransactionsService {
 
     const totalCount = Number(countData[0].count);
 
-    return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
+    return formatPaginatedResponse(
+      formattedData,
+      totalCount,
+      Number(page),
+      Number(limit),
+    );
   }
 
   async findOne(userId: string, id: string) {
     const transaction = await this.db.query.transactions.findFirst({
       where: and(eq(transactions.id, id), eq(transactions.userId, userId)),
-      with: { category: true }
+      with: { category: true },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');
     return transaction;
   }
 
-  async update(userId: string, id: string, updateTransactionDto: UpdateTransactionDto) {
+  async update(
+    userId: string,
+    id: string,
+    updateTransactionDto: UpdateTransactionDto,
+  ) {
     // Optimized: single query — update with ownership check, no separate findOne
     const updateData: any = { ...updateTransactionDto, updatedAt: new Date() };
-    if (updateTransactionDto.date) updateData.date = new Date(updateTransactionDto.date);
-    if (updateTransactionDto.amount) updateData.amount = updateTransactionDto.amount.toString();
+    if (updateTransactionDto.date)
+      updateData.date = new Date(updateTransactionDto.date);
+    if (updateTransactionDto.amount)
+      updateData.amount = updateTransactionDto.amount.toString();
 
-    const [updated] = await this.db.update(transactions)
+    const [updated] = await this.db
+      .update(transactions)
       .set(updateData)
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
       .returning();
@@ -112,11 +139,40 @@ export class TransactionsService {
 
   async remove(userId: string, id: string) {
     // Optimized: single query — delete with ownership check, no separate findOne
-    const [deleted] = await this.db.delete(transactions)
+    const [deleted] = await this.db
+      .delete(transactions)
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
       .returning({ id: transactions.id });
 
     if (!deleted) throw new NotFoundException('Transaction not found');
     return { message: 'Transaction removed successfully' };
+  }
+
+  async getCalendarSummary(userId: string, month: number, year: number) {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const conditions = [
+      eq(transactions.userId, userId),
+      gte(transactions.date, startDate),
+      lte(transactions.date, endDate),
+    ];
+
+    const summary = await this.db
+      .select({
+        date: sql<string>`DATE(${transactions.date})`.as('date'),
+        type: transactions.type,
+        count: sql<number>`count(*)`.as('count'),
+      })
+      .from(transactions)
+      .where(and(...conditions))
+      .groupBy(sql`DATE(${transactions.date})`, transactions.type);
+
+    return summary.map((row: any) => ({
+      // Formatting date back to string in case it comes as a Date object from pg driver
+      date: typeof row.date === 'string' ? row.date : row.date.toISOString().split('T')[0],
+      type: row.type,
+      count: Number(row.count),
+    }));
   }
 }
