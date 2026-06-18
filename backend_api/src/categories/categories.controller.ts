@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -8,27 +8,27 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Post()
-  create(@Body() createCategoryDto: any) {
-    return this.categoriesService.create(createCategoryDto);
+  create(@Request() req: any, @Body() createCategoryDto: any) {
+    return this.categoriesService.create(req.user.userId, createCategoryDto);
   }
 
   @Get()
-  findAll(@Query() query: any) {
-    return this.categoriesService.findAll(query);
+  findAll(@Request() req: any, @Query() query: any) {
+    return this.categoriesService.findAll(req.user.userId, query);
   }
 
   @Get(':slug')
-  findOne(@Param('slug') slug: string) {
-    return this.categoriesService.findOne(slug);
+  findOne(@Request() req: any, @Param('slug') slug: string) {
+    return this.categoriesService.findOne(req.user.userId, slug);
   }
 
   @Patch(':slug')
-  update(@Param('slug') slug: string, @Body() updateCategoryDto: any) {
-    return this.categoriesService.update(slug, updateCategoryDto);
+  update(@Request() req: any, @Param('slug') slug: string, @Body() updateCategoryDto: any) {
+    return this.categoriesService.update(req.user.userId, slug, updateCategoryDto);
   }
 
   @Delete(':slug')
-  remove(@Param('slug') slug: string) {
-    return this.categoriesService.remove(slug);
+  remove(@Request() req: any, @Param('slug') slug: string) {
+    return this.categoriesService.remove(req.user.userId, slug);
   }
 }

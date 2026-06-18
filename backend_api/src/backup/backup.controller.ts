@@ -33,9 +33,10 @@ export class BackupController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('export')
-  @ApiOperation({ summary: 'Export all data as ZIP' })
-  exportAllAsZip(@Request() req: any, @Response() res: any) {
-    return this.backupService.exportAllAsZip(req.user.userId, res);
+  @ApiOperation({ summary: 'Export selected data as ZIP' })
+  exportAllAsZip(@Request() req: any, @Query('tables') tables: string, @Response() res: any) {
+    const tableList = tables ? tables.split(',') : [];
+    return this.backupService.exportAllAsZip(req.user.userId, tableList, res);
   }
 
   @ApiBearerAuth()
@@ -71,6 +72,14 @@ export class BackupController {
   @UseInterceptors(FileInterceptor('file'))
   importData(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
     return this.backupService.processImport(req.user.userId, file);
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Post('mark-completed')
+  @ApiOperation({ summary: 'Mark backup as completed' })
+  markCompleted(@Request() req: any) {
+    return this.backupService.markBackupCompleted(req.user.userId);
   }
 
   // ─────────────────────────────────────────────

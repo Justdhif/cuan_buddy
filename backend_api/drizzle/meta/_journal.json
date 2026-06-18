@@ -15,6 +15,13 @@
       "when": 1781572733265,
       "tag": "0001_colorful_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781751497719,
+      "tag": "0002_lyrical_carmella_unuscione",
+      "breakpoints": true
     }
   ]
 }

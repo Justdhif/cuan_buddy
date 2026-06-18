@@ -67,26 +67,51 @@ export class BackupService {
   // ─────────────────────────────────────────────
   
   // Creates an Excel workbook in memory for a specific table
-  private async createExcelWorkbook(userId: string, tableName: string): Promise<ExcelJS.Workbook> {
+    private async createExcelWorkbook(userId: string, tableName: string): Promise<ExcelJS.Workbook> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(tableName);
+
+    // Helper to map categories
+    const categoriesList = await this.db.query.categories.findMany();
+    const categoriesMap = new Map();
+    for (const c of categoriesList) categoriesMap.set(c.id, c);
 
     // Fetch data based on table (excluding notifications as requested)
     if (tableName === 'transactions') {
       const data = await this.db.query.transactions.findMany({ where: eq(transactions.userId, userId) });
+      const mappedData = data.map((t: any) => {
+        const cat = categoriesMap.get(t.categoryId);
+        return {
+          ...t,
+          categoryName: cat ? cat.name : '',
+          categoryEmoji: cat ? cat.emojiIcon : ''
+        };
+      });
       worksheet.columns = [
         { header: 'ID', key: 'id' }, { header: 'Type', key: 'type' }, 
         { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' },
-        { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }
+        { header: 'Note', key: 'note' }, 
+        { header: 'Category Name', key: 'categoryName' },
+        { header: 'Category Emoji', key: 'categoryEmoji' }
       ];
-      worksheet.addRows(data);
+      worksheet.addRows(mappedData);
     } else if (tableName === 'budgets') {
       const data = await this.db.query.budgets.findMany({ where: eq(budgets.userId, userId) });
+      const mappedData = data.map((b: any) => {
+        const cat = categoriesMap.get(b.categoryId);
+        return {
+          ...b,
+          categoryName: cat ? cat.name : '',
+          categoryEmoji: cat ? cat.emojiIcon : ''
+        };
+      });
       worksheet.columns = [
-        { header: 'ID', key: 'id' }, { header: 'CategoryID', key: 'categoryId' }, 
+        { header: 'ID', key: 'id' }, 
+        { header: 'Category Name', key: 'categoryName' },
+        { header: 'Category Emoji', key: 'categoryEmoji' },
         { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }
       ];
-      worksheet.addRows(data);
+      worksheet.addRows(mappedData);
     } else if (tableName === 'savings_goals') {
       const data = await this.db.query.savingsGoals.findMany({ where: eq(savingsGoals.userId, userId) });
       worksheet.columns = [
@@ -97,12 +122,11 @@ export class BackupService {
       worksheet.addRows(data);
     } else if (tableName === 'categories') {
       // Categories are global or user-specific depending on future design, fetching all for now
-      const data = await this.db.query.categories.findMany();
       worksheet.columns = [
         { header: 'ID', key: 'id' }, { header: 'Name', key: 'name' }, 
         { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }
       ];
-      worksheet.addRows(data);
+      worksheet.addRows(categoriesList);
     }
 
     return workbook;
@@ -122,8 +146,9 @@ export class BackupService {
     res.end();
   }
 
-  async exportAllAsZip(userId: string, res: Response) {
-    const tables = ['transactions', 'budgets', 'savings_goals', 'categories'];
+    async exportAllAsZip(userId: string, reqTables: string[], res: Response) {
+    const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
+    const tables = reqTables.length > 0 ? reqTables.filter(t => validTables.includes(t)) : validTables;
     
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_backup.zip');
@@ -172,7 +197,7 @@ export class BackupService {
   // Note: For a production app, the import logic would parse the Excel/ZIP buffer,
   // validate each row, and use bulk inserts. Due to space constraints in this service,
   // we are implementing the structure. Actual DB inserts would follow Drizzle patterns.
-  async processImport(userId: string, file: Express.Multer.File) {
+    async processImport(userId: string, file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
 
     const isZip = file.originalname.endsWith('.zip');
@@ -180,15 +205,100 @@ export class BackupService {
 
     if (!isZip && !isExcel) throw new BadRequestException('Only .zip or .xlsx allowed');
 
-    // In a full implementation, you would use adm-zip to extract the buffer in memory
-    // and process each Excel file using ExcelJS workbook.xlsx.load(buffer).
-    // Then map the rows to DB objects and perform bulk inserts/upserts.
+    let buffersToProcess: { name: string; buffer: Buffer }[] = [];
+
+    if (isZip) {
+      const AdmZip = await import('adm-zip');
+      const zip = new AdmZip.default(file.buffer);
+      const zipEntries = zip.getEntries();
+      for (const entry of zipEntries) {
+        if (!entry.isDirectory && entry.entryName.endsWith('.xlsx')) {
+          buffersToProcess.push({ name: entry.entryName.replace('.xlsx', ''), buffer: entry.getData() });
+        }
+      }
+    } else {
+      buffersToProcess.push({ name: file.originalname.replace('.xlsx', '').replace('_backup', ''), buffer: file.buffer });
+    }
+
+    let importedCount = 0;
+
+    for (const item of buffersToProcess) {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(item.buffer);
+      
+      const worksheet = workbook.worksheets[0]; // Assuming one sheet per file
+      if (!worksheet) continue;
+
+      const tableName = worksheet.name || item.name;
+
+      // Ensure categories exist
+      if (tableName === 'transactions' || tableName === 'budgets') {
+        const rows: any[] = [];
+        worksheet.eachRow((row, rowNumber) => {
+          if (rowNumber === 1) return; // Skip header
+          rows.push(row.values);
+        });
+
+        // Column mapping depends on what we exported.
+        // ID, Type, Amount, Date, Note, Category Name, Category Emoji
+        for (const rowVals of rows) {
+          const type = rowVals[2];
+          const amount = rowVals[3];
+          const date = rowVals[4];
+          const note = rowVals[5];
+          const catName = tableName === 'transactions' ? rowVals[6] : rowVals[2];
+          const catEmoji = tableName === 'transactions' ? rowVals[7] : rowVals[3];
+          
+          let categoryId = null;
+          if (catName) {
+            const slug = String(catName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            let existingCat = await this.db.query.categories.findFirst({
+              where: and(eq(categories.slug, slug), eq(categories.userId, userId))
+            });
+            if (!existingCat) {
+               const [newCat] = await this.db.insert(categories).values({
+                 userId,
+                 name: String(catName),
+                 slug,
+                 emojiIcon: catEmoji ? String(catEmoji) : null
+               }).returning();
+               existingCat = newCat;
+            }
+            categoryId = existingCat.id;
+          }
+
+          if (tableName === 'transactions') {
+            await this.db.insert(transactions).values({
+              userId,
+              type: String(type) === 'income' ? 'income' : 'expense',
+              amount: String(amount),
+              date: new Date(date),
+              note: note ? String(note) : null,
+              categoryId
+            });
+            importedCount++;
+          } else if (tableName === 'budgets') {
+            const limitAmount = rowVals[4];
+            const monthYear = rowVals[5];
+            if (categoryId) {
+              await this.db.insert(budgets).values({
+                userId,
+                categoryId,
+                limitAmount: String(limitAmount),
+                monthYear: String(monthYear)
+              });
+              importedCount++;
+            }
+          }
+        }
+      }
+    }
     
     return {
       message: 'File received and processed successfully',
       type: isZip ? 'zip' : 'excel',
       fileName: file.originalname,
-      // recordsImported: ...
+      recordsImported: importedCount
     };
   }
 
@@ -226,4 +336,20 @@ export class BackupService {
 
     return { processed: dueBackups.length };
   }
+
+  async markBackupCompleted(userId: string) {
+    const settings = await this.getSettings(userId);
+    if (!settings.isEnabled) return settings;
+    
+    const now = new Date();
+    const nextDate = this.calculateNextBackupDate(settings.interval as any);
+    
+    const [updated] = await this.db.update(backupSettings)
+      .set({ lastBackupAt: now, nextBackupAt: nextDate, updatedAt: new Date() })
+      .where(eq(backupSettings.userId, userId))
+      .returning();
+      
+    return updated;
+  }
+
 }

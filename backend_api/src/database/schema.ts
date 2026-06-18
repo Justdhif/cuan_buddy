@@ -33,7 +33,8 @@ export const userProfiles = pgTable('user_profiles', {
 
 export const categories = pgTable('categories', {
   id: uuid('id').primaryKey().defaultRandom(),
-  slug: text('slug').unique(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  slug: text('slug').notNull(),
   name: text('name').notNull(),
   emojiIcon: text('emoji_icon'),
   colorCode: text('color_code'),
