@@ -47,6 +47,7 @@ export const transactions = pgTable('transactions', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: transactionTypeEnum('type').notNull(),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  currency: text('currency').default('IDR').notNull(),
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
   note: text('note'),
   date: timestamp('date').notNull(),
@@ -59,6 +60,7 @@ export const budgets = pgTable('budgets', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
   limitAmount: decimal('limit_amount', { precision: 12, scale: 2 }).notNull(),
+  currency: text('currency').default('IDR').notNull(),
   monthYear: text('month_year').notNull(), // format YYYY-MM
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -71,6 +73,7 @@ export const savingsGoals = pgTable('savings_goals', {
   name: text('name').notNull(),
   targetAmount: decimal('target_amount', { precision: 12, scale: 2 }).notNull(),
   currentAmount: decimal('current_amount', { precision: 12, scale: 2 }).default('0').notNull(),
+  currency: text('currency').default('IDR').notNull(),
   targetDate: timestamp('target_date'),
   status: text('status').default('in_progress'), // in_progress, completed
   createdAt: timestamp('created_at').defaultNow().notNull(),

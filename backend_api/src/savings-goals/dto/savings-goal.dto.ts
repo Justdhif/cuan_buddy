@@ -5,6 +5,7 @@ export const CreateSavingsGoalSchema = z.object({
   name: z.string().min(1),
   targetAmount: z.number().positive(),
   currentAmount: z.number().min(0).optional(),
+  currency: z.string().optional(),
   targetDate: z.string().optional(),
   status: z.enum(['in_progress', 'completed']).optional(),
 });

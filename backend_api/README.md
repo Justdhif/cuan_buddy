@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://api.dicebear.com/8.x/bottts/svg?seed=CuanBuddy" width="100" height="100" alt="CuanBuddy Logo">
+  <img src="../app_icon_transparent.png" width="100" height="100" alt="CuanBuddy Logo">
   <h1>💰 CuanBuddy Backend API</h1>
   <p><strong>A modern, scalable, and secure RESTful API for personal finance management.</strong></p>
 </div>

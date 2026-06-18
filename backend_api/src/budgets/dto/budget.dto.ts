@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const CreateBudgetSchema = z.object({
   categoryId: z.string().uuid(),
   limitAmount: z.number().positive(),
+  currency: z.string().optional(),
   monthYear: z.string().regex(/^\d{4}-\d{2}$/, 'Must be in YYYY-MM format'),
 });
 
