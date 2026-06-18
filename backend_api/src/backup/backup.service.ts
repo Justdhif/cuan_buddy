@@ -5,6 +5,7 @@ import { users, backupSettings, transactions, budgets, savingsGoals, categories 
 import { NotificationsService } from '../notifications/notifications.service';
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
+import archiver from 'archiver';
 
 @Injectable()
 export class BackupService {
@@ -153,9 +154,7 @@ export class BackupService {
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_backup.zip');
 
-    const archiverModule = await import('archiver');
-    const archiver = (archiverModule as any).default || archiverModule;
-    const archive = (archiver as any)('zip', { zlib: { level: 9 } }); // Maximum compression
+    const archive = archiver('zip', { zlib: { level: 9 } }); // Maximum compression
     archive.pipe(res);
 
     // Generate Excel files in memory and append to ZIP stream
