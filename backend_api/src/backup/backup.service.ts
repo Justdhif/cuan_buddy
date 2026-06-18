@@ -153,8 +153,9 @@ export class BackupService {
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_backup.zip');
 
-    const archiver = require('archiver');
-    const archive = archiver('zip', { zlib: { level: 9 } }); // Maximum compression
+    const archiverModule = await import('archiver');
+    const ZipArchive = (archiverModule as any).ZipArchive;
+    const archive = new ZipArchive({ zlib: { level: 9 } }); // Maximum compression
     archive.pipe(res);
 
     // Generate Excel files in memory and append to ZIP stream
