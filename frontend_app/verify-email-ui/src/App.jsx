@@ -112,7 +112,7 @@ function App() {
         </div>
 
         {/* Content */}
-        <h1 className="text-3xl font-bold tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-br from-white to-white/60">
+        <h1 className="text-3xl font-bold tracking-tight mb-2 text-transparent bg-clip-text bg-linear-to-br from-white to-white/60">
           {status === 'loading' && 'Authenticating'}
           {status === 'success' && 'Verification Complete'}
           {status === 'error' && 'Verification Failed'}

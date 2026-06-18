@@ -1,0 +1,374 @@
+import '../../../../core/utils/app_snackbar.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
+import '../providers/budgets_provider.dart';
+import '../../../transactions/presentation/providers/transaction_provider.dart'
+    show categoriesProvider;
+
+class AddBudgetSheet extends ConsumerStatefulWidget {
+  const AddBudgetSheet({super.key});
+
+  @override
+  ConsumerState<AddBudgetSheet> createState() => _AddBudgetSheetState();
+}
+
+class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  String? _selectedCategoryId;
+  DateTime _selectedDate = DateTime.now();
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedCategoryId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a category'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    final monthYearStr = DateFormat('yyyy-MM').format(_selectedDate);
+
+    try {
+      await ref.read(budgetsNotifierProvider.notifier).createBudget(
+            categoryId: _selectedCategoryId!,
+            limitAmount:
+                double.parse(_amountController.text.replaceAll(',', '')),
+            monthYear: monthYearStr,
+          );
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Budget saved!'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (mounted) {
+        AppSnackbar.show(context, title: 'Error', message: 'Error saving budget: $e', type: SnackbarType.error);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    // Only show expense categories for budgets
+    final expenseCategories = categoriesAsync.whenData((all) =>
+        all.where((c) => c['type'] == 'expense' || c['type'] == null).toList());
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Set Budget',
+                style: AppTypography.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Limit Amount ──────────────────────────────────────────
+                AppTextField(
+                  controller: _amountController,
+                  label: 'Limit Amount',
+                  hint: '0',
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      'Rp',
+                      style: AppTypography.textTheme.titleMedium?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Amount is required';
+                    }
+                    if (double.tryParse(value.replaceAll(',', '')) == null) {
+                      return 'Invalid amount';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // ── Category ──────────────────────────────────────────────
+                Text('Category', style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 8),
+                expenseCategories.when(
+                  loading: () => _buildCategorySkeletonLoader(isDark),
+                  error: (_, __) => Text(
+                    'Failed to load categories',
+                    style: TextStyle(color: AppColors.danger, fontSize: 12),
+                  ),
+                  data: (filtered) {
+                    if (filtered.isEmpty) {
+                      return Text(
+                        'No categories found',
+                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      );
+                    }
+                    return SizedBox(
+                      height: 52,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.zero,
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final cat = filtered[index];
+                          final catId = cat['id'] as String?;
+                          final catName = cat['name'] as String? ?? '';
+                          final catEmoji = cat['emojiIcon'] as String? ??
+                              cat['emoji'] as String? ??
+                              '📦';
+                          final isSelected = _selectedCategoryId == catId;
+
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              _selectedCategoryId =
+                                  isSelected ? null : catId;
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeInOut,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.15)
+                                    : (isDark
+                                        ? AppColors.surfaceDark
+                                        : const Color(0xFFF3F0FF)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : (isDark
+                                          ? AppColors.borderDark
+                                          : AppColors.borderLight),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    catEmoji,
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    catName,
+                                    style: AppTypography.textTheme.labelMedium
+                                        ?.copyWith(
+                                      color: isSelected
+                                          ? AppColors.primary
+                                          : null,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // ── Month Picker ───────────────────────────────────────────
+                InkWell(
+                  onTap: () async {
+                    final pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null && pickedDate != _selectedDate) {
+                      setState(() => _selectedDate = pickedDate);
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Month',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          DateFormat('MMMM yyyy').format(_selectedDate),
+                          style: AppTypography.textTheme.bodyLarge,
+                        ),
+                        const Icon(Icons.calendar_today_rounded, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // ── Save Button ────────────────────────────────────────────
+                AppButton(
+                  label: _isSaving ? 'Saving...' : 'Save Budget',
+                  onPressed: _isSaving ? null : _save,
+                  type: AppButtonType.primary,
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Skeleton loader for the category chips row
+  Widget _buildCategorySkeletonLoader(bool isDark) {
+    return SizedBox(
+      height: 52,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
+      ),
+    );
+  }
+}
+
+// ─── Skeleton Chip ────────────────────────────────────────────────────────────
+class _SkeletonChip extends StatefulWidget {
+  const _SkeletonChip({required this.isDark});
+  final bool isDark;
+
+  @override
+  State<_SkeletonChip> createState() => _SkeletonChipState();
+}
+
+class _SkeletonChipState extends State<_SkeletonChip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.4, end: 0.9).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = widget.isDark
+        ? const Color(0xFF2D3748)
+        : const Color(0xFFE2E8F0);
+
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Opacity(
+        opacity: _anim.value,
+        child: Container(
+          width: 100,
+          height: 52,
+          decoration: BoxDecoration(
+            color: baseColor,
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Show helper ─────────────────────────────────────────────────────────────
+void showAddBudgetSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+    ),
+    builder: (context) => const AddBudgetSheet(),
+  );
+}
