@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/ai_provider.dart';
 
 class AiChatScreen extends ConsumerStatefulWidget {
@@ -36,6 +37,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final aiState = ref.watch(aiNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -51,7 +53,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           children: [
             const Text('🤖', style: TextStyle(fontSize: 24)),
             const SizedBox(width: 8),
-            Text('CuanBuddy AI', style: AppTypography.textTheme.titleMedium),
+            Text(l10n.cuanBuddyAI, style: AppTypography.textTheme.titleMedium),
           ],
         ),
       ),
@@ -124,7 +126,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     child: TextField(
                       controller: _controller,
                       decoration: InputDecoration(
-                        hintText: 'Ask about your finances...',
+                        hintText: l10n.askAboutFinances,
                         hintStyle: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),

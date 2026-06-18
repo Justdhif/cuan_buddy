@@ -30,66 +30,69 @@ class ServerException extends AppException {
 }
 
 class ApiExceptionMapper {
-  static AppException fromStatusCode(int statusCode, {String? serverMessage}) {
+  static AppException fromStatusCode(int statusCode, {String? serverMessage, String lang = 'en'}) {
+    final isIndo = lang == 'id';
     switch (statusCode) {
       case 400:
         return ValidationException(
-          message: serverMessage ?? 'Invalid data. Please check again 😊',
+          message: serverMessage ?? (isIndo ? 'Data tidak valid. Silakan periksa kembali 😊' : 'Invalid data. Please check again 😊'),
         );
       case 401:
         return AuthException(
-          message: 'Oops, incorrect email or password 😅',
+          message: isIndo ? 'Oops, email atau password salah 😅' : 'Oops, incorrect email or password 😅',
           statusCode: statusCode,
         );
       case 403:
         return AuthException(
-          message: serverMessage?.contains('verifikasi') == true
-              ? 'Account not verified. Check your email 📧'
-              : 'You do not have access here 🚫',
+          message: serverMessage?.contains('verifikasi') == true || serverMessage?.toLowerCase().contains('verify') == true
+              ? (isIndo ? 'Akun belum diverifikasi. Periksa email Anda 📧' : 'Account not verified. Check your email 📧')
+              : (isIndo ? 'Anda tidak memiliki akses di sini 🚫' : 'You do not have access here 🚫'),
           statusCode: statusCode,
         );
       case 404:
         return NetworkException(
-          message: 'Data not found 🔍',
+          message: isIndo ? 'Data tidak ditemukan 🔍' : 'Data not found 🔍',
           statusCode: statusCode,
         );
       case 409:
         return ValidationException(
-          message: serverMessage ?? 'Data already exists ⚠️',
+          message: serverMessage ?? (isIndo ? 'Data sudah ada ⚠️' : 'Data already exists ⚠️'),
         );
       case 422:
         return ValidationException(
-          message: serverMessage ?? 'Incorrect data format. Please check again 😊',
+          message: serverMessage ?? (isIndo ? 'Format data salah. Silakan periksa kembali 😊' : 'Incorrect data format. Please check again 😊'),
         );
       case 429:
         return NetworkException(
-          message: 'Too many attempts. Please wait a moment ⏳',
+          message: isIndo ? 'Terlalu banyak percobaan. Silakan tunggu sebentar ⏳' : 'Too many attempts. Please wait a moment ⏳',
           statusCode: statusCode,
         );
       case 500:
       case 502:
       case 503:
         return ServerException(
-          message: 'Oops, the server is busy. Please try again later 🙏',
+          message: isIndo ? 'Oops, server sedang sibuk. Silakan coba lagi nanti 🙏' : 'Oops, the server is busy. Please try again later 🙏',
           statusCode: statusCode,
         );
       default:
         return NetworkException(
-          message: 'An error occurred. Please try again later 😅',
+          message: isIndo ? 'Terjadi kesalahan. Silakan coba lagi nanti 😅' : 'An error occurred. Please try again later 😅',
           statusCode: statusCode,
         );
     }
   }
 
-  static AppException fromConnectionError() {
-    return const NetworkException(
-      message: 'Internet connection issue. Please check your connection 📶',
+  static AppException fromConnectionError({String lang = 'en'}) {
+    final isIndo = lang == 'id';
+    return NetworkException(
+      message: isIndo ? 'Masalah koneksi internet. Silakan periksa koneksi Anda 📶' : 'Internet connection issue. Please check your connection 📶',
     );
   }
 
-  static AppException fromTimeout() {
-    return const NetworkException(
-      message: 'Slow connection. Please try again later ⏳',
+  static AppException fromTimeout({String lang = 'en'}) {
+    final isIndo = lang == 'id';
+    return NetworkException(
+      message: isIndo ? 'Koneksi lambat. Silakan coba lagi nanti ⏳' : 'Slow connection. Please try again later ⏳',
     );
   }
 }

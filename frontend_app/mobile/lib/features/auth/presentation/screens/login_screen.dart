@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/app_snackbar.dart';
@@ -37,6 +38,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState is AuthStateLoading;
+    final l10n = AppLocalizations.of(context);
 
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       switch (next) {
@@ -45,7 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         case AuthStateError(:final message):
           AppSnackbar.show(
             context,
-            title: 'Login Failed',
+            title: l10n.loginFailed,
             message: message,
             type: SnackbarType.error,
           );
@@ -95,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               // ─── Heading ─────────────────────────────────────────
               Text(
-                'Welcome back',
+                l10n.welcomeBack,
                 style: AppTypography.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.2,
@@ -104,7 +106,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Log in to manage your finances',
+                l10n.loginSubtitle,
                 style: AppTypography.textTheme.bodyLarge?.copyWith(
                   color: Colors.white60,
                 ),
@@ -120,15 +122,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // Email
                     _DarkTextField(
                       controller: _emailController,
-                      hint: 'email@example.com',
-                      label: 'Email',
+                      hint: l10n.emailHint,
+                      label: l10n.email,
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Email is required';
+                        if (value == null || value.isEmpty) return l10n.emailRequired;
                         if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                          return 'Invalid email format';
+                          return l10n.invalidEmail;
                         }
                         return null;
                       },
@@ -138,14 +140,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     // Password
                     _DarkTextField(
                       controller: _passwordController,
-                      hint: 'Password',
-                      label: 'Password',
+                      hint: l10n.passwordHint,
+                      label: l10n.password,
                       icon: Icons.lock_outline_rounded,
                       isPassword: true,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _login(),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Password is required';
+                        if (value == null || value.isEmpty) return l10n.passwordRequired;
                         return null;
                       },
                     ),
@@ -156,7 +158,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: TextButton(
                         onPressed: () => context.push('/forgot-password'),
                         child: Text(
-                          'Forgot Password?',
+                          l10n.forgotPassword,
                           style: AppTypography.textTheme.labelMedium?.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.w600,
@@ -189,7 +191,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     color: Colors.white, strokeWidth: 2.5),
                               )
                             : Text(
-                                'Log In',
+                                l10n.loginButton,
                                 style: AppTypography.textTheme.titleMedium
                                     ?.copyWith(
                                   color: Colors.white,
@@ -204,14 +206,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Don't have an account? ",
+                          l10n.noAccount,
                           style: AppTypography.textTheme.bodyMedium
                               ?.copyWith(color: Colors.white60),
                         ),
                         GestureDetector(
                           onTap: () => context.push('/register'),
                           child: Text(
-                            'Sign up now',
+                            l10n.signUpNow,
                             style: AppTypography.textTheme.labelMedium?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -317,8 +319,7 @@ class _DarkTextFieldState extends State<_DarkTextField> {
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide:
-                BorderSide(color: AppColors.danger, width: 1.2),
+            borderSide: BorderSide(color: AppColors.danger, width: 1.2),
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),

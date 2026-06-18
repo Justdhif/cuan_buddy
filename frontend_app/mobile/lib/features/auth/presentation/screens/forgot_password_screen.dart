@@ -2,6 +2,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -33,9 +34,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   }
 
   Future<void> _sendOtp() async {
+    final l10n = AppLocalizations.of(context);
     if (_emailController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email first 😊')),
+        SnackBar(content: Text(l10n.pleaseEnterEmailFirst)),
       );
       return;
     }
@@ -47,20 +49,21 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       if (!mounted) return;
       setState(() => _otpSent = true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('OTP sent to your email 📧'),
+        SnackBar(
+          content: Text(l10n.otpSentToEmail),
           backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: 'Info', message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _resetPassword() async {
+    final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
@@ -73,7 +76,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       setState(() => _resetSuccess = true);
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: 'Info', message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -81,6 +84,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -95,18 +99,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               ),
               const SizedBox(height: 24),
               if (_resetSuccess)
-                _buildSuccess(context)
+                _buildSuccess(context, l10n)
               else ...[
                 Text(
-                  'Forgot Password? 🔐',
+                  l10n.forgotPasswordTitle,
                   style: AppTypography.textTheme.headlineMedium
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   _otpSent
-                      ? 'Enter the OTP sent to your email'
-                      : 'Enter your email to receive an OTP code',
+                      ? l10n.enterOtpSentToEmail
+                      : l10n.enterEmailForOtp,
                   style: AppTypography.textTheme.bodyLarge
                       ?.copyWith(color: AppColors.textSecondaryLight),
                 ),
@@ -117,18 +121,18 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                     children: [
                       AppTextField(
                         controller: _emailController,
-                        label: 'Email',
-                        hint: 'email@example.com',
+                        label: l10n.email,
+                        hint: l10n.emailHintForgot,
                         keyboardType: TextInputType.emailAddress,
                         readOnly: _otpSent,
                         prefixIcon: const Icon(Icons.email_outlined, size: 20),
                         validator: (v) =>
-                            v == null || v.isEmpty ? 'Email is required' : null,
+                            v == null || v.isEmpty ? l10n.emailRequired : null,
                       ),
                       if (!_otpSent) ...[
                         const SizedBox(height: 24),
                         AppButton(
-                          label: 'Send OTP',
+                          label: l10n.sendOtp,
                           onPressed: _sendOtp,
                           isLoading: _isLoading,
                         ),
@@ -137,36 +141,36 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                         const SizedBox(height: 16),
                         AppTextField(
                           controller: _otpController,
-                          label: 'OTP Code',
-                          hint: '6-digit OTP code',
+                          label: l10n.otpCode,
+                          hint: l10n.otpHint,
                           keyboardType: TextInputType.number,
                           prefixIcon: const Icon(Icons.key_rounded, size: 20),
                           validator: (v) =>
-                              v == null || v.isEmpty ? 'OTP is required' : null,
+                              v == null || v.isEmpty ? l10n.otpRequired : null,
                         ),
                         const SizedBox(height: 16),
                         AppTextField(
                           controller: _newPasswordController,
-                          label: 'New Password',
-                          hint: 'Minimum 8 characters',
+                          label: l10n.newPassword,
+                          hint: l10n.passwordMinHint,
                           isPassword: true,
                           prefixIcon:
                               const Icon(Icons.lock_outline_rounded, size: 20),
                           validator: (v) {
-                            if (v == null || v.isEmpty) return 'Password is required';
-                            if (v.length < 8) return 'Password must be at least 8 characters';
+                            if (v == null || v.isEmpty) return l10n.passwordRequired;
+                            if (v.length < 8) return l10n.passwordMin8;
                             return null;
                           },
                         ),
                         const SizedBox(height: 24),
                         AppButton(
-                          label: 'Reset Password',
+                          label: l10n.resetPassword,
                           onPressed: _resetPassword,
                           isLoading: _isLoading,
                         ),
                         const SizedBox(height: 12),
                         AppButton(
-                          label: 'Resend OTP',
+                          label: l10n.resendOtp,
                           onPressed: _sendOtp,
                           type: AppButtonType.text,
                         ),
@@ -182,7 +186,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildSuccess(BuildContext context) {
+  Widget _buildSuccess(BuildContext context, AppLocalizations l10n) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.only(top: 40),
@@ -190,19 +194,19 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           children: [
             const Text('🎉', style: TextStyle(fontSize: 80)),
             const SizedBox(height: 24),
-            Text('Password successfully changed!',
+            Text(l10n.passwordChangedSuccess,
                 style: AppTypography.textTheme.headlineSmall
                     ?.copyWith(fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             Text(
-              'You can now log in with your new password',
+              l10n.canNowLoginNewPassword,
               textAlign: TextAlign.center,
               style: AppTypography.textTheme.bodyLarge
                   ?.copyWith(color: AppColors.textSecondaryLight),
             ),
             const SizedBox(height: 32),
             AppButton(
-              label: 'Log In Now',
+              label: l10n.logInNow,
               onPressed: () => context.go('/login'),
             ),
           ],

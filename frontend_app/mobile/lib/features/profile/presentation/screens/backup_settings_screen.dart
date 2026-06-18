@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../data/services/backup_worker.dart';
@@ -20,6 +21,7 @@ class BackupSettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   bool? _backupEnabled;
   String _interval = '7d';
 
@@ -82,8 +84,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
         context.go('/home/dashboard');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Backup settings saved ✅'),
+          SnackBar(
+            content: Text(l10n.backupSettingsSaved),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -91,7 +93,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: 'Info', message: 'Failed to save settings: ${e.toString()}', type: SnackbarType.error);
+      AppSnackbar.show(context, title: l10n.info, message: '${l10n.failedToSaveSettings}: ${e.toString()}', type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -105,7 +107,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       appBar: widget.isOnboarding
           ? null
           : AppBar(
-              title: const Text('Backup & Restore'),
+              title: Text(l10n.backupRestore),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back_ios_rounded),
                 onPressed: () => context.pop(),
@@ -118,7 +120,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => AppErrorState(
-          message: 'Failed to load backup settings',
+          message: l10n.failedToLoadBackupSettings,
           onRetry: () => ref.invalidate(backupSettingsProvider),
         ),
       ),
@@ -128,137 +130,153 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   Widget _buildContent(BuildContext context) {
     final enabled = _backupEnabled ?? false;
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.isOnboarding) ...[
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: LinearProgressIndicator(
-                      value: 1.0,
-                      backgroundColor: AppColors.borderLight,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                          AppColors.primary),
-                      borderRadius: BorderRadius.circular(4),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.isOnboarding) ...[
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: LinearProgressIndicator(
+                        value: 1.0,
+                        backgroundColor: AppColors.borderLight,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primary),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text('Step 2/2',
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      )),
-                ],
-              ),
-              const SizedBox(height: 32),
-              const Text('💾', style: TextStyle(fontSize: 56)),
-              const SizedBox(height: 16),
-              Text(
-                'Backup Settings',
-                style: AppTypography.textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Enable automatic backup to keep your data safe 🔒',
-                style: AppTypography.textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+                    const SizedBox(width: 12),
+                    Text(l10n.step2of2,
+                        style: AppTypography.textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        )),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 32),
-            ],
-
-            // ─── Enable Toggle Card ─────────────────────────────────
-            _buildToggleTile(enabled),
-
-            // ─── Frequency Options ──────────────────────────────────
-            if (enabled) ...[
-              const SizedBox(height: 24),
-              Text('Backup Frequency',
-                  style: AppTypography.textTheme.titleSmall),
-              const SizedBox(height: 12),
-              ..._intervals.map(
-                (item) => _buildIntervalOption(
-                  item['value']!,
-                  item['label']!,
-                  item['icon']!,
-                  item['desc']!,
+                const SizedBox(height: 32),
+                const Text('💾', style: TextStyle(fontSize: 56)),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.backupSettings,
+                  style: AppTypography.textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-              ),
-            ],
-
-            
-            if (enabled) ...[
-              const SizedBox(height: 24),
-              Text('Select Data to Backup/Restore',
-                  style: AppTypography.textTheme.titleSmall),
-              const SizedBox(height: 12),
-              _buildCheckbox('Transactions', 'transactions'),
-              _buildCheckbox('Budgets', 'budgets'),
-              _buildCheckbox('Savings Goals', 'savings_goals'),
-              _buildCheckbox('Categories', 'categories'),
-            ],
-const Spacer(),
-
-            if (!widget.isOnboarding) ...[
-              const SizedBox(height: 32),
-              Text('Manual Action',
-                  style: AppTypography.textTheme.titleSmall),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      label: 'Backup Now',
-                      onPressed: _selectedTables.isEmpty ? null : () {
-                        ref.read(backupWorkerProvider).runBackupProcess(tables: _selectedTables);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Backup started...')),
-                        );
-                      },
-                      type: AppButtonType.outlined,
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.enableAutoBackup,
+                  style: AppTypography.textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AppButton(
-                      label: 'Restore',
-                      onPressed: _showRestoreSheet,
-                      type: AppButtonType.outlined,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 32),
+              ],
+  
+              // ─── Enable Toggle Card ─────────────────────────────────
+              _buildToggleTile(enabled),
+  
+              // ─── Frequency Options ──────────────────────────────────
+              if (enabled) ...[
+                const SizedBox(height: 24),
+                Text(l10n.backupFrequency,
+                    style: AppTypography.textTheme.titleSmall),
+                const SizedBox(height: 12),
+                ..._intervals.map(
+                  (item) {
+                    final String translatedLabel = switch (item['value']) {
+                      '24h' => l10n.everyDay,
+                      '7d' => l10n.everyWeek,
+                      '1m' => l10n.everyMonth,
+                      _ => item['label']!,
+                    };
+                    final String translatedDesc = switch (item['value']) {
+                      '24h' => l10n.dailyBackupDesc,
+                      '7d' => l10n.weeklyBackupDesc,
+                      '1m' => l10n.monthlyBackupDesc,
+                      _ => item['desc']!,
+                    };
+                    return _buildIntervalOption(
+                      item['value']!,
+                      translatedLabel,
+                      item['icon']!,
+                      translatedDesc,
+                    );
+                  },
+                ),
+              ],
+  
+              
+              if (enabled) ...[
+                const SizedBox(height: 24),
+                Text(l10n.selectDataToBackup,
+                    style: AppTypography.textTheme.titleSmall),
+                const SizedBox(height: 12),
+                _buildCheckbox(l10n.transactionsLabel, 'transactions'),
+                _buildCheckbox(l10n.budgetsLabel, 'budgets'),
+                _buildCheckbox(l10n.savingsGoalsLabel, 'savings_goals'),
+                _buildCheckbox(l10n.categoriesLabel, 'categories'),
+              ],
               const SizedBox(height: 24),
-            ],
-
-            // ─── Save / Finish Button ───────────────────────────────
-            AppButton(
-              label: widget.isOnboarding ? 'Finish & Start 🚀' : 'Save Changes',
-              onPressed: _isLoading
-                  ? null
-                  : () => _saveSettings(navigateAway: widget.isOnboarding),
-              isLoading: _isLoading,
-            ),
-
-            if (widget.isOnboarding) ...[
-              const SizedBox(height: 12),
+  
+              if (!widget.isOnboarding) ...[
+                const SizedBox(height: 32),
+                Text(l10n.manualAction,
+                    style: AppTypography.textTheme.titleSmall),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppButton(
+                        label: l10n.backupNow,
+                        onPressed: _selectedTables.isEmpty ? null : () {
+                          ref.read(backupWorkerProvider).runBackupProcess(tables: _selectedTables);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.backupStarted)),
+                          );
+                        },
+                        type: AppButtonType.outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: AppButton(
+                        label: l10n.restore,
+                        onPressed: _showRestoreSheet,
+                        type: AppButtonType.outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+  
+              // ─── Save / Finish Button ───────────────────────────────
               AppButton(
-                label: 'Skip',
-                onPressed: () => context.go('/home/dashboard'),
-                type: AppButtonType.text,
+                label: widget.isOnboarding ? l10n.finishAndStart : l10n.saveChanges,
+                onPressed: _isLoading
+                    ? null
+                    : () => _saveSettings(navigateAway: widget.isOnboarding),
+                isLoading: _isLoading,
               ),
+  
+              if (widget.isOnboarding) ...[
+                const SizedBox(height: 12),
+                AppButton(
+                  label: l10n.skip,
+                  onPressed: () => context.go('/home/dashboard'),
+                  type: AppButtonType.text,
+                ),
+              ],
+  
+              const SizedBox(height: 16),
             ],
-
-            const SizedBox(height: 16),
-          ],
+          ),
         ),
       ),
     );
@@ -306,12 +324,12 @@ const Spacer(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Auto Backup',
+                Text(l10n.autoBackup,
                     style: AppTypography.textTheme.titleSmall),
                 Text(
                   enabled
-                      ? 'Automatic backup is active'
-                      : 'Back up your data automatically',
+                      ? l10n.autoBackupActive
+                      : l10n.backupYourDataAuto,
                   style: AppTypography.textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? AppColors.textSecondaryDark
@@ -417,6 +435,7 @@ class _RestoreSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
@@ -435,45 +454,45 @@ class _RestoreSheet extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Restore Data',
+            l10n.restoreData,
             style: AppTypography.textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
-            'To restore data correctly, please ensure your Excel or ZIP file follows our standard template structure. You can download the template below, fill it in, and then upload it.',
+            l10n.restoreInstructions,
             style: AppTypography.textTheme.bodyMedium?.copyWith(
               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
             ),
           ),
           const SizedBox(height: 24),
-          Text('Download Templates', style: AppTypography.textTheme.labelLarge),
+          Text(l10n.downloadTemplates, style: AppTypography.textTheme.labelLarge),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               ActionChip(
-                label: const Text('Transactions'),
+                label: Text(l10n.transactionsLabel),
                 onPressed: () => onDownloadTemplate('transactions'),
               ),
               ActionChip(
-                label: const Text('Budgets'),
+                label: Text(l10n.budgetsLabel),
                 onPressed: () => onDownloadTemplate('budgets'),
               ),
               ActionChip(
-                label: const Text('Savings Goals'),
+                label: Text(l10n.savingsGoalsLabel),
                 onPressed: () => onDownloadTemplate('savings_goals'),
               ),
               ActionChip(
-                label: const Text('Categories'),
+                label: Text(l10n.categoriesLabel),
                 onPressed: () => onDownloadTemplate('categories'),
               ),
             ],
           ),
           const SizedBox(height: 32),
           AppButton(
-            label: 'Upload & Restore',
+            label: l10n.uploadAndRestore,
             onPressed: onRestore,
           ),
         ],

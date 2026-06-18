@@ -2,6 +2,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
@@ -48,9 +49,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       if (next is AuthStateError) {
-        AppSnackbar.show(context, title: 'Error', message: next.message, type: SnackbarType.error);
+        AppSnackbar.show(context, title: l10n.error, message: next.message, type: SnackbarType.error);
         ref.read(authNotifierProvider.notifier).clearError();
       }
     });
@@ -95,7 +98,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
               // ─── Heading ─────────────────────────────────────────
               Text(
-                'Create an account',
+                l10n.createAccount,
                 style: AppTypography.textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.2,
@@ -104,7 +107,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Start your financial journey with CuanBuddy!',
+                l10n.registerSubtitle,
                 style: AppTypography.textTheme.bodyLarge?.copyWith(
                   color: Colors.white60,
                 ),
@@ -119,29 +122,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     _DarkTextField(
                       controller: _fullNameController,
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
+                      label: l10n.fullName,
+                      hint: l10n.fullNameHint,
                       icon: Icons.person_outline_rounded,
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Full name is required';
-                        if (value.trim().length < 2) return 'Name must be at least 2 characters';
+                        if (value == null || value.isEmpty) return l10n.fullNameRequired;
+                        if (value.trim().length < 2) return l10n.nameTooShort;
                         return null;
                       },
                     ),
                     const SizedBox(height: 14),
                     _DarkTextField(
                       controller: _emailController,
-                      label: 'Email',
-                      hint: 'email@example.com',
+                      label: l10n.email,
+                      hint: l10n.emailHint,
                       icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Email is required';
+                        if (value == null || value.isEmpty) return l10n.emailRequired;
                         if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                          return 'Invalid email format';
+                          return l10n.invalidEmail;
                         }
                         return null;
                       },
@@ -149,35 +152,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 14),
                     _DarkTextField(
                       controller: _passwordController,
-                      label: 'Password',
-                      hint: 'Minimum 8 characters',
+                      label: l10n.password,
+                      hint: l10n.passwordMinHint,
                       icon: Icons.lock_outline_rounded,
                       isPassword: true,
                       textInputAction: TextInputAction.next,
                       onChanged: (value) => setState(() => _password = value),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Password is required';
-                        if (value.length < 8) return 'Password must be at least 8 characters';
+                        if (value == null || value.isEmpty) return l10n.passwordRequired;
+                        if (value.length < 8) return l10n.passwordMin8;
                         return null;
                       },
                     ),
                     // Password strength indicator
                     if (_password.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      _buildPasswordStrength(_password),
+                      _buildPasswordStrength(_password, l10n),
                     ],
                     const SizedBox(height: 14),
                     _DarkTextField(
                       controller: _confirmPasswordController,
-                      label: 'Confirm Password',
-                      hint: 'Repeat your password',
+                      label: l10n.confirmPassword,
+                      hint: l10n.confirmPasswordHint,
                       icon: Icons.lock_outline_rounded,
                       isPassword: true,
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _register(),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return 'Confirm password is required';
-                        if (value != _passwordController.text) return 'Passwords do not match';
+                        if (value == null || value.isEmpty) return l10n.confirmPasswordRequired;
+                        if (value != _passwordController.text) return l10n.passwordsDoNotMatch;
                         return null;
                       },
                     ),
@@ -206,7 +209,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     color: Colors.white, strokeWidth: 2.5),
                               )
                             : Text(
-                                'Sign Up',
+                                l10n.signUp,
                                 style: AppTypography.textTheme.titleMedium
                                     ?.copyWith(
                                   color: Colors.white,
@@ -221,14 +224,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Already have an account? ',
+                          l10n.alreadyHaveAccount,
                           style: AppTypography.textTheme.bodyMedium
                               ?.copyWith(color: Colors.white60),
                         ),
                         GestureDetector(
                           onTap: () => context.pop(),
                           child: Text(
-                            'Log In',
+                            l10n.logInLink,
                             style: AppTypography.textTheme.labelMedium?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
@@ -248,7 +251,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  Widget _buildPasswordStrength(String password) {
+  Widget _buildPasswordStrength(String password, AppLocalizations l10n) {
     int strength = 0;
     if (password.length >= 8) strength++;
     if (password.contains(RegExp(r'[A-Z]'))) strength++;
@@ -257,10 +260,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final (label, color) = switch (strength) {
       0 => ('', Colors.transparent),
-      1 => ('Weak', AppColors.danger),
-      2 => ('Fair', AppColors.warning),
-      3 => ('Strong', AppColors.secondary),
-      _ => ('Very Strong 💪', AppColors.success),
+      1 => (l10n.weak, AppColors.danger),
+      2 => (l10n.fair, AppColors.warning),
+      3 => (l10n.strong, AppColors.secondary),
+      _ => (l10n.veryStrong, AppColors.success),
     };
 
     return Row(

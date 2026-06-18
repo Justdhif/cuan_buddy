@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../providers/category_provider.dart';
@@ -19,6 +20,7 @@ class CategoryFormSheet extends ConsumerStatefulWidget {
 }
 
 class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   late final TextEditingController _nameController;
   late final TextEditingController _emojiController;
   bool _isLoading = false;
@@ -43,7 +45,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
 
     if (name.isEmpty || emoji.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
+        SnackBar(content: Text(l10n.pleaseFillAllFields)),
       );
       return;
     }
@@ -67,7 +69,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     } else {
       final error = ref.read(categoryNotifierProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? 'An error occurred')),
+        SnackBar(content: Text(error ?? l10n.anErrorOccurred)),
       );
     }
   }
@@ -92,7 +94,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            widget.initialCategory == null ? 'New Category' : 'Edit Category',
+            widget.initialCategory == null ? l10n.newCategory : l10n.editCategory,
             style: AppTypography.textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
@@ -123,8 +125,8 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
               const SizedBox(width: 16),
               Expanded(
                 child: AppTextField(
-                  label: 'Category Name',
-                  hint: 'e.g., Food & Dining',
+                  label: l10n.categoryName,
+                  hint: l10n.categoryNameHint,
                   controller: _nameController,
                 ),
               ),
@@ -132,7 +134,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
           ),
           const SizedBox(height: 32),
           AppButton(
-            label: widget.initialCategory == null ? 'Create Category' : 'Save Changes',
+            label: widget.initialCategory == null ? l10n.createCategory : l10n.saveChanges,
             onPressed: _isLoading ? null : _submit,
             isLoading: _isLoading,
           ),

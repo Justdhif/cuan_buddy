@@ -20,7 +20,8 @@ final preferencesServiceProvider = Provider<PreferencesService>((ref) {
 // ─── Network ──────────────────────────────────────────────────────────────────
 final dioClientProvider = Provider<DioClient>((ref) {
   final authService = ref.watch(authServiceProvider);
-  return DioClient(authService: authService);
+  final prefs = ref.watch(preferencesServiceProvider);
+  return DioClient(authService: authService, prefs: prefs);
 });
 
 // ─── Socket.IO (Real-time) ────────────────────────────────────────────────────

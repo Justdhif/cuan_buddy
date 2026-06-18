@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/auth_provider.dart';
@@ -29,12 +30,12 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
   Future<void> _sendVerificationEmail() async {
     if (widget.email == null || widget.email!.isEmpty) return;
-
+    final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
     try {
       final msg = await ref.read(authNotifierProvider.notifier).sendVerificationEmail(widget.email!);
       if (!mounted) return;
-      AppSnackbar.show(context, title: 'Success', message: msg, type: SnackbarType.success);
+      AppSnackbar.show(context, title: l10n.success, message: msg, type: SnackbarType.success);
       setState(() {
         _isWaiting = true;
         _isLoading = false;
@@ -42,24 +43,24 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      AppSnackbar.show(context, title: 'Info', message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
     }
   }
 
   Future<void> _checkStatus() async {
     if (widget.email == null || widget.email!.isEmpty) return;
-
+    final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
     try {
       final isActive = await ref.read(authNotifierProvider.notifier).checkVerificationStatus(widget.email!);
       if (!mounted) return;
       setState(() => _isLoading = false);
-      
+
       if (isActive) {
         setState(() => _isVerified = true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account verified! Redirecting to login...'),
+          SnackBar(
+            content: Text(l10n.accountVerifiedRedirecting),
             backgroundColor: AppColors.success,
           ),
         );
@@ -68,8 +69,8 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account is not yet verified. Please check your email and click the link.'),
+          SnackBar(
+            content: Text(l10n.accountNotYetVerified),
             backgroundColor: AppColors.warning,
           ),
         );
@@ -77,7 +78,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      AppSnackbar.show(context, title: 'Info', message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
     }
   }
 
@@ -89,8 +90,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   }
 
   Widget _buildRequestState(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Email')),
+      appBar: AppBar(title: Text(l10n.verifyEmail)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -101,7 +103,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const Text('📧', style: TextStyle(fontSize: 80)),
               const SizedBox(height: 24),
               Text(
-                'Verification Required',
+                l10n.verificationRequired,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -110,8 +112,8 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const SizedBox(height: 12),
               Text(
                 widget.email != null
-                    ? 'Click the button below to receive a verification link at\n${widget.email}'
-                    : 'Click the button below to receive a verification link.',
+                    ? l10n.verificationLinkSentTo(widget.email!)
+                    : l10n.verificationLinkSent,
                 style: AppTypography.textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondaryLight,
                   height: 1.6,
@@ -136,9 +138,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                           width: 24,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
-                          'Send Verification Email',
-                          style: TextStyle(
+                      : Text(
+                          l10n.sendVerificationEmail,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -150,7 +152,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               TextButton(
                 onPressed: () => context.go('/login'),
                 child: Text(
-                  'Back to Login',
+                  l10n.backToLogin,
                   style: AppTypography.textTheme.labelMedium?.copyWith(
                     color: AppColors.primary,
                   ),
@@ -165,8 +167,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   }
 
   Widget _buildWaitingState(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Waiting for Activation')),
+      appBar: AppBar(title: Text(l10n.waitingForActivation)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -177,7 +180,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const Text('⏳', style: TextStyle(fontSize: 80)),
               const SizedBox(height: 24),
               Text(
-                'Check Your Email',
+                l10n.checkYourEmail,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -185,7 +188,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               ),
               const SizedBox(height: 12),
               Text(
-                'We have sent a verification link to ${widget.email}.\n\nPlease check your inbox and click the link to activate your account. Then return here to check your status.',
+                l10n.weHaveSentVerificationTo(widget.email ?? ''),
                 style: AppTypography.textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondaryLight,
                   height: 1.6,
@@ -210,9 +213,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                           width: 24,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                         )
-                      : const Text(
-                          'Check User Status',
-                          style: TextStyle(
+                      : Text(
+                          l10n.checkUserStatus,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -224,7 +227,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               TextButton(
                 onPressed: () => context.go('/login'),
                 child: Text(
-                  'Go to Login',
+                  l10n.goToLogin,
                   style: AppTypography.textTheme.labelMedium?.copyWith(
                     color: AppColors.primary,
                   ),
@@ -232,7 +235,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               ),
               const Spacer(),
               Text(
-                'Didn\'t receive the email? Check your spam folder 📬',
+                l10n.didNotReceiveEmail,
                 style: AppTypography.textTheme.bodySmall?.copyWith(
                   color: AppColors.textHintLight,
                 ),
@@ -247,6 +250,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
   }
 
   Widget _buildSuccessState(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -257,7 +261,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const Text('🎉', style: TextStyle(fontSize: 80)),
               const SizedBox(height: 24),
               Text(
-                'Account Verified!',
+                l10n.accountVerified,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: AppColors.successDark,
@@ -266,7 +270,7 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               ),
               const SizedBox(height: 12),
               Text(
-                'Your email has been successfully verified.\nYou will be redirected to the login screen in 5 seconds...',
+                l10n.redirectingToLogin,
                 style: AppTypography.textTheme.bodyLarge?.copyWith(
                   color: AppColors.textSecondaryLight,
                   height: 1.6,
@@ -288,9 +292,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    'Go to Login Now',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.goToLoginNow,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

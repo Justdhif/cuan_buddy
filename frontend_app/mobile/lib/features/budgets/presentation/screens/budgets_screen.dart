@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/widgets/sticky_header_delegate.dart';
+import '../../../../core/services/currency_service.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/budgets_provider.dart';
 import '../widgets/add_budget_sheet.dart';
@@ -18,6 +20,7 @@ class BudgetsScreen extends ConsumerStatefulWidget {
 }
 
 class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   String _statusFilter = 'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
 
   @override
@@ -29,7 +32,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Budgets'),
+        title: Text(l10n.budgets),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
@@ -163,7 +166,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Total Budget',
+                                l10n.totalBudget,
                                 style: AppTypography.textTheme.bodyMedium?.copyWith(
                                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                 ),
@@ -177,7 +180,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Spent: ${fmt.format(totalSpent)}',
+                                l10n.spent(fmt.format(totalSpent)),
                                 style: AppTypography.textTheme.labelMedium?.copyWith(
                                   color: summaryColor,
                                   fontWeight: FontWeight.w600,
@@ -209,10 +212,18 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                   if (status == 'Warning') statusColor = AppColors.warning;
                   if (status == 'Exceeded') statusColor = AppColors.danger;
 
+                  final String translatedStatus = switch (status) {
+                    'All' => l10n.all,
+                    'On Track' => l10n.onTrack,
+                    'Warning' => l10n.warning,
+                    'Exceeded' => l10n.exceeded,
+                    _ => status,
+                  };
+
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ChoiceChip(
-                      label: Text(status),
+                      label: Text(translatedStatus),
                       selected: isSelected,
                       onSelected: (selected) {
                         if (selected) setState(() => _statusFilter = status);
@@ -239,19 +250,25 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
         // Budgets List
         if (state.budgets.isEmpty)
-          const SliverFillRemaining(
+          SliverFillRemaining(
             child: AppEmptyState(
               emoji: '📊',
-              title: 'No Budgets Set',
-              subtitle: 'Tap + to set your first monthly spending limit.',
+              title: l10n.noBudgetsSet,
+              subtitle: l10n.noBudgetsSetSubtitle,
             ),
           )
         else if (filteredBudgets.isEmpty)
           SliverFillRemaining(
             child: AppEmptyState(
               emoji: '🔍',
-              title: 'No $_statusFilter Budgets',
-              subtitle: 'Try changing the filter.',
+              title: l10n.noBudgetsFilter(switch (_statusFilter) {
+                'All' => l10n.all,
+                'On Track' => l10n.onTrack,
+                'Warning' => l10n.warning,
+                'Exceeded' => l10n.exceeded,
+                _ => _statusFilter,
+              }),
+              subtitle: l10n.tryChangingFilter,
             ),
           )
         else
@@ -283,12 +300,13 @@ class _BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final tx = budget as Map<String, dynamic>;
     final rawL = tx['limitAmount'];
     final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
     final rawS = tx['spentAmount'];
     final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-    final categoryName = tx['category']?['name'] as String? ?? tx['categoryName'] as String? ?? 'Budget';
+    final categoryName = tx['category']?['name'] as String? ?? tx['categoryName'] as String? ?? l10n.budget;
     final categoryEmoji = tx['category']?['emoji'] as String? ?? tx['categoryEmoji'] as String? ?? '📦';
     final monthYear = tx['monthYear'] as String? ?? '';
 
@@ -302,6 +320,15 @@ class _BudgetCard extends StatelessWidget {
       progressColor = AppColors.warning;
     }
 
+    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
+    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
+
+    final fmtOriginal = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: txCurrencySymbol,
+      decimalDigits: 0,
+    );
+    
     final fmt = NumberFormat.currency(
       locale: 'en_US',
       symbol: currencySymbol,
@@ -356,18 +383,78 @@ class _BudgetCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                fmt.format(spentAmount),
-                style: AppTypography.textTheme.titleMedium?.copyWith(
-                  color: progressColor,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    txCurrency == AppConstants.defaultCurrency ? fmt.format(spentAmount) : fmtOriginal.format(spentAmount),
+                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                      color: progressColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (txCurrency != AppConstants.defaultCurrency)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        if (txCurrency == currencyCode) return const SizedBox.shrink();
+                        
+                        final convertedAsync = ref.watch(convertedAmountProvider({
+                          'amount': spentAmount,
+                          'from': txCurrency,
+                          'to': currencyCode,
+                        }));
+                        return convertedAsync.when(
+                          data: (converted) => Text(
+                            '≈ ${fmt.format(converted)}',
+                            style: TextStyle(
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                          loading: () => const SizedBox(width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          error: (_, __) => const SizedBox(),
+                        );
+                      },
+                    ),
+                ],
               ),
-              Text(
-                'of ${fmt.format(limitAmount)}',
-                style: AppTypography.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    l10n.of_(txCurrency == AppConstants.defaultCurrency ? fmt.format(limitAmount) : fmtOriginal.format(limitAmount)),
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  if (txCurrency != AppConstants.defaultCurrency)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        if (txCurrency == currencyCode) return const SizedBox.shrink();
+                        
+                        final convertedAsync = ref.watch(convertedAmountProvider({
+                          'amount': limitAmount,
+                          'from': txCurrency,
+                          'to': currencyCode,
+                        }));
+                        return convertedAsync.when(
+                          data: (converted) => Text(
+                            '≈ ${fmt.format(converted)}',
+                            style: TextStyle(
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                          loading: () => const SizedBox(width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          error: (_, __) => const SizedBox(),
+                        );
+                      },
+                    ),
+                ],
               ),
             ],
           ),
@@ -394,7 +481,7 @@ class _BudgetCard extends StatelessWidget {
                 const Icon(Icons.warning_rounded, size: 14, color: AppColors.danger),
                 const SizedBox(width: 4),
                 Text(
-                  'Budget exceeded!',
+                  l10n.budgetExceeded,
                   style: AppTypography.textTheme.labelSmall?.copyWith(
                     color: AppColors.danger,
                     fontWeight: FontWeight.w600,

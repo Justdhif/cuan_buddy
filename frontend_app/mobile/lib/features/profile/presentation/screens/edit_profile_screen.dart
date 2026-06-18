@@ -1,4 +1,5 @@
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -30,6 +31,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     with SingleTickerProviderStateMixin {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
@@ -115,8 +117,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
+          SnackBar(
+            content: Text(l10n.profileUpdatedSuccess),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -125,7 +127,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: 'Error', message: 'Failed to update profile: $e', type: SnackbarType.error);
+        AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToUpdateProfile}: $e', type: SnackbarType.error);
       }
     }
   }
@@ -136,7 +138,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile'),
+        title: Text(l10n.editProfile),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
@@ -162,18 +164,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
                 // ─── Full Name ─────────────────────────────────────────────
                 Text(
-                  'Personal Info',
+                  l10n.personalInfo,
                   style: AppTypography.textTheme.titleSmall
                       ?.copyWith(color: AppColors.primary),
                 ),
                 const SizedBox(height: 12),
                 AppTextField(
                   controller: _nameController,
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
+                  label: l10n.fullName,
+                  hint: l10n.fullNameHint,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Full name is required';
+                      return l10n.fullNameRequired;
                     }
                     return null;
                   },
@@ -183,8 +185,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                 // ─── Phone Number ──────────────────────────────────────────
                 AppTextField(
                   controller: _phoneController,
-                  label: 'Phone Number (Optional)',
-                  hint: '+62...',
+                  label: l10n.phoneNumberOptional,
+                  hint: l10n.phoneHint,
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 16),
@@ -207,7 +209,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                   borderRadius: BorderRadius.circular(16),
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      labelText: 'Date of Birth (Optional)',
+                      labelText: l10n.dateOfBirthOptional,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
@@ -224,7 +226,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                         Text(
                           _selectedDate != null
                               ? DateFormat('dd MMM yyyy').format(_selectedDate!)
-                              : 'Select date',
+                              : l10n.selectDateHint,
                           style: AppTypography.textTheme.bodyLarge?.copyWith(
                             color: _selectedDate == null
                                 ? (isDark
@@ -242,7 +244,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
                 // ─── Save Button ───────────────────────────────────────────
                 AppButton(
-                  label: _isSaving ? 'Saving...' : 'Save Changes',
+                  label: _isSaving ? l10n.savingLabel : l10n.saveChanges,
                   onPressed: _isSaving ? null : _save,
                 ),
               ],
@@ -270,11 +272,12 @@ class _AvatarPickerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Choose Avatar',
+          l10n.chooseAvatar,
           style: AppTypography.textTheme.titleSmall
               ?.copyWith(color: AppColors.primary),
         ),
@@ -432,7 +435,7 @@ class _AvatarPickerSection extends StatelessWidget {
         const SizedBox(height: 8),
         Center(
           child: Text(
-            '★ = your current avatar',
+            '★ = ${l10n.currentAvatarLabel}',
             style: AppTypography.textTheme.labelSmall?.copyWith(
               color: isDark
                   ? AppColors.textSecondaryDark

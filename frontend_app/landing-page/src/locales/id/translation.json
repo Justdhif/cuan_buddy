@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "features": "Fitur",
+    "howItWorks": "Cara Kerja",
+    "testimonials": "Testimoni",
+    "faq": "FAQ",
+    "download": "Unduh App"
+  },
+  "hero": {
+    "title": "Kelola Uang dengan Cerdas",
+    "subtitle": "Teman finansial Anda yang ramah untuk melacak pengeluaran, mengelola anggaran, dan mencapai tujuan tabungan Anda.",
+    "cta": "Unduh CuanBuddy"
+  },
+  "features": {
+    "title": "Fitur Utama",
+    "f1_title": "Lacak Pengeluaran",
+    "f1_desc": "Catat setiap sen yang masuk dan keluar dengan mudah.",
+    "f2_title": "Anggaran Cerdas",
+    "f2_desc": "Tetapkan batas bulanan dan dapatkan peringatan sebelum Anda boros.",
+    "f3_title": "Penasihat AI",
+    "f3_desc": "Dapatkan wawasan keuangan yang dipersonalisasi langsung dari Buddy."
+  },
+  "how": {
+    "title": "Cara Kerja",
+    "step1": "Unduh & Daftar",
+    "step2": "Tetapkan Tujuan",
+    "step3": "Tumbuhkan Tabungan"
+  },
+  "testi": {
+    "title": "Kata Pengguna Kami"
+  },
+  "faq": {
+    "title": "Pertanyaan Umum"
+  },
+  "footer": {
+    "rights": "Hak cipta dilindungi."
+  }
+}

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/transaction_provider.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/language_provider.dart';
 
 class TransactionCalendar extends ConsumerWidget {
   const TransactionCalendar({super.key});
@@ -28,7 +30,7 @@ class TransactionCalendar extends ConsumerWidget {
         children: [
           _buildHeader(context, ref, filterState, isDark),
           const SizedBox(height: 16),
-          _buildDaysOfWeek(isDark),
+          _buildDaysOfWeek(ref, isDark),
           const SizedBox(height: 8),
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
@@ -67,7 +69,8 @@ class TransactionCalendar extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, TransactionFilterState state, bool isDark) {
-    final monthFormat = DateFormat('MMMM yyyy');
+    final localeCode = ref.watch(languageProvider);
+    final monthFormat = DateFormat('MMMM yyyy', localeCode);
     return Row(
       children: [
         Row(
@@ -104,13 +107,16 @@ class TransactionCalendar extends ConsumerWidget {
           ],
         ),
         const Spacer(),
-        _buildLegend(isDark),
+        _buildLegend(context, ref, isDark),
       ],
     );
   }
 
-  Widget _buildDaysOfWeek(bool isDark) {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  Widget _buildDaysOfWeek(WidgetRef ref, bool isDark) {
+    final localeCode = ref.watch(languageProvider);
+    final days = localeCode == 'id'
+        ? ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: days.map((day) {
@@ -260,7 +266,8 @@ class TransactionCalendar extends ConsumerWidget {
     );
   }
 
-  Widget _buildLegend(bool isDark) {
+  Widget _buildLegend(BuildContext context, WidgetRef ref, bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -273,7 +280,7 @@ class TransactionCalendar extends ConsumerWidget {
               decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
-            Text('Income', style: AppTypography.textTheme.labelSmall?.copyWith(
+            Text(l10n.incomeType, style: AppTypography.textTheme.labelSmall?.copyWith(
               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
               fontSize: 10,
             )),
@@ -289,7 +296,7 @@ class TransactionCalendar extends ConsumerWidget {
               decoration: const BoxDecoration(color: AppColors.danger, shape: BoxShape.circle),
             ),
             const SizedBox(width: 4),
-            Text('Expense', style: AppTypography.textTheme.labelSmall?.copyWith(
+            Text(l10n.expenseType, style: AppTypography.textTheme.labelSmall?.copyWith(
               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
               fontSize: 10,
             )),

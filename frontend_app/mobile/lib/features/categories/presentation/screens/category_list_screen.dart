@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/category_provider.dart';
 import '../widgets/category_form_sheet.dart';
 
@@ -18,22 +19,23 @@ class CategoryListScreen extends ConsumerWidget {
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, String slug) {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Category?'),
-        content: const Text('Are you sure you want to delete this category?'),
+        title: Text(l10n.deleteCategory),
+        content: Text(l10n.deleteCategoryConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               ref.read(categoryNotifierProvider.notifier).deleteCategory(slug);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -42,19 +44,20 @@ class CategoryListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final state = ref.watch(categoryNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Manage Categories', style: AppTypography.textTheme.titleMedium),
+        title: Text(l10n.manageCategories, style: AppTypography.textTheme.titleMedium),
         centerTitle: true,
       ),
       body: state.isLoading && state.categories.isEmpty
           ? const Center(child: CircularProgressIndicator())
           : state.categories.isEmpty
               ? Center(
-                  child: Text('No categories found.', style: AppTypography.textTheme.bodyMedium),
+                  child: Text(l10n.noCategoriesFound, style: AppTypography.textTheme.bodyMedium),
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),

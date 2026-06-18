@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/widgets/sticky_header_delegate.dart';
+import '../../../../core/services/currency_service.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
 import '../widgets/add_savings_sheet.dart';
@@ -19,6 +21,7 @@ class SavingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SavingsScreenState extends ConsumerState<SavingsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   String _statusFilter = 'All'; // 'All', 'In Progress', 'Completed'
 
   @override
@@ -30,7 +33,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Savings Goals'),
+        title: Text(l10n.savingsGoals),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
@@ -94,134 +97,146 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     return CustomScrollView(
       slivers: [
         // Summary Header
-        if (state.goals.isNotEmpty)
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: StickyHeaderDelegate(
-              minHeight: 180, // Approximate height for savings card
-              maxHeight: 180,
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, Color(0xFF6B58E6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: StickyHeaderDelegate(
+            minHeight: 180, // Approximate height for savings card
+            maxHeight: 180,
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primary, Color(0xFF6B58E6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      )
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        l10n.totalSaved,
+                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Total Saved',
-                          style: AppTypography.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w500,
+                      const SizedBox(height: 4),
+                      Text(
+                        fmt.format(totalSaved),
+                        style: AppTypography.textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildSummaryItem(
+                            l10n.goals,
+                            state.goals.length.toString(),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          fmt.format(totalSaved),
-                          style: AppTypography.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
+                          _buildSummaryItem(
+                            l10n.completed,
+                            completedGoals.toString(),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildSummaryItem(
-                              'Goals',
-                              state.goals.length.toString(),
-                            ),
-                            Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-                            _buildSummaryItem(
-                              'Completed',
-                              completedGoals.toString(),
-                            ),
-                            Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-                            _buildSummaryItem(
-                              'Remaining',
-                              fmt.format(totalTarget > totalSaved ? totalTarget - totalSaved : 0),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
+                          _buildSummaryItem(
+                            l10n.remaining,
+                            fmt.format(totalTarget > totalSaved ? totalTarget - totalSaved : 0),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
+        ),
 
         // Status Filter
-        if (state.goals.isNotEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: ['All', 'In Progress', 'Completed'].map((status) {
-                    final isSelected = _statusFilter == status;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _statusFilter = status),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primary : Colors.transparent,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Text(
-                            status,
-                            textAlign: TextAlign.center,
-                            style: AppTypography.textTheme.titleSmall?.copyWith(
-                              color: isSelected 
-                                  ? Colors.white 
-                                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                              fontWeight: FontWeight.bold,
-                            ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: ['All', 'In Progress', 'Completed'].map((status) {
+                  final isSelected = _statusFilter == status;
+                  final String translatedStatus = switch (status) {
+                    'All' => l10n.all,
+                    'In Progress' => l10n.inProgress,
+                    'Completed' => l10n.completed,
+                    _ => status,
+                  };
+
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _statusFilter = status),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          translatedStatus,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                            color: isSelected 
+                                ? Colors.white 
+                                : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
           ),
+        ),
 
         // Goals List
         if (state.goals.isEmpty)
-          const SliverFillRemaining(
+          SliverFillRemaining(
+            hasScrollBody: false,
             child: AppEmptyState(
               emoji: '🎯',
-              title: 'No Savings Goals',
-              subtitle: 'Tap the + icon to set aside money for your dreams.',
+              title: l10n.noSavingsGoals,
+              subtitle: l10n.noSavingsGoalsSubtitle,
             ),
           )
         else if (filteredGoals.isEmpty)
           SliverFillRemaining(
+            hasScrollBody: false,
             child: AppEmptyState(
               emoji: '🔍',
-              title: 'No $_statusFilter Goals',
-              subtitle: 'Try changing the filter.',
+              title: l10n.noGoalsFilter(switch (_statusFilter) {
+                'All' => l10n.all,
+                'In Progress' => l10n.inProgress,
+                'Completed' => l10n.completed,
+                _ => _statusFilter,
+              }),
+              subtitle: l10n.tryChangingFilter,
             ),
           )
         else
@@ -263,9 +278,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   }
 
   Widget _buildGoalCard(BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
+    final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    final name = goal['name'] as String? ?? 'Unnamed Goal';
+    final name = goal['name'] as String? ?? l10n.unnamedGoal;
     final rawT = goal['targetAmount'];
     final targetAmount = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
     final rawC = goal['currentAmount'];
@@ -275,6 +291,15 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     final percentage = targetAmount > 0 ? (currentAmount / targetAmount) : 0.0;
     final safePercentage = percentage.clamp(0.0, 1.0);
     final isCompleted = goal['status'] == 'completed' || safePercentage >= 1.0;
+
+    final goalCurrency = goal['currency'] as String? ?? AppConstants.defaultCurrency;
+    final goalCurrencySymbol = AppConstants.getCurrencySymbol(goalCurrency);
+
+    final fmtOriginal = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: goalCurrencySymbol,
+      decimalDigits: 0,
+    );
 
     final fmt = NumberFormat.currency(
       locale: 'en_US',
@@ -292,13 +317,13 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         final diff = targetDate.difference(now).inDays;
         
         if (diff < 0) {
-          countdownText = '${diff.abs()} days overdue';
+          countdownText = l10n.daysOverdue(diff.abs());
           countdownColor = AppColors.danger;
         } else if (diff == 0) {
-          countdownText = 'Due today!';
+          countdownText = l10n.dueToday;
           countdownColor = AppColors.warning;
         } else {
-          countdownText = '$diff days left';
+          countdownText = l10n.daysLeft(diff);
           countdownColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
         }
       } catch (_) {}
@@ -343,7 +368,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        'Completed',
+                        l10n.completedBadge,
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.success,
                           fontWeight: FontWeight.bold,
@@ -373,18 +398,78 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                fmt.format(currentAmount),
-                style: AppTypography.textTheme.titleMedium?.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    goalCurrency == AppConstants.defaultCurrency ? fmt.format(currentAmount) : fmtOriginal.format(currentAmount),
+                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (goalCurrency != AppConstants.defaultCurrency)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        if (goalCurrency == currencyCode) return const SizedBox.shrink();
+                        
+                        final convertedAsync = ref.watch(convertedAmountProvider({
+                          'amount': currentAmount,
+                          'from': goalCurrency,
+                          'to': currencyCode,
+                        }));
+                        return convertedAsync.when(
+                          data: (converted) => Text(
+                            '≈ ${fmt.format(converted)}',
+                            style: TextStyle(
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                          loading: () => const SizedBox(width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          error: (_, __) => const SizedBox(),
+                        );
+                      },
+                    ),
+                ],
               ),
-              Text(
-                'of ${fmt.format(targetAmount)}',
-                style: AppTypography.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    l10n.of_(goalCurrency == AppConstants.defaultCurrency ? fmt.format(targetAmount) : fmtOriginal.format(targetAmount)),
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  if (goalCurrency != AppConstants.defaultCurrency)
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        if (goalCurrency == currencyCode) return const SizedBox.shrink();
+                        
+                        final convertedAsync = ref.watch(convertedAmountProvider({
+                          'amount': targetAmount,
+                          'from': goalCurrency,
+                          'to': currencyCode,
+                        }));
+                        return convertedAsync.when(
+                          data: (converted) => Text(
+                            '≈ ${fmt.format(converted)}',
+                            style: TextStyle(
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                            ),
+                          ),
+                          loading: () => const SizedBox(width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          error: (_, __) => const SizedBox(),
+                        );
+                      },
+                    ),
+                ],
               ),
             ],
           ),
@@ -411,7 +496,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               child: OutlinedButton.icon(
                 onPressed: () => showTopUpSheet(context, goal),
                 icon: const Icon(Icons.edit_note_rounded, size: 18),
-                label: const Text('Update Funds'),
+                label: Text(l10n.updateFunds),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),

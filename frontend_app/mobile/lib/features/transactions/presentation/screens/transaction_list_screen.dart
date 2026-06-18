@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/providers/language_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/services/currency_service.dart';
 import '../providers/transaction_provider.dart';
 import '../widgets/add_transaction_sheet.dart';
 import '../widgets/transaction_calendar.dart';
@@ -21,18 +24,20 @@ class TransactionListScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
+
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(allTransactionsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transactions'),
+        title: Text(l10n.transactions),
         actions: [
           IconButton(
             onPressed: () => _showAddSheet(context),
             icon: const Icon(Icons.add_rounded),
-            tooltip: 'Add Transaction',
+            tooltip: l10n.addTransaction,
           ),
           const SizedBox(width: 8),
         ],
@@ -46,10 +51,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
               skipLoadingOnReload: true,
               data: (transactions) {
                 if (transactions.isEmpty) {
-                  return const AppEmptyState(
+                  return AppEmptyState(
                     emoji: '💸',
-                    title: 'No transactions yet',
-                    subtitle: 'Start recording your income & expenses!',
+                    title: l10n.noTransactionsYetTitle,
+                    subtitle: l10n.noTransactionsYetSubtitle,
                   );
                 }
                 return RefreshIndicator(
@@ -68,7 +73,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
               },
               loading: () => const SkeletonList(itemCount: 8),
               error: (e, _) => AppErrorState(
-                message: 'Failed to load transactions 😅',
+                message: l10n.failedToLoadTransactionsError,
                 onRetry: () => ref.invalidate(allTransactionsProvider),
               ),
             ),
@@ -93,6 +98,7 @@ class _FilterRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final filterState = ref.watch(transactionFilterProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
@@ -110,9 +116,9 @@ class _FilterRow extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                _buildTypeTab(context, ref, filterState.type, null, 'All Types', isDark),
-                _buildTypeTab(context, ref, filterState.type, 'income', 'Income', isDark),
-                _buildTypeTab(context, ref, filterState.type, 'expense', 'Expense', isDark),
+                _buildTypeTab(context, ref, filterState.type, null, l10n.allTypes, isDark),
+                _buildTypeTab(context, ref, filterState.type, 'income', l10n.incomeType, isDark),
+                _buildTypeTab(context, ref, filterState.type, 'expense', l10n.expenseType, isDark),
               ],
             ),
           ),
@@ -140,7 +146,7 @@ class _FilterRow extends ConsumerWidget {
                       context: context,
                       ref: ref,
                       id: null,
-                      name: 'All Categories',
+                      name: l10n.allCategories,
                       emoji: '📁',
                       isSelected: isSelected,
                       isDark: isDark,
@@ -175,9 +181,9 @@ class _FilterRow extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: _buildCategorySkeletonLoader(isDark),
           ),
-          error: (_, __) => const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Text('Failed to load categories', style: TextStyle(color: AppColors.danger, fontSize: 12)),
+          error: (_, __) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(l10n.failedToLoadCategories, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
           ),
         ),
         const SizedBox(height: 8),
@@ -278,6 +284,7 @@ class _TransactionTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final tx = transaction as Map<String, dynamic>;
     final isIncome = tx['type'] == 'income';
     final amountRaw = tx['amount'];
@@ -285,11 +292,17 @@ class _TransactionTile extends ConsumerWidget {
         ? amountRaw.toDouble() 
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
     
+    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
         locale: 'en_US',
         symbol: currencySymbol,
+        decimalDigits: 0);
+    final fmtOriginal = NumberFormat.currency(
+        locale: 'en_US',
+        symbol: txCurrencySymbol,
         decimalDigits: 0);
     final dynamic category = tx['category'];
     final emoji = (category is Map
@@ -298,10 +311,11 @@ class _TransactionTile extends ConsumerWidget {
         (isIncome ? '💰' : '💸');
     final title = tx['description'] as String? ??
         (category is Map ? category['name'] as String? : null) ??
-        'Transaction';
+        l10n.transaction;
+    final localeCode = ref.watch(languageProvider);
     final rawDate = tx['date'] as String?;
     final date = rawDate != null
-        ? DateFormat('d MMM yyyy', 'en_US').format(DateTime.parse(rawDate))
+        ? DateFormat('d MMM yyyy', localeCode).format(DateTime.parse(rawDate))
         : '';
 
     return Padding(
@@ -340,8 +354,31 @@ class _TransactionTile extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                if (txCurrency != currencyCode)
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final convertedAsync = ref.watch(convertedAmountProvider({
+                        'amount': amount,
+                        'from': txCurrency,
+                        'to': currencyCode,
+                      }));
+                      return convertedAsync.when(
+                        data: (converted) => Text(
+                          '≈ ${isIncome ? '+' : '-'}${fmt.format(converted)}',
+                          style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                        loading: () => const SizedBox(
+                          width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                        error: (_, __) => const SizedBox(),
+                      );
+                    },
+                  ),
                 Text(
-                  '${isIncome ? '+' : '-'}${fmt.format(amount)}',
+                  '${isIncome ? '+' : '-'}${txCurrency == currencyCode ? fmt.format(amount) : fmtOriginal.format(amount)}',
                   style: TextStyle(
                     color: isIncome ? AppColors.successDark : AppColors.dangerDark,
                     fontWeight: FontWeight.w700,
@@ -369,11 +406,11 @@ class _TransactionTile extends ConsumerWidget {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            title: const Text('Delete Transaction'),
-                            content: const Text('Are you sure you want to delete this transaction?'),
+                            title: Text(l10n.deleteTransaction),
+                            content: Text(l10n.deleteTransactionConfirm),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete', style: TextStyle(color: AppColors.danger))),
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                              TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger))),
                             ],
                           ),
                         );
@@ -385,15 +422,15 @@ class _TransactionTile extends ConsumerWidget {
                             ref.invalidate(calendarSummaryProvider);
                           } catch (e) {
                             if (context.mounted) {
-                              AppSnackbar.show(context, title: 'Error', message: 'Failed to delete: $e', type: SnackbarType.error);
+                              AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToDelete}: $e', type: SnackbarType.error);
                             }
                           }
                         }
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                      const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: AppColors.danger))),
+                      PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                      PopupMenuItem(value: 'delete', child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger))),
                     ],
                   ),
                 ),

@@ -37,6 +37,14 @@ class PreferencesService {
     await _prefs.setString(AppConstants.currencyCodeKey, code);
   }
 
+  // ─── Language ─────────────────────────────────────────────────────────────────
+  String get languageCode =>
+      _prefs.getString(AppConstants.languageKey) ?? AppConstants.defaultLanguage;
+
+  Future<void> setLanguageCode(String code) async {
+    await _prefs.setString(AppConstants.languageKey, code);
+  }
+
   // ─── Notifications ───────────────────────────────────────────────────────────
   bool get notificationsEnabled =>
       _prefs.getBool(AppConstants.notificationsEnabledKey) ?? true;
@@ -58,6 +66,13 @@ class PreferencesService {
 
   Future<void> setBackupSetupComplete(bool complete) async {
     await _prefs.setBool(AppConstants.backupSetupCompleteKey, complete);
+  }
+
+  bool get onboardingComplete =>
+      _prefs.getBool(AppConstants.onboardingCompleteKey) ?? false;
+
+  Future<void> setOnboardingComplete(bool complete) async {
+    await _prefs.setBool(AppConstants.onboardingCompleteKey, complete);
   }
 
   Future<void> clearAll() async {

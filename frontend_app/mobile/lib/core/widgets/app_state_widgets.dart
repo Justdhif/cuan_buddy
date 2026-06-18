@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../l10n/app_localizations.dart';
 
 // ─── App Loading ─────────────────────────────────────────────────────────────
 class AppLoading extends StatelessWidget {
@@ -102,6 +103,7 @@ class AppErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -120,7 +122,7 @@ class AppErrorState extends StatelessWidget {
               TextButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Try Again'),
+                label: Text(l10n.tryAgain),
                 style: TextButton.styleFrom(foregroundColor: AppColors.primary),
               ),
             ],
@@ -238,20 +240,21 @@ class FinancialHealthWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (emoji, defaultMessage, color) = switch (healthState) {
       FinancialHealthState.happy => (
           '😊',
-          'Great! You are still within budget this month 🎉',
+          l10n.withinBudget,
           AppColors.success,
         ),
       FinancialHealthState.sweating => (
           '😅',
-          'Careful! You are approaching your budget limit 💡',
+          l10n.approachingBudget,
           AppColors.warning,
         ),
       FinancialHealthState.panic => (
           '😱',
-          'Oh no! You have exceeded your budget this month 🆘',
+          l10n.exceededBudget,
           AppColors.danger,
         ),
     };

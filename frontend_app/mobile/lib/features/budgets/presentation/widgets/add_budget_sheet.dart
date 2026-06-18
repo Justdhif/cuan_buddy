@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../providers/budgets_provider.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
@@ -18,10 +21,12 @@ class AddBudgetSheet extends ConsumerStatefulWidget {
 }
 
 class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
+  String _selectedCurrency = AppConstants.defaultCurrency;
   bool _isSaving = false;
 
   @override
@@ -34,8 +39,8 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a category'),
+        SnackBar(
+          content: Text(l10n.pleaseSelectCategory),
           backgroundColor: AppColors.danger,
         ),
       );
@@ -47,17 +52,21 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
     final monthYearStr = DateFormat('yyyy-MM').format(_selectedDate);
 
     try {
-      await ref.read(budgetsNotifierProvider.notifier).createBudget(
-            categoryId: _selectedCategoryId!,
-            limitAmount:
-                double.parse(_amountController.text.replaceAll(',', '')),
-            monthYear: monthYearStr,
-          );
+      final dio = ref.read(dioClientProvider).dio;
+      final payload = {
+        'categoryId': _selectedCategoryId!,
+        'limitAmount': double.parse(_amountController.text.replaceAll(',', '')),
+        'currency': _selectedCurrency,
+        'monthYear': monthYearStr,
+      };
+      await dio.post('/budgets', data: payload);
+      ref.invalidate(budgetsNotifierProvider);
+      
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Budget saved!'),
+          SnackBar(
+            content: Text(l10n.budgetSaved),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
           ),
@@ -66,7 +75,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: 'Error', message: 'Error saving budget: $e', type: SnackbarType.error);
+        AppSnackbar.show(context, title: l10n.error, message: '${l10n.errorSavingBudget}: $e', type: SnackbarType.error);
       }
     }
   }
@@ -95,7 +104,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Set Budget',
+                l10n.setBudget,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -112,48 +121,83 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Limit Amount ──────────────────────────────────────────
-                AppTextField(
-                  controller: _amountController,
-                  label: 'Limit Amount',
-                  hint: '0',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      'Rp',
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
+                // ── Limit Amount & Currency ──────────────────────────────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'Currency',
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            ),
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedCurrency,
+                            isExpanded: true,
+                            icon: const Icon(Icons.arrow_drop_down_rounded),
+                            items: AppConstants.supportedCurrencies.map((c) {
+                              return DropdownMenuItem<String>(
+                                value: c['code'],
+                                child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedCurrency = val);
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Amount is required';
-                    }
-                    if (double.tryParse(value.replaceAll(',', '')) == null) {
-                      return 'Invalid amount';
-                    }
-                    return null;
-                  },
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 3,
+                      child: AppTextField(
+                        controller: _amountController,
+                        label: l10n.limitAmount,
+                        hint: '0',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        prefixIcon: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            AppConstants.getCurrencySymbol(_selectedCurrency),
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return l10n.amountRequired;
+                          if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 
                 // ── Category ──────────────────────────────────────────────
-                Text('Category', style: AppTypography.textTheme.labelMedium),
+                Text(l10n.category, style: AppTypography.textTheme.labelMedium),
                 const SizedBox(height: 8),
                 expenseCategories.when(
                   loading: () => _buildCategorySkeletonLoader(isDark),
                   error: (_, __) => Text(
-                    'Failed to load categories',
-                    style: TextStyle(color: AppColors.danger, fontSize: 12),
+                    l10n.failedToLoadCategories,
+                    style: const TextStyle(color: AppColors.danger, fontSize: 12),
                   ),
                   data: (filtered) {
                     if (filtered.isEmpty) {
                       return Text(
-                        'No categories found',
+                        l10n.noCategories,
                         style: AppTypography.textTheme.bodySmall?.copyWith(
                           color: isDark
                               ? AppColors.textSecondaryDark
@@ -250,7 +294,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                   },
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      labelText: 'Month',
+                      labelText: l10n.month,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
@@ -277,7 +321,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
 
                 // ── Save Button ────────────────────────────────────────────
                 AppButton(
-                  label: _isSaving ? 'Saving...' : 'Save Budget',
+                  label: _isSaving ? l10n.saving : l10n.saveBudget,
                   onPressed: _isSaving ? null : _save,
                   type: AppButtonType.primary,
                 ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
 import '../../features/profile/presentation/providers/profile_provider.dart';
+import '../l10n/app_localizations.dart';
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({
@@ -53,22 +54,23 @@ class _CuanBuddyNavBar extends ConsumerWidget {
   final int currentIndex;
   final void Function(int) onTap;
 
-  // Branches: 0=Dashboard, 1=Transactions, 2=Budgets, 3=Savings, 4=Profile
-  // Visual:   Trans | Budgets | [HOME] | Savings | Profile
-  static const _items = [
-    _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: 'Transactions', branch: 1),
-    _NavItem(icon: Icons.pie_chart_outline_rounded, activeIcon: Icons.pie_chart_rounded, label: 'Budgets', branch: 2),
-    _NavItem(icon: Icons.home_rounded, activeIcon: Icons.home_rounded, label: 'Home', branch: 0), // CENTER
-    _NavItem(icon: Icons.savings_outlined, activeIcon: Icons.savings_rounded, label: 'Savings', branch: 3),
-    _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile', branch: 4),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final profileAsync = ref.watch(profileProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
     final shadowColor = Colors.transparent;
+
+    // Branches: 0=Dashboard, 1=Transactions, 2=Budgets, 3=Savings, 4=Profile
+    // Visual:   Trans | Budgets | [HOME] | Savings | Profile
+    final items = [
+      _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: l10n.transactions, branch: 1),
+      _NavItem(icon: Icons.pie_chart_outline_rounded, activeIcon: Icons.pie_chart_rounded, label: l10n.budgets, branch: 2),
+      _NavItem(icon: Icons.home_rounded, activeIcon: Icons.home_rounded, label: l10n.home, branch: 0), // CENTER
+      _NavItem(icon: Icons.savings_outlined, activeIcon: Icons.savings_rounded, label: l10n.savingsGoals, branch: 3),
+      _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: l10n.profile, branch: 4),
+    ];
 
     return SafeArea(
       top: false,
@@ -89,8 +91,8 @@ class _CuanBuddyNavBar extends ConsumerWidget {
               ],
             ),
             child: Row(
-              children: List.generate(_items.length, (i) {
-                final item = _items[i];
+              children: List.generate(items.length, (i) {
+                final item = items[i];
                 final isCenter = i == 2;
                 final isActive = currentIndex == item.branch;
 
@@ -107,7 +109,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
                             fontSize: 10,
                             fontWeight: currentIndex == 0 ? FontWeight.w700 : FontWeight.w400,
                           ),
-                          child: const Text('Home'),
+                          child: Text(l10n.home),
                         ),
                         const SizedBox(height: 10),
                       ],

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/core_providers.dart';
@@ -17,6 +18,7 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -56,7 +58,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       context.go('/backup-settings');
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: 'Error', message: 'Failed to save profile: $e', type: SnackbarType.error);
+      AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToSaveProfile}: $e', type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,6 +72,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -90,7 +93,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('Step 1/2',
+                  Text(l10n.step1of2,
                       style: AppTypography.textTheme.labelSmall
                           ?.copyWith(color: AppColors.textSecondaryLight)),
                 ],
@@ -99,13 +102,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               const Text('🎉', style: TextStyle(fontSize: 56)),
               const SizedBox(height: 16),
               Text(
-                'Complete Your Profile',
+                l10n.completeYourProfile,
                 style: AppTypography.textTheme.headlineMedium
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
-                'Let us personalize your CuanBuddy experience ✨',
+                l10n.profileSetupSubtitle,
                 style: AppTypography.textTheme.bodyLarge
                     ?.copyWith(color: AppColors.textSecondaryLight),
               ),
@@ -117,27 +120,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   children: [
                     AppTextField(
                       controller: _fullNameController,
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
+                      label: l10n.fullName,
+                      hint: l10n.fullNameHint,
                       keyboardType: TextInputType.name,
                       prefixIcon:
                           const Icon(Icons.person_outline_rounded, size: 20),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Name is required';
-                        if (v.trim().length < 2) return 'Name must be at least 2 characters';
+                        if (v == null || v.isEmpty) return l10n.fullNameRequired;
+                        if (v.trim().length < 2) return l10n.nameTooShortSetup;
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
                     AppTextField(
                       controller: _phoneController,
-                      label: 'Phone Number (Optional)',
+                      label: l10n.phoneNumberField,
                       hint: '+62 812 3456 7890',
                       keyboardType: TextInputType.phone,
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
                     ),
                     const SizedBox(height: 16),
-                    Text('Currency',
+                    Text(l10n.currency,
                         style: AppTypography.textTheme.labelMedium),
                     const SizedBox(height: 8),
                     Container(
@@ -167,13 +170,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     ),
                     const SizedBox(height: 40),
                     AppButton(
-                      label: 'Continue',
+                      label: l10n.continueButton,
                       onPressed: _saveProfile,
                       isLoading: _isLoading,
                     ),
                     const SizedBox(height: 12),
                     AppButton(
-                      label: 'Skip',
+                      label: l10n.skip,
                       onPressed: _skip,
                       type: AppButtonType.text,
                     ),

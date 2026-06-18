@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../providers/savings_provider.dart';
 
 void showTopUpSheet(BuildContext context, Map<String, dynamic> goal) {
@@ -50,8 +52,9 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       // Prevent negative balance
       if (newAmount < 0) {
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Balance cannot be negative')),
+            SnackBar(content: Text(l10n.balanceCannotBeNegative)),
           );
         }
         setState(() => _isLoading = false);
@@ -62,12 +65,14 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       await ref.read(savingsNotifierProvider.notifier).updateBalance(slug, newAmount);
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         Navigator.pop(context);
-        AppSnackbar.show(context, title: 'Success', message: _isAdding ? 'Funds added successfully!' : 'Funds reduced successfully!', type: SnackbarType.success);
+        AppSnackbar.show(context, title: l10n.success, message: _isAdding ? l10n.fundsAddedSuccess : l10n.fundsReducedSuccess, type: SnackbarType.success);
       }
     } catch (e) {
       if (mounted) {
-        AppSnackbar.show(context, title: 'Info', message: e.toString(), type: SnackbarType.error);
+        final l10n = AppLocalizations.of(context);
+        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     } finally {
       if (mounted) {
@@ -78,8 +83,11 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final goalCurrency = widget.goal['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencySymbol = AppConstants.getCurrencySymbol(goalCurrency);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final name = widget.goal['name'] as String? ?? 'Goal';
+    final name = widget.goal['name'] as String? ?? l10n.unnamedGoal;
 
     return Container(
       padding: EdgeInsets.only(
@@ -99,7 +107,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Update $name', style: AppTypography.textTheme.titleMedium),
+              Text(l10n.updateGoalTitle(name), style: AppTypography.textTheme.titleMedium),
               IconButton(
                 icon: const Icon(Icons.close_rounded),
                 onPressed: () => Navigator.pop(context),
@@ -133,7 +141,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        'Add Funds',
+                        l10n.addFunds,
                         style: TextStyle(
                           fontWeight: _isAdding ? FontWeight.bold : FontWeight.normal,
                           color: _isAdding 
@@ -160,7 +168,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        'Reduce',
+                        l10n.reduce,
                         style: TextStyle(
                           fontWeight: !_isAdding ? FontWeight.bold : FontWeight.normal,
                           color: !_isAdding 
@@ -182,8 +190,8 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
-              labelText: 'Amount',
-              prefixText: 'Rp ',
+              labelText: l10n.amount,
+              prefixText: '$currencySymbol ',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -209,7 +217,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
             child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(
-                    _isAdding ? 'Add Funds' : 'Reduce Funds',
+                    _isAdding ? l10n.addFunds : l10n.reduceFunds,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
           ),

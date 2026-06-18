@@ -14,13 +14,17 @@ class AppConstants {
   // ─── SharedPreferences Keys ──────────────────────────────────────────────────
   static const String themeModeKey = 'theme_mode';
   static const String currencyCodeKey = 'currency_code';
+  static const String languageKey = 'language_code';
   static const String notificationsEnabledKey = 'notifications_enabled';
   static const String profileCompleteKey = 'profile_complete';
   static const String backupSetupCompleteKey = 'backup_setup_complete';
+  static const String onboardingCompleteKey = 'onboarding_complete';
 
   // ─── Defaults ────────────────────────────────────────────────────────────────
   static const String defaultCurrency = 'IDR';
   static const String defaultCurrencySymbol = 'Rp';
+  static const String defaultLanguage = 'en';
+  static const List<String> supportedLanguages = ['en', 'id'];
 
   static const List<Map<String, String>> supportedCurrencies = [
     {'code': 'IDR', 'name': 'Indonesian Rupiah', 'symbol': 'Rp'},

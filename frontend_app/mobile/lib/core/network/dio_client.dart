@@ -2,10 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import '../constants/app_constants.dart';
 import '../services/auth_service.dart';
+import '../services/preferences_service.dart';
 import 'api_exceptions.dart';
 
 class DioClient {
-  DioClient({required this.authService}) {
+  DioClient({required this.authService, required this.prefs}) {
     _dio = Dio(
       BaseOptions(
         baseUrl: AppConstants.baseUrl,
@@ -19,7 +20,7 @@ class DioClient {
     );
 
     _dio.interceptors.addAll([
-      AuthInterceptor(authService: authService, dio: _dio),
+      AuthInterceptor(authService: authService, dio: _dio, prefs: prefs),
       PrettyDioLogger(
         requestHeader: true,
         requestBody: true,
@@ -33,15 +34,17 @@ class DioClient {
 
   late final Dio _dio;
   final AuthService authService;
+  final PreferencesService prefs;
 
   Dio get dio => _dio;
 }
 
 class AuthInterceptor extends Interceptor {
-  AuthInterceptor({required this.authService, required this.dio});
+  AuthInterceptor({required this.authService, required this.dio, required this.prefs});
 
   final AuthService authService;
   final Dio dio;
+  final PreferencesService prefs;
   bool _isRefreshing = false;
 
   @override
@@ -112,23 +115,27 @@ class AuthInterceptor extends Interceptor {
 
   DioException _convertToAppException(DioException err) {
     AppException appException;
+    final lang = prefs.languageCode;
 
     if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.receiveTimeout ||
         err.type == DioExceptionType.sendTimeout) {
-      appException = ApiExceptionMapper.fromTimeout();
+      appException = ApiExceptionMapper.fromTimeout(lang: lang);
     } else if (err.type == DioExceptionType.connectionError) {
-      appException = ApiExceptionMapper.fromConnectionError();
+      appException = ApiExceptionMapper.fromConnectionError(lang: lang);
     } else if (err.response != null) {
       final statusCode = err.response!.statusCode ?? 0;
       final serverMessage = _extractServerMessage(err.response!.data);
       appException = ApiExceptionMapper.fromStatusCode(
         statusCode,
         serverMessage: serverMessage,
+        lang: lang,
       );
     } else {
-      appException = const NetworkException(
-        message: 'Terjadi kesalahan. Coba lagi nanti ya 😅',
+      appException = NetworkException(
+        message: lang == 'id'
+            ? 'Terjadi kesalahan. Coba lagi nanti ya 😅'
+            : 'Something went wrong. Please try again later 😅',
       );
     }
 

@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart' as fp;
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/notification_service.dart';
 import '../repositories/profile_repository.dart';
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -24,6 +25,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -100,11 +102,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Recent Activities',
+                      Text(l10n.recentActivities,
                           style: AppTypography.textTheme.titleMedium),
                       TextButton(
                         onPressed: () => context.go('/home/transactions'),
-                        child: const Text('See All'),
+                        child: Text(l10n.seeAll),
                       ),
                     ],
                   ),
@@ -114,11 +116,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 skipLoadingOnReload: true,
                 data: (transactions) {
                   if (transactions.isEmpty) {
-                    return const SliverToBoxAdapter(
+                    return SliverToBoxAdapter(
                       child: AppEmptyState(
                         emoji: '💸',
-                        title: 'No transactions yet',
-                        subtitle: 'Start recording your income & expenses!',
+                        title: l10n.noTransactionsYetTitle,
+                        subtitle: l10n.noTransactionsYetSubtitle,
                       ),
                     );
                   }
@@ -130,8 +132,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   );
                 },
                 loading: () => const SliverToBoxAdapter(child: SkeletonList()),
-                error: (_, __) => const SliverToBoxAdapter(
-                  child: AppErrorState(message: 'Failed to load transactions 😅'),
+                error: (_, __) => SliverToBoxAdapter(
+                  child: AppErrorState(message: l10n.failedToLoadTransactionsError),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -143,7 +145,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Spending by Category',
+                      Text(l10n.spendingByCategory,
                           style: AppTypography.textTheme.titleMedium),
                     ],
                   ),
@@ -155,11 +157,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: SkeletonList(itemCount: 3),
                 ))
               else if (analyticsState.spendingByCategory.isEmpty)
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: AppEmptyState(
                     emoji: '📊',
-                    title: 'No Spending Data',
-                    subtitle: 'Add expenses to see breakdown.',
+                    title: l10n.noSpendingData,
+                    subtitle: l10n.addExpensesToSeeBreakdown,
                   ),
                 )
               else
@@ -179,7 +181,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Text('Monthly Trend',
+                  child: Text(l10n.monthlyTrend,
                       style: AppTypography.textTheme.titleMedium),
                 ),
               ),
@@ -191,11 +193,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 )
               else if (analyticsState.monthlyTrend.isEmpty)
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: AppEmptyState(
                     emoji: '📈',
-                    title: 'No Trend Data',
-                    subtitle: 'Start recording transactions to see your monthly trend.',
+                    title: l10n.noTrendData,
+                    subtitle: l10n.startRecordingToSeeTrend,
                   ),
                 )
               else
@@ -239,22 +241,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           Expanded(
             child: profileAsync.isLoading && profile.isEmpty
-                ? const Row(
+                ? Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        'Hello, ',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textSecondaryLight),
+                        l10n.hello,
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textSecondaryLight),
                       ),
-                      SizedBox(width: 120, child: SkeletonCard(height: 24)),
+                      const SizedBox(width: 120, child: SkeletonCard(height: 24)),
                     ],
                   )
                 : RichText(
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     text: TextSpan(
-                      text: 'Hello, ',
+                      text: l10n.hello,
                       style: AppTypography.textTheme.titleMedium?.copyWith(
                         color: AppColors.textSecondaryLight,
                       ),
@@ -275,7 +277,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               IconButton(
                 onPressed: () => context.push('/ai-chat'),
                 icon: const Text('🤖', style: TextStyle(fontSize: 20)),
-                tooltip: 'AI Advisor',
+                tooltip: l10n.aiAdvisor,
               ),
               IconButton(
                 onPressed: () => context.push('/notifications'),
@@ -322,7 +324,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Total Balance',
+            l10n.totalBalance,
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.8),
               fontSize: 14,
@@ -343,10 +345,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Row(
             children: [
               Expanded(
-                  child: _miniStat('📈 Income', fmt.format(income))),
+                  child: _miniStat(l10n.income, fmt.format(income))),
               const SizedBox(width: 12),
               Expanded(
-                  child: _miniStat('📉 Expense', fmt.format(expense))),
+                  child: _miniStat(l10n.expense, fmt.format(expense))),
             ],
           ),
         ],
@@ -413,7 +415,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         (isIncome ? '💰' : '💸');
     final title = tx['description'] as String? ??
         (category is Map ? category['name'] as String? : null) ??
-        'Transaction';
+        l10n.transaction;
     final rawDate = tx['date'] as String?;
     final date = rawDate != null
         ? DateFormat('d MMM', 'en_US').format(DateTime.parse(rawDate))
@@ -532,7 +534,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ...categories.asMap().entries.map((entry) {
             final i = entry.key;
             final cat = entry.value as Map<String, dynamic>;
-            final name = cat['category'] as String? ?? 'Other';
+            final name = cat['category'] as String? ?? l10n.other;
             final emoji =
                 cat['emojiIcon'] as String? ?? cat['emoji'] as String? ?? '📦';
             final amount = (cat['amount'] as num?)?.toDouble() ?? 0;
@@ -665,9 +667,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           Row(
             children: [
-              _trendLegendDot(AppColors.success, 'Income'),
+              _trendLegendDot(AppColors.success, l10n.incomeType),
               const SizedBox(width: 16),
-              _trendLegendDot(AppColors.danger, 'Expense'),
+              _trendLegendDot(AppColors.danger, l10n.expenseType),
             ],
           ),
           const SizedBox(height: 20),
@@ -696,7 +698,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final row = data[group.x] as Map<String, dynamic>;
-                      final label = rodIndex == 0 ? 'Income' : 'Expense';
+                      final label = rodIndex == 0 ? l10n.incomeType : l10n.expenseType;
                       final val = rodIndex == 0
                           ? (row['income'] as num?)?.toDouble() ?? 0
                           : (row['expense'] as num?)?.toDouble() ?? 0;

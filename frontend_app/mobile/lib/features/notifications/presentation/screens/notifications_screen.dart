@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../providers/notifications_provider.dart';
 
@@ -13,6 +14,8 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  AppLocalizations get l10n => AppLocalizations.of(context);
+
   @override
   Widget build(BuildContext context) {
     final notifState = ref.watch(notificationsNotifierProvider);
@@ -20,7 +23,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(l10n.notifications),
         actions: [
           if (notifState.notifications.any((n) => !(n['isRead'] as bool? ?? false)))
             TextButton(
@@ -34,7 +37,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   }
                 }
               },
-              child: const Text('Mark all read'),
+              child: Text(l10n.markAllRead),
             ),
         ],
       ),
@@ -54,10 +57,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       return AppErrorState(message: state.error!);
     }
     if (state.notifications.isEmpty) {
-      return const AppEmptyState(
+      return AppEmptyState(
         emoji: '🔔',
-        title: 'No Notifications',
-        subtitle: 'You\'re all caught up! Check back later.',
+        title: l10n.noNotifications,
+        subtitle: l10n.noNotificationsSubtitle,
       );
     }
 
@@ -92,9 +95,10 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isRead = notif['isRead'] as bool? ?? false;
-    final title = notif['title'] as String? ?? 'Notification';
+    final title = notif['title'] as String? ?? l10n.notification;
     final message = notif['message'] as String? ?? '';
     final createdAt = notif['createdAtFormatted'] as String? ?? '';
 

@@ -11,6 +11,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/email_verification_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/onboarding_screen.dart';
 
 // Profile Setup
 import '../../features/profile/presentation/screens/profile_setup_screen.dart';
@@ -47,6 +48,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         pageBuilder: (context, state) => _buildPage(state, const SplashScreen()),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        pageBuilder: (context, state) => _buildPage(state, const OnboardingScreen()),
       ),
       GoRoute(
         path: '/login',

@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 
 function App() {
-  const [status, setStatus] = useState("loading");
-  const [message, setMessage] = useState("Verifying your email...");
+  const token = new URLSearchParams(window.location.search).get("token");
+  const [status, setStatus] = useState<"loading" | "idle" | "success" | "error">(token ? "loading" : "idle");
+  const [message, setMessage] = useState(token ? "Verifying your email..." : "CuanBuddy Web Services are running successfully. This portal is used for secure email verifications.");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-
-    if (!token) {
-      setStatus('idle');
-      setMessage('CuanBuddy Web Services are running successfully. This portal is used for secure email verifications.');
-      return;
-    }
+    if (!token) return;
 
     const verifyEmail = async () => {
       try {
@@ -27,7 +21,7 @@ function App() {
           setStatus("error");
           setMessage(data.message || "Verification failed.");
         }
-      } catch (error) {
+      } catch {
         setStatus("error");
         setMessage("Network error. Unable to reach the server.");
       }
@@ -37,7 +31,7 @@ function App() {
     setTimeout(() => {
       verifyEmail();
     }, 1500);
-  }, []);
+  }, [token]);
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-slate-900 via-[#0f172a] to-black p-4 font-sans text-white relative overflow-hidden">

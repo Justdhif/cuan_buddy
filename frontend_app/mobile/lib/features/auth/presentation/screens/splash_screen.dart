@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -55,76 +56,41 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         case AuthStateAuthenticated():
           context.go('/home/dashboard');
         case AuthStateUnauthenticated():
-          context.go('/login');
         case AuthStateError():
-          context.go('/login');
+          final prefs = ref.read(preferencesServiceProvider);
+          if (!prefs.onboardingComplete) {
+            context.go('/onboarding');
+          } else {
+            context.go('/login');
+          }
         default:
           break;
       }
     });
 
+    final theme = Theme.of(context);
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF7C3AED), Color(0xFFA78BFA), Color(0xFF6EE7B7)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 32,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text('💰', style: TextStyle(fontSize: 52)),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'CuanBuddy',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Manage your finances smartly ✨',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 64),
-                    const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      strokeWidth: 2.5,
-                    ),
-                  ],
-                ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/icon/app_icon.png',
+                    width: 120,
+                    height: 120,
+                  ),
+                  const SizedBox(height: 48),
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                    strokeWidth: 2.5,
+                  ),
+                ],
               ),
             ),
           ),

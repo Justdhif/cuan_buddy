@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -10,6 +11,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/language_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
@@ -28,6 +30,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     BuildContext context,
     String currentCurrency,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final selected = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -49,8 +52,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (context.mounted) {
           AppSnackbar.show(
             context,
-            title: 'Success',
-            message: 'Currency updated to $selected',
+            title: l10n.success,
+            message: l10n.currencyUpdatedTo(selected),
             type: SnackbarType.success,
           );
         }
@@ -58,8 +61,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (context.mounted) {
           AppSnackbar.show(
             context,
-            title: 'Failed',
-            message: 'Failed to update currency',
+            title: l10n.failed,
+            message: l10n.failedToUpdateCurrency,
             type: SnackbarType.error,
           );
         }
@@ -69,9 +72,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
+  Future<void> _showLanguagePicker(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final currentCode = ref.read(languageProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => _LanguagePickerSheet(
+        currentCode: currentCode,
+        l10n: l10n,
+        onSelect: (code) async {
+          Navigator.pop(ctx);
+          await ref.read(languageProvider.notifier).setLanguage(code);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
+    final l10n = AppLocalizations.of(context);
 
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       if (next is AuthStateUnauthenticated) {
@@ -82,7 +106,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(l10n.profile),
         automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
@@ -92,7 +116,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         data: (profile) => _buildProfileContent(context, ref, profile),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => AppErrorState(
-          message: 'Failed to load profile',
+          message: l10n.failedToLoadProfile,
           onRetry: () => ref.invalidate(profileProvider),
         ),
       ),
@@ -101,11 +125,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildProfileContent(
       BuildContext context, WidgetRef ref, Map<String, dynamic> profile) {
-    final name = profile['fullName'] as String? ?? 'You';
+    final l10n = AppLocalizations.of(context);
+    final name = profile['fullName'] as String? ?? l10n.you;
     final email = profile['email'] as String? ?? '';
     final avatar = profile['avatar'] as String?;
     final currency = profile['currency'] as String? ?? 'IDR';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final currentLangCode = ref.watch(languageProvider);
 
     // Backend now stores PNG URL directly.
     final validAvatar = avatar;
@@ -115,6 +141,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       (c) => c['code'] == currency,
       orElse: () => {'code': currency, 'name': currency, 'symbol': currency},
     );
+
+    // Language display name
+    final langDisplayName = currentLangCode == 'id' ? 'Indonesia' : 'English';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
@@ -168,12 +197,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           // ─── Preferences ────────────────────────────────────────────
           _buildSection(
             context,
-            title: 'Preferences',
+            title: l10n.preferences,
             children: [
               _buildListTile(
                 context,
                 icon: Icons.dark_mode_outlined,
-                title: 'Dark Mode',
+                title: l10n.darkMode,
                 trailing: Switch(
                   value: isDarkMode,
                   onChanged: (v) {
@@ -187,19 +216,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _buildListTile(
                 context,
                 icon: Icons.language_outlined,
-                title: 'Language',
-                trailing: Text('English',
+                title: l10n.language,
+                trailing: Text(langDisplayName,
                     style: TextStyle(
                       color: isDarkMode
                           ? AppColors.textSecondaryDark
                           : AppColors.textSecondaryLight,
                     )),
-                onTap: () {},
+                onTap: () => _showLanguagePicker(context),
               ),
               _buildListTile(
                 context,
                 icon: Icons.attach_money_rounded,
-                title: 'Currency',
+                title: l10n.currency,
                 trailing: _isSavingCurrency
                     ? const SizedBox(
                         width: 20,
@@ -236,31 +265,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           // ─── Account ────────────────────────────────────────────────
           _buildSection(
             context,
-            title: 'Account',
+            title: l10n.account,
             children: [
               _buildListTile(
                 context,
                 icon: Icons.category_outlined,
-                title: 'Manage Categories',
+                title: l10n.manageCategories,
                 onTap: () => context.push('/home/manage-categories'),
               ),
               _buildListTile(
                 context,
                 icon: Icons.backup_outlined,
-                title: 'Backup & Restore',
+                title: l10n.backupRestore,
                 onTap: () => context.push('/profile/backup'),
               ),
             ],
           ),
           const SizedBox(height: 24),
           AppButton(
-            label: 'Edit Profile',
+            label: l10n.editProfile,
             onPressed: () => context.push('/profile/edit', extra: profile),
             type: AppButtonType.outlined,
           ),
           const SizedBox(height: 16),
           AppButton(
-            label: 'Log Out',
+            label: l10n.logOut,
             onPressed: () => _logout(context, ref),
             type: AppButtonType.outlined,
           ),
@@ -314,20 +343,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        title: Text(l10n.logOutTitle),
+        content: Text(l10n.logOutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Log Out'),
+            child: Text(l10n.logOut),
           ),
         ],
       ),
@@ -339,6 +369,113 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
+// ─── Language Picker Sheet ────────────────────────────────────────────────────
+class _LanguagePickerSheet extends StatelessWidget {
+  const _LanguagePickerSheet({
+    required this.currentCode,
+    required this.l10n,
+    required this.onSelect,
+  });
+
+  final String currentCode;
+  final AppLocalizations l10n;
+  final ValueChanged<String> onSelect;
+
+  static const _languages = [
+    {'code': 'en', 'name': 'English', 'flag': '🇬🇧', 'native': 'English'},
+    {'code': 'id', 'name': 'Indonesia', 'flag': '🇮🇩', 'native': 'Bahasa Indonesia'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              l10n.selectLanguage,
+              style: AppTypography.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 20),
+            ..._languages.map((lang) {
+              final isSelected = lang['code'] == currentCode;
+              return GestureDetector(
+                onTap: () => onSelect(lang['code']!),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : (isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(lang['flag']!, style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              lang['name']!,
+                              style: AppTypography.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? AppColors.primary : null,
+                              ),
+                            ),
+                            Text(
+                              lang['native']!,
+                              style: AppTypography.textTheme.bodySmall?.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Currency Picker Sheet ────────────────────────────────────────────────────
 class _CurrencyPickerSheet extends StatelessWidget {
   const _CurrencyPickerSheet({required this.currentCurrency});
@@ -346,6 +483,7 @@ class _CurrencyPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DraggableScrollableSheet(
       initialChildSize: 0.6,
       maxChildSize: 0.85,
@@ -366,7 +504,7 @@ class _CurrencyPickerSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              'Select Currency',
+              l10n.selectCurrency,
               style: AppTypography.textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.w800),
             ),
