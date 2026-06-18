@@ -18,6 +18,7 @@ const defaultCategories = [
   { slug: 'salary', name: 'Salary', emojiIcon: '💼', colorCode: '#2ECC71' },
   { slug: 'bonus', name: 'Bonus', emojiIcon: '🎁', colorCode: '#F1C40F' },
   { slug: 'investment', name: 'Investment', emojiIcon: '📈', colorCode: '#3498DB' },
+  { slug: 'savings', name: 'Tabungan', emojiIcon: '🐖', colorCode: '#8E44AD' },
 ];
 
 async function seed() {
