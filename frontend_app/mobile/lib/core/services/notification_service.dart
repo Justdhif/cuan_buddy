@@ -51,7 +51,6 @@ class NotificationService {
       showProgress: true,
       maxProgress: maxProgress,
       progress: progress,
-      icon: '@mipmap/launcher_icon',
       ongoing: true, // Cannot be swiped away while in progress
     );
     final NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -69,7 +68,6 @@ class NotificationService {
       channelDescription: 'Shows success message for backup process',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/launcher_icon',
       ongoing: false,
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -87,7 +85,6 @@ class NotificationService {
       channelDescription: 'Shows error message for backup process',
       importance: Importance.high,
       priority: Priority.high,
-      icon: '@mipmap/launcher_icon',
       ongoing: false,
     );
     const NotificationDetails platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);

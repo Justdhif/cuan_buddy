@@ -16,6 +16,7 @@ import '../../../analytics/presentation/providers/analytics_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
+import '../../../../core/services/currency_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -402,8 +403,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final amount = amountRaw is num 
         ? amountRaw.toDouble() 
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencyCode = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+    final currencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
         locale: 'en_US',
         symbol: currencySymbol,
@@ -454,13 +456,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
-            Text(
-              '${isIncome ? '+' : '-'}${fmt.format(amount)}',
-              style: TextStyle(
-                color: isIncome ? AppColors.successDark : AppColors.dangerDark,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '${isIncome ? '+' : '-'}${fmt.format(amount)}',
+                  style: TextStyle(
+                    color: isIncome ? AppColors.successDark : AppColors.dangerDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+                if (txCurrency != currencyCode)
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                        amount: amount,
+                        from: txCurrency,
+                        to: currencyCode,
+                      )));
+                      return convertedAsync.when(
+                        data: (converted) {
+                          final userFmt = NumberFormat.currency(
+                              locale: 'en_US',
+                              symbol: AppConstants.getCurrencySymbol(currencyCode),
+                              decimalDigits: 0);
+                          return Text(
+                            '≈ ${isIncome ? '+' : '-'}${userFmt.format(converted)}',
+                            style: AppTypography.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondaryLight,
+                            ),
+                          );
+                        },
+                        loading: () => const SizedBox(
+                          width: 12, height: 12, 
+                          child: CircularProgressIndicator(strokeWidth: 2)
+                        ),
+                        error: (_, __) => const SizedBox.shrink(),
+                      );
+                    },
+                  ),
+              ],
             ),
           ],
         ),

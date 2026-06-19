@@ -414,11 +414,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                         final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (goalCurrency == currencyCode) return const SizedBox.shrink();
                         
-                        final convertedAsync = ref.watch(convertedAmountProvider({
-                          'amount': currentAmount,
-                          'from': goalCurrency,
-                          'to': currencyCode,
-                        }));
+                        final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                          amount: currentAmount,
+                          from: goalCurrency,
+                          to: currencyCode,
+                        )));
                         return convertedAsync.when(
                           data: (converted) => Text(
                             '≈ ${fmt.format(converted)}',
@@ -450,11 +450,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                         final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (goalCurrency == currencyCode) return const SizedBox.shrink();
                         
-                        final convertedAsync = ref.watch(convertedAmountProvider({
-                          'amount': targetAmount,
-                          'from': goalCurrency,
-                          'to': currencyCode,
-                        }));
+                        final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                          amount: targetAmount,
+                          from: goalCurrency,
+                          to: currencyCode,
+                        )));
                         return convertedAsync.when(
                           data: (converted) => Text(
                             '≈ ${fmt.format(converted)}',

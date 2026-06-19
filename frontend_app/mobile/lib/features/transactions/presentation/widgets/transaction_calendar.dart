@@ -38,7 +38,7 @@ class TransactionCalendar extends ConsumerWidget {
             alignment: Alignment.topCenter,
             child: summaryAsync.when(
               data: (summaryData) => _buildGrid(context, ref, filterState, summaryData, isDark),
-              loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+              loading: () => _buildGrid(context, ref, filterState, summaryAsync.value ?? [], isDark),
               error: (e, _) => const SizedBox(height: 80, child: Center(child: Text('Failed to load calendar'))),
             ),
           ),

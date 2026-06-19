@@ -190,7 +190,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get errorSavingBudget => 'Gagal menyimpan anggaran';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
-  @override String get savingsGoals => 'Tujuan Tabungan';
+  @override String get savingsGoals => 'Tabungan';
   @override String get totalSaved => 'Total Tersimpan';
   @override String get goals => 'Tujuan';
   @override String get completed => 'Selesai';
@@ -283,6 +283,14 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get failed => 'Gagal';
   @override String get selectLanguage => 'Pilih Bahasa';
 
+  // ─── Change Password ──────────────────────────────────────────────────────────
+  @override String get changePassword => 'Ganti Password';
+  @override String get oldPassword => 'Password Lama';
+  @override String get oldPasswordHint => 'Masukkan password Anda saat ini';
+  @override String get newPasswordHint => 'Masukkan password baru Anda';
+  @override String get confirmNewPasswordHint => 'Ulangi password baru Anda';
+  @override String get oldPasswordRequired => 'Password lama wajib diisi';
+
   // ─── Edit Profile ─────────────────────────────────────────────────────────────
   @override String get chooseAvatar => 'Pilih Avatar';
   @override String get personalInfo => 'Informasi Pribadi';
@@ -316,7 +324,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get monthlyBackupDesc => 'Backup otomatis bulanan';
   @override String get transactionsLabel => 'Transaksi';
   @override String get budgetsLabel => 'Anggaran';
-  @override String get savingsGoalsLabel => 'Tujuan Tabungan';
+  @override String get savingsGoalsLabel => 'Tabungan';
   @override String get categoriesLabel => 'Kategori';
   @override String get backupNow => 'Backup Sekarang';
   @override String get restore => 'Pulihkan';

@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/core_providers.dart';
+import '../../../transactions/presentation/providers/transaction_provider.dart';
+import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/savings_provider.dart';
 
@@ -62,7 +65,37 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       }
 
       final slug = widget.goal['slug'] as String;
+      final name = widget.goal['name'] as String? ?? 'Goal';
       await ref.read(savingsNotifierProvider.notifier).updateBalance(slug, newAmount);
+
+      // Create a transaction for this savings operation
+      try {
+        final categories = await ref.read(categoriesProvider.future);
+        final savingsCategory = categories.firstWhere(
+          (c) => c['slug'] == 'savings',
+          orElse: () => null,
+        );
+
+        final dio = ref.read(dioClientProvider).dio;
+        await dio.post('/transactions', data: {
+          'type': _isAdding ? 'expense' : 'income',
+          'amount': amount,
+          'currency': widget.goal['currency'] ?? AppConstants.defaultCurrency,
+          'categoryId': savingsCategory?['id'],
+          'note': _isAdding ? 'Transfer ke Tabungan: $name' : 'Tarik dari Tabungan: $name',
+          'date': DateTime.now().toUtc().toIso8601String(),
+        });
+
+        // Invalidate transaction providers
+        ref.invalidate(allTransactionsProvider);
+        ref.invalidate(recentTransactionsProvider);
+        ref.invalidate(analyticsSummaryProvider);
+        ref.invalidate(financialHealthProvider);
+        ref.invalidate(calendarSummaryProvider);
+      } catch (e) {
+        // Just log the error, don't fail the top-up
+        debugPrint('Failed to create savings transaction: $e');
+      }
 
       if (mounted) {
         final l10n = AppLocalizations.of(context);

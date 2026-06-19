@@ -127,10 +127,12 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: InputDecorator(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_drop_down_rounded),
                         decoration: InputDecoration(
                           labelText: 'Currency',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
@@ -138,22 +140,15 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                             ),
                           ),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedCurrency,
-                            isExpanded: true,
-                            icon: const Icon(Icons.arrow_drop_down_rounded),
-                            items: AppConstants.supportedCurrencies.map((c) {
-                              return DropdownMenuItem<String>(
-                                value: c['code'],
-                                child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) setState(() => _selectedCurrency = val);
-                            },
-                          ),
-                        ),
+                        items: AppConstants.supportedCurrencies.map((c) {
+                          return DropdownMenuItem<String>(
+                            value: c['code'],
+                            child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedCurrency = val);
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -164,16 +159,6 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                         label: l10n.limitAmount,
                         hint: '0',
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            AppConstants.getCurrencySymbol(_selectedCurrency),
-                            style: AppTypography.textTheme.titleMedium?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) return l10n.amountRequired;
                           if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;

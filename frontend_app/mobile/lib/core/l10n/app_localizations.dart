@@ -271,6 +271,14 @@ abstract class AppLocalizations {
   String get failed;
   String get selectLanguage;
 
+  // ─── Change Password ──────────────────────────────────────────────────────────
+  String get changePassword;
+  String get oldPassword;
+  String get oldPasswordHint;
+  String get newPasswordHint;
+  String get confirmNewPasswordHint;
+  String get oldPasswordRequired;
+
   // ─── Edit Profile ─────────────────────────────────────────────────────────────
   String get chooseAvatar;
   String get personalInfo;

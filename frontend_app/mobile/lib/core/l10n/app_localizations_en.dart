@@ -184,7 +184,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get errorSavingBudget => 'Error saving budget';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
-  @override String get savingsGoals => 'Savings Goals';
+  @override String get savingsGoals => 'Savings';
   @override String get totalSaved => 'Total Saved';
   @override String get goals => 'Goals';
   @override String get completed => 'Completed';
@@ -276,6 +276,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get failed => 'Failed';
   @override String get selectLanguage => 'Select Language';
 
+  // ─── Change Password ──────────────────────────────────────────────────────────
+  @override String get changePassword => 'Change Password';
+  @override String get oldPassword => 'Old Password';
+  @override String get oldPasswordHint => 'Enter your current password';
+  @override String get newPasswordHint => 'Enter your new password';
+  @override String get confirmNewPasswordHint => 'Repeat your new password';
+  @override String get oldPasswordRequired => 'Old password is required';
+
   // ─── Edit Profile ─────────────────────────────────────────────────────────────
   @override String get chooseAvatar => 'Choose Avatar';
   @override String get personalInfo => 'Personal Info';
@@ -307,7 +315,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get monthlyBackupDesc => 'Monthly automatic backup';
   @override String get transactionsLabel => 'Transactions';
   @override String get budgetsLabel => 'Budgets';
-  @override String get savingsGoalsLabel => 'Savings Goals';
+  @override String get savingsGoalsLabel => 'Savings';
   @override String get categoriesLabel => 'Categories';
   @override String get backupNow => 'Backup Now';
   @override String get restore => 'Restore';

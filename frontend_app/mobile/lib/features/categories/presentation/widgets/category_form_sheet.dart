@@ -1,3 +1,4 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -74,6 +75,25 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     }
   }
 
+  void _showEmojiPicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: 300,
+          child: EmojiPicker(
+            onEmojiSelected: (category, emoji) {
+              setState(() {
+                _emojiController.text = emoji.emoji;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -101,25 +121,27 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              GestureDetector(
+                onTap: () {
+                  FocusScope.of(context).unfocus();
+                  _showEmojiPicker();
+                },
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
                   ),
-                ),
-                child: TextField(
-                  controller: _emojiController,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 24),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    counterText: '',
+                  child: Center(
+                    child: Text(
+                      _emojiController.text.isNotEmpty ? _emojiController.text : '💰',
+                      style: const TextStyle(fontSize: 24),
+                    ),
                   ),
-                  maxLength: 2,
                 ),
               ),
               const SizedBox(width: 16),

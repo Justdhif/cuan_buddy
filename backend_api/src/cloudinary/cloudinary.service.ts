@@ -19,7 +19,17 @@ export class CloudinaryService {
           resolve(result);
         },
       );
-      Readable.from(file.buffer).pipe(upload);
+
+      if (file.buffer) {
+        Readable.from(file.buffer).pipe(upload);
+      } else if (file.stream) {
+        file.stream.pipe(upload);
+      } else if (file.path) {
+        const fs = require('fs');
+        fs.createReadStream(file.path).pipe(upload);
+      } else {
+        reject(new Error('File buffer, stream, and path are all missing'));
+      }
     });
   }
 }

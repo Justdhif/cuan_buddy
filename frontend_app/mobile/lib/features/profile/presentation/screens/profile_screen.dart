@@ -7,9 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
-import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -24,53 +22,6 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _isSavingCurrency = false;
-
-  Future<void> _showCurrencyPicker(
-    BuildContext context,
-    String currentCurrency,
-  ) async {
-    final l10n = AppLocalizations.of(context);
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => _CurrencyPickerSheet(currentCurrency: currentCurrency),
-    );
-
-    if (selected != null && selected != currentCurrency) {
-      if (!context.mounted) return;
-      setState(() => _isSavingCurrency = true);
-      try {
-        await ref
-            .read(profileRepositoryProvider)
-            .updateProfile(currency: selected);
-        await ref.read(preferencesServiceProvider).setCurrencyCode(selected);
-        ref.invalidate(profileProvider);
-        if (context.mounted) {
-          AppSnackbar.show(
-            context,
-            title: l10n.success,
-            message: l10n.currencyUpdatedTo(selected),
-            type: SnackbarType.success,
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          AppSnackbar.show(
-            context,
-            title: l10n.failed,
-            message: l10n.failedToUpdateCurrency,
-            type: SnackbarType.error,
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isSavingCurrency = false);
-      }
-    }
-  }
 
   Future<void> _showLanguagePicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
@@ -229,34 +180,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 context,
                 icon: Icons.attach_money_rounded,
                 title: l10n.currency,
-                trailing: _isSavingCurrency
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${currencyInfo['symbol']} ${currencyInfo['code']}',
-                            style: TextStyle(
-                                color: isDarkMode
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight,
-                                fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_ios_rounded,
-                              size: 14,
-                              color: isDarkMode
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight),
-                        ],
-                      ),
-                onTap: _isSavingCurrency
-                    ? null
-                    : () => _showCurrencyPicker(context, currency),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${currencyInfo['symbol']} ${currencyInfo['code']}',
+                      style: TextStyle(
+                          color: isDarkMode
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        size: 14,
+                        color: isDarkMode
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight),
+                  ],
+                ),
+                onTap: () => context.push('/currency'),
               ),
             ],
           ),
@@ -272,6 +215,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 icon: Icons.category_outlined,
                 title: l10n.manageCategories,
                 onTap: () => context.push('/home/manage-categories'),
+              ),
+              _buildListTile(
+                context,
+                icon: Icons.lock_outline,
+                title: l10n.changePassword,
+                onTap: () => context.push('/change-password'),
               ),
               _buildListTile(
                 context,
@@ -476,98 +425,3 @@ class _LanguagePickerSheet extends StatelessWidget {
   }
 }
 
-// ─── Currency Picker Sheet ────────────────────────────────────────────────────
-class _CurrencyPickerSheet extends StatelessWidget {
-  const _CurrencyPickerSheet({required this.currentCurrency});
-  final String currentCurrency;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      maxChildSize: 0.85,
-      minChildSize: 0.4,
-      expand: false,
-      builder: (ctx, scrollController) => Column(
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.borderLight,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              l10n.selectCurrency,
-              style: AppTypography.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: ListView.separated(
-              controller: scrollController,
-              padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).padding.bottom + 24),
-              itemCount: AppConstants.supportedCurrencies.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final currency = AppConstants.supportedCurrencies[index];
-                final isSelected = currency['code'] == currentCurrency;
-                return ListTile(
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.12)
-                          : AppColors.borderLight.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        currency['symbol']!,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                          color: isSelected
-                              ? AppColors.primary
-                              : AppColors.textPrimaryLight,
-                        ),
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    currency['code']!,
-                    style: AppTypography.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: isSelected ? AppColors.primary : null,
-                    ),
-                  ),
-                  subtitle: Text(
-                    currency['name']!,
-                    style: AppTypography.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_circle_rounded,
-                          color: AppColors.primary)
-                      : null,
-                  onTap: () => Navigator.pop(context, currency['code']),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

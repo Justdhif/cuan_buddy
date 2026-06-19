@@ -88,5 +88,17 @@ class AuthRepository {
     return data['message'] as String? ?? 'Password successfully changed!';
   }
 
+  Future<String> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final response = await _dio.post('/auth/change-password', data: {
+      'oldPassword': oldPassword,
+      'newPassword': newPassword,
+    });
+    final data = response.data as Map<String, dynamic>;
+    return data['message'] as String? ?? 'Password successfully changed!';
+  }
+
   Future<bool> hasToken() => authService.hasValidToken();
 }

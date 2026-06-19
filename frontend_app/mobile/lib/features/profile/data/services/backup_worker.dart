@@ -28,7 +28,7 @@ class BackupWorker {
       final now = DateTime.now();
 
       if (now.isAfter(nextBackupAt)) {
-        await runBackupProcess();
+        await runBackupProcess(isAuto: true);
       }
     } catch (e) {
       print('Auto backup error: $e');
@@ -37,7 +37,7 @@ class BackupWorker {
     }
   }
 
-    Future<void> runBackupProcess({List<String> tables = const []}) async {
+  Future<void> runBackupProcess({List<String> tables = const [], bool isAuto = false}) async {
     final notificationService = NotificationService();
     try {
       await notificationService.showProgressNotification(
@@ -48,7 +48,28 @@ class BackupWorker {
         maxProgress: 100,
       );
 
-      Directory directory = await getTemporaryDirectory();
+      Directory? directory;
+      if (Platform.isAndroid && isAuto) {
+        directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          String newPath = "";
+          List<String> paths = directory.path.split("/");
+          for (int x = 1; x < paths.length; x++) {
+            String folder = paths[x];
+            if (folder != "Android") {
+              newPath += "/$folder";
+            } else {
+              break;
+            }
+          }
+          newPath = "$newPath/Download";
+          directory = Directory(newPath);
+        } else {
+          directory = await getTemporaryDirectory();
+        }
+      } else {
+        directory = await getTemporaryDirectory();
+      }
 
       if (!await directory.exists()) {
         await directory.create(recursive: true);
@@ -90,12 +111,13 @@ class BackupWorker {
       await notificationService.flutterLocalNotificationsPlugin.cancel(id: 99);
       await notificationService.showSuccessNotification(
         id: 100,
-        title: 'Backup Successful ✅',
-        body: 'Ready to share or save.',
+        title: isAuto ? 'Auto Backup Successful ✅' : 'Backup Successful ✅',
+        body: isAuto ? 'Saved to Downloads' : 'Ready to share or save.',
       );
 
-      // Share the file so user can save it to Downloads or send via WhatsApp
-      await Share.shareXFiles([XFile(savePath)], text: 'CuanBuddy Backup');
+      if (!isAuto) {
+        await Share.shareXFiles([XFile(savePath)], text: 'CuanBuddy Backup');
+      }
     } catch (e) {
       await notificationService.flutterLocalNotificationsPlugin.cancel(id: 99);
       await notificationService.showErrorNotification(

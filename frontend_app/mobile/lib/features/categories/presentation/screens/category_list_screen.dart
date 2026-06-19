@@ -52,15 +52,22 @@ class CategoryListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.manageCategories, style: AppTypography.textTheme.titleMedium),
         centerTitle: true,
+        actions: [
+          IconButton(
+            onPressed: () => _showCategoryForm(context),
+            icon: const Icon(Icons.add_rounded),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: state.isLoading && state.categories.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const _CategorySkeletonLoader()
           : state.categories.isEmpty
               ? Center(
                   child: Text(l10n.noCategoriesFound, style: AppTypography.textTheme.bodyMedium),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
                   itemCount: state.categories.length,
                   itemBuilder: (context, index) {
                     final category = state.categories[index];
@@ -96,11 +103,70 @@ class CategoryListScreen extends ConsumerWidget {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCategoryForm(context),
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+    );
+  }
+}
+
+class _CategorySkeletonLoader extends StatefulWidget {
+  const _CategorySkeletonLoader();
+
+  @override
+  State<_CategorySkeletonLoader> createState() => _CategorySkeletonLoaderState();
+}
+
+class _CategorySkeletonLoaderState extends State<_CategorySkeletonLoader> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 0.85).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return AnimatedBuilder(
+          animation: _anim,
+          builder: (_, __) => Opacity(
+            opacity: _anim.value,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: baseColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: baseColor.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(width: 24, height: 24, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), shape: BoxShape.circle)),
+                  const SizedBox(width: 16),
+                  Container(width: 120, height: 16, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(8))),
+                  const Spacer(),
+                  Container(width: 20, height: 20, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), shape: BoxShape.circle)),
+                  const SizedBox(width: 16),
+                  Container(width: 20, height: 20, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), shape: BoxShape.circle)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

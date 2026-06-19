@@ -17,6 +17,9 @@ import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/profile/presentation/screens/profile_setup_screen.dart';
 import '../../features/profile/presentation/screens/backup_settings_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/profile/presentation/screens/change_password_screen.dart';
+
+import '../../features/profile/presentation/screens/currency_screen.dart';
 
 // Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -100,6 +103,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/currency',
+        pageBuilder: (context, state) => _buildPage(state, const CurrencyScreen()),
+      ),
+      GoRoute(
+        path: '/change-password',
+        pageBuilder: (context, state) => _buildPage(state, const ChangePasswordScreen()),
+      ),
+      GoRoute(
         path: '/notifications',
         pageBuilder: (context, state) => _buildPage(state, const NotificationsScreen()),
       ),
@@ -116,21 +127,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
         branches: [
-          // Branch 0 – Dashboard (Home)
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/home/dashboard',
-              pageBuilder: (context, state) => _buildPage(state, const DashboardScreen()),
-            ),
-          ]),
-          // Branch 1 – Transactions
+          // Branch 0 – Transactions
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/transactions',
               pageBuilder: (context, state) => _buildPage(state, const TransactionListScreen()),
             ),
           ]),
-          // Branch 2 – Budgets
+          // Branch 1 – Budgets
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/budgets',
@@ -141,6 +145,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               pageBuilder: (context, state) => _buildPage(state, const CategoryListScreen()),
             ),
           ]),
+          // Branch 2 – Dashboard (Home)
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/home/dashboard',
+              pageBuilder: (context, state) => _buildPage(state, const DashboardScreen()),
+            ),
+          ]),
           // Branch 3 – Savings
           StatefulShellBranch(routes: [
             GoRoute(
@@ -148,7 +159,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               pageBuilder: (context, state) => _buildPage(state, const SavingsScreen()),
             ),
           ]),
-          // Branch 4 – Profile (replaces Analytics)
+          // Branch 4 – Profile
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/profile',

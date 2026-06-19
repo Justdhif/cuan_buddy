@@ -15,6 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
@@ -239,6 +240,39 @@ export class AuthService {
       .where(eq(users.id, user.id));
 
     return { message: 'Password changed successfully. Please log in with your new password.' };
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const [user] = await this.db
+      .select({
+        id: users.id,
+        passwordHash: users.passwordHash,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(dto.oldPassword, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new BadRequestException('Incorrect old password');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.db
+      .update(users)
+      .set({
+        passwordHash: hashedPassword,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, user.id));
+
+    return { message: 'Password changed successfully' };
   }
 
   private generateTokens(userId: string, email: string) {

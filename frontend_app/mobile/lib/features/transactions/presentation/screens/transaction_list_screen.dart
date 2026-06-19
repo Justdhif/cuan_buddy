@@ -357,11 +357,11 @@ class _TransactionTile extends ConsumerWidget {
                 if (txCurrency != currencyCode)
                   Consumer(
                     builder: (context, ref, _) {
-                      final convertedAsync = ref.watch(convertedAmountProvider({
-                        'amount': amount,
-                        'from': txCurrency,
-                        'to': currencyCode,
-                      }));
+                      final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                        amount: amount,
+                        from: txCurrency,
+                        to: currencyCode,
+                      )));
                       return convertedAsync.when(
                         data: (converted) => Text(
                           '≈ ${isIncome ? '+' : '-'}${fmt.format(converted)}',

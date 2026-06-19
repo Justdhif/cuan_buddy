@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/core_providers.dart';
@@ -91,7 +90,6 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                       child: InputDecorator(
                         decoration: InputDecoration(
                           labelText: 'Currency',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
@@ -125,16 +123,6 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                         label: l10n.targetAmount,
                         hint: '0',
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            AppConstants.getCurrencySymbol(_selectedCurrency),
-                            style: AppTypography.textTheme.titleMedium?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) return l10n.amountRequired;
                           if (double.tryParse(value) == null) return l10n.invalidAmount;

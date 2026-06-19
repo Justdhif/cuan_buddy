@@ -11,7 +11,8 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
-
+import '../../../notifications/presentation/providers/notifications_provider.dart';
+import '../../../savings/presentation/providers/savings_provider.dart';
 
 // ─── Add Transaction Sheet ────────────────────────────────────────────────────
 class AddTransactionSheet extends ConsumerStatefulWidget {
@@ -29,6 +30,8 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
+  final _allocationAmountController = TextEditingController();
+  String? _selectedGoalSlug;
   late String _type;
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
@@ -61,6 +64,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _allocationAmountController.dispose();
     super.dispose();
   }
 
@@ -96,6 +100,51 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         await dio.patch('/transactions/$id', data: payload);
       } else {
         await dio.post('/transactions', data: payload);
+
+        // Handle Savings Allocation for new Income
+        if (_type == 'income' && _selectedGoalSlug != null) {
+          final allocAmountStr = _allocationAmountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+          if (allocAmountStr.isNotEmpty) {
+            final allocAmount = double.parse(allocAmountStr);
+            if (allocAmount > 0) {
+              try {
+                // 1. Get current goal balance
+                final goals = ref.read(savingsNotifierProvider).goals;
+                final goal = goals.firstWhere(
+                  (g) => g['slug'] == _selectedGoalSlug,
+                  orElse: () => <String, dynamic>{},
+                );
+                
+                if (goal.isNotEmpty) {
+                  final currentAmount = (goal['currentAmount'] as num?)?.toDouble() ?? 0;
+                  final newAmount = currentAmount + allocAmount;
+                  final goalName = goal['name'] as String? ?? 'Goal';
+                  
+                  // 2. Update goal balance
+                  await ref.read(savingsNotifierProvider.notifier).updateBalance(_selectedGoalSlug!, newAmount);
+                  
+                  // 3. Create expense transaction
+                  final categories = await ref.read(categoriesProvider.future);
+                  final savingsCategory = categories.firstWhere(
+                    (c) => c['slug'] == 'savings',
+                    orElse: () => null,
+                  );
+
+                  await dio.post('/transactions', data: {
+                    'type': 'expense',
+                    'amount': allocAmount,
+                    'currency': _selectedCurrency,
+                    'categoryId': savingsCategory?['id'],
+                    'note': 'Alokasi ke Tabungan: $goalName',
+                    'date': _selectedDate.toUtc().toIso8601String(),
+                  });
+                }
+              } catch (e) {
+                debugPrint('Failed to process savings allocation: $e');
+              }
+            }
+          }
+        }
       }
 
       // Invalidate all relevant providers to refresh data
@@ -104,6 +153,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       ref.invalidate(analyticsSummaryProvider);
       ref.invalidate(financialHealthProvider);
       ref.invalidate(calendarSummaryProvider); // New provider
+      ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
 
       if (mounted) {
         Navigator.pop(context);
@@ -235,10 +285,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: InputDecorator(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_drop_down_rounded),
                         decoration: InputDecoration(
                           labelText: 'Currency',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
@@ -246,22 +298,15 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                             ),
                           ),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedCurrency,
-                            isExpanded: true,
-                            icon: const Icon(Icons.arrow_drop_down_rounded),
-                            items: AppConstants.supportedCurrencies.map((c) {
-                              return DropdownMenuItem<String>(
-                                value: c['code'],
-                                child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) setState(() => _selectedCurrency = val);
-                            },
-                          ),
-                        ),
+                        items: AppConstants.supportedCurrencies.map((c) {
+                          return DropdownMenuItem<String>(
+                            value: c['code'],
+                            child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedCurrency = val);
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -272,16 +317,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                         label: l10n.amount,
                         hint: '0',
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        prefixIcon: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            AppConstants.getCurrencySymbol(_selectedCurrency),
-                            style: AppTypography.textTheme.titleMedium?.copyWith(
-                              color: typeColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) return l10n.amountRequired;
                           if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
@@ -437,6 +472,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                 ),
                 const SizedBox(height: 32),
 
+                // ── Savings Goal Allocation (Income Only) ──────────────────────
+                if (_type == 'income' && widget.initialTransaction == null)
+                  _buildSavingsAllocationSection(isDark),
+
                 // ── Save Button ────────────────────────────────────────
                 AppButton(
                   label: _isSaving ? l10n.saving : l10n.saveTransaction,
@@ -451,6 +490,52 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSavingsAllocationSection(bool isDark) {
+    final savingsState = ref.watch(savingsNotifierProvider);
+    if (savingsState.goals.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Alokasi ke Tabungan (Opsional)', style: AppTypography.textTheme.labelMedium),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedGoalSlug,
+          decoration: InputDecoration(
+            labelText: 'Pilih Tabungan',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          items: [
+            const DropdownMenuItem<String>(
+              value: null,
+              child: Text('Tidak ada alokasi'),
+            ),
+            ...savingsState.goals.map((g) {
+              return DropdownMenuItem<String>(
+                value: g['slug'] as String,
+                child: Text(g['name'] as String? ?? 'Goal'),
+              );
+            }),
+          ],
+          onChanged: (val) {
+            setState(() => _selectedGoalSlug = val);
+          },
+        ),
+        if (_selectedGoalSlug != null) ...[
+          const SizedBox(height: 12),
+          AppTextField(
+            controller: _allocationAmountController,
+            label: 'Jumlah Alokasi',
+            hint: '0',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+        ],
+        const SizedBox(height: 32),
+      ],
     );
   }
 

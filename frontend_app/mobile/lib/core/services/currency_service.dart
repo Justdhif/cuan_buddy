@@ -73,10 +73,31 @@ class CurrencyService {
   }
 }
 
-final convertedAmountProvider = FutureProvider.family<double, Map<String, dynamic>>((ref, params) async {
-  final amount = params['amount'] as double;
-  final from = params['from'] as String;
-  final to = params['to'] as String;
+class ConversionParams {
+  final double amount;
+  final String from;
+  final String to;
+
+  const ConversionParams({
+    required this.amount,
+    required this.from,
+    required this.to,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ConversionParams &&
+          runtimeType == other.runtimeType &&
+          amount == other.amount &&
+          from == other.from &&
+          to == other.to;
+
+  @override
+  int get hashCode => amount.hashCode ^ from.hashCode ^ to.hashCode;
+}
+
+final convertedAmountProvider = FutureProvider.family<double, ConversionParams>((ref, params) async {
   final service = ref.watch(currencyServiceProvider);
-  return await service.convert(amount, from, to);
+  return await service.convert(params.amount, params.from, params.to);
 });

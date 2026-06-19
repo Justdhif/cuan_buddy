@@ -25,7 +25,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   bool? _backupEnabled;
   String _interval = '7d';
 
-  final List<String> _selectedTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
+  final List<String> _selectedTables = ['transactions', 'budgets', 'savings_goals'];
 
   void _toggleTable(String table) {
     setState(() {
@@ -220,15 +220,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 _buildCheckbox(l10n.transactionsLabel, 'transactions'),
                 _buildCheckbox(l10n.budgetsLabel, 'budgets'),
                 _buildCheckbox(l10n.savingsGoalsLabel, 'savings_goals'),
-                _buildCheckbox(l10n.categoriesLabel, 'categories'),
               ],
-              const SizedBox(height: 24),
   
               if (!widget.isOnboarding) ...[
-                const SizedBox(height: 32),
-                Text(l10n.manualAction,
-                    style: AppTypography.textTheme.titleSmall),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
@@ -453,40 +448,52 @@ class _RestoreSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            l10n.restoreData,
-            style: AppTypography.textTheme.titleMedium,
-            textAlign: TextAlign.center,
+          Icon(
+            Icons.restore_page_rounded,
+            size: 64,
+            color: AppColors.primary,
           ),
           const SizedBox(height: 16),
           Text(
+            l10n.restoreData,
+            style: AppTypography.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
             l10n.restoreInstructions,
+            textAlign: TextAlign.center,
             style: AppTypography.textTheme.bodyMedium?.copyWith(
               color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
             ),
           ),
-          const SizedBox(height: 24),
-          Text(l10n.downloadTemplates, style: AppTypography.textTheme.labelLarge),
-          const SizedBox(height: 8),
+          const SizedBox(height: 32),
+          Text(l10n.downloadTemplates, style: AppTypography.textTheme.titleSmall),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               ActionChip(
+                avatar: const Icon(Icons.download_rounded, size: 16),
                 label: Text(l10n.transactionsLabel),
                 onPressed: () => onDownloadTemplate('transactions'),
+                backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+                side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
               ActionChip(
+                avatar: const Icon(Icons.download_rounded, size: 16),
                 label: Text(l10n.budgetsLabel),
                 onPressed: () => onDownloadTemplate('budgets'),
+                backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+                side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
               ActionChip(
+                avatar: const Icon(Icons.download_rounded, size: 16),
                 label: Text(l10n.savingsGoalsLabel),
                 onPressed: () => onDownloadTemplate('savings_goals'),
-              ),
-              ActionChip(
-                label: Text(l10n.categoriesLabel),
-                onPressed: () => onDownloadTemplate('categories'),
+                backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+                side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
               ),
             ],
           ),

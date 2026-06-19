@@ -2,9 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import '../theme/app_colors.dart';
-import '../../features/profile/presentation/providers/profile_provider.dart';
 import '../l10n/app_localizations.dart';
+import '../../features/profile/presentation/providers/profile_provider.dart';
+
+class _CustomConvexStyle extends StyleHook {
+  final TextStyle baseStyle;
+  _CustomConvexStyle(this.baseStyle);
+
+  @override
+  double get activeIconSize => 40;
+
+  @override
+  double get activeIconMargin => 10;
+
+  @override
+  double get iconSize => 24;
+
+  @override
+  TextStyle textStyle(Color color, String? fontFamily) {
+    return baseStyle.copyWith(color: color, fontSize: 10);
+  }
+}
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({
@@ -57,268 +78,78 @@ class _CuanBuddyNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final profileAsync = ref.watch(profileProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = Theme.of(context).scaffoldBackgroundColor;
-    final shadowColor = Colors.transparent;
+    
+    // Watch profile for avatar
+    final profileAsync = ref.watch(profileProvider);
 
-    // Branches: 0=Dashboard, 1=Transactions, 2=Budgets, 3=Savings, 4=Profile
-    // Visual:   Trans | Budgets | [HOME] | Savings | Profile
-    final items = [
-      _NavItem(icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: l10n.transactions, branch: 1),
-      _NavItem(icon: Icons.pie_chart_outline_rounded, activeIcon: Icons.pie_chart_rounded, label: l10n.budgets, branch: 2),
-      _NavItem(icon: Icons.home_rounded, activeIcon: Icons.home_rounded, label: l10n.home, branch: 0), // CENTER
-      _NavItem(icon: Icons.savings_outlined, activeIcon: Icons.savings_rounded, label: l10n.savingsGoals, branch: 3),
-      _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: l10n.profile, branch: 4),
-    ];
-
-    return SafeArea(
-      top: false,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.bottomCenter,
-        children: [
-          Container(
-            height: 68,
-            decoration: BoxDecoration(
-              color: bgColor,
-              boxShadow: [
-                BoxShadow(
-                  color: shadowColor,
-                  blurRadius: 24,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: List.generate(items.length, (i) {
-                final item = items[i];
-                final isCenter = i == 2;
-                final isActive = currentIndex == item.branch;
-
-                if (isCenter) {
-                  return Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        const SizedBox(height: 4),
-                        AnimatedDefaultTextStyle(
-                          duration: const Duration(milliseconds: 200),
-                          style: TextStyle(
-                            color: currentIndex == 0 ? AppColors.primary : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                            fontSize: 10,
-                            fontWeight: currentIndex == 0 ? FontWeight.w700 : FontWeight.w400,
-                          ),
-                          child: Text(l10n.home),
+    return StyleProvider(
+      style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
+      child: ConvexAppBar(
+        style: TabStyle.fixedCircle,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+        activeColor: AppColors.primary,
+        cornerRadius: 0,
+        elevation: 4,
+        initialActiveIndex: currentIndex,
+        onTap: onTap,
+        items: [
+          TabItem(icon: Icons.receipt_long_outlined, title: l10n.transactions),
+          TabItem(icon: Icons.pie_chart_outline_rounded, title: l10n.budgets),
+          TabItem(icon: Icons.home_rounded, title: l10n.home),
+          TabItem(icon: Icons.savings_outlined, title: l10n.savingsGoals),
+          TabItem(
+            title: l10n.profile,
+            icon: profileAsync.when(
+              data: (profile) {
+                final avatarUrl = profile['avatar'] as String?;
+                if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: currentIndex == 4 ? AppColors.primary : Colors.transparent, 
+                        width: 1.5,
+                      ),
+                    ),
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: avatarUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) => Shimmer.fromColors(
+                          baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                          highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                          child: Container(color: Colors.white),
                         ),
-                        const SizedBox(height: 10),
-                      ],
+                        errorWidget: (_, __, ___) => Icon(
+                          Icons.person_outline_rounded,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
                     ),
                   );
                 }
-                return _buildNavItem(item, isActive, isDark, i, profileAsync);
-              }),
+                return Icon(
+                  Icons.person_outline_rounded,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                );
+              },
+              loading: () => Shimmer.fromColors(
+                baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                child: Container(
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                ),
+              ),
+              error: (_, __) => Icon(
+                Icons.person_outline_rounded,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
             ),
-          ),
-          Positioned(
-            top: -32,
-            child: _buildCenterButton(currentIndex == 0),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildCenterButton(bool isActive) {
-    return GestureDetector(
-      onTap: () => onTap(0),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.45),
-              blurRadius: 18,
-              spreadRadius: 1,
-              offset: const Offset(0, 4),
-            ),
-          ],
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.15),
-            width: 3,
-          ),
-        ),
-        child: Icon(
-          Icons.home_rounded,
-          color: Colors.white,
-          size: isActive ? 32 : 28,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-      _NavItem item, bool isActive, bool isDark, int visualIndex, AsyncValue<Map<String, dynamic>> profileAsync) {
-    final activeColor = AppColors.primary;
-    final inactiveColor =
-        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onTap(item.branch),
-        behavior: HitTestBehavior.opaque,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedScale(
-                scale: isActive ? 1.15 : 1.0,
-                duration: const Duration(milliseconds: 200),
-                child: item.branch == 4
-                    ? _buildAvatarIcon(profileAsync, isActive)
-                    : Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        color: isActive ? activeColor : inactiveColor,
-                        size: 22,
-                      ),
-              ),
-              const SizedBox(height: 4),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  color: isActive ? activeColor : inactiveColor,
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                ),
-                child: Text(item.label),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvatarIcon(AsyncValue<Map<String, dynamic>> profileAsync, bool isActive) {
-    final profile = profileAsync.value ?? {};
-    final avatar = profile['avatar'] as String?;
-    final name = profile['fullName'] as String? ?? 'You';
-    final validAvatar = avatar;
-    
-    if (profileAsync.isLoading && profile.isEmpty) {
-      return const _AvatarSkeletonLoader();
-    }
-
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: isActive ? Border.all(color: AppColors.primary, width: 1.5) : null,
-      ),
-      child: CircleAvatar(
-        backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-        child: validAvatar != null
-            ? ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: validAvatar,
-                  fit: BoxFit.cover,
-                  width: 24,
-                  height: 24,
-                  placeholder: (context, url) => const _AvatarSkeletonLoader(),
-                  errorWidget: (context, url, error) => Text(
-                    name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              )
-            : Text(
-                name[0].toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 10,
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-// ─── Avatar Skeleton Loader ───────────────────────────────────────────────────
-class _AvatarSkeletonLoader extends StatefulWidget {
-  const _AvatarSkeletonLoader();
-
-  @override
-  State<_AvatarSkeletonLoader> createState() => _AvatarSkeletonLoaderState();
-}
-
-class _AvatarSkeletonLoaderState extends State<_AvatarSkeletonLoader>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.3, end: 0.85).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor =
-        isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
-
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Opacity(
-        opacity: _anim.value,
-        child: Container(
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            color: baseColor,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Nav Item ─────────────────────────────────────────────────────────────────
-class _NavItem {
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-    required this.branch,
-  });
-
-  final IconData icon;
-  final IconData activeIcon;
-  final String label;
-  final int branch;
 }

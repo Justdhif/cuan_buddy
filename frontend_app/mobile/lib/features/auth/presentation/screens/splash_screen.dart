@@ -85,10 +85,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     width: 120,
                     height: 120,
                   ),
-                  const SizedBox(height: 48),
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                    strokeWidth: 2.5,
+                  const SizedBox(height: 16),
+                  Text(
+                    'Cuan Buddy',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                 ],
               ),

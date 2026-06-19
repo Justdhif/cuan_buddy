@@ -1,3 +1,8 @@
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:dio/dio.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +15,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../providers/profile_provider.dart';
 
-// ─── DiceBear Avatar Seeds ────────────────────────────────────────────────────
-// We use the avataaars style (same as backend) with fixed seeds to create
-// a diverse set of 9 extra avatars to display alongside the user's own avatar.
 const List<String> _avatarSeeds = [
   'alpha', 'bravo', 'charlie', 'delta', 'echo',
   'foxtrot', 'golf', 'hotel', 'india',
@@ -40,6 +42,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
   // Avatar
   late String? _selectedAvatarUrl;
+  File? _selectedLocalFile;
   late List<String> _avatarOptions;
 
   late AnimationController _animController;
@@ -60,18 +63,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       _selectedDate = DateTime.tryParse(birthDateStr);
     }
 
-    // Current avatar
-    final currentAvatar = widget.profile['avatar'] as String?;
-    _selectedAvatarUrl = currentAvatar;
-
-    // Build avatar list: current user avatar + 9 fixed seeds = 10 total
-    // The user's avatar may already use one of the seeds but we show it
-    // separately at index 0 so the user always sees their current one first.
-    final extraAvatars = _avatarSeeds.map(_dicebearUrl).toList();
-    _avatarOptions = [
-      if (currentAvatar != null) currentAvatar,
-      ...extraAvatars,
-    ];
+    _selectedAvatarUrl = widget.profile['avatar'] as String?;
+    _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
 
     _animController = AnimationController(
       vsync: this,
@@ -89,11 +82,57 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     super.dispose();
   }
 
+  Future<void> _pickAvatarAndCrop() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    
+    if (pickedFile == null) return;
+    
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: pickedFile.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Avatar',
+          toolbarColor: AppColors.primary,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+        ),
+        IOSUiSettings(
+          title: 'Crop Avatar',
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+        ),
+      ],
+    );
+    
+    if (croppedFile != null) {
+      setState(() {
+        _selectedLocalFile = File(croppedFile.path);
+        _selectedAvatarUrl = null; // Prioritize local file
+      });
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
 
     try {
+      String? finalAvatarUrl = _selectedAvatarUrl;
+
+      // If user picked a local file, upload it now
+      if (_selectedLocalFile != null) {
+        final dio = ref.read(dioClientProvider).dio;
+        final formData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(_selectedLocalFile!.path),
+        });
+        
+        final response = await dio.post('/profiles/avatar/upload', data: formData);
+        finalAvatarUrl = response.data['avatar'] as String;
+      }
+
       // Update profile fields
       await ref.read(profileRepositoryProvider).updateProfile(
             fullName: _nameController.text.trim(),
@@ -103,13 +142,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
             dateOfBirth: _selectedDate?.toUtc().toIso8601String(),
           );
 
-      // Update avatar if changed
+      // If user picked a dicebear avatar, update it (if it's local file, upload endpoint already updated DB)
       final currentAvatar = widget.profile['avatar'] as String?;
-      if (_selectedAvatarUrl != null &&
-          _selectedAvatarUrl != currentAvatar) {
+      if (finalAvatarUrl != null && finalAvatarUrl != currentAvatar && _selectedLocalFile == null) {
         await ref
             .read(profileRepositoryProvider)
-            .updateAvatar(avatarUrl: _selectedAvatarUrl!);
+            .updateAvatar(avatarUrl: finalAvatarUrl);
       }
 
       ref.invalidate(profileProvider);
@@ -157,8 +195,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                 _AvatarPickerSection(
                   avatarOptions: _avatarOptions,
                   selectedAvatarUrl: _selectedAvatarUrl,
-                  onSelected: (url) => setState(() => _selectedAvatarUrl = url),
+                  selectedLocalFile: _selectedLocalFile,
+                  onDicebearSelected: (url) => setState(() {
+                    _selectedAvatarUrl = url;
+                    _selectedLocalFile = null;
+                  }),
+                  onUploadTap: _pickAvatarAndCrop,
                   isDark: isDark,
+                  currentProfileAvatar: widget.profile['avatar'] as String?,
                 ),
                 const SizedBox(height: 32),
 
@@ -261,21 +305,78 @@ class _AvatarPickerSection extends StatelessWidget {
   const _AvatarPickerSection({
     required this.avatarOptions,
     required this.selectedAvatarUrl,
-    required this.onSelected,
+    required this.selectedLocalFile,
+    required this.onDicebearSelected,
+    required this.onUploadTap,
     required this.isDark,
+    required this.currentProfileAvatar,
   });
 
   final List<String> avatarOptions;
   final String? selectedAvatarUrl;
-  final ValueChanged<String> onSelected;
+  final File? selectedLocalFile;
+  final ValueChanged<String> onDicebearSelected;
+  final VoidCallback onUploadTap;
   final bool isDark;
+  final String? currentProfileAvatar;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    
+    // We display 1 preview + 1 upload circle + 9 dicebears = 10 items total
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ─── Big Preview ───────────────────────────────────────────────────
+        Center(
+          child: Hero(
+            tag: 'avatar',
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primary.withValues(alpha: 0.1),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.5),
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: selectedLocalFile != null
+                    ? Image.file(
+                        selectedLocalFile!,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      )
+                    : (selectedAvatarUrl != null && selectedAvatarUrl!.isNotEmpty)
+                        ? CachedNetworkImage(
+                            imageUrl: selectedAvatarUrl!,
+                            width: 120,
+                            height: 120,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (_, __, ___) => const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: AppColors.primary,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: AppColors.primary,
+                          ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 32),
+
         Text(
           l10n.chooseAvatar,
           style: AppTypography.textTheme.titleSmall
@@ -283,52 +384,6 @@ class _AvatarPickerSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Large preview of selected avatar
-        Center(
-          child: Hero(
-            tag: 'avatar',
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppColors.primaryGradient,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: selectedAvatarUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: selectedAvatarUrl!,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        errorWidget: (_, __, ___) => const Icon(
-                          Icons.person,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.person,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Avatar grid
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -338,23 +393,109 @@ class _AvatarPickerSection extends StatelessWidget {
             mainAxisSpacing: 12,
             childAspectRatio: 1,
           ),
-          itemCount: avatarOptions.length,
+          itemCount: 1 + avatarOptions.length,
           itemBuilder: (context, index) {
-            final url = avatarOptions[index];
-            final isSelected = url == selectedAvatarUrl;
-            final isCurrentUser = index == 0;
+            // First item is the "Upload" circle
+            if (index == 0) {
+              final isSelected = selectedLocalFile != null || 
+                (selectedAvatarUrl != null && !avatarOptions.contains(selectedAvatarUrl));
+              
+              return GestureDetector(
+                onTap: onUploadTap,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.5),
+                      width: isSelected ? 3 : 2,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipOval(
+                        child: selectedLocalFile != null
+                            ? Image.file(
+                                selectedLocalFile!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : (currentProfileAvatar != null && !avatarOptions.contains(currentProfileAvatar))
+                                ? CachedNetworkImage(
+                                    imageUrl: currentProfileAvatar!,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Center(
+                                    child: Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: AppColors.primary.withValues(alpha: 0.8),
+                                      size: 28,
+                                    ),
+                                  ),
+                      ),
+                      if (selectedLocalFile != null || (currentProfileAvatar != null && !avatarOptions.contains(currentProfileAvatar)))
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black.withValues(alpha: 0.3),
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.camera_alt_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (isSelected)
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: AppColors.primary, width: 3),
+                            ),
+                            child: const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.primary,
+                              size: 24,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            // Dicebear avatars
+            final url = avatarOptions[index - 1];
+            final isSelected = url == selectedAvatarUrl && selectedLocalFile == null;
 
             return GestureDetector(
-              onTap: () => onSelected(url),
+              onTap: () => onDicebearSelected(url),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOut,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : Colors.transparent,
+                    color: isSelected ? AppColors.primary : Colors.transparent,
                     width: 3,
                   ),
                   boxShadow: isSelected
@@ -385,33 +526,10 @@ class _AvatarPickerSection extends StatelessWidget {
                         ),
                         errorWidget: (_, __, ___) => Container(
                           color: AppColors.primary.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person,
-                              color: AppColors.primary, size: 24),
+                          child: const Icon(Icons.person, color: AppColors.primary, size: 24),
                         ),
                       ),
                     ),
-                    // "Mine" badge for first (current user) avatar
-                    if (isCurrentUser)
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            border:
-                                Border.all(color: Colors.white, width: 1.5),
-                          ),
-                          child: const Icon(
-                            Icons.star_rounded,
-                            color: Colors.white,
-                            size: 10,
-                          ),
-                        ),
-                      ),
-                    // Checkmark overlay when selected
                     if (isSelected)
                       Positioned.fill(
                         child: DecoratedBox(
@@ -431,17 +549,6 @@ class _AvatarPickerSection extends StatelessWidget {
               ),
             );
           },
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: Text(
-            '★ = ${l10n.currentAvatarLabel}',
-            style: AppTypography.textTheme.labelSmall?.copyWith(
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
-            ),
-          ),
         ),
       ],
     );

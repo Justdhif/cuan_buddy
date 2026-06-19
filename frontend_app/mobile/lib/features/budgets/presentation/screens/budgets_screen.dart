@@ -399,11 +399,11 @@ class _BudgetCard extends StatelessWidget {
                         final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (txCurrency == currencyCode) return const SizedBox.shrink();
                         
-                        final convertedAsync = ref.watch(convertedAmountProvider({
-                          'amount': spentAmount,
-                          'from': txCurrency,
-                          'to': currencyCode,
-                        }));
+                        final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                          amount: spentAmount,
+                          from: txCurrency,
+                          to: currencyCode,
+                        )));
                         return convertedAsync.when(
                           data: (converted) => Text(
                             '≈ ${fmt.format(converted)}',
@@ -435,11 +435,11 @@ class _BudgetCard extends StatelessWidget {
                         final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (txCurrency == currencyCode) return const SizedBox.shrink();
                         
-                        final convertedAsync = ref.watch(convertedAmountProvider({
-                          'amount': limitAmount,
-                          'from': txCurrency,
-                          'to': currencyCode,
-                        }));
+                        final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                          amount: limitAmount,
+                          from: txCurrency,
+                          to: currencyCode,
+                        )));
                         return convertedAsync.when(
                           data: (converted) => Text(
                             '≈ ${fmt.format(converted)}',
