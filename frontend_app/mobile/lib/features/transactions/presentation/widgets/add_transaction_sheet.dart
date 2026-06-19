@@ -205,69 +205,25 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
           Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.surfaceDark
+                  ? AppColors.backgroundDark
                   : AppColors.borderLight.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _type = 'expense';
-                      _selectedCategoryId = null;
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _type == 'expense'
-                            ? AppColors.danger
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        l10n.expenseType,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.textTheme.titleSmall?.copyWith(
-                          color: _type == 'expense'
-                              ? Colors.white
-                              : (isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                _buildTypeTab(
+                  context: context,
+                  targetType: 'expense',
+                  label: l10n.expenseType,
+                  activeColor: AppColors.danger,
+                  isDark: isDark,
                 ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _type = 'income';
-                      _selectedCategoryId = null;
-                    }),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _type == 'income'
-                            ? AppColors.success
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        l10n.incomeType,
-                        textAlign: TextAlign.center,
-                        style: AppTypography.textTheme.titleSmall?.copyWith(
-                          color: _type == 'income'
-                              ? Colors.white
-                              : (isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                _buildTypeTab(
+                  context: context,
+                  targetType: 'income',
+                  label: l10n.incomeType,
+                  activeColor: AppColors.success,
+                  isDark: isDark,
                 ),
               ],
             ),
@@ -549,6 +505,46 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         itemCount: 5,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
+      ),
+    );
+  }
+
+  /// Builds a single type tab, identical to the style in _FilterRow
+  Widget _buildTypeTab({
+    required BuildContext context,
+    required String targetType,
+    required String label,
+    required Color activeColor,
+    required bool isDark,
+  }) {
+    final isSelected = _type == targetType;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() {
+          _type = targetType;
+          _selectedCategoryId = null;
+        }),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? activeColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTypography.textTheme.titleSmall?.copyWith(
+              color: isSelected
+                  ? Colors.white
+                  : (isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
       ),
     );
   }

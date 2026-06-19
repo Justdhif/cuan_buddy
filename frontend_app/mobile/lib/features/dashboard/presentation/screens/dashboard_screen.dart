@@ -17,6 +17,8 @@ import '../../../notifications/presentation/providers/notifications_provider.dar
 import '../providers/dashboard_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/currency_service.dart';
+import '../../../../core/services/widget_service.dart';
+import '../widgets/ai_insight_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -31,12 +33,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Initialise Socket.IO connection once profile loads
+    // Initialise Socket.IO connection once profile loads, then warm-up
+    // the notifications provider so its socket listener is registered
+    // immediately after the connection is established.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final profile = await ref.read(profileProvider.future);
       final userId = profile['userId'] as String? ?? profile['id'] as String?;
       if (userId != null && userId.isNotEmpty) {
         ref.read(socketServiceProvider).connect(userId);
+        // Warm-up the notifications provider *after* connect() so that its
+        // onConnected callback fires with the correct timing.
+        ref.read(notificationsNotifierProvider);
         // Check for auto backup on launch
         ref.read(backupWorkerProvider).checkAndRunAutoBackup();
       }
@@ -50,6 +57,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final transactionsAsync = ref.watch(recentTransactionsProvider);
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
+
+    ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider, (previous, next) {
+      if (next.hasValue && next.value != null) {
+        final data = next.value!;
+        final balance = (data['balance'] as num? ?? 0).toDouble();
+        final income = (data['totalIncome'] as num? ?? 0).toDouble();
+        final expense = (data['totalExpense'] as num? ?? 0).toDouble();
+        final currency = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+        
+        // Push data to Android Homescreen Widget
+        WidgetService.updateWidgetData(balance: balance, income: income, expense: expense, currency: currency);
+      }
+    });
 
     return Scaffold(
       body: GestureDetector(
@@ -95,6 +115,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     loading: () => const SkeletonCard(height: 80),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: AiInsightCard(),
                 ),
               ),
               SliverToBoxAdapter(

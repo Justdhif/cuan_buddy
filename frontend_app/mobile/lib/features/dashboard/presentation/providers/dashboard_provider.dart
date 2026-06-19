@@ -10,7 +10,7 @@ final analyticsSummaryProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
   // We need to get the user's base currency to convert transactions properly
   String baseCurrency = 'IDR'; // fallback
   try {
-    final profileRes = await dio.get('/user-profile');
+    final profileRes = await dio.get('/profiles/me');
     if (profileRes.data != null && profileRes.data['currency'] != null) {
       baseCurrency = profileRes.data['currency'];
     }

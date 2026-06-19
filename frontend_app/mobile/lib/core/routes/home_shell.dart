@@ -93,6 +93,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
         shadowColor: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.black12,
         cornerRadius: 0,
         elevation: isDark ? 8 : 4,
+        height: 60 + (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom * 0.6 : 0),
         initialActiveIndex: currentIndex,
         onTap: onTap,
         items: [

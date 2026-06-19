@@ -5,6 +5,12 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../providers/notifications_provider.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/providers/language_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/services/currency_service.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -88,19 +94,49 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   }
 }
 
-class _NotificationTile extends StatelessWidget {
+class _NotificationTile extends ConsumerWidget {
   const _NotificationTile({required this.notif, required this.onTap});
   final dynamic notif;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isRead = notif['isRead'] as bool? ?? false;
-    final title = notif['title'] as String? ?? l10n.notification;
-    final message = notif['message'] as String? ?? '';
+    String title = notif['title'] as String? ?? l10n.notification;
+    String message = notif['message'] as String? ?? '';
     final createdAt = notif['createdAtFormatted'] as String? ?? '';
+
+    if (title == 'TRANSACTION_RECORDED') {
+      final isId = ref.watch(languageProvider) == 'id';
+      title = isId ? 'Transaksi Baru Tercatat' : 'New Transaction Recorded';
+      try {
+        final payload = jsonDecode(message);
+        final type = payload['type'];
+        final amount = payload['amount'] is num ? (payload['amount'] as num).toDouble() : double.parse(payload['amount'].toString());
+        final currency = payload['currency'] as String;
+        final typeStr = type == 'income' ? (isId ? 'pemasukan' : 'income') : (isId ? 'pengeluaran' : 'expense');
+        final txCurrencySymbol = AppConstants.getCurrencySymbol(currency);
+        final fmt = NumberFormat.currency(locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
+        final amountStr = fmt.format(amount);
+        message = isId 
+            ? 'Anda telah berhasil mencatat $typeStr sebesar $amountStr.'
+            : 'You have successfully recorded a $typeStr of $amountStr.';
+            
+        final defaultCurrency = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+        if (currency != defaultCurrency) {
+          final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(amount: amount, from: currency, to: defaultCurrency)));
+          final defCurrencySymbol = AppConstants.getCurrencySymbol(defaultCurrency);
+          final defFmt = NumberFormat.currency(locale: 'en_US', symbol: defCurrencySymbol, decimalDigits: 0);
+          final convertedText = convertedAsync.maybeWhen(
+            data: (converted) => ' (≈ ${defFmt.format(converted)})',
+            orElse: () => '',
+          );
+          message += convertedText;
+        }
+      } catch (_) {}
+    }
 
     return InkWell(
       onTap: onTap,
