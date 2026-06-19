@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { users, userProfiles } from '../database/schema';
+import { users, userProfiles, categories } from '../database/schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -48,6 +48,25 @@ export class AuthService {
         fullName: registerDto.fullName,
         avatar: avatarValue,
       });
+
+      const defaultCategories = [
+        { slug: 'food', name: 'Food', emojiIcon: '🍔', colorCode: '#FF5733' },
+        { slug: 'transport', name: 'Transport', emojiIcon: '🚕', colorCode: '#FFC300' },
+        { slug: 'entertainment', name: 'Entertainment', emojiIcon: '🎮', colorCode: '#900C3F' },
+        { slug: 'shopping', name: 'Shopping', emojiIcon: '🛍', colorCode: '#DAF7A6' },
+        { slug: 'bills', name: 'Bills', emojiIcon: '💡', colorCode: '#581845' },
+        { slug: 'salary', name: 'Salary', emojiIcon: '💼', colorCode: '#2ECC71' },
+        { slug: 'bonus', name: 'Bonus', emojiIcon: '🎁', colorCode: '#F1C40F' },
+        { slug: 'investment', name: 'Investment', emojiIcon: '📈', colorCode: '#3498DB' },
+        { slug: 'savings', name: 'Tabungan', emojiIcon: '🐖', colorCode: '#8E44AD' },
+      ];
+
+      const categoriesToInsert = defaultCategories.map((cat) => ({
+        ...cat,
+        userId: insertedUser.id,
+      }));
+
+      await this.db.insert(categories).values(categoriesToInsert);
 
       const newUser = insertedUser;
 

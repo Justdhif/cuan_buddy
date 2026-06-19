@@ -230,6 +230,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get categoryNameHint => 'e.g., Food & Dining';
   @override String get createCategory => 'Create Category';
   @override String get saveChanges => 'Save Changes';
+  @override String get categorySaved => 'Category saved successfully';
   @override String get pleaseFillAllFields => 'Please fill all fields';
   @override String get anErrorOccurred => 'An error occurred';
 

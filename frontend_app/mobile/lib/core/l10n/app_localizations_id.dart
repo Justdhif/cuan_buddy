@@ -236,6 +236,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get categoryNameHint => 'mis., Makanan & Minuman';
   @override String get createCategory => 'Buat Kategori';
   @override String get saveChanges => 'Simpan Perubahan';
+  @override String get categorySaved => 'Kategori berhasil disimpan';
   @override String get pleaseFillAllFields => 'Harap isi semua kolom';
   @override String get anErrorOccurred => 'Terjadi kesalahan';
 

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/utils/app_snackbar.dart';
 import '../providers/category_provider.dart';
 
 class CategoryFormSheet extends ConsumerStatefulWidget {
@@ -45,8 +46,11 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     final emoji = _emojiController.text.trim();
 
     if (name.isEmpty || emoji.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.pleaseFillAllFields)),
+      AppSnackbar.show(
+        context,
+        title: l10n.info,
+        message: l10n.pleaseFillAllFields,
+        type: SnackbarType.warning,
       );
       return;
     }
@@ -67,10 +71,19 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
 
     if (success) {
       Navigator.pop(context);
+      AppSnackbar.show(
+        context,
+        title: l10n.success,
+        message: l10n.categorySaved,
+        type: SnackbarType.success,
+      );
     } else {
       final error = ref.read(categoryNotifierProvider).error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error ?? l10n.anErrorOccurred)),
+      AppSnackbar.show(
+        context,
+        title: l10n.error,
+        message: error ?? l10n.anErrorOccurred,
+        type: SnackbarType.error,
       );
     }
   }

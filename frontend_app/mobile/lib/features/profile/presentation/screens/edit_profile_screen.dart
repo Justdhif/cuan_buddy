@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:dio/dio.dart';
@@ -84,7 +85,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
   Future<void> _pickAvatarAndCrop() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
     
     if (pickedFile == null) return;
     
@@ -125,11 +131,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       // If user picked a local file, upload it now
       if (_selectedLocalFile != null) {
         final dio = ref.read(dioClientProvider).dio;
+        
+        // Read file bytes and validate size (max ~3MB to stay under Vercel 4.5MB limit)
+        final Uint8List rawBytes = await _selectedLocalFile!.readAsBytes();
+        
+        // Determine file extension for filename
+        final ext = _selectedLocalFile!.path.split('.').last.toLowerCase();
+        final filename = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        
         final formData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(_selectedLocalFile!.path),
+          'file': MultipartFile.fromBytes(
+            rawBytes,
+            filename: filename,
+          ),
         });
         
-        final response = await dio.post('/profiles/avatar/upload', data: formData);
+        final response = await dio.post(
+          '/profiles/avatar/upload',
+          data: formData,
+          options: Options(
+            headers: {'Content-Type': 'multipart/form-data'},
+          ),
+        );
         finalAvatarUrl = response.data['avatar'] as String;
       }
 
@@ -154,12 +177,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.profileUpdatedSuccess),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppSnackbar.show(
+          context,
+          title: l10n.success,
+          message: l10n.profileUpdatedSuccess,
+          type: SnackbarType.success,
         );
       }
     } catch (e) {

@@ -240,6 +240,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Image.asset(
+            'assets/icon/app_icon.png',
+            width: 36,
+            height: 36,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: profileAsync.isLoading && profile.isEmpty
                 ? Row(

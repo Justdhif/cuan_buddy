@@ -87,11 +87,12 @@ class _CuanBuddyNavBar extends ConsumerWidget {
       style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
       child: ConvexAppBar(
         style: TabStyle.fixedCircle,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: isDark ? AppColors.surfaceDark : Theme.of(context).scaffoldBackgroundColor,
         color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
         activeColor: AppColors.primary,
+        shadowColor: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.black12,
         cornerRadius: 0,
-        elevation: 4,
+        elevation: isDark ? 8 : 4,
         initialActiveIndex: currentIndex,
         onTap: onTap,
         items: [

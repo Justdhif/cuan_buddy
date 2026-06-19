@@ -227,6 +227,7 @@ abstract class AppLocalizations {
   String get categoryNameHint;
   String get createCategory;
   String get saveChanges;
+  String get categorySaved;
   String get pleaseFillAllFields;
   String get anErrorOccurred;
 
