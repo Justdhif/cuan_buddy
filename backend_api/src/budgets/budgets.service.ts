@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, gte, lte } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { budgets } from '../database/schema';
+import { budgets, transactions } from '../database/schema';
 import { CreateBudgetDto, UpdateBudgetDto } from './dto/budget.dto';
 import { formatPaginatedResponse, formatCurrency } from '../common/utils/formatter.util';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -58,9 +58,31 @@ export class BudgetsService {
       offset: offset,
     });
 
-    const formattedData = data.map(b => ({
-      ...b,
-      limitAmountFormatted: formatCurrency(b.limitAmount),
+    const formattedData = await Promise.all(data.map(async (b) => {
+      const [year, month] = b.monthYear.split('-');
+      const startDate = new Date(Number(year), Number(month) - 1, 1);
+      const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
+      
+      const spentData = await this.db
+        .select({ total: sql<number>`SUM(amount::numeric)` })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            eq(transactions.categoryId, b.categoryId),
+            eq(transactions.type, 'expense'),
+            gte(transactions.date, startDate),
+            lte(transactions.date, endDate)
+          )
+        );
+        
+      const spentAmount = Number(spentData[0]?.total || 0);
+
+      return {
+        ...b,
+        limitAmountFormatted: formatCurrency(b.limitAmount),
+        spentAmount: spentAmount,
+      };
     }));
 
     // Dynamic count query
