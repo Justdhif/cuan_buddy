@@ -6,7 +6,8 @@ import android.content.SharedPreferences
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetProvider
 
-class HomeWidgetProvider : HomeWidgetProvider() {
+class AppHomeWidgetProvider : HomeWidgetProvider() {
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -15,13 +16,13 @@ class HomeWidgetProvider : HomeWidgetProvider() {
     ) {
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_layout).apply {
-                val balance = widgetData.getString("tv_balance", "Rp 0")
-                val income = widgetData.getString("tv_income", "Rp 0")
-                val expense = widgetData.getString("tv_expense", "Rp 0")
+                val balance = widgetData.getString("balance", "Rp 0")
+                val income = widgetData.getString("income", "Rp 0")
+                val expense = widgetData.getString("expense", "Rp 0")
 
-                setTextViewText(R.id.tv_balance, balance)
-                setTextViewText(R.id.tv_income, income)
-                setTextViewText(R.id.tv_expense, expense)
+                setTextViewText(R.id.widget_balance, balance)
+                setTextViewText(R.id.widget_income, income)
+                setTextViewText(R.id.widget_expense, expense)
             }
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }

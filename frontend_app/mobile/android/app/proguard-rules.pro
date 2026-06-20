@@ -1,0 +1,2 @@
+-keep class es.antonborri.home_widget.** { *; }
+-keep class com.cuanbuddy.cuan_buddy_app.AppHomeWidgetProvider { *; }

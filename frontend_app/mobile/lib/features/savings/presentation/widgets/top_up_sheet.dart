@@ -9,6 +9,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../providers/savings_provider.dart';
 
 void showTopUpSheet(BuildContext context, Map<String, dynamic> goal) {
@@ -127,7 +128,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         left: 24,
         right: 24,
-        top: 24,
+        top: 12,
       ),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -137,6 +138,17 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -240,19 +252,11 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           ),
           const SizedBox(height: 32),
           
-          ElevatedButton(
-            onPressed: _isLoading ? null : _submit,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isAdding ? AppColors.primary : AppColors.danger,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            ),
-            child: _isLoading
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Text(
-                    _isAdding ? l10n.addFunds : l10n.reduceFunds,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
+          AppButton(
+            label: _isAdding ? l10n.addFunds : l10n.reduceFunds,
+            onPressed: _submit,
+            isLoading: _isLoading,
+            type: _isAdding ? AppButtonType.primary : AppButtonType.danger,
           ),
           const SizedBox(height: 32),
         ],

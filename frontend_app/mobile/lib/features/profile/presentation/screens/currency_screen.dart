@@ -418,7 +418,7 @@ class _CurrencyPickerSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: isDark ? Colors.grey[700] : Colors.grey[300],
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

@@ -18,6 +18,8 @@ import '../providers/dashboard_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/currency_service.dart';
 import '../../../../core/services/widget_service.dart';
+import '../../../../core/providers/widget_preferences_provider.dart';
+import '../../../savings/presentation/providers/savings_provider.dart';
 import '../widgets/ai_insight_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -30,9 +32,12 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
 
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     // Initialise Socket.IO connection once profile loads, then warm-up
     // the notifications provider so its socket listener is registered
     // immediately after the connection is established.
@@ -48,6 +53,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.read(backupWorkerProvider).checkAndRunAutoBackup();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -71,39 +82,93 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     });
 
+    ref.listen<SavingsState>(savingsNotifierProvider, (previous, next) {
+      final selectedGoalId = ref.read(selectedSavingsWidgetIdProvider);
+      if (selectedGoalId != null) {
+        try {
+          final goal = next.goals.firstWhere((g) => g['id'] == selectedGoalId);
+          final rawT = goal['targetAmount'];
+          final rawS = goal['savedAmount'];
+          final target = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+          final saved = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+          final currency = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+          final emoji = goal['icon'] as String? ?? '🎯';
+          final name = goal['name'] as String? ?? 'Savings Goal';
+
+          WidgetService.updateSavingsWidgetData(
+            emoji: emoji,
+            name: name,
+            savedAmount: saved,
+            targetAmount: target,
+            currency: currency,
+          );
+        } catch (e) {
+          // Goal not found or error parsing
+        }
+      }
+    });
+
     return Scaffold(
       body: GestureDetector(
         onTap: () {},
-        child: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(analyticsSummaryProvider);
-            ref.invalidate(financialHealthProvider);
-            ref.invalidate(recentTransactionsProvider);
-            ref.read(analyticsNotifierProvider.notifier).fetchAllAnalytics();
-          },
-          color: AppColors.primary,
-          child: CustomScrollView(
-            slivers: [
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: StickyHeaderDelegate(
-                  minHeight: 120, // Approximate header height
-                  maxHeight: 120,
-                  child: Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: _buildHeader(context, ref, profileAsync),
-                  ),
-                ),
-              ),
+        child: Stack(
+          children: [
+            AnimatedBuilder(
+              animation: _scrollController,
+              builder: (context, child) {
+                double offset = 0.0;
+                if (_scrollController.hasClients) {
+                  offset = _scrollController.offset;
+                }
+                // Prevent it from pulling down when overscrolling at the top
+                if (offset < 0) offset = 0;
+                return Positioned(
+                  top: -offset,
+                  left: 0,
+                  right: 0,
+                  child: child!,
+                );
+              },
+              child: const _TimeSceneryBackground(),
+            ),
+            Positioned.fill(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(analyticsSummaryProvider);
+                  ref.invalidate(financialHealthProvider);
+                  ref.invalidate(recentTransactionsProvider);
+                  ref.read(analyticsNotifierProvider.notifier).fetchAllAnalytics();
+                },
+                color: AppColors.primary,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _DashboardHeaderDelegate(
+                        minHeight: 120, // Approximate header height
+                        maxHeight: 120,
+                        baseColor: Theme.of(context).scaffoldBackgroundColor,
+                        builder: (context, shrinkOffset) {
+                          return _buildHeader(context, ref, profileAsync, shrinkOffset);
+                        },
+                      ),
+                    ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                   child: summaryAsync.when(
                     skipLoadingOnReload: true,
                     data: (data) => _buildBalanceCard(data, profileAsync),
                     loading: () => const SkeletonCard(height: 220),
                     error: (_, __) => const SkeletonCard(height: 220),
                   ),
+                ),
+              ),
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: AiInsightCard(),
                 ),
               ),
               SliverToBoxAdapter(
@@ -115,12 +180,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     loading: () => const SkeletonCard(height: 80),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: AiInsightCard(),
                 ),
               ),
               SliverToBoxAdapter(
@@ -242,6 +301,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ],
           ),
         ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -251,6 +313,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     BuildContext context,
     WidgetRef ref,
     AsyncValue<Map<String, dynamic>> profileAsync,
+    double shrinkOffset,
   ) {
     final profile = profileAsync.value ?? {};
     final name = profile['fullName'] as String? ?? 'You';
@@ -273,37 +336,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: profileAsync.isLoading && profile.isEmpty
-                ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        l10n.hello,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: AppColors.textSecondaryLight),
-                      ),
-                      const SizedBox(width: 120, child: SkeletonCard(height: 24)),
-                    ],
-                  )
-                : RichText(
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    text: TextSpan(
-                      text: l10n.hello,
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: firstName,
-                          style: AppTypography.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: Theme.of(context).textTheme.bodyLarge?.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+            child: Text(
+              'Cuan Buddy',
+              style: AppTypography.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                letterSpacing: -0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Row(
             children: [
@@ -871,6 +913,115 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget Function(BuildContext, double) builder;
+  final double minHeight;
+  final double maxHeight;
+  final Color baseColor;
+
+  _DashboardHeaderDelegate({
+    required this.builder,
+    required this.minHeight,
+    required this.maxHeight,
+    required this.baseColor,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    // Opacity increases as we scroll up to 50 pixels
+    final double opacity = (shrinkOffset / 50).clamp(0.0, 1.0);
+    return Container(
+      color: baseColor.withValues(alpha: opacity),
+      child: builder(context, shrinkOffset),
+    );
+  }
+
+  @override
+  double get maxExtent => maxHeight;
+
+  @override
+  double get minExtent => minHeight;
+
+  @override
+  bool shouldRebuild(covariant _DashboardHeaderDelegate oldDelegate) {
+    return maxHeight != oldDelegate.maxHeight ||
+        minHeight != oldDelegate.minHeight ||
+        baseColor != oldDelegate.baseColor;
+  }
+}
+
+class _TimeSceneryBackground extends StatelessWidget {
+  const _TimeSceneryBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final hour = now.hour;
+    
+    List<Color> gradientColors;
+    String emoji;
+    
+    if (hour >= 6 && hour < 12) {
+      // Morning
+      gradientColors = [const Color(0xFF87CEEB).withValues(alpha: 0.6), const Color(0xFFFFE4B5).withValues(alpha: 0.2)];
+      emoji = '🌅';
+    } else if (hour >= 12 && hour < 15) {
+      // Afternoon
+      gradientColors = [const Color(0xFF00BFFF).withValues(alpha: 0.6), const Color(0xFF87CEEB).withValues(alpha: 0.2)];
+      emoji = '☀️';
+    } else if (hour >= 15 && hour < 19) {
+      // Evening
+      gradientColors = [const Color(0xFFFF7E5F).withValues(alpha: 0.6), const Color(0xFFFEB47B).withValues(alpha: 0.2)];
+      emoji = '🌇';
+    } else {
+      // Night
+      gradientColors = [const Color(0xFF2C3E50).withValues(alpha: 0.8), const Color(0xFF000000).withValues(alpha: 0.4)];
+      emoji = '🌙';
+    }
+
+    return Container(
+      height: 350,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: gradientColors,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: 40,
+            top: 60,
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 100),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 150,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.0),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

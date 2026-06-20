@@ -101,9 +101,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     return CustomScrollView(
       slivers: [
         // Summary Header Card
-        if (state.budgets.isNotEmpty)
-          SliverPersistentHeader(
-            pinned: true,
+        SliverPersistentHeader(
+          pinned: true,
             delegate: StickyHeaderDelegate(
               minHeight: 140, // Match typical card height
               maxHeight: 140,
@@ -198,55 +197,76 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           ),
 
         // Status Filter Chips
-        if (state.budgets.isNotEmpty)
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 60,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                children: ['All', 'On Track', 'Warning', 'Exceeded'].map((status) {
-                  final isSelected = _statusFilter == status;
-                  Color? statusColor;
-                  if (status == 'On Track') statusColor = AppColors.success;
-                  if (status == 'Warning') statusColor = AppColors.warning;
-                  if (status == 'Exceeded') statusColor = AppColors.danger;
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: 60,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              children: ['All', 'On Track', 'Warning', 'Exceeded'].asMap().entries.map((entry) {
+                final index = entry.key;
+                final status = entry.value;
+                final isSelected = _statusFilter == status;
+                Color statusColor = AppColors.primary;
+                if (status == 'On Track') statusColor = AppColors.success;
+                if (status == 'Warning') statusColor = AppColors.warning;
+                if (status == 'Exceeded') statusColor = AppColors.danger;
 
-                  final String translatedStatus = switch (status) {
-                    'All' => l10n.all,
-                    'On Track' => l10n.onTrack,
-                    'Warning' => l10n.warning,
-                    'Exceeded' => l10n.exceeded,
-                    _ => status,
-                  };
+                final String translatedStatus = switch (status) {
+                  'All' => l10n.all,
+                  'On Track' => l10n.onTrack,
+                  'Warning' => l10n.warning,
+                  'Exceeded' => l10n.exceeded,
+                  _ => status,
+                };
+                
+                final String emoji = switch (status) {
+                  'All' => '📁',
+                  'On Track' => '✅',
+                  'Warning' => '⚠️',
+                  'Exceeded' => '❌',
+                  _ => '📁',
+                };
 
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(translatedStatus),
-                      selected: isSelected,
-                      onSelected: (selected) {
-                        if (selected) setState(() => _statusFilter = status);
-                      },
-                      selectedColor: (statusColor ?? AppColors.primary).withValues(alpha: isDark ? 0.3 : 0.1),
-                      labelStyle: TextStyle(
-                        color: isSelected 
-                            ? (statusColor ?? AppColors.primary)
-                            : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                return Padding(
+                  padding: EdgeInsets.only(right: index == 3 ? 0 : 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      if (!isSelected) setState(() => _statusFilter = status);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeInOut,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected ? statusColor.withValues(alpha: 0.15) : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected ? statusColor : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                          width: isSelected ? 1.5 : 1,
+                        ),
                       ),
-                      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                      side: BorderSide(
-                        color: isSelected 
-                            ? (statusColor ?? AppColors.primary)
-                            : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(emoji, style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Text(
+                            translatedStatus,
+                            style: AppTypography.textTheme.labelMedium?.copyWith(
+                              color: isSelected ? statusColor : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
+        ),
 
         // Budgets List
         if (state.budgets.isEmpty)
@@ -307,7 +327,7 @@ class _BudgetCard extends StatelessWidget {
     final rawS = tx['spentAmount'];
     final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
     final categoryName = tx['category']?['name'] as String? ?? tx['categoryName'] as String? ?? l10n.budget;
-    final categoryEmoji = tx['category']?['emoji'] as String? ?? tx['categoryEmoji'] as String? ?? '📦';
+    final categoryEmoji = tx['category']?['emojiIcon'] as String? ?? tx['category']?['emoji'] as String? ?? tx['categoryEmoji'] as String? ?? '📦';
     final monthYear = tx['monthYear'] as String? ?? '';
 
     final percentage = limitAmount > 0 ? (spentAmount / limitAmount) : 0.0;

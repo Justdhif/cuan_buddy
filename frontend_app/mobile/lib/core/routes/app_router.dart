@@ -18,6 +18,7 @@ import '../../features/profile/presentation/screens/profile_setup_screen.dart';
 import '../../features/profile/presentation/screens/backup_settings_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
+import '../../features/profile/presentation/screens/widget_settings_screen.dart';
 
 import '../../features/profile/presentation/screens/currency_screen.dart';
 
@@ -101,6 +102,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final profile = state.extra as Map<String, dynamic>;
           return _buildPage(state, EditProfileScreen(profile: profile));
         },
+      ),
+      GoRoute(
+        path: '/profile/widgets',
+        pageBuilder: (context, state) => _buildPage(state, const WidgetSettingsScreen()),
       ),
       GoRoute(
         path: '/currency',

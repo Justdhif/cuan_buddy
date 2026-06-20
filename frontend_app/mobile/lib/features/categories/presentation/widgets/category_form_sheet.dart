@@ -115,7 +115,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
-        top: 24,
+        top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       decoration: BoxDecoration(
@@ -126,6 +126,17 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           Text(
             widget.initialCategory == null ? l10n.newCategory : l10n.editCategory,
             style: AppTypography.textTheme.titleMedium,

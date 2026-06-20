@@ -30,7 +30,7 @@ export class AiController {
   })
   @ApiResponse({ status: 201, description: 'AI reply berhasil digenerate' })
   chat(@Request() req: any, @Body() dto: AiChatDto) {
-    return this.aiService.chat(req.user.sub, dto.message);
+    return this.aiService.chat(req.user.userId, dto.message);
   }
 
   @Get('insights')
@@ -40,7 +40,7 @@ export class AiController {
   })
   @ApiResponse({ status: 200, description: 'Insights berhasil digenerate' })
   getInsights(@Request() req: any) {
-    return this.aiService.getInsights(req.user.sub);
+    return this.aiService.getInsights(req.user.userId);
   }
 
   @Post('categorize')
@@ -60,6 +60,6 @@ export class AiController {
   })
   @ApiResponse({ status: 200, description: 'Rekomendasi budget berhasil digenerate' })
   getBudgetRecommendation(@Request() req: any) {
-    return this.aiService.getBudgetRecommendation(req.user.sub);
+    return this.aiService.getBudgetRecommendation(req.user.userId);
   }
 }

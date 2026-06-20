@@ -201,6 +201,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 onTap: () => context.push('/currency'),
               ),
+              _buildListTile(
+                context,
+                icon: Icons.widgets_outlined,
+                title: 'Widget Settings',
+                onTap: () => context.push('/profile/widgets'),
+              ),
             ],
           ),
           const SizedBox(height: 24),
@@ -348,9 +354,9 @@ class _LanguagePickerSheet extends StatelessWidget {
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
-                color: AppColors.borderLight,
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

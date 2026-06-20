@@ -168,8 +168,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               
               // ─── Submit Button ────────────────────────────────────────────
               AppButton(
-                label: _isLoading ? l10n.loading : l10n.changePassword,
-                onPressed: _isLoading ? null : _submit,
+                label: l10n.changePassword,
+                onPressed: _submit,
+                isLoading: _isLoading,
               ),
             ],
           ),

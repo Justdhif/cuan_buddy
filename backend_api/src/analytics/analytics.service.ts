@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, savingsGoals } from '../database/schema';
+import { transactions, savingsGoals, budgets } from '../database/schema';
 import { formatCurrency } from '../common/utils/formatter.util';
 
 @Injectable()
@@ -74,7 +74,6 @@ export class AnalyticsService {
   }
 
   async getFinancialHealth(userId: string) {
-    // Reuse getSummary — already optimized to single query
     const summary = await this.getSummary(userId);
     let score = 50;
 
@@ -85,9 +84,62 @@ export class AnalyticsService {
       else score -= 20;
     }
 
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const userBudgets = await this.db.query.budgets.findMany({
+      where: and(eq(budgets.userId, userId), eq(budgets.monthYear, currentMonth)),
+    });
+
+    let overspentCount = 0;
+    if (userBudgets.length > 0) {
+      const expenses = await this.db
+        .select({
+          categoryId: transactions.categoryId,
+          total: sql<number>`SUM(amount::numeric)`,
+        })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            eq(transactions.type, 'expense'),
+            sql`TO_CHAR(date, 'YYYY-MM') = ${currentMonth}`
+          )
+        )
+        .groupBy(transactions.categoryId);
+
+      const expensesByCat = expenses.reduce((acc: any, row: any) => {
+        acc[row.categoryId] = Number(row.total);
+        return acc;
+      }, {});
+
+      for (const budget of userBudgets) {
+        const spent = expensesByCat[budget.categoryId] || 0;
+        if (spent > Number(budget.limitAmount)) {
+          overspentCount++;
+        }
+      }
+    }
+
+    let status = 'healthy';
+    let message = 'Your finances are looking great!';
+
+    if (overspentCount > 0) {
+      score -= 20 * overspentCount;
+      status = overspentCount >= 2 ? 'danger' : 'warning';
+      message = `You have exceeded your budget in ${overspentCount} categor${overspentCount > 1 ? 'ies' : 'y'}.`;
+    } else if (summary.totalIncome > 0 && summary.balance < 0) {
+      status = 'warning';
+      message = 'You are spending more than you earn.';
+    } else if (score < 50) {
+      status = 'warning';
+      message = 'Your savings rate is low. Try to save more!';
+    } else if (score >= 80) {
+      status = 'excellent';
+    }
+
     return {
       score: Math.min(Math.max(score, 0), 100),
-      status: score >= 80 ? 'Excellent' : score >= 50 ? 'Good' : 'Needs Improvement',
+      status,
+      message,
     };
   }
 

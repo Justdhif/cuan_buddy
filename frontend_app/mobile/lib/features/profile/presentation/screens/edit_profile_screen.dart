@@ -310,8 +310,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
                 // ─── Save Button ───────────────────────────────────────────
                 AppButton(
-                  label: _isSaving ? l10n.savingLabel : l10n.saveChanges,
-                  onPressed: _isSaving ? null : _save,
+                  label: l10n.saveChanges,
+                  onPressed: _save,
+                  isLoading: _isSaving,
                 ),
               ],
             ),
