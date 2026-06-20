@@ -36,6 +36,7 @@ export class AnalyticsService {
     const results = await this.db
       .select({
         categoryName: sql<string>`COALESCE(c.name, 'Uncategorized')`,
+        emojiIcon: sql<string>`MAX(c.emoji_icon)`,
         total: sql<number>`SUM(t.amount::numeric)`,
       })
       .from(sql`${transactions} t`)
@@ -46,6 +47,7 @@ export class AnalyticsService {
 
     return results.map((row: any) => ({
       category: row.categoryName,
+      emojiIcon: row.emojiIcon ?? '📦',
       amount: Number(row.total),
       amountFormatted: formatCurrency(Number(row.total)),
     }));

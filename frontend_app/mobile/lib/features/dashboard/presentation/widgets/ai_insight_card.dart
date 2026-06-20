@@ -22,6 +22,9 @@ class AiInsightCard extends ConsumerWidget {
   }
 
   Widget _buildMarquee(BuildContext context, String insight, bool isDark) {
+    // Clean text: Marquee requires a single line, so replace newlines with bullets
+    final cleanInsight = insight.replaceAll(RegExp(r'\n+'), '   •   ');
+    
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -53,7 +56,7 @@ class AiInsightCard extends ConsumerWidget {
           Expanded(
             child: Center(
               child: Marquee(
-                text: insight,
+                text: cleanInsight,
                 style: AppTypography.textTheme.bodyMedium?.copyWith(
                   color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                   fontWeight: FontWeight.w600,

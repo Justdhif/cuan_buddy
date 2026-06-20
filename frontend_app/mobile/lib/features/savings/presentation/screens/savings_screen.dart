@@ -8,10 +8,12 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/widgets/sticky_header_delegate.dart';
 import '../../../../core/services/currency_service.dart';
+// Removed app logger
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
 import '../widgets/add_savings_sheet.dart';
 import '../widgets/top_up_sheet.dart';
+import '../widgets/savings_gamification_widget.dart';
 
 class SavingsScreen extends ConsumerStatefulWidget {
   const SavingsScreen({super.key});
@@ -474,19 +476,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: safePercentage,
-              backgroundColor: isDark 
-                  ? AppColors.borderDark 
-                  : AppColors.borderLight,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isCompleted ? AppColors.success : AppColors.primary
-              ),
-              minHeight: 8,
-            ),
-          ),
+          SavingsGamificationWidget(percentage: safePercentage),
           
           // Action Button
           if (!isCompleted) ...[

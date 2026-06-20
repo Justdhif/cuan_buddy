@@ -21,7 +21,7 @@ import '../../../../core/services/widget_service.dart';
 import '../../../../core/providers/widget_preferences_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../widgets/ai_insight_card.dart';
-import '../../transactions/presentation/widgets/ai_voice_button.dart';
+import '../../../transactions/presentation/widgets/ai_voice_button.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
