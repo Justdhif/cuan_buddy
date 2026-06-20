@@ -61,7 +61,7 @@ export class EmailService {
       this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     // We can point this directly to our backend GET /api/auth/verify?token=... for testing
     // In production, it usually points to frontend, which then calls backend POST /api/auth/verify
-    const verifyUrl = `${frontendUrl}/api/auth/verify?token=${token}`;
+    const verifyUrl = `${frontendUrl}/?token=${token}`;
 
     const mailOptions = {
       from: `"CuanBuddy" <${this.configService.get<string>('SMTP_USER')}>`,
