@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq from 'groq-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 @Injectable()
 export class GroqService {
@@ -29,5 +32,28 @@ export class GroqService {
       temperature: 0.5, // Lower temp = more deterministic, fewer retries
     });
     return response.choices[0]?.message?.content ?? '';
+  }
+
+  /**
+   * Transcribe an audio file to text using Groq Whisper model.
+   */
+  async transcribeAudio(buffer: Buffer, originalName: string): Promise<string> {
+    // Write buffer to a temp file since the SDK expects a stream/file
+    const ext = path.extname(originalName) || '.m4a';
+    const tempFileName = `audio_${Date.now()}_${Math.random().toString(36).substring(7)}${ext}`;
+    const tempFilePath = path.join(os.tmpdir(), tempFileName);
+    fs.writeFileSync(tempFilePath, buffer);
+    
+    try {
+      const response = await this.client.audio.transcriptions.create({
+        file: fs.createReadStream(tempFilePath),
+        model: 'whisper-large-v3',
+      });
+      return response.text ?? '';
+    } finally {
+      if (fs.existsSync(tempFilePath)) {
+        fs.unlinkSync(tempFilePath);
+      }
+    }
   }
 }

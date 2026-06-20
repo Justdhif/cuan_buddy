@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/providers/widget_preferences_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../../../../core/services/widget_service.dart';
@@ -184,7 +185,13 @@ class WidgetSettingsScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               Expanded(
                 child: savingsState.goals.isEmpty
-                  ? const Center(child: Text('You have no active savings goals.'))
+                  ? Center(
+                      child: AppEmptyState(
+                        emoji: '🎯',
+                        title: 'No Savings Goals',
+                        subtitle: 'You have no active savings goals to display.',
+                      ),
+                    )
                   : ListView.builder(
                   itemCount: savingsState.goals.length,
                   itemBuilder: (context, index) {
@@ -234,8 +241,9 @@ class WidgetSettingsScreen extends ConsumerWidget {
               const SizedBox(height: 24),
             ],
           ),
-        );
-      },
+        ),
+      );
+    },
     );
   }
 }

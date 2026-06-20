@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, categories, savingsGoals } from '../database/schema';
+import { transactions, categories, savingsGoals, userProfiles } from '../database/schema';
 import { GroqService } from './groq.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { formatCurrency } from '../common/utils/formatter.util';
@@ -321,5 +321,94 @@ ${spendingData}`;
         'anomaly',
       );
     }
+  }
+
+  // ─────────────────────────────────────────────
+  // 6. VOICE TRANSACTION PROCESSING
+  // ─────────────────────────────────────────────
+  async processVoiceTransaction(userId: string, audioBuffer: Buffer, originalName: string): Promise<any> {
+    // 1. Transcribe audio to text using Whisper
+    const text = await this.groqService.transcribeAudio(audioBuffer, originalName);
+    
+    if (!text || text.trim().length === 0) {
+      throw new Error('Suara tidak terdengar jelas atau kosong.');
+    }
+
+    // 2. Fetch categories for precise matching
+    const cats = await this.db
+      .select({ id: categories.id, name: categories.name })
+      .from(categories);
+
+    // Fetch user profile to get their default currency
+    const [profile] = await this.db
+      .select({ currency: userProfiles.currency })
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, userId));
+    const defaultCurrency = profile?.currency ?? 'IDR';
+
+    const categoryList = cats.map((c: any) => c.name).join(', ');
+
+    const prompt = `You are an AI that extracts transaction details from a transcribed voice message.
+Extract the following information:
+1. amount: The total money spent or received (as a pure number, no currency symbols).
+2. currency: The currency mentioned in the voice (e.g. "USD", "IDR"). If the user says "ribu", "rupiah", "perak" it means IDR. If they say "dollar" it usually means USD. If no currency is mentioned, use the user's default currency: "${defaultCurrency}".
+3. category: The best matching category from this list: [${categoryList}]. If none matches perfectly, pick the closest or "Uncategorized".
+4. type: Either "income" or "expense".
+5. note: A short description of the transaction (in Indonesian if the input is in Indonesian).
+
+Voice Transcription: "${text}"
+
+Reply ONLY with valid JSON:
+{
+  "amount": 25000,
+  "currency": "IDR",
+  "category": "Food & Drink",
+  "type": "expense",
+  "note": "Makan siang warteg"
+}
+Do not add any explanations or markdown formatting.`;
+
+    const raw = await this.groqService.chat(
+      [{ role: 'user', content: prompt }],
+      200,
+    );
+
+    let parsed: any;
+    try {
+      const jsonMatch = raw.match(/\{.*?\}/s);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response');
+      }
+    } catch {
+      throw new Error('Gagal mengekstrak data dari suara.');
+    }
+
+    // Find category ID
+    const catMatch = cats.find((c: any) => c.name.toLowerCase() === parsed.category?.toLowerCase());
+    const categoryId = catMatch ? catMatch.id : null;
+
+    // 3. Save transaction to database
+    const [newTx] = await this.db.insert(transactions).values({
+      userId,
+      categoryId,
+      amount: parsed.amount.toString(),
+      currency: parsed.currency ?? defaultCurrency,
+      type: parsed.type === 'income' ? 'income' : 'expense',
+      note: parsed.note,
+      date: new Date(),
+    }).returning();
+
+    // Trigger anomaly detection in background
+    if (newTx.type === 'expense') {
+      this.detectAnomaly(userId, newTx.id, newTx.categoryId, Number(newTx.amount), newTx.type).catch(() => {});
+    }
+
+    return {
+      transaction: newTx,
+      transcription: text,
+      extracted: parsed,
+    };
   }
 }

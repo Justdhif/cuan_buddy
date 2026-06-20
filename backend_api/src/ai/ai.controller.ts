@@ -5,7 +5,10 @@ import {
   Body,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -61,5 +64,26 @@ export class AiController {
   @ApiResponse({ status: 200, description: 'Rekomendasi budget berhasil digenerate' })
   getBudgetRecommendation(@Request() req: any) {
     return this.aiService.getBudgetRecommendation(req.user.userId);
+  }
+
+  @Post('voice-transaction')
+  @UseInterceptors(FileInterceptor('audio'))
+  @ApiOperation({
+    summary: '🎙️ Voice Transaction Logging',
+    description: 'Kirim file suara, AI akan mentranskripsi dan mencatat transaksi otomatis.',
+  })
+  @ApiResponse({ status: 201, description: 'Transaksi berhasil dicatat' })
+  async voiceTransaction(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new Error('File audio tidak ditemukan');
+    }
+    return this.aiService.processVoiceTransaction(
+      req.user.userId,
+      file.buffer,
+      file.originalname,
+    );
   }
 }

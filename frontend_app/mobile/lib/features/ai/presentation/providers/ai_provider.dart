@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/providers/core_providers.dart';
 
 class ChatMessage {
@@ -70,6 +71,28 @@ class AiNotifier extends StateNotifier<AiState> {
           ChatMessage(role: 'assistant', content: 'Oops! I am having trouble connecting to the server.')
         ]
       );
+    }
+  }
+
+  Future<Map<String, dynamic>?> processVoiceTransaction(String filePath) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      final formData = FormData.fromMap({
+        'audio': await MultipartFile.fromFile(filePath, filename: filePath.split('/').last),
+      });
+
+      final response = await dio.post('/ai/voice-transaction', data: formData);
+      state = state.copyWith(isLoading: false);
+      
+      // Return the parsed data
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString(),
+        isLoading: false,
+      );
+      return null;
     }
   }
 }

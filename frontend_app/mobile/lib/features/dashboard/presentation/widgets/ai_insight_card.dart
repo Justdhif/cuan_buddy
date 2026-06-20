@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:marquee/marquee.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
 
 class AiInsightCard extends ConsumerWidget {
@@ -22,36 +23,52 @@ class AiInsightCard extends ConsumerWidget {
 
   Widget _buildMarquee(BuildContext context, String insight, bool isDark) {
     return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
+        gradient: LinearGradient(
+          colors: isDark 
+              ? [AppColors.primary.withValues(alpha: 0.15), AppColors.secondary.withValues(alpha: 0.05)]
+              : [AppColors.primary.withValues(alpha: 0.1), AppColors.secondary.withValues(alpha: 0.02)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.2),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.05),
+            blurRadius: 10,
+            spreadRadius: 0,
+          )
+        ]
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text('✨', style: TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
+          const Text('✨', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 12),
           Expanded(
-            child: Marquee(
-              text: insight,
-              style: AppTypography.textTheme.bodyMedium?.copyWith(
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                fontWeight: FontWeight.w500,
+            child: Center(
+              child: Marquee(
+                text: insight,
+                style: AppTypography.textTheme.bodyMedium?.copyWith(
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.w600,
+                ),
+                scrollAxis: Axis.horizontal,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                blankSpace: 40.0,
+                velocity: 30.0,
+                pauseAfterRound: const Duration(seconds: 2),
+                startPadding: 10.0,
+                accelerationDuration: const Duration(seconds: 1),
+                accelerationCurve: Curves.linear,
+                decelerationDuration: const Duration(milliseconds: 500),
+                decelerationCurve: Curves.easeOut,
               ),
-              scrollAxis: Axis.horizontal,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              blankSpace: 40.0,
-              velocity: 30.0,
-              pauseAfterRound: const Duration(seconds: 2),
-              startPadding: 10.0,
-              accelerationDuration: const Duration(seconds: 1),
-              accelerationCurve: Curves.linear,
-              decelerationDuration: const Duration(milliseconds: 500),
-              decelerationCurve: Curves.easeOut,
             ),
           ),
         ],
@@ -61,25 +78,23 @@ class AiInsightCard extends ConsumerWidget {
 
   Widget _buildLoadingState(bool isDark) {
     return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.3),
+          color: AppColors.primary.withValues(alpha: 0.1),
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text('✨', style: TextStyle(fontSize: 16)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'Generating insights...',
-              style: AppTypography.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondaryLight,
-              ),
+          const Text('✨', style: TextStyle(fontSize: 18)),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Center(
+              child: SkeletonCard(height: 16),
             ),
           ),
         ],
