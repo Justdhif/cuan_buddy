@@ -389,26 +389,12 @@ Do not add any explanations or markdown formatting.`;
     const catMatch = cats.find((c: any) => c.name.toLowerCase() === parsed.category?.toLowerCase());
     const categoryId = catMatch ? catMatch.id : null;
 
-    // 3. Save transaction to database
-    const [newTx] = await this.db.insert(transactions).values({
-      userId,
-      categoryId,
-      amount: parsed.amount.toString(),
-      currency: parsed.currency ?? defaultCurrency,
-      type: parsed.type === 'income' ? 'income' : 'expense',
-      note: parsed.note,
-      date: new Date(),
-    }).returning();
-
-    // Trigger anomaly detection in background
-    if (newTx.type === 'expense') {
-      this.detectAnomaly(userId, newTx.id, newTx.categoryId, Number(newTx.amount), newTx.type).catch(() => {});
-    }
-
     return {
-      transaction: newTx,
       transcription: text,
-      extracted: parsed,
+      extracted: {
+        ...parsed,
+        categoryId,
+      },
     };
   }
 }
