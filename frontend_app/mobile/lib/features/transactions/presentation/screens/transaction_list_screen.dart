@@ -52,6 +52,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(allTransactionsProvider);
+    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
 
     return Scaffold(
       appBar: AppBar(
@@ -89,39 +90,38 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
               skipLoadingOnReload: true,
               data: (transactions) {
                 if (transactions.isEmpty) {
-                  return SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: AppEmptyState(
-                      emoji: '💸',
-                      title: l10n.noTransactionsYetTitle,
-                      subtitle: l10n.noTransactionsYetSubtitle,
+                  return SliverToBoxAdapter(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: viewportHeight),
+                      child: AppEmptyState(
+                        emoji: '💸',
+                        title: l10n.noTransactionsYetTitle,
+                        subtitle: l10n.noTransactionsYetSubtitle,
+                      ),
                     ),
                   );
                 }
-                return SliverMainAxisGroup(
-                  slivers: [
-                    SliverPadding(
+                return SliverToBoxAdapter(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: viewportHeight),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(top: 8, bottom: 100),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) => _TransactionTile(transaction: transactions[index]),
-                          childCount: transactions.length,
-                        ),
-                      ),
+                      itemCount: transactions.length,
+                      itemBuilder: (context, index) => _TransactionTile(transaction: transactions[index]),
                     ),
-                    const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: SizedBox.shrink(),
-                    ),
-                  ],
+                  ),
                 );
               },
               loading: () => const SliverToBoxAdapter(child: SkeletonList(itemCount: 8)),
-              error: (e, _) => SliverFillRemaining(
-                hasScrollBody: false,
-                child: AppErrorState(
-                  message: l10n.failedToLoadTransactionsError,
-                  onRetry: () => ref.invalidate(allTransactionsProvider),
+              error: (e, _) => SliverToBoxAdapter(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: viewportHeight),
+                  child: AppErrorState(
+                    message: l10n.failedToLoadTransactionsError,
+                    onRetry: () => ref.invalidate(allTransactionsProvider),
+                  ),
                 ),
               ),
             ),

@@ -48,10 +48,25 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final savingsState = ref.watch(savingsNotifierProvider);
+    final state = ref.watch(savingsGoalsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
+
+    // Filter goals
+    final filteredGoals = state.goals.where((goal) {
+      if (_statusFilter == 'All') return true;
+      final rawT = goal['targetAmount'];
+      final t = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+      final rawC = goal['currentAmount'];
+      final c = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+      final isCompleted = goal['status'] == 'completed' || (t > 0 && c >= t);
+      
+      if (_statusFilter == 'Completed') return isCompleted;
+      if (_statusFilter == 'In Progress') return !isCompleted;
+      return true;
+    }).toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -263,46 +278,48 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
         // Goals List
         if (state.goals.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: AppEmptyState(
-              emoji: '🎯',
-              title: l10n.noSavingsGoals,
-              subtitle: l10n.noSavingsGoalsSubtitle,
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: AppEmptyState(
+                emoji: '🎯',
+                title: l10n.noSavingsGoals,
+                subtitle: l10n.noSavingsGoalsSubtitle,
+              ),
             ),
           )
         else if (filteredGoals.isEmpty)
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: AppEmptyState(
-              emoji: '🔍',
-              title: l10n.noGoalsFilter(switch (_statusFilter) {
-                'All' => l10n.all,
-                'In Progress' => l10n.inProgress,
-                'Completed' => l10n.completed,
-                _ => _statusFilter,
-              }),
-              subtitle: l10n.tryChangingFilter,
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: AppEmptyState(
+                emoji: '🔍',
+                title: l10n.noGoalsFilter(switch (_statusFilter) {
+                  'All' => l10n.all,
+                  'In Progress' => l10n.inProgress,
+                  'Completed' => l10n.completed,
+                  _ => _statusFilter,
+                }),
+                subtitle: l10n.tryChangingFilter,
+              ),
             ),
           )
-        else ...[
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
+        else
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                itemCount: filteredGoals.length,
+                itemBuilder: (context, index) {
                   final goal = filteredGoals[index];
                   return _buildGoalCard(context, goal, currencySymbol);
                 },
-                childCount: filteredGoals.length,
               ),
             ),
-          ),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: SizedBox.shrink(),
-          ),
-        ]
+          )
       ],
     );
   }

@@ -119,6 +119,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       return true;
     }).toList();
 
+    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
+
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
@@ -328,48 +330,52 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
         // Budgets List
         if (state.budgets.isEmpty)
-          SliverFillRemaining(
-            child: AppEmptyState(
-              emoji: '📊',
-              title: l10n.noBudgetsSet,
-              subtitle: l10n.noBudgetsSetSubtitle,
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: AppEmptyState(
+                emoji: '📊',
+                title: l10n.noBudgetsSet,
+                subtitle: l10n.noBudgetsSetSubtitle,
+              ),
             ),
           )
         else if (filteredBudgets.isEmpty)
-          SliverFillRemaining(
-            child: AppEmptyState(
-              emoji: '🔍',
-              title: l10n.noBudgetsFilter(switch (_statusFilter) {
-                'All' => l10n.all,
-                'On Track' => l10n.onTrack,
-                'Warning' => l10n.warning,
-                'Exceeded' => l10n.exceeded,
-                _ => _statusFilter,
-              }),
-              subtitle: l10n.tryChangingFilter,
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: AppEmptyState(
+                emoji: '🔍',
+                title: l10n.noBudgetsFilter(switch (_statusFilter) {
+                  'All' => l10n.all,
+                  'On Track' => l10n.onTrack,
+                  'Warning' => l10n.warning,
+                  'Exceeded' => l10n.exceeded,
+                  _ => _statusFilter,
+                }),
+                subtitle: l10n.tryChangingFilter,
+              ),
             ),
           )
-        else ...[
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
+        else
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
+                itemCount: filteredBudgets.length,
+                itemBuilder: (context, index) {
                   return _BudgetCard(
                     budget: filteredBudgets[index],
                     isDark: isDark,
                     currencySymbol: currencySymbol,
                   );
                 },
-                childCount: filteredBudgets.length,
               ),
             ),
-          ),
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: SizedBox.shrink(),
-          ),
-        ]
+          )
       ],
     );
   }
