@@ -45,7 +45,7 @@ export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: transactionTypeEnum('type').notNull(),
-  amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
+  amount: decimal('amount', { precision: 19, scale: 2 }).notNull(),
   currency: text('currency').default('IDR').notNull(),
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
   note: text('note'),
@@ -58,10 +58,10 @@ export const budgets = pgTable('budgets', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
-  limitAmount: decimal('limit_amount', { precision: 12, scale: 2 }).notNull(),
+  limitAmount: decimal('limit_amount', { precision: 19, scale: 2 }).notNull(),
   isRecurring: boolean('is_recurring').default(false).notNull(),
   rollover: boolean('rollover').default(false).notNull(),
-  rolloverAmount: decimal('rollover_amount', { precision: 12, scale: 2 }).default('0').notNull(),
+  rolloverAmount: decimal('rollover_amount', { precision: 19, scale: 2 }).default('0').notNull(),
   currency: text('currency').default('IDR').notNull(),
   monthYear: text('month_year').notNull(), // format YYYY-MM
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -72,8 +72,8 @@ export const savingsGoals = pgTable('savings_goals', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
-  targetAmount: decimal('target_amount', { precision: 12, scale: 2 }).notNull(),
-  currentAmount: decimal('current_amount', { precision: 12, scale: 2 }).default('0').notNull(),
+  targetAmount: decimal('target_amount', { precision: 19, scale: 2 }).notNull(),
+  currentAmount: decimal('current_amount', { precision: 19, scale: 2 }).default('0').notNull(),
   currency: text('currency').default('IDR').notNull(),
   targetDate: timestamp('target_date'),
   status: text('status').default('in_progress'), // in_progress, completed
@@ -100,3 +100,4 @@ export const backupSettings = pgTable('backup_settings', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
+
