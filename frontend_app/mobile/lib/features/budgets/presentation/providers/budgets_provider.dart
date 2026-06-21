@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/services/currency_service.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 
 // State model for budgets response
 class BudgetsState {
@@ -99,4 +102,48 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
 
 final budgetsNotifierProvider = StateNotifierProvider<BudgetsNotifier, BudgetsState>((ref) {
   return BudgetsNotifier(ref);
+});
+
+final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<String, double>, String>((ref, filter) async {
+  final budgetsState = ref.watch(budgetsNotifierProvider);
+  if (budgetsState.budgets.isEmpty) return {'totalLimit': 0.0, 'totalSpent': 0.0};
+  
+  final currencyService = ref.watch(currencyServiceProvider);
+  final profile = ref.watch(profileProvider);
+  final baseCurrency = profile.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+
+  double totalLimit = 0;
+  double totalSpent = 0;
+
+  for (final b in budgetsState.budgets) {
+    final rawL = b['limitAmount'];
+    final rawR = b['rolloverAmount'];
+    final limit = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+    final rollover = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+    final tL = limit + rollover;
+    
+    final rawS = b['spentAmount'];
+    final spent = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+
+    if (filter != 'All') {
+      final p = tL > 0 ? spent / tL : 0.0;
+      if (filter == 'Exceeded' && p < 1.0) continue;
+      if (filter == 'Warning' && (p <= 0.7 || p >= 1.0)) continue;
+      if (filter == 'On Track' && p > 0.7) continue;
+    }
+
+    final bCurrency = b['currency'] as String? ?? AppConstants.defaultCurrency;
+    
+    if (bCurrency == baseCurrency) {
+      totalLimit += tL;
+      totalSpent += spent;
+    } else {
+      final convLimit = await currencyService.convert(tL, bCurrency, baseCurrency);
+      final convSpent = await currencyService.convert(spent, bCurrency, baseCurrency);
+      totalLimit += convLimit;
+      totalSpent += convSpent;
+    }
+  }
+
+  return {'totalLimit': totalLimit, 'totalSpent': totalSpent};
 });

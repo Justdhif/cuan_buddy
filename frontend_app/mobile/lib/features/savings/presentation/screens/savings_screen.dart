@@ -46,12 +46,12 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       body: RefreshIndicator(
         onRefresh: () => ref.read(savingsNotifierProvider.notifier).fetchGoals(),
         color: AppColors.primary,
-        child: _buildBody(context, savingsState, isDark, currencySymbol),
+        child: _buildBody(context, ref, savingsState, isDark, currencySymbol),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, SavingsState state, bool isDark, String currencySymbol) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, SavingsState state, bool isDark, String currencySymbol) {
     if (state.isLoading && state.goals.isEmpty) {
       return const SkeletonList();
     }
@@ -65,9 +65,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       decimalDigits: 0,
     );
 
-    // Calculate Summary
-    double totalSaved = 0;
-    double totalTarget = 0;
+    // Calculate Completed Goals
     int completedGoals = 0;
 
     for (final g in state.goals) {
@@ -75,8 +73,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       final t = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
       final rawC = g['currentAmount'];
       final c = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
-      totalTarget += t;
-      totalSaved += c;
       if (g['status'] == 'completed' || (t > 0 && c >= t)) {
         completedGoals++;
       }
@@ -125,44 +121,57 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       )
                     ],
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        l10n.totalSaved,
-                        style: AppTypography.textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        fmt.format(totalSaved),
-                        style: AppTypography.textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildSummaryItem(
-                            l10n.goals,
-                            state.goals.length.toString(),
-                          ),
-                          Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-                          _buildSummaryItem(
-                            l10n.completed,
-                            completedGoals.toString(),
-                          ),
-                          Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-                          _buildSummaryItem(
-                            l10n.remaining,
-                            fmt.format(totalTarget > totalSaved ? totalTarget - totalSaved : 0),
-                          ),
-                        ],
-                      ),
-                    ],
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final summaryAsync = ref.watch(convertedSavingsSummaryProvider('All'));
+                      return summaryAsync.when(
+                        data: (summary) {
+                          final totalSaved = summary['totalSaved'] ?? 0.0;
+                          final totalTarget = summary['totalTarget'] ?? 0.0;
+                          return Column(
+                            children: [
+                              Text(
+                                l10n.totalSaved,
+                                style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                fmt.format(totalSaved),
+                                style: AppTypography.textTheme.headlineMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildSummaryItem(
+                                    l10n.goals,
+                                    state.goals.length.toString(),
+                                  ),
+                                  Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
+                                  _buildSummaryItem(
+                                    l10n.completed,
+                                    completedGoals.toString(),
+                                  ),
+                                  Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
+                                  _buildSummaryItem(
+                                    l10n.remaining,
+                                    fmt.format(totalTarget > totalSaved ? totalTarget - totalSaved : 0),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                        loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                        error: (_, __) => const SizedBox(),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -281,6 +290,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
   Widget _buildGoalCard(BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
     final l10n = AppLocalizations.of(context);
+    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     final name = goal['name'] as String? ?? l10n.unnamedGoal;
@@ -463,13 +473,13 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    goalCurrency == AppConstants.defaultCurrency ? fmt.format(currentAmount) : fmtOriginal.format(currentAmount),
+                    goalCurrency == currencyCode ? fmt.format(currentAmount) : fmtOriginal.format(currentAmount),
                     style: AppTypography.textTheme.titleMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if (goalCurrency != AppConstants.defaultCurrency)
+                  if (goalCurrency != currencyCode)
                     Consumer(
                       builder: (context, ref, _) {
                         final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
@@ -500,12 +510,12 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    l10n.of_(goalCurrency == AppConstants.defaultCurrency ? fmt.format(targetAmount) : fmtOriginal.format(targetAmount)),
+                    l10n.of_(goalCurrency == currencyCode ? fmt.format(targetAmount) : fmtOriginal.format(targetAmount)),
                     style: AppTypography.textTheme.bodyMedium?.copyWith(
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
                   ),
-                  if (goalCurrency != AppConstants.defaultCurrency)
+                  if (goalCurrency != currencyCode)
                     Consumer(
                       builder: (context, ref, _) {
                         final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;

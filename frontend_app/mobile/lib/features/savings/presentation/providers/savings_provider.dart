@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/services/currency_service.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 
 class SavingsState {
   final List<dynamic> goals;
@@ -110,4 +113,39 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
 
 final savingsNotifierProvider = StateNotifierProvider<SavingsNotifier, SavingsState>((ref) {
   return SavingsNotifier(ref);
+});
+
+final convertedSavingsSummaryProvider = FutureProvider.autoDispose.family<Map<String, double>, String>((ref, filter) async {
+  final savingsState = ref.watch(savingsNotifierProvider);
+  if (savingsState.goals.isEmpty) return {'totalTarget': 0.0, 'totalSaved': 0.0};
+
+  final currencyService = ref.watch(currencyServiceProvider);
+  final profile = ref.watch(profileProvider);
+  final baseCurrency = profile.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+
+  double totalTarget = 0;
+  double totalSaved = 0;
+
+  for (final goal in savingsState.goals) {
+    if (filter == 'In Progress' && goal['status'] == 'completed') continue;
+    if (filter == 'Completed' && goal['status'] != 'completed') continue;
+
+    final gCurrency = goal['currency'] as String? ?? AppConstants.defaultCurrency;
+    final rawT = goal['targetAmount'];
+    final target = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+    final rawC = goal['currentAmount'];
+    final current = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+
+    if (gCurrency == baseCurrency) {
+      totalTarget += target;
+      totalSaved += current;
+    } else {
+      final convTarget = await currencyService.convert(target, gCurrency, baseCurrency);
+      final convSaved = await currencyService.convert(current, gCurrency, baseCurrency);
+      totalTarget += convTarget;
+      totalSaved += convSaved;
+    }
+  }
+
+  return {'totalTarget': totalTarget, 'totalSaved': totalSaved};
 });

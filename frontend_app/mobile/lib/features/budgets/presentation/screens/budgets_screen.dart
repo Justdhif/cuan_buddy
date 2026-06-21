@@ -43,12 +43,12 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       body: RefreshIndicator(
         onRefresh: () => ref.read(budgetsNotifierProvider.notifier).fetchBudgets(),
         color: AppColors.primary,
-        child: _buildBody(context, budgetsState, isDark, currencySymbol),
+        child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, BudgetsState state, bool isDark, String currencySymbol) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, BudgetsState state, bool isDark, String currencySymbol) {
     if (state.isLoading && state.budgets.isEmpty) {
       return const SkeletonList();
     }
@@ -79,13 +79,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final totalPercentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
     final safeTotalPercentage = totalPercentage.clamp(0.0, 1.0);
     
-    Color summaryColor = AppColors.success;
-    if (safeTotalPercentage >= 1.0) {
-      summaryColor = AppColors.danger;
-    } else if (safeTotalPercentage > 0.7) {
-      summaryColor = AppColors.warning;
-    }
-
     // Filter logic
     final filteredBudgets = state.budgets.where((b) {
       if (_statusFilter == 'All') return true;
@@ -131,67 +124,107 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                         SizedBox(
                           width: 80,
                           height: 80,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              CircularProgressIndicator(
-                                value: 1.0,
-                                strokeWidth: 8,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  isDark ? AppColors.borderDark : AppColors.borderLight,
-                                ),
-                              ),
-                              TweenAnimationBuilder<double>(
-                                tween: Tween<double>(begin: 0, end: safeTotalPercentage),
-                                duration: const Duration(milliseconds: 1000),
-                                curve: Curves.easeOutCubic,
-                                builder: (context, value, _) => CircularProgressIndicator(
-                                  value: value,
-                                  strokeWidth: 8,
-                                  backgroundColor: Colors.transparent,
-                                  valueColor: AlwaysStoppedAnimation<Color>(summaryColor),
-                                ),
-                              ),
-                              Center(
-                                child: Text(
-                                  '${(safeTotalPercentage * 100).toStringAsFixed(0)}%',
-                                  style: AppTypography.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: summaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final summaryAsync = ref.watch(convertedBudgetsSummaryProvider('All'));
+                              return summaryAsync.when(
+                                data: (summary) {
+                                  final totalLimit = summary['totalLimit'] ?? 0.0;
+                                  final totalSpent = summary['totalSpent'] ?? 0.0;
+                                  final percentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
+                                  final safePercentage = percentage.clamp(0.0, 1.0);
+                                  
+                                  Color progressColor = AppColors.success;
+                                  if (safePercentage >= 1.0) {
+                                    progressColor = AppColors.danger;
+                                  } else if (safePercentage > 0.7) {
+                                    progressColor = AppColors.warning;
+                                  }
+
+                                  return Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      CircularProgressIndicator(
+                                        value: 1.0,
+                                        strokeWidth: 8,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          isDark ? AppColors.surfaceDark : const Color(0xFFF0EFF8),
+                                        ),
+                                      ),
+                                      CircularProgressIndicator(
+                                        value: safePercentage,
+                                        strokeWidth: 8,
+                                        backgroundColor: Colors.transparent,
+                                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                                      ),
+                                      Center(
+                                        child: Text(
+                                          '${(safePercentage * 100).toStringAsFixed(0)}%',
+                                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: progressColor,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                loading: () => const CircularProgressIndicator(),
+                                error: (_, __) => const Icon(Icons.error, color: AppColors.danger),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(width: 20),
                         // Texts
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                l10n.totalBudget,
-                                style: AppTypography.textTheme.bodyMedium?.copyWith(
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                fmt.format(totalLimit),
-                                style: AppTypography.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                l10n.spent(fmt.format(totalSpent)),
-                                style: AppTypography.textTheme.labelMedium?.copyWith(
-                                  color: summaryColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          child: Consumer(
+                            builder: (context, ref, child) {
+                              final summaryAsync = ref.watch(convertedBudgetsSummaryProvider('All'));
+                              return summaryAsync.when(
+                                data: (summary) {
+                                  final totalLimit = summary['totalLimit'] ?? 0.0;
+                                  final totalSpent = summary['totalSpent'] ?? 0.0;
+                                  final percentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
+                                  
+                                  Color summaryColor = AppColors.success;
+                                  if (percentage >= 1.0) {
+                                    summaryColor = AppColors.danger;
+                                  } else if (percentage > 0.7) {
+                                    summaryColor = AppColors.warning;
+                                  }
+
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        l10n.totalBudget,
+                                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        fmt.format(totalLimit),
+                                        style: AppTypography.textTheme.titleLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        l10n.spent(fmt.format(totalSpent)),
+                                        style: AppTypography.textTheme.labelMedium?.copyWith(
+                                          color: summaryColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                                loading: () => const SizedBox(),
+                                error: (_, __) => const SizedBox(),
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -327,6 +360,7 @@ class _BudgetCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
     final tx = budget as Map<String, dynamic>;
     final rawL = tx['limitAmount'];
     final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
@@ -489,7 +523,7 @@ class _BudgetCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    txCurrency == AppConstants.defaultCurrency ? fmt.format(spentAmount) : fmtOriginal.format(spentAmount),
+                    txCurrency == currencyCode ? fmt.format(spentAmount) : fmtOriginal.format(spentAmount),
                     style: AppTypography.textTheme.titleMedium?.copyWith(
                       color: progressColor,
                       fontWeight: FontWeight.bold,
@@ -526,7 +560,7 @@ class _BudgetCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    l10n.of_(txCurrency == AppConstants.defaultCurrency ? fmt.format(totalLimitAmount) : fmtOriginal.format(totalLimitAmount)),
+                    l10n.of_(txCurrency == currencyCode ? fmt.format(totalLimitAmount) : fmtOriginal.format(totalLimitAmount)),
                     style: AppTypography.textTheme.bodyMedium?.copyWith(
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
