@@ -24,18 +24,9 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   String _statusFilter = 'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
   final ScrollController _scrollController = ScrollController();
-  bool _showScrollToTop = false;
-
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 200 && !_showScrollToTop) {
-        setState(() => _showScrollToTop = true);
-      } else if (_scrollController.offset <= 200 && _showScrollToTop) {
-        setState(() => _showScrollToTop = false);
-      }
-    });
   }
 
   @override
@@ -57,7 +48,16 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(l10n.budgets),
+        title: GestureDetector(
+          onTap: () {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          },
+          child: Text(l10n.budgets),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
@@ -71,19 +71,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         color: AppColors.primary,
         child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
       ),
-      floatingActionButton: _showScrollToTop 
-          ? FloatingActionButton(
-              onPressed: () {
-                _scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-            )
-          : null,
     );
   }
 

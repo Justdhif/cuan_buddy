@@ -336,15 +336,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              'Cuan Buddy',
-              style: AppTypography.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-                letterSpacing: -0.5,
+            child: GestureDetector(
+              onTap: () {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              },
+              child: Text(
+                'Cuan Buddy',
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  letterSpacing: -0.5,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
           Row(

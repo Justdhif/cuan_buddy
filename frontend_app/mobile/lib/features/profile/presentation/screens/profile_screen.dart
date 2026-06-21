@@ -21,6 +21,13 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   Future<void> _showLanguagePicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
@@ -85,7 +92,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         titleSpacing: 24,
-        title: Text(l10n.profile),
+        title: GestureDetector(
+          onTap: () {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          },
+          child: Text(l10n.profile),
+        ),
         automaticallyImplyLeading: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
@@ -128,6 +144,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final bio = profile['bio'] as String?;
 
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
       child: Column(
         children: [

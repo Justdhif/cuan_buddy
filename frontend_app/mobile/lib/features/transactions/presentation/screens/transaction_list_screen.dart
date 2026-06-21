@@ -27,18 +27,9 @@ class TransactionListScreen extends ConsumerStatefulWidget {
 
 class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _showScrollToTop = false;
-
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 200 && !_showScrollToTop) {
-        setState(() => _showScrollToTop = true);
-      } else if (_scrollController.offset <= 200 && _showScrollToTop) {
-        setState(() => _showScrollToTop = false);
-      }
-    });
   }
 
   @override
@@ -60,7 +51,16 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
-        title: Text(l10n.transactions),
+        title: GestureDetector(
+          onTap: () {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          },
+          child: Text(l10n.transactions),
+        ),
         actions: [
           IconButton(
             onPressed: () => _showAddSheet(context),
@@ -131,22 +131,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (_showScrollToTop) ...[
-            FloatingActionButton(
-              heroTag: 'scroll_top',
-              mini: true,
-              onPressed: () {
-                _scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              backgroundColor: AppColors.primary,
-              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-          ],
           AiVoiceButton(
             onTransactionAdded: () {
               ref.invalidate(allTransactionsProvider);
