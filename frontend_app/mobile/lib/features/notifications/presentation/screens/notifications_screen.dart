@@ -136,6 +136,58 @@ class _NotificationTile extends ConsumerWidget {
           message += convertedText;
         }
       } catch (_) {}
+    } else if (title == 'BUDGET_EXCEEDED' || title == 'BUDGET_WARNING' || title == 'BUDGET_PREDICTION_WARNING') {
+      final isId = ref.watch(languageProvider) == 'id';
+      
+      try {
+        final payload = jsonDecode(message);
+        final monthYear = payload['monthYear'] as String;
+        final categoryName = payload['categoryName'] as String;
+        final currency = payload['currency'] as String? ?? AppConstants.defaultCurrency;
+        final txCurrencySymbol = AppConstants.getCurrencySymbol(currency);
+        final fmt = NumberFormat.currency(locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
+        final defaultCurrency = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+        final defCurrencySymbol = AppConstants.getCurrencySymbol(defaultCurrency);
+        final defFmt = NumberFormat.currency(locale: 'en_US', symbol: defCurrencySymbol, decimalDigits: 0);
+
+        String formatWithConversion(double amount) {
+          String str = fmt.format(amount);
+          if (currency != defaultCurrency) {
+            final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(amount: amount, from: currency, to: defaultCurrency)));
+            final convertedText = convertedAsync.maybeWhen(
+              data: (converted) => ' (≈ ${defFmt.format(converted)})',
+              orElse: () => '',
+            );
+            str += convertedText;
+          }
+          return str;
+        }
+
+        if (title == 'BUDGET_EXCEEDED') {
+          title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
+          final limit = payload['limitAmount'] is num ? (payload['limitAmount'] as num).toDouble() : double.parse(payload['limitAmount'].toString());
+          final spent = payload['totalSpent'] is num ? (payload['totalSpent'] as num).toDouble() : double.parse(payload['totalSpent'].toString());
+          message = isId 
+              ? 'Anda telah melampaui batas anggaran $monthYear untuk $categoryName! Batas: ${formatWithConversion(limit)}, Terpakai: ${formatWithConversion(spent)}'
+              : 'You have exceeded your $monthYear budget for $categoryName! Limit: ${formatWithConversion(limit)}, Spent: ${formatWithConversion(spent)}';
+        } else if (title == 'BUDGET_WARNING') {
+          title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
+          final ratio = payload['ratio'] is num ? (payload['ratio'] as num).toDouble() : double.parse(payload['ratio'].toString());
+          message = isId 
+              ? 'Hati-hati! Anda telah menggunakan ${(ratio * 100).round()}% dari anggaran $monthYear untuk $categoryName.'
+              : 'Watch out! You have spent ${(ratio * 100).round()}% of your $monthYear budget for $categoryName.';
+        } else if (title == 'BUDGET_PREDICTION_WARNING') {
+          title = isId ? 'Peringatan Prediksi Anggaran' : 'Budget Prediction Warning';
+          final predicted = payload['predicted'] is num ? (payload['predicted'] as num).toDouble() : double.parse(payload['predicted'].toString());
+          message = isId 
+              ? 'Berdasarkan pengeluaran Anda, Anda diprediksi akan melampaui anggaran $monthYear untuk $categoryName. Estimasi pengeluaran: ${formatWithConversion(predicted)}'
+              : 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: ${formatWithConversion(predicted)}';
+        }
+      } catch (_) {
+        if (title == 'BUDGET_EXCEEDED') title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
+        else if (title == 'BUDGET_WARNING') title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
+        else if (title == 'BUDGET_PREDICTION_WARNING') title = isId ? 'Peringatan Prediksi Anggaran' : 'Budget Prediction Warning';
+      }
     }
 
     return InkWell(

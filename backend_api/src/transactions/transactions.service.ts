@@ -102,14 +102,25 @@ export class TransactionsService {
         void this.notificationsService.createAndBroadcast(
           userId,
           'BUDGET_EXCEEDED',
-          `You have exceeded your ${monthYear} budget for ${categoryName}! Limit: ${formatCurrency(limitAmount)}, Spent: ${formatCurrency(totalSpent)}`,
+          JSON.stringify({
+            monthYear,
+            categoryName,
+            limitAmount,
+            totalSpent,
+            currency: budget.currency
+          }),
           'budget'
         );
       } else if (ratio >= 0.75) {
         void this.notificationsService.createAndBroadcast(
           userId,
           'BUDGET_WARNING',
-          `Watch out! You have spent ${Math.round(ratio * 100)}% of your ${monthYear} budget for ${categoryName}.`,
+          JSON.stringify({
+            monthYear,
+            categoryName,
+            ratio,
+            currency: budget.currency
+          }),
           'budget'
         );
       } else {
@@ -122,7 +133,13 @@ export class TransactionsService {
             void this.notificationsService.createAndBroadcast(
               userId,
               'BUDGET_PREDICTION_WARNING',
-              `Based on your spending, you are projected to exceed your ${monthYear} budget for ${categoryName}. Estimated spend: ${formatCurrency(predicted)}`,
+              JSON.stringify({
+                monthYear,
+                categoryName,
+                predicted,
+                limitAmount,
+                currency: budget.currency
+              }),
               'budget'
             );
           }
