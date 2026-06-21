@@ -43,6 +43,13 @@
       "when": 1782003226912,
       "tag": "0005_sloppy_proudstar",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782003742238,
+      "tag": "0006_brainy_phalanx",
+      "breakpoints": true
     }
   ]
 }

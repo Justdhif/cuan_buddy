@@ -251,15 +251,13 @@ export class BackupService {
           
           let categoryId = null;
           if (catName) {
-            const slug = String(catName).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
             let existingCat = await this.db.query.categories.findFirst({
-              where: and(eq(categories.slug, slug), eq(categories.userId, userId))
+              where: and(eq(categories.name, String(catName)), eq(categories.userId, userId))
             });
             if (!existingCat) {
                const [newCat] = await this.db.insert(categories).values({
                  userId,
                  name: String(catName),
-                 slug,
                  emojiIcon: catEmoji ? String(catEmoji) : null
                }).returning();
                existingCat = newCat;

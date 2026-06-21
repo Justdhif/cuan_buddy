@@ -37,7 +37,7 @@ async function seed() {
       try {
         // Check if category already exists for this user
         const existing = await db.query.categories.findFirst({
-          where: and(eq(schema.categories.slug, cat.slug), eq(schema.categories.userId, user.id))
+          where: and(eq(schema.categories.name, cat.name), eq(schema.categories.userId, user.id))
         });
 
         if (!existing) {

@@ -14,10 +14,8 @@ export class SavingsGoalsService {
   ) {}
 
   async create(userId: string, createSavingsGoalDto: CreateSavingsGoalDto) {
-    const slug = createSavingsGoalDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     const data: any = {
       userId,
-      slug,
       name: createSavingsGoalDto.name,
       targetAmount: createSavingsGoalDto.targetAmount.toString(),
     };
@@ -68,30 +66,33 @@ export class SavingsGoalsService {
     return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
   }
 
-  async findOne(userId: string, slug: string) {
+  async findOne(userId: string, id: string) {
     const goal = await this.db.query.savingsGoals.findFirst({
-      where: and(eq(savingsGoals.slug, slug), eq(savingsGoals.userId, userId)),
+      where: and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)),
     });
-    if (!goal) throw new NotFoundException('Savings goal not found');
+
+    if (!goal) {
+      throw new NotFoundException('Savings goal not found');
+    }
     return goal;
   }
 
-  async update(userId: string, slug: string, updateSavingsGoalDto: UpdateSavingsGoalDto) {
-    await this.findOne(userId, slug);
-    
-    const updateData: any = { updatedAt: new Date() };
+  async update(userId: string, id: string, updateSavingsGoalDto: UpdateSavingsGoalDto) {
+    await this.findOne(userId, id);
+
+    const updateData: any = {};
     if (updateSavingsGoalDto.name) {
       updateData.name = updateSavingsGoalDto.name;
-      updateData.slug = updateSavingsGoalDto.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     }
     if (updateSavingsGoalDto.targetAmount) updateData.targetAmount = updateSavingsGoalDto.targetAmount.toString();
     if (updateSavingsGoalDto.currentAmount) updateData.currentAmount = updateSavingsGoalDto.currentAmount.toString();
     if (updateSavingsGoalDto.targetDate) updateData.targetDate = new Date(updateSavingsGoalDto.targetDate);
     if (updateSavingsGoalDto.status) updateData.status = updateSavingsGoalDto.status;
 
-    const [updated] = await this.db.update(savingsGoals)
-      .set(updateData)
-      .where(and(eq(savingsGoals.slug, slug), eq(savingsGoals.userId, userId)))
+    const [updated] = await this.db
+      .update(savingsGoals)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)))
       .returning();
 
     // Check if goal is reached after update
@@ -110,10 +111,10 @@ export class SavingsGoalsService {
     return updated;
   }
 
-  async remove(userId: string, slug: string) {
-    await this.findOne(userId, slug);
+  async remove(userId: string, id: string) {
+    await this.findOne(userId, id);
     await this.db.delete(savingsGoals)
-      .where(and(eq(savingsGoals.slug, slug), eq(savingsGoals.userId, userId)));
-    return { message: 'Savings goal removed successfully' };
+      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)));
+    return { message: 'Savings goal deleted successfully' };
   }
 }

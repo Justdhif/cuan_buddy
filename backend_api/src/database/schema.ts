@@ -34,7 +34,6 @@ export const userProfiles = pgTable('user_profiles', {
 export const categories = pgTable('categories', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  slug: text('slug').notNull(),
   name: text('name').notNull(),
   emojiIcon: text('emoji_icon'),
   colorCode: text('color_code'),
@@ -72,7 +71,6 @@ export const budgets = pgTable('budgets', {
 export const savingsGoals = pgTable('savings_goals', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  slug: text('slug').notNull(),
   name: text('name').notNull(),
   targetAmount: decimal('target_amount', { precision: 12, scale: 2 }).notNull(),
   currentAmount: decimal('current_amount', { precision: 12, scale: 2 }).default('0').notNull(),
@@ -81,9 +79,7 @@ export const savingsGoals = pgTable('savings_goals', {
   status: text('status').default('in_progress'), // in_progress, completed
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-}, (t) => ({
-  userSlugUnique: unique('savings_goals_user_id_slug_unique').on(t.userId, t.slug),
-}));
+});
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').primaryKey().defaultRandom(),
