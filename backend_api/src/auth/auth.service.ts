@@ -58,7 +58,7 @@ export class AuthService {
         { name: 'Salary', emojiIcon: '💼', colorCode: '#2ECC71' },
         { name: 'Bonus', emojiIcon: '🎁', colorCode: '#F1C40F' },
         { name: 'Investment', emojiIcon: '📈', colorCode: '#3498DB' },
-        { name: 'Tabungan', emojiIcon: '🐖', colorCode: '#8E44AD' },
+        { name: 'Others', emojiIcon: '📦', colorCode: '#95A5A6' },
       ];
 
       const categoriesToInsert = defaultCategories.map((cat) => ({

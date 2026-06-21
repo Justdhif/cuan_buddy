@@ -73,10 +73,10 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     }
   }
 
-  Future<void> updateBalance(String slug, double newAmount) async {
+  Future<void> updateBalance(String id, double newAmount) async {
     try {
       final dio = ref.read(dioClientProvider).dio;
-      await dio.patch('/goals/$slug', data: {
+      await dio.patch('/goals/$id', data: {
         'currentAmount': newAmount,
       });
       await fetchGoals();
@@ -85,10 +85,10 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
       rethrow;
     }
   }
-  Future<void> updateGoal(String slug, Map<String, dynamic> data) async {
+  Future<void> updateGoal(String id, Map<String, dynamic> data) async {
     try {
       final dio = ref.read(dioClientProvider).dio;
-      await dio.patch('/goals/$slug', data: data);
+      await dio.patch('/goals/$id', data: data);
       await fetchGoals();
     } catch (e) {
       state = state.copyWith(error: e.toString());
@@ -96,10 +96,10 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
     }
   }
 
-  Future<void> deleteGoal(String slug) async {
+  Future<void> deleteGoal(String id) async {
     try {
       final dio = ref.read(dioClientProvider).dio;
-      await dio.delete('/goals/$slug');
+      await dio.delete('/goals/$id');
       await fetchGoals();
     } catch (e) {
       state = state.copyWith(error: e.toString());

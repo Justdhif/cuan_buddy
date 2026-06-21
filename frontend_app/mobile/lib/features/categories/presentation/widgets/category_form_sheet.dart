@@ -80,7 +80,12 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     if (widget.initialCategory == null) {
       success = await notifier.addCategory(name, emoji, colorCode);
     } else {
-      success = await notifier.updateCategory(widget.initialCategory!['slug'], name, emoji, colorCode);
+      await notifier.updateCategory(widget.initialCategory!['id'], {
+        'name': name,
+        'emojiIcon': emoji,
+        'colorCode': colorCode,
+      });
+      success = true;
     }
 
     if (!mounted) return;

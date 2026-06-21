@@ -31,7 +31,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _allocationAmountController = TextEditingController();
-  String? _selectedGoalSlug;
+  String? _selectedGoalId;
   late String _type;
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
@@ -102,7 +102,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         await dio.post('/transactions', data: payload);
 
         // Handle Savings Allocation for new Income
-        if (_type == 'income' && _selectedGoalSlug != null) {
+        if (_type == 'income' && _selectedGoalId != null) {
           final allocAmountStr = _allocationAmountController.text.replaceAll(RegExp(r'[^0-9]'), '');
           if (allocAmountStr.isNotEmpty) {
             final allocAmount = double.parse(allocAmountStr);
@@ -111,7 +111,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                 // 1. Get current goal balance
                 final goals = ref.read(savingsNotifierProvider).goals;
                 final goal = goals.firstWhere(
-                  (g) => g['slug'] == _selectedGoalSlug,
+                  (g) => g['id'] == _selectedGoalId,
                   orElse: () => <String, dynamic>{},
                 );
                 
@@ -121,12 +121,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   final goalName = goal['name'] as String? ?? 'Goal';
                   
                   // 2. Update goal balance
-                  await ref.read(savingsNotifierProvider.notifier).updateBalance(_selectedGoalSlug!, newAmount);
+                  await ref.read(savingsNotifierProvider.notifier).updateBalance(_selectedGoalId!, newAmount);
                   
                   // 3. Create expense transaction
                   final categories = await ref.read(categoriesProvider.future);
                   final savingsCategory = categories.firstWhere(
-                    (c) => c['slug'] == 'savings',
+                    (c) => c['name'].toString().toLowerCase() == 'others',
                     orElse: () => null,
                   );
 
@@ -474,7 +474,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         Text('Alokasi ke Tabungan (Opsional)', style: AppTypography.textTheme.labelMedium),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: _selectedGoalSlug,
+          value: _selectedGoalId,
           decoration: InputDecoration(
             labelText: 'Pilih Tabungan',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
@@ -486,16 +486,16 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             ),
             ...savingsState.goals.map((g) {
               return DropdownMenuItem<String>(
-                value: g['slug'] as String,
+                value: g['id'] as String,
                 child: Text(g['name'] as String? ?? 'Goal'),
               );
             }),
           ],
           onChanged: (val) {
-            setState(() => _selectedGoalSlug = val);
+            setState(() => _selectedGoalId = val);
           },
         ),
-        if (_selectedGoalSlug != null) ...[
+        if (_selectedGoalId != null) ...[
           const SizedBox(height: 12),
           AppTextField(
             controller: _allocationAmountController,

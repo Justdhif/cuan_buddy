@@ -421,7 +421,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     );
                     if (confirm == true) {
                       try {
-                        await ref.read(savingsNotifierProvider.notifier).deleteGoal(goal['slug']);
+                        await ref.read(savingsNotifierProvider.notifier).deleteGoal(goal['id']);
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));

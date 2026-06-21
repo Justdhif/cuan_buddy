@@ -18,7 +18,7 @@ class CategoryListScreen extends ConsumerWidget {
     );
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, String slug) {
+  void _confirmDelete(BuildContext context, WidgetRef ref, String id) {
     final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
@@ -33,7 +33,7 @@ class CategoryListScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              ref.read(categoryNotifierProvider.notifier).deleteCategory(slug);
+              ref.read(categoryNotifierProvider.notifier).deleteCategory(id);
             },
             child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
@@ -95,7 +95,7 @@ class CategoryListScreen extends ConsumerWidget {
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                              onPressed: () => _confirmDelete(context, ref, category['slug']),
+                              onPressed: () => _confirmDelete(context, ref, category['id']),
                             ),
                           ],
                         ),

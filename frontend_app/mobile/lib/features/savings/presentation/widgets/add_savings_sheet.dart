@@ -256,7 +256,7 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                             AppSnackbar.show(context, title: l10n.success, message: l10n.goalSavedSuccess, type: SnackbarType.success);
                           }
                         } else {
-                          await dio.patch('/goals/${widget.goal!['slug']}', data: payload);
+                          await dio.patch('/goals/${widget.goal!['id']}', data: payload);
                           ref.invalidate(savingsNotifierProvider);
                           if (context.mounted) {
                             Navigator.pop(context);

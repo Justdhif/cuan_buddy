@@ -103,6 +103,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     }
   }
 
+  Future<void> _stopRecording() async {
     try {
       _amplitudeSubscription?.cancel();
       _amplitude = 0.0;

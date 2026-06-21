@@ -10,15 +10,15 @@ const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
 const defaultCategories = [
-  { slug: 'food', name: 'Food', emojiIcon: '🍔', colorCode: '#FF5733' },
-  { slug: 'transport', name: 'Transport', emojiIcon: '🚕', colorCode: '#FFC300' },
-  { slug: 'entertainment', name: 'Entertainment', emojiIcon: '🎮', colorCode: '#900C3F' },
-  { slug: 'shopping', name: 'Shopping', emojiIcon: '🛍', colorCode: '#DAF7A6' },
-  { slug: 'bills', name: 'Bills', emojiIcon: '💡', colorCode: '#581845' },
-  { slug: 'salary', name: 'Salary', emojiIcon: '💼', colorCode: '#2ECC71' },
-  { slug: 'bonus', name: 'Bonus', emojiIcon: '🎁', colorCode: '#F1C40F' },
-  { slug: 'investment', name: 'Investment', emojiIcon: '📈', colorCode: '#3498DB' },
-  { slug: 'savings', name: 'Tabungan', emojiIcon: '🐖', colorCode: '#8E44AD' },
+  { name: 'Food', emojiIcon: '🍔', colorCode: '#FF5733' },
+  { name: 'Transport', emojiIcon: '🚕', colorCode: '#FFC300' },
+  { name: 'Entertainment', emojiIcon: '🎮', colorCode: '#900C3F' },
+  { name: 'Shopping', emojiIcon: '🛍', colorCode: '#DAF7A6' },
+  { name: 'Bills', emojiIcon: '💡', colorCode: '#581845' },
+  { name: 'Salary', emojiIcon: '💼', colorCode: '#2ECC71' },
+  { name: 'Bonus', emojiIcon: '🎁', colorCode: '#F1C40F' },
+  { name: 'Investment', emojiIcon: '📈', colorCode: '#3498DB' },
+  { name: 'Others', emojiIcon: '📦', colorCode: '#95A5A6' },
 ];
 
 async function seed() {
@@ -47,7 +47,7 @@ async function seed() {
           }).execute();
         }
       } catch (e) {
-        console.error(`Failed to add ${cat.slug} for ${user.email}:`, e);
+        console.error(`Failed to add ${cat.name} for ${user.email}:`, e);
       }
     }
   }

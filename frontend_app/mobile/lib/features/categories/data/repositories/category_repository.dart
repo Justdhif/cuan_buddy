@@ -30,20 +30,14 @@ class CategoryRepository {
   }
 
   Future<Map<String, dynamic>> updateCategory({
-    required String slug,
-    required String name,
-    String? emojiIcon,
-    String? colorCode,
+    required String id,
+    Map<String, dynamic>? data,
   }) async {
-    final response = await _dio.patch('/categories/$slug', data: {
-      'name': name,
-      'emojiIcon': emojiIcon,
-      'colorCode': colorCode,
-    });
+    final response = await _dio.patch('/categories/$id', data: data);
     return response.data as Map<String, dynamic>;
   }
 
-  Future<void> deleteCategory(String slug) async {
-    await _dio.delete('/categories/$slug');
+  Future<void> deleteCategory(String id) async {
+    await _dio.delete('/categories/$id');
   }
 }

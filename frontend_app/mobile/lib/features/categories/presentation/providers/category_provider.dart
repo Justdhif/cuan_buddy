@@ -60,27 +60,23 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     }
   }
 
-  Future<bool> updateCategory(String slug, String name, String emojiIcon, String colorCode) async {
+  Future<void> updateCategory(String id, Map<String, dynamic> data) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
-      await repository.updateCategory(slug: slug, name: name, emojiIcon: emojiIcon, colorCode: colorCode);
+      await repository.updateCategory(id: id, data: data);
       await fetchCategories();
-      return true;
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
-      return false;
     }
   }
 
-  Future<bool> deleteCategory(String slug) async {
+  Future<void> deleteCategory(String id) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
-      await repository.deleteCategory(slug);
+      await repository.deleteCategory(id);
       await fetchCategories();
-      return true;
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false);
-      return false;
     }
   }
 }

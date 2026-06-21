@@ -65,15 +65,15 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
         return;
       }
 
-      final slug = widget.goal['slug'] as String;
+      final id = widget.goal['id'] as String;
       final name = widget.goal['name'] as String? ?? 'Goal';
-      await ref.read(savingsNotifierProvider.notifier).updateBalance(slug, newAmount);
+      await ref.read(savingsNotifierProvider.notifier).updateBalance(id, newAmount);
 
       // Create a transaction for this savings operation
       try {
         final categories = await ref.read(categoriesProvider.future);
         final savingsCategory = categories.firstWhere(
-          (c) => c['slug'] == 'savings',
+          (c) => c['id'] == widget.goal['categoryId'],
           orElse: () => null,
         );
 
