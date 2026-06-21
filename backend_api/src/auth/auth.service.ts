@@ -75,7 +75,13 @@ export class AuthService {
       };
     } catch (err: any) {
       // PostgreSQL unique violation error code: 23505
-      if (err?.code === '23505' || err?.message?.includes('unique')) {
+      // Drizzle wraps the original error in err.cause
+      if (
+        err?.code === '23505' ||
+        err?.message?.includes('unique') ||
+        err?.cause?.code === '23505' ||
+        err?.cause?.message?.includes('unique')
+      ) {
         throw new ConflictException('Email already exists');
       }
       throw err;
