@@ -60,6 +60,9 @@ export const budgets = pgTable('budgets', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
   limitAmount: decimal('limit_amount', { precision: 12, scale: 2 }).notNull(),
+  isRecurring: boolean('is_recurring').default(false).notNull(),
+  rollover: boolean('rollover').default(false).notNull(),
+  rolloverAmount: decimal('rollover_amount', { precision: 12, scale: 2 }).default('0').notNull(),
   currency: text('currency').default('IDR').notNull(),
   monthYear: text('month_year').notNull(), // format YYYY-MM
   createdAt: timestamp('created_at').defaultNow().notNull(),

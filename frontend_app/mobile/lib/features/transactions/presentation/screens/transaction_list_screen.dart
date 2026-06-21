@@ -161,7 +161,8 @@ class _FilterRow extends ConsumerWidget {
                   final isSelected = filterState.categoryId == catId;
                   
                   final catType = cat['type'] as String?;
-                  final typeColor = catType == 'income' ? AppColors.success : (catType == 'expense' ? AppColors.danger : AppColors.primary);
+                  final defaultTypeColor = catType == 'income' ? AppColors.success : (catType == 'expense' ? AppColors.danger : AppColors.primary);
+                  final typeColor = AppColors.colorFromHex(cat['colorCode'] as String?, fallback: defaultTypeColor);
 
                   return _buildCategoryChip(
                     context: context,

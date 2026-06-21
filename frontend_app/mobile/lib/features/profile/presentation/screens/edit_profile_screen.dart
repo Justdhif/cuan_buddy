@@ -158,12 +158,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
       // Update profile fields
       await ref.read(profileRepositoryProvider).updateProfile(
-            fullName: _nameController.text.trim(),
-            phone: _phoneController.text.trim().isNotEmpty
-                ? _phoneController.text.trim()
-                : null,
-            dateOfBirth: _selectedDate?.toUtc().toIso8601String(),
-          );
+        fullName: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+        birthDate: _selectedDate?.toUtc().toIso8601String(),
+      );
 
       // If user picked a dicebear avatar, update it (if it's local file, upload endpoint already updated DB)
       final currentAvatar = widget.profile['avatar'] as String?;

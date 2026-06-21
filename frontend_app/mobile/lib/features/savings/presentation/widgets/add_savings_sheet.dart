@@ -12,7 +12,8 @@ import '../../../../core/providers/core_providers.dart';
 import '../providers/savings_provider.dart';
 
 class AddSavingsSheet extends ConsumerStatefulWidget {
-  const AddSavingsSheet({super.key});
+  const AddSavingsSheet({super.key, this.goal});
+  final Map<String, dynamic>? goal;
 
   @override
   ConsumerState<AddSavingsSheet> createState() => _AddSavingsSheetState();
@@ -25,6 +26,30 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
   final _currentAmountController = TextEditingController();
   DateTime? _selectedDate;
   String _selectedCurrency = AppConstants.defaultCurrency;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.goal != null) {
+      _nameController.text = widget.goal!['name'] ?? '';
+      
+      final rawT = widget.goal!['targetAmount'];
+      final targetAmount = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+      _targetAmountController.text = targetAmount.toStringAsFixed(0);
+      
+      final rawC = widget.goal!['currentAmount'];
+      final currentAmount = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+      _currentAmountController.text = currentAmount.toStringAsFixed(0);
+      
+      _selectedCurrency = widget.goal!['currency'] ?? AppConstants.defaultCurrency;
+      
+      final targetDateStr = widget.goal!['targetDate']?.toString();
+      if (targetDateStr != null) {
+        _selectedDate = DateTime.tryParse(targetDateStr);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -65,7 +90,7 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                l10n.newGoal,
+                widget.goal == null ? l10n.newGoal : 'Edit Goal',
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -98,9 +123,12 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                   children: [
                     Expanded(
                       flex: 2,
-                      child: InputDecorator(
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        isExpanded: true,
+                        icon: const Icon(Icons.arrow_drop_down_rounded),
                         decoration: InputDecoration(
-                          labelText: 'Currency',
+                          labelText: l10n.currency,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
@@ -108,22 +136,15 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                             ),
                           ),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedCurrency,
-                            isExpanded: true,
-                            icon: const Icon(Icons.arrow_drop_down_rounded),
-                            items: AppConstants.supportedCurrencies.map((c) {
-                              return DropdownMenuItem<String>(
-                                value: c['code'],
-                                child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) setState(() => _selectedCurrency = val);
-                            },
-                          ),
-                        ),
+                        items: AppConstants.supportedCurrencies.map((c) {
+                          return DropdownMenuItem<String>(
+                            value: c['code'],
+                            child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedCurrency = val);
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -215,6 +236,7 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                   label: l10n.saveGoal,
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
+                      setState(() => _isSaving = true);
                       try {
                         final payload = {
                           'name': _nameController.text,
@@ -226,17 +248,31 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                           payload['targetDate'] = _selectedDate!.toUtc().toIso8601String();
                         }
                         final dio = ref.read(dioClientProvider).dio;
-                        await dio.post('/savings-goals', data: payload);
-                        ref.invalidate(savingsNotifierProvider);
-                        if (context.mounted) Navigator.pop(context);
+                        if (widget.goal == null) {
+                          await dio.post('/goals', data: payload);
+                          ref.invalidate(savingsNotifierProvider);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            AppSnackbar.show(context, title: l10n.success, message: l10n.goalSavedSuccess, type: SnackbarType.success);
+                          }
+                        } else {
+                          await dio.patch('/goals/${widget.goal!['slug']}', data: payload);
+                          ref.invalidate(savingsNotifierProvider);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            AppSnackbar.show(context, title: l10n.success, message: 'Goal updated successfully', type: SnackbarType.success);
+                          }
+                        }
                       } catch (e) {
+                        setState(() => _isSaving = false);
                         if (context.mounted) {
-                          AppSnackbar.show(context, title: l10n.info, message: '${l10n.errorSavingGoal}: $e', type: SnackbarType.info);
+                          AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
                         }
                       }
                     }
                   },
                   type: AppButtonType.primary,
+                  isLoading: _isSaving,
                 ),
                 const SizedBox(height: 32),
               ],
@@ -248,7 +284,7 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
   }
 }
 
-void showAddSavingsSheet(BuildContext context) {
+void showAddSavingsSheet(BuildContext context, {Map<String, dynamic>? goal}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -256,6 +292,6 @@ void showAddSavingsSheet(BuildContext context) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
     ),
-    builder: (context) => const AddSavingsSheet(),
+    builder: (context) => AddSavingsSheet(goal: goal),
   );
 }

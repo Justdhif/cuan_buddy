@@ -59,21 +59,21 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
       if (isActive) {
         setState(() => _isVerified = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.accountVerifiedRedirecting),
-            backgroundColor: AppColors.success,
-          ),
+        AppSnackbar.show(
+          context,
+          title: l10n.success,
+          message: l10n.accountVerifiedRedirecting,
+          type: SnackbarType.success,
         );
         _redirectTimer = Timer(const Duration(seconds: 5), () {
           if (mounted) context.go('/login');
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.accountNotYetVerified),
-            backgroundColor: AppColors.warning,
-          ),
+        AppSnackbar.show(
+          context,
+          title: l10n.info,
+          message: l10n.accountNotYetVerified,
+          type: SnackbarType.warning,
         );
       }
     } catch (e) {

@@ -68,7 +68,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
     for (final b in state.budgets) {
       final rawL = b['limitAmount'];
-      totalLimit += rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+      final rawR = b['rolloverAmount'];
+      final limit = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+      final rollover = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+      totalLimit += limit + rollover;
       final rawS = b['spentAmount'];
       totalSpent += rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
     }
@@ -87,10 +90,13 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final filteredBudgets = state.budgets.where((b) {
       if (_statusFilter == 'All') return true;
       final rawL = b['limitAmount'];
+      final rawR = b['rolloverAmount'];
       final limit = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+      final rollover = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+      final totalLimit = limit + rollover;
       final rawS = b['spentAmount'];
       final spent = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-      final p = limit > 0 ? spent / limit : 0.0;
+      final p = totalLimit > 0 ? spent / totalLimit : 0.0;
       
       if (_statusFilter == 'Exceeded') return p >= 1.0;
       if (_statusFilter == 'Warning') return p > 0.7 && p < 1.0;
@@ -312,25 +318,30 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 }
 
-class _BudgetCard extends StatelessWidget {
+class _BudgetCard extends ConsumerWidget {
   const _BudgetCard({required this.budget, required this.isDark, required this.currencySymbol});
   final dynamic budget;
   final bool isDark;
   final String currencySymbol;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tx = budget as Map<String, dynamic>;
     final rawL = tx['limitAmount'];
     final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
     final rawS = tx['spentAmount'];
     final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+    final rawR = tx['rolloverAmount'];
+    final rolloverAmount = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+    final totalLimitAmount = limitAmount + rolloverAmount;
+    final isRecurring = tx['isRecurring'] == true;
+    
     final categoryName = tx['category']?['name'] as String? ?? tx['categoryName'] as String? ?? l10n.budget;
     final categoryEmoji = tx['category']?['emojiIcon'] as String? ?? tx['category']?['emoji'] as String? ?? tx['categoryEmoji'] as String? ?? '📦';
     final monthYear = tx['monthYear'] as String? ?? '';
 
-    final percentage = limitAmount > 0 ? (spentAmount / limitAmount) : 0.0;
+    final percentage = totalLimitAmount > 0 ? (spentAmount / totalLimitAmount) : 0.0;
     final safePercentage = percentage.clamp(0.0, 1.0);
 
     Color progressColor = AppColors.success;
@@ -383,6 +394,18 @@ class _BudgetCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (isRecurring) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.repeat_rounded, size: 14, color: AppColors.primary),
+                ),
+              ],
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -397,9 +420,68 @@ class _BudgetCard extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert_rounded, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, size: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    showAddBudgetSheet(context, budget: tx);
+                  } else if (value == 'delete') {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Budget?'),
+                        content: const Text('Are you sure you want to delete this budget?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      try {
+                        await ref.read(budgetsNotifierProvider.notifier).deleteBudget(tx['id']);
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+                        }
+                      }
+                    }
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.edit_rounded, size: 20),
+                        SizedBox(width: 12),
+                        Text('Edit'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.delete_rounded, size: 20, color: AppColors.danger),
+                        SizedBox(width: 12),
+                        Text('Delete', style: TextStyle(color: AppColors.danger)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -444,7 +526,7 @@ class _BudgetCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    l10n.of_(txCurrency == AppConstants.defaultCurrency ? fmt.format(limitAmount) : fmtOriginal.format(limitAmount)),
+                    l10n.of_(txCurrency == AppConstants.defaultCurrency ? fmt.format(totalLimitAmount) : fmtOriginal.format(totalLimitAmount)),
                     style: AppTypography.textTheme.bodyMedium?.copyWith(
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
@@ -456,7 +538,7 @@ class _BudgetCard extends StatelessWidget {
                         if (txCurrency == currencyCode) return const SizedBox.shrink();
                         
                         final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
-                          amount: limitAmount,
+                          amount: totalLimitAmount,
                           from: txCurrency,
                           to: currencyCode,
                         )));

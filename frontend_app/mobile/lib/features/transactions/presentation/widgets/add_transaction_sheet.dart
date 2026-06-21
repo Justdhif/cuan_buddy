@@ -162,7 +162,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToSave}: $e', type: SnackbarType.error);
+        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     }
   }
@@ -336,6 +336,8 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                           final catEmoji = cat['emojiIcon'] as String? ?? cat['emoji'] as String? ?? '💰';
                           final isSelected = _selectedCategoryId == catId;
 
+                          final catColor = AppColors.colorFromHex(cat['colorCode'] as String?, fallback: typeColor);
+
                           return GestureDetector(
                             onTap: () => setState(() {
                               _selectedCategoryId =
@@ -348,14 +350,14 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                                   horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? typeColor.withValues(alpha: 0.15)
+                                    ? catColor.withValues(alpha: 0.15)
                                     : (isDark
                                         ? AppColors.surfaceDark
                                         : const Color(0xFFF3F0FF)),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: isSelected
-                                      ? typeColor
+                                      ? catColor
                                       : (isDark
                                           ? AppColors.borderDark
                                           : AppColors.borderLight),
@@ -374,7 +376,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                                     catName,
                                     style: AppTypography.textTheme.labelMedium
                                         ?.copyWith(
-                                      color: isSelected ? typeColor : null,
+                                      color: isSelected ? catColor : null,
                                       fontWeight: isSelected
                                           ? FontWeight.w700
                                           : FontWeight.w500,

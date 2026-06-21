@@ -45,7 +45,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     try {
       await ref.read(profileRepositoryProvider).updateProfile(
             fullName: _fullNameController.text.trim(),
-            phone: _phoneController.text.trim().isNotEmpty
+            phoneNumber: _phoneController.text.trim().isNotEmpty
                 ? _phoneController.text.trim()
                 : null,
             currency: _selectedCurrency,

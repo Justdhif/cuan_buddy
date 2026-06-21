@@ -36,8 +36,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   Future<void> _sendOtp() async {
     final l10n = AppLocalizations.of(context);
     if (_emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.pleaseEnterEmailFirst)),
+      AppSnackbar.show(
+        context,
+        title: l10n.info,
+        message: l10n.pleaseEnterEmailFirst,
+        type: SnackbarType.warning,
       );
       return;
     }
@@ -48,11 +51,11 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           );
       if (!mounted) return;
       setState(() => _otpSent = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.otpSentToEmail),
-          backgroundColor: AppColors.success,
-        ),
+      AppSnackbar.show(
+        context,
+        title: l10n.success,
+        message: l10n.otpSentToEmail,
+        type: SnackbarType.success,
       );
     } catch (e) {
       if (!mounted) return;

@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../providers/profile_provider.dart';
 
 class EditProfileSheet extends ConsumerStatefulWidget {
@@ -19,8 +20,12 @@ class EditProfileSheet extends ConsumerStatefulWidget {
 class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _usernameController;
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
+  late TextEditingController _bioController;
+  late TextEditingController _currencyController;
+  String? _selectedGender;
   DateTime? _selectedDate;
   bool _isSaving = false;
 
@@ -28,9 +33,12 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.profile['fullName']);
+    _usernameController = TextEditingController(text: widget.profile['username']);
     _phoneController = TextEditingController(text: widget.profile['phoneNumber'] ?? widget.profile['phone'] ?? '');
     _emailController = TextEditingController(text: widget.profile['email']);
-    
+    _bioController = TextEditingController(text: widget.profile['bio']);
+    _currencyController = TextEditingController(text: widget.profile['currency'] ?? 'IDR');
+    _selectedGender = widget.profile['gender'];
     final birthDateStr = widget.profile['birthDate'] as String?;
     if (birthDateStr != null) {
       _selectedDate = DateTime.tryParse(birthDateStr);
@@ -40,8 +48,11 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _bioController.dispose();
+    _currencyController.dispose();
     super.dispose();
   }
 
@@ -52,8 +63,12 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
     try {
       await ref.read(profileRepositoryProvider).updateProfile(
         fullName: _nameController.text.trim(),
-        phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        dateOfBirth: _selectedDate?.toUtc().toIso8601String(),
+        username: _usernameController.text.trim().isNotEmpty ? _usernameController.text.trim() : null,
+        phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+        currency: _currencyController.text.trim().isNotEmpty ? _currencyController.text.trim().toUpperCase() : null,
+        birthDate: _selectedDate?.toUtc().toIso8601String(),
+        gender: _selectedGender,
+        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
       );
       
       ref.invalidate(profileProvider);
@@ -71,7 +86,8 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: 'Error', message: 'Failed to update profile: $e', type: SnackbarType.error);
+        final l10n = AppLocalizations.of(context);
+        AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToUpdateProfile}: $e', type: SnackbarType.error);
       }
     }
   }
@@ -195,6 +211,45 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                       ],
                     ),
                   ),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: _usernameController,
+                  label: 'Username (Optional)',
+                  hint: 'Enter your username',
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _selectedGender,
+                  decoration: InputDecoration(
+                    labelText: 'Gender (Optional)',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                    DropdownMenuItem(value: 'Other', child: Text('Other')),
+                  ],
+                  onChanged: (value) => setState(() => _selectedGender = value),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: _bioController,
+                  label: 'Bio (Optional)',
+                  hint: 'Tell us about yourself',
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: _currencyController,
+                  label: 'Currency',
+                  hint: 'IDR, USD, etc.',
                 ),
                 const SizedBox(height: 32),
                 AppButton(

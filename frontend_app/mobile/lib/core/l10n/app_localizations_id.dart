@@ -110,6 +110,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get recentActivities => 'Aktivitas Terkini';
   @override String get seeAll => 'Lihat Semua';
   @override String get spendingByCategory => 'Pengeluaran per Kategori';
+  @override String get budgetDetails => 'Detail Anggaran';
   @override String get monthlyTrend => 'Tren Bulanan';
   @override String get transaction => 'Transaksi';
   @override String get other => 'Lainnya';
@@ -186,8 +187,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get limitAmount => 'Jumlah Batas';
   @override String get month => 'Bulan';
   @override String get saveBudget => 'Simpan Anggaran';
-  @override String get budgetSaved => 'Anggaran berhasil disimpan!';
+  @override String get budgetSaved => 'Anggaran berhasil disimpan';
   @override String get errorSavingBudget => 'Gagal menyimpan anggaran';
+  @override String get recurringBudget => 'Anggaran Berulang (Tiap Bulan)';
+  @override String get rolloverRemaining => 'Akumulasi Sisa Anggaran (Rollover)';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override String get savingsGoals => 'Tabungan';
@@ -214,8 +217,9 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get goalNameHint => 'mis. Mobil Baru';
   @override String get selectDate => 'Pilih tanggal';
   @override String get nameRequired => 'Nama wajib diisi';
-  @override String get saveGoal => 'Simpan Tujuan';
-  @override String get errorSavingGoal => 'Gagal menyimpan tujuan';
+  @override String get saveGoal => 'Simpan Target';
+  @override String get goalSavedSuccess => 'Target berhasil disimpan';
+  @override String get errorSavingGoal => 'Gagal menyimpan target';
   @override String get addFunds => 'Tambah Dana';
   @override String get reduceFunds => 'Kurangi Dana';
   @override String get reduce => 'Kurangi';
@@ -372,4 +376,23 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get onboardingDesc3 => 'Konsultasi dengan asisten AI personalmu untuk mendapat saran dan analisis kesehatan keuangan.';
   @override String get getStarted => 'Mulai Sekarang';
   @override String get next => 'Lanjut';
+
+  // ─── AI Voice ───────────────────────────────────────────────────────────────
+  @override String get aiVoiceTitle => 'Konfirmasi Transaksi';
+  @override String get aiVoiceTapToStart => 'Ketuk mikrofon untuk mulai berbicara';
+  @override String get aiVoiceTapToStop => 'Ketuk mikrofon saat selesai berbicara';
+  @override String get aiVoiceListening => 'Mendengarkan...';
+  @override String get aiVoiceAnalyzing => 'AI sedang menganalisis...';
+  @override String get aiVoiceExtracting => 'Mengekstrak nominal dan kategori';
+  @override String get aiVoiceFailed => 'Gagal memproses suara.';
+  @override String get aiVoiceErrorUnclear => 'Suara tidak jelas atau gagal memproses.';
+  @override String get aiVoiceTitleField => 'Judul';
+  @override String get aiVoiceAmountField => 'Nominal';
+  @override String get aiVoiceTypeField => 'Tipe';
+  @override String get aiVoiceCategoryField => 'Kategori';
+  @override String get aiVoiceIncome => 'Pemasukan';
+  @override String get aiVoiceExpense => 'Pengeluaran';
+  @override String get aiVoiceSave => 'Simpan Transaksi';
+  @override String get aiVoiceBack => 'Rekam Ulang';
+  @override String get aiVoiceSuccess => 'Transaksi disimpan melalui AI Voice!';
 }

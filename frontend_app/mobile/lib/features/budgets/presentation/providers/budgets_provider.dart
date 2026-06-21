@@ -69,6 +69,32 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
       rethrow;
     }
   }
+  Future<void> updateBudget({
+    required String id,
+    required double limitAmount,
+  }) async {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.patch('/budgets/$id', data: {
+        'limitAmount': limitAmount,
+      });
+      await fetchBudgets();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> deleteBudget(String id) async {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.delete('/budgets/$id');
+      await fetchBudgets();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
 }
 
 final budgetsNotifierProvider = StateNotifierProvider<BudgetsNotifier, BudgetsState>((ref) {

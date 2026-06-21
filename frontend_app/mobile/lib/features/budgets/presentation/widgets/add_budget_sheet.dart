@@ -14,7 +14,8 @@ import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
 
 class AddBudgetSheet extends ConsumerStatefulWidget {
-  const AddBudgetSheet({super.key});
+  const AddBudgetSheet({super.key, this.budget});
+  final Map<String, dynamic>? budget;
 
   @override
   ConsumerState<AddBudgetSheet> createState() => _AddBudgetSheetState();
@@ -27,7 +28,29 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
   String _selectedCurrency = AppConstants.defaultCurrency;
+  bool _isRecurring = false;
+  bool _rollover = false;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.budget != null) {
+      final rawL = widget.budget!['limitAmount'];
+      final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+      // Format amount with commas if needed, but for simplicity just string
+      _amountController.text = limitAmount.toStringAsFixed(0);
+      _selectedCategoryId = widget.budget!['categoryId'];
+      _selectedCurrency = widget.budget!['currency'] ?? AppConstants.defaultCurrency;
+      _isRecurring = widget.budget!['isRecurring'] ?? false;
+      _rollover = widget.budget!['rollover'] ?? false;
+      final monthYear = widget.budget!['monthYear']?.toString();
+      if (monthYear != null && monthYear.contains('-')) {
+        final parts = monthYear.split('-');
+        _selectedDate = DateTime(int.parse(parts[0]), int.parse(parts[1]));
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -57,25 +80,29 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
         'categoryId': _selectedCategoryId!,
         'limitAmount': double.parse(_amountController.text.replaceAll(',', '')),
         'currency': _selectedCurrency,
+        'isRecurring': _isRecurring,
+        'rollover': _rollover,
         'monthYear': monthYearStr,
       };
-      await dio.post('/budgets', data: payload);
-      ref.invalidate(budgetsNotifierProvider);
-      
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(l10n.budgetSaved),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      if (widget.budget == null) {
+        await dio.post('/budgets', data: payload);
+        ref.invalidate(budgetsNotifierProvider);
+        if (mounted) {
+          Navigator.pop(context);
+          AppSnackbar.show(context, title: l10n.success, message: 'Budget saved successfully', type: SnackbarType.success);
+        }
+      } else {
+        await dio.patch('/budgets/${widget.budget!['id']}', data: payload);
+        ref.invalidate(budgetsNotifierProvider);
+        if (mounted) {
+          Navigator.pop(context);
+          AppSnackbar.show(context, title: l10n.success, message: 'Budget updated successfully', type: SnackbarType.success);
+        }
       }
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: l10n.error, message: '${l10n.errorSavingBudget}: $e', type: SnackbarType.error);
+        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     }
   }
@@ -115,7 +142,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                l10n.setBudget,
+                widget.budget == null ? l10n.setBudget : 'Edit Budget',
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),
@@ -143,7 +170,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down_rounded),
                         decoration: InputDecoration(
-                          labelText: 'Currency',
+                          labelText: l10n.currency,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
@@ -313,6 +340,29 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                
+                // ── Recurring & Rollover Toggles ───────────────────────────
+                SwitchListTile(
+                  title: Text(l10n.recurringBudget, style: AppTypography.textTheme.bodyMedium),
+                  value: _isRecurring,
+                  activeColor: AppColors.primary,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) {
+                    setState(() {
+                      _isRecurring = val;
+                      if (!val) _rollover = false;
+                    });
+                  },
+                ),
+                if (_isRecurring)
+                  SwitchListTile(
+                    title: Text(l10n.rolloverRemaining, style: AppTypography.textTheme.bodyMedium),
+                    value: _rollover,
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (val) => setState(() => _rollover = val),
+                  ),
                 const SizedBox(height: 32),
 
                 // ── Save Button ────────────────────────────────────────────
@@ -402,14 +452,15 @@ class _SkeletonChipState extends State<_SkeletonChip>
 }
 
 // ─── Show helper ─────────────────────────────────────────────────────────────
-void showAddBudgetSheet(BuildContext context) {
+void showAddBudgetSheet(BuildContext context, {Map<String, dynamic>? budget}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
     ),
-    builder: (context) => const AddBudgetSheet(),
+    builder: (_) => AddBudgetSheet(budget: budget),
   );
 }

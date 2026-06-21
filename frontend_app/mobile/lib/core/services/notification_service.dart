@@ -12,7 +12,7 @@ class NotificationService {
 
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
@@ -58,7 +58,7 @@ class NotificationService {
       maxProgress: maxProgress,
       progress: progress,
       ongoing: true,
-      icon: 'ic_notification',
+      icon: '@mipmap/launcher_icon',
       color: const Color(0xFFA78BFA), // AppColors.primary
     );
     final NotificationDetails platformChannelSpecifics =
@@ -83,7 +83,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ongoing: false,
-      icon: 'ic_notification',
+      icon: '@mipmap/launcher_icon',
       color: Color(0xFF4ADE80), // AppColors.success
     );
     const NotificationDetails platformChannelSpecifics =
@@ -108,7 +108,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ongoing: false,
-      icon: 'ic_notification',
+      icon: '@mipmap/launcher_icon',
       color: Color(0xFFFB7185), // AppColors.danger
     );
     const NotificationDetails platformChannelSpecifics =
@@ -134,7 +134,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ongoing: false,
-      icon: 'ic_notification',
+      icon: '@mipmap/launcher_icon',
       color: Color(0xFFA78BFA), // AppColors.primary
       playSound: true,
       enableVibration: true,

@@ -1,4 +1,5 @@
 import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -27,11 +28,26 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   late final TextEditingController _emojiController;
   bool _isLoading = false;
 
+  late Color _selectedColor;
+
+  Color _colorFromHex(String? hexString) {
+    if (hexString == null || hexString.isEmpty) return AppColors.primary;
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+
+  String _colorToHex(Color color) {
+    return '#${color.value.toRadixString(16).substring(2, 8).toUpperCase()}';
+  }
+
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialCategory?['name']);
     _emojiController = TextEditingController(text: widget.initialCategory?['emojiIcon'] ?? '💰');
+    _selectedColor = _colorFromHex(widget.initialCategory?['colorCode'] as String?);
   }
 
   @override
@@ -44,6 +60,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   Future<void> _submit() async {
     final name = _nameController.text.trim();
     final emoji = _emojiController.text.trim();
+    final colorCode = _colorToHex(_selectedColor);
 
     if (name.isEmpty || emoji.isEmpty) {
       AppSnackbar.show(
@@ -61,9 +78,9 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     bool success;
 
     if (widget.initialCategory == null) {
-      success = await notifier.addCategory(name, emoji);
+      success = await notifier.addCategory(name, emoji, colorCode);
     } else {
-      success = await notifier.updateCategory(widget.initialCategory!['slug'], name, emoji);
+      success = await notifier.updateCategory(widget.initialCategory!['slug'], name, emoji, colorCode);
     }
 
     if (!mounted) return;
@@ -101,6 +118,26 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
               });
               Navigator.pop(context);
             },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showColorPicker() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pick Color'),
+          content: SingleChildScrollView(
+            child: BlockPicker(
+              pickerColor: _selectedColor,
+              onColorChanged: (Color color) {
+                setState(() => _selectedColor = color);
+                Navigator.of(context).pop();
+              },
+            ),
           ),
         );
       },
@@ -164,6 +201,25 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
                     child: Text(
                       _emojiController.text.isNotEmpty ? _emojiController.text : '💰',
                       style: const TextStyle(fontSize: 24),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  FocusScope.of(context).unfocus();
+                  _showColorPicker();
+                },
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: _selectedColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      width: 2,
                     ),
                   ),
                 ),

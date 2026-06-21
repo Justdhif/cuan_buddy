@@ -85,6 +85,27 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
       rethrow;
     }
   }
+  Future<void> updateGoal(String slug, Map<String, dynamic> data) async {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.patch('/goals/$slug', data: data);
+      await fetchGoals();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
+
+  Future<void> deleteGoal(String slug) async {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.delete('/goals/$slug');
+      await fetchGoals();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      rethrow;
+    }
+  }
 }
 
 final savingsNotifierProvider = StateNotifierProvider<SavingsNotifier, SavingsState>((ref) {

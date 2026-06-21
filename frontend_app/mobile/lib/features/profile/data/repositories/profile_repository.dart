@@ -15,15 +15,21 @@ class ProfileRepository {
 
   Future<Map<String, dynamic>> updateProfile({
     String? fullName,
-    String? phone,
+    String? username,
+    String? phoneNumber,
     String? currency,
-    String? dateOfBirth,
+    String? birthDate,
+    String? gender,
+    String? bio,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['fullName'] = fullName;
-    if (phone != null) body['phone'] = phone;
+    if (username != null) body['username'] = username;
+    if (phoneNumber != null) body['phoneNumber'] = phoneNumber;
     if (currency != null) body['currency'] = currency;
-    if (dateOfBirth != null) body['dateOfBirth'] = dateOfBirth;
+    if (birthDate != null) body['birthDate'] = birthDate;
+    if (gender != null) body['gender'] = gender;
+    if (bio != null) body['bio'] = bio;
 
     final response = await _dio.patch('/profiles/me', data: body);
     return response.data as Map<String, dynamic>;

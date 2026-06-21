@@ -48,10 +48,10 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     }
   }
 
-  Future<bool> addCategory(String name, String emojiIcon) async {
+  Future<bool> addCategory(String name, String emojiIcon, String colorCode) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
-      await repository.createCategory(name: name, emojiIcon: emojiIcon);
+      await repository.createCategory(name: name, emojiIcon: emojiIcon, colorCode: colorCode);
       await fetchCategories();
       return true;
     } catch (e) {
@@ -60,10 +60,10 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     }
   }
 
-  Future<bool> updateCategory(String slug, String name, String emojiIcon) async {
+  Future<bool> updateCategory(String slug, String name, String emojiIcon, String colorCode) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
-      await repository.updateCategory(slug: slug, name: name, emojiIcon: emojiIcon);
+      await repository.updateCategory(slug: slug, name: name, emojiIcon: emojiIcon, colorCode: colorCode);
       await fetchCategories();
       return true;
     } catch (e) {

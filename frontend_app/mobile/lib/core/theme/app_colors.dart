@@ -85,4 +85,17 @@ class AppColors {
     Color(0xFF34D399),
     Color(0xFFFCD34D),
   ];
+
+  // ─── Utilities ───────────────────────────────────────────────────────────────
+  static Color colorFromHex(String? hexString, {Color fallback = AppColors.primary}) {
+    if (hexString == null || hexString.isEmpty) return fallback;
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    try {
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (_) {
+      return fallback;
+    }
+  }
 }

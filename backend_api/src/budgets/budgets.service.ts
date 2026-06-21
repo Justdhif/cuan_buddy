@@ -48,6 +48,10 @@ export class BudgetsService {
     const { monthYear, page = 1, limit = 10 } = query;
     const offset = (Number(page) - 1) * Number(limit);
 
+    if (monthYear) {
+      await this._generateRecurringBudgets(userId, monthYear);
+    }
+
     const conditions = [eq(budgets.userId, userId)];
     if (monthYear) conditions.push(eq(budgets.monthYear, monthYear));
 
@@ -129,5 +133,67 @@ export class BudgetsService {
 
     if (!deleted) throw new NotFoundException('Budget not found');
     return { message: 'Budget removed successfully' };
+  }
+  async _generateRecurringBudgets(userId: string, currentMonthYear: string) {
+    const [year, month] = currentMonthYear.split('-').map(Number);
+    // month is 1-indexed. Month - 2 gives previous month (since 0-indexed in JS)
+    const prevDate = new Date(year, month - 2, 1);
+    const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+    const prevYear = prevDate.getFullYear();
+    const prevMonthYear = `${prevYear}-${prevMonth}`;
+
+    const prevBudgets = await this.db.query.budgets.findMany({
+      where: and(
+        eq(budgets.userId, userId),
+        eq(budgets.monthYear, prevMonthYear),
+        eq(budgets.isRecurring, true)
+      )
+    });
+
+    if (prevBudgets.length === 0) return;
+
+    const currBudgets = await this.db.query.budgets.findMany({
+      where: and(
+        eq(budgets.userId, userId),
+        eq(budgets.monthYear, currentMonthYear)
+      )
+    });
+    const currCategoryIds = new Set(currBudgets.map(b => b.categoryId));
+
+    for (const pb of prevBudgets) {
+      if (!currCategoryIds.has(pb.categoryId)) {
+        let rolloverAmount = 0;
+        if (pb.rollover) {
+          const startDate = new Date(prevYear, prevDate.getMonth(), 1);
+          const endDate = new Date(prevYear, prevDate.getMonth() + 1, 0, 23, 59, 59, 999);
+          const spentData = await this.db
+            .select({ total: sql<number>`SUM(amount::numeric)` })
+            .from(transactions)
+            .where(
+              and(
+                eq(transactions.userId, userId),
+                eq(transactions.categoryId, pb.categoryId),
+                eq(transactions.type, 'expense'),
+                gte(transactions.date, startDate),
+                lte(transactions.date, endDate)
+              )
+            );
+          const spent = Number(spentData[0]?.total || 0);
+          const totalPrevLimit = Number(pb.limitAmount) + Number(pb.rolloverAmount);
+          rolloverAmount = Math.max(0, totalPrevLimit - spent);
+        }
+
+        await this.db.insert(budgets).values({
+          userId,
+          categoryId: pb.categoryId,
+          limitAmount: pb.limitAmount.toString(),
+          isRecurring: true,
+          rollover: pb.rollover,
+          rolloverAmount: rolloverAmount.toString(),
+          currency: pb.currency,
+          monthYear: currentMonthYear
+        });
+      }
+    }
   }
 }

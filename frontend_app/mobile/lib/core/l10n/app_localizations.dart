@@ -114,6 +114,26 @@ abstract class AppLocalizations {
   String get recentActivities;
   String get seeAll;
   String get spendingByCategory;
+  String get budgetDetails;
+  // ─── AI Voice ───────────────────────────────────────────────────────────────
+  String get aiVoiceTitle;
+  String get aiVoiceTapToStart;
+  String get aiVoiceTapToStop;
+  String get aiVoiceListening;
+  String get aiVoiceAnalyzing;
+  String get aiVoiceExtracting;
+  String get aiVoiceFailed;
+  String get aiVoiceErrorUnclear;
+  String get aiVoiceTitleField;
+  String get aiVoiceAmountField;
+  String get aiVoiceTypeField;
+  String get aiVoiceCategoryField;
+  String get aiVoiceIncome;
+  String get aiVoiceExpense;
+  String get aiVoiceSave;
+  String get aiVoiceBack;
+  String get aiVoiceSuccess;
+
   String get monthlyTrend;
   String get transaction;
   String get other;
@@ -181,6 +201,8 @@ abstract class AppLocalizations {
   String get saveBudget;
   String get budgetSaved;
   String get errorSavingBudget;
+  String get recurringBudget;
+  String get rolloverRemaining;
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   String get savingsGoals;
@@ -207,6 +229,7 @@ abstract class AppLocalizations {
   String get selectDate;
   String get nameRequired;
   String get saveGoal;
+  String get goalSavedSuccess;
   String get errorSavingGoal;
   String get addFunds;
   String get reduceFunds;

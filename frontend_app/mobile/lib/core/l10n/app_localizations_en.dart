@@ -104,6 +104,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get recentActivities => 'Recent Activities';
   @override String get seeAll => 'See All';
   @override String get spendingByCategory => 'Spending by Category';
+  @override String get budgetDetails => 'Budget Details';
   @override String get monthlyTrend => 'Monthly Trend';
   @override String get transaction => 'Transaction';
   @override String get other => 'Other';
@@ -180,8 +181,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get limitAmount => 'Limit Amount';
   @override String get month => 'Month';
   @override String get saveBudget => 'Save Budget';
-  @override String get budgetSaved => 'Budget saved!';
+  @override String get budgetSaved => 'Budget saved successfully';
   @override String get errorSavingBudget => 'Error saving budget';
+  @override String get recurringBudget => 'Recurring Budget (Monthly)';
+  @override String get rolloverRemaining => 'Rollover Remaining Budget';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override String get savingsGoals => 'Savings';
@@ -209,6 +212,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get selectDate => 'Select a date';
   @override String get nameRequired => 'Name is required';
   @override String get saveGoal => 'Save Goal';
+  @override String get goalSavedSuccess => 'Goal saved successfully';
   @override String get errorSavingGoal => 'Error saving goal';
   @override String get addFunds => 'Add Funds';
   @override String get reduceFunds => 'Reduce Funds';
@@ -362,4 +366,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get onboardingDesc3 => 'Chat with your personal AI assistant to receive recommendations and insights about your health.';
   @override String get getStarted => 'Get Started';
   @override String get next => 'Next';
+
+  // ─── AI Voice ───────────────────────────────────────────────────────────────
+  @override String get aiVoiceTitle => 'Transaction Confirmation';
+  @override String get aiVoiceTapToStart => 'Tap the microphone to start speaking';
+  @override String get aiVoiceTapToStop => 'Tap the microphone when you\'re done';
+  @override String get aiVoiceListening => 'Listening...';
+  @override String get aiVoiceAnalyzing => 'AI is analyzing...';
+  @override String get aiVoiceExtracting => 'Extracting amount and category';
+  @override String get aiVoiceFailed => 'Failed to process voice.';
+  @override String get aiVoiceErrorUnclear => 'Voice is unclear or failed to process.';
+  @override String get aiVoiceTitleField => 'Title';
+  @override String get aiVoiceAmountField => 'Amount';
+  @override String get aiVoiceTypeField => 'Type';
+  @override String get aiVoiceCategoryField => 'Category';
+  @override String get aiVoiceIncome => 'Income';
+  @override String get aiVoiceExpense => 'Expense';
+  @override String get aiVoiceSave => 'Save Transaction';
+  @override String get aiVoiceBack => 'Record Again';
+  @override String get aiVoiceSuccess => 'Transaction saved via AI Voice!';
 }
