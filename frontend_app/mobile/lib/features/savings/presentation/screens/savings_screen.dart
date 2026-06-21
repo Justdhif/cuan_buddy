@@ -48,25 +48,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(savingsGoalsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final savingsState = ref.watch(savingsNotifierProvider);
     final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
-
-    // Filter goals
-    final filteredGoals = state.goals.where((goal) {
-      if (_statusFilter == 'All') return true;
-      final rawT = goal['targetAmount'];
-      final t = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
-      final rawC = goal['currentAmount'];
-      final c = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
-      final isCompleted = goal['status'] == 'completed' || (t > 0 && c >= t);
-      
-      if (_statusFilter == 'Completed') return isCompleted;
-      if (_statusFilter == 'In Progress') return !isCompleted;
-      return true;
-    }).toList();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -144,6 +129,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       if (_statusFilter == 'In Progress') return !isCompleted;
       return true;
     }).toList();
+
+    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
 
     return CustomScrollView(
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
