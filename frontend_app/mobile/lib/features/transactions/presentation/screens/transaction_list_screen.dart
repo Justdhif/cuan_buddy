@@ -76,6 +76,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
         },
         color: AppColors.primary,
         child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           controller: _scrollController,
           slivers: [
             const SliverToBoxAdapter(
@@ -97,14 +98,22 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                     ),
                   );
                 }
-                return SliverPadding(
-                  padding: const EdgeInsets.only(top: 8, bottom: 100),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _TransactionTile(transaction: transactions[index]),
-                      childCount: transactions.length,
+                return SliverMainAxisGroup(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 100),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _TransactionTile(transaction: transactions[index]),
+                          childCount: transactions.length,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: SizedBox.shrink(),
+                    ),
+                  ],
                 );
               },
               loading: () => const SliverToBoxAdapter(child: SkeletonList(itemCount: 8)),

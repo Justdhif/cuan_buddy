@@ -131,6 +131,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     }).toList();
 
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
         // Summary Header
@@ -284,7 +285,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               subtitle: l10n.tryChangingFilter,
             ),
           )
-        else
+        else ...[
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
             sliver: SliverList(
@@ -297,6 +298,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               ),
             ),
           ),
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: SizedBox.shrink(),
+          ),
+        ]
       ],
     );
   }

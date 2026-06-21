@@ -120,6 +120,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     }).toList();
 
     return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
         // Summary Header Card
@@ -348,7 +349,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               subtitle: l10n.tryChangingFilter,
             ),
           )
-        else
+        else ...[
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
             sliver: SliverList(
@@ -364,6 +365,11 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               ),
             ),
           ),
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: SizedBox.shrink(),
+          ),
+        ]
       ],
     );
   }
