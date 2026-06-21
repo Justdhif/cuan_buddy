@@ -124,7 +124,7 @@ class _NotificationTile extends ConsumerWidget {
             ? 'Anda telah berhasil mencatat $typeStr sebesar $amountStr.'
             : 'You have successfully recorded a $typeStr of $amountStr.';
             
-        final defaultCurrency = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+        final defaultCurrency = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
         if (currency != defaultCurrency) {
           final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(amount: amount, from: currency, to: defaultCurrency)));
           final defCurrencySymbol = AppConstants.getCurrencySymbol(defaultCurrency);
@@ -216,3 +216,4 @@ class _NotificationTile extends ConsumerWidget {
     );
   }
 }
+

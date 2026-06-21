@@ -53,7 +53,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           children: [
             const Text('🤖', style: TextStyle(fontSize: 24)),
             const SizedBox(width: 8),
-            Text(l10n.cuanBuddyAI, style: AppTypography.textTheme.titleMedium),
+            Text(l10n.cuanBuddyAI),
           ],
         ),
       ),

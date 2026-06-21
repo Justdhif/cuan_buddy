@@ -37,8 +37,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
   AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _usernameController;
   late TextEditingController _phoneController;
+  late TextEditingController _bioController;
   DateTime? _selectedDate;
+  String? _selectedGender;
   bool _isSaving = false;
 
   // Avatar
@@ -54,10 +57,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     super.initState();
     _nameController =
         TextEditingController(text: widget.profile['fullName'] as String? ?? '');
+    _usernameController =
+        TextEditingController(text: widget.profile['username'] as String? ?? '');
     _phoneController = TextEditingController(
         text: widget.profile['phoneNumber'] as String? ??
             widget.profile['phone'] as String? ??
             '');
+    _bioController =
+        TextEditingController(text: widget.profile['bio'] as String? ?? '');
+    _selectedGender = widget.profile['gender'] as String?;
 
     final birthDateStr = widget.profile['birthDate'] as String?;
     if (birthDateStr != null) {
@@ -78,7 +86,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
     _phoneController.dispose();
+    _bioController.dispose();
     _animController.dispose();
     super.dispose();
   }
@@ -159,8 +169,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       // Update profile fields
       await ref.read(profileRepositoryProvider).updateProfile(
         fullName: _nameController.text.trim(),
+        username: _usernameController.text.trim().isNotEmpty ? _usernameController.text.trim() : null,
         phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
         birthDate: _selectedDate?.toUtc().toIso8601String(),
+        gender: _selectedGender,
+        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
       );
 
       // If user picked a dicebear avatar, update it (if it's local file, upload endpoint already updated DB)
@@ -246,6 +259,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                 ),
                 const SizedBox(height: 16),
 
+                // ─── Username ─────────────────────────────────────────────
+                AppTextField(
+                  controller: _usernameController,
+                  label: l10n.usernameField,
+                  hint: l10n.usernameHint,
+                ),
+                const SizedBox(height: 16),
+
                 // ─── Phone Number ──────────────────────────────────────────
                 AppTextField(
                   controller: _phoneController,
@@ -304,6 +325,29 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+
+                // ─── Gender ────────────────────────────────────────────────
+                Text(l10n.genderField, style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    _buildGenderToggle('male', l10n.genderMale, Icons.male_rounded, isDark),
+                    const SizedBox(width: 8),
+                    _buildGenderToggle('female', l10n.genderFemale, Icons.female_rounded, isDark),
+                    const SizedBox(width: 8),
+                    _buildGenderToggle('other', l10n.genderOther, Icons.transgender_rounded, isDark),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // ─── Bio ───────────────────────────────────────────────────
+                AppTextField(
+                  controller: _bioController,
+                  label: l10n.bioField,
+                  hint: l10n.bioHint,
+                  maxLines: 3,
+                ),
                 const SizedBox(height: 40),
 
                 // ─── Save Button ───────────────────────────────────────────
@@ -314,6 +358,45 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderToggle(String value, String label, IconData icon, bool isDark) {
+    final isSelected = _selectedGender == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedGender = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? AppColors.primary 
+                : (isDark ? AppColors.surfaceDark : Colors.white),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected 
+                  ? AppColors.primary 
+                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: isSelected ? Colors.white : AppColors.primary),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isSelected 
+                      ? Colors.white 
+                      : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
         ),
       ),

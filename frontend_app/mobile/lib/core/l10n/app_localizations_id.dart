@@ -407,4 +407,21 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get aiVoiceSave => 'Simpan Transaksi';
   @override String get aiVoiceBack => 'Rekam Ulang';
   @override String get aiVoiceSuccess => 'Transaksi disimpan melalui AI Voice!';
+
+  // ─── Extra Fields ─────────────────────────────────────────────────────────────
+  @override String get usernameField => 'Username';
+  @override String get usernameHint => 'Masukkan username Anda';
+  @override String get genderField => 'Jenis Kelamin';
+  @override String get genderMale => 'Laki-laki';
+  @override String get genderFemale => 'Perempuan';
+  @override String get genderOther => 'Lainnya';
+  @override String get bioField => 'Bio';
+  @override String get bioHint => 'Ceritakan tentang diri Anda...';
+  @override String get noBioFallback => 'Belum ada bio.';
+  @override String get allocateToSavings => 'Alokasikan ke Tabungan';
+  @override String get selectSavingsGoal => 'Pilih Target Tabungan';
+  @override String get allocate => 'Alokasikan';
+  @override String get allocationSuccessful => 'Alokasi berhasil';
+  @override String get pleaseSelectSavingsGoal => 'Silakan pilih target tabungan';
+  @override String get changePasswordInfo => 'Silakan masukkan password saat ini untuk membuat password baru. Pastikan password baru Anda minimal 8 karakter.';
 }

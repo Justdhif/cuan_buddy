@@ -12,7 +12,6 @@ import '../../../../core/providers/core_providers.dart';
 import '../providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
-import '../../../savings/presentation/providers/savings_provider.dart';
 
 // ─── Add Transaction Sheet ────────────────────────────────────────────────────
 class AddTransactionSheet extends ConsumerStatefulWidget {
@@ -30,8 +29,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  final _allocationAmountController = TextEditingController();
-  String? _selectedGoalId;
   late String _type;
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
@@ -64,7 +61,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
-    _allocationAmountController.dispose();
     super.dispose();
   }
 
@@ -100,51 +96,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         await dio.patch('/transactions/$id', data: payload);
       } else {
         await dio.post('/transactions', data: payload);
-
-        // Handle Savings Allocation for new Income
-        if (_type == 'income' && _selectedGoalId != null) {
-          final allocAmountStr = _allocationAmountController.text.replaceAll(RegExp(r'[^0-9]'), '');
-          if (allocAmountStr.isNotEmpty) {
-            final allocAmount = double.parse(allocAmountStr);
-            if (allocAmount > 0) {
-              try {
-                // 1. Get current goal balance
-                final goals = ref.read(savingsNotifierProvider).goals;
-                final goal = goals.firstWhere(
-                  (g) => g['id'] == _selectedGoalId,
-                  orElse: () => <String, dynamic>{},
-                );
-                
-                if (goal.isNotEmpty) {
-                  final currentAmount = (goal['currentAmount'] as num?)?.toDouble() ?? 0;
-                  final newAmount = currentAmount + allocAmount;
-                  final goalName = goal['name'] as String? ?? 'Goal';
-                  
-                  // 2. Update goal balance
-                  await ref.read(savingsNotifierProvider.notifier).updateBalance(_selectedGoalId!, newAmount);
-                  
-                  // 3. Create expense transaction
-                  final categories = await ref.read(categoriesProvider.future);
-                  final savingsCategory = categories.firstWhere(
-                    (c) => c['name'].toString().toLowerCase() == 'others',
-                    orElse: () => null,
-                  );
-
-                  await dio.post('/transactions', data: {
-                    'type': 'expense',
-                    'amount': allocAmount,
-                    'currency': _selectedCurrency,
-                    'categoryId': savingsCategory?['id'],
-                    'note': 'Alokasi ke Tabungan: $goalName',
-                    'date': _selectedDate.toUtc().toIso8601String(),
-                  });
-                }
-              } catch (e) {
-                debugPrint('Failed to process savings allocation: $e');
-              }
-            }
-          }
-        }
       }
 
       // Invalidate all relevant providers to refresh data
@@ -441,10 +392,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                 ),
                 const SizedBox(height: 32),
 
-                // ── Savings Goal Allocation (Income Only) ──────────────────────
-                if (_type == 'income' && widget.initialTransaction == null)
-                  _buildSavingsAllocationSection(isDark),
-
                 // ── Save Button ────────────────────────────────────────
                 AppButton(
                   label: l10n.saveTransaction,
@@ -463,51 +410,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     );
   }
 
-  Widget _buildSavingsAllocationSection(bool isDark) {
-    final savingsState = ref.watch(savingsNotifierProvider);
-    if (savingsState.goals.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Text('Alokasi ke Tabungan (Opsional)', style: AppTypography.textTheme.labelMedium),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: _selectedGoalId,
-          decoration: InputDecoration(
-            labelText: 'Pilih Tabungan',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          items: [
-            const DropdownMenuItem<String>(
-              value: null,
-              child: Text('Tidak ada alokasi'),
-            ),
-            ...savingsState.goals.map((g) {
-              return DropdownMenuItem<String>(
-                value: g['id'] as String,
-                child: Text(g['name'] as String? ?? 'Goal'),
-              );
-            }),
-          ],
-          onChanged: (val) {
-            setState(() => _selectedGoalId = val);
-          },
-        ),
-        if (_selectedGoalId != null) ...[
-          const SizedBox(height: 12),
-          AppTextField(
-            controller: _allocationAmountController,
-            label: 'Jumlah Alokasi',
-            hint: '0',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          ),
-        ],
-        const SizedBox(height: 32),
-      ],
-    );
-  }
 
   /// Skeleton loader untuk baris chip kategori
   Widget _buildCategorySkeletonLoader(bool isDark) {

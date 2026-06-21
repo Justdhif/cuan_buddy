@@ -110,7 +110,7 @@ final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<St
   
   final currencyService = ref.watch(currencyServiceProvider);
   final profile = ref.watch(profileProvider);
-  final baseCurrency = profile.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+  final baseCurrency = profile.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
 
   double totalLimit = 0;
   double totalSpent = 0;
@@ -147,3 +147,4 @@ final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<St
 
   return {'totalLimit': totalLimit, 'totalSpent': totalSpent};
 });
+

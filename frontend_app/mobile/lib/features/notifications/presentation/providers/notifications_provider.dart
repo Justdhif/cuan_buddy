@@ -68,7 +68,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
           if (title == 'TRANSACTION_RECORDED') {
             final isId = ref.read(languageProvider) == 'id';
             title = isId ? 'Transaksi Baru Tercatat' : 'New Transaction Recorded';
-            final defaultCurrency = ref.read(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+            final defaultCurrency = ref.read(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
             
             try {
               final payload = jsonDecode(message);
@@ -166,3 +166,4 @@ final notificationsNotifierProvider =
     StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
   return NotificationsNotifier(ref);
 });
+

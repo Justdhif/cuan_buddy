@@ -13,7 +13,9 @@ import '../../../../core/providers/language_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
 import '../providers/transaction_provider.dart';
+import '../../../savings/presentation/widgets/allocate_savings_sheet.dart';
 import '../widgets/add_transaction_sheet.dart';
+import '../widgets/ai_voice_button.dart';
 import '../widgets/transaction_calendar.dart';
 
 class TransactionListScreen extends ConsumerStatefulWidget {
@@ -24,6 +26,27 @@ class TransactionListScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 200 && !_showScrollToTop) {
+        setState(() => _showScrollToTop = true);
+      } else if (_scrollController.offset <= 200 && _showScrollToTop) {
+        setState(() => _showScrollToTop = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   AppLocalizations get l10n => AppLocalizations.of(context);
 
   @override
@@ -32,6 +55,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 24,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         title: Text(l10n.transactions),
         actions: [
           IconButton(
@@ -39,44 +66,82 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
             icon: const Icon(Icons.add_rounded),
             tooltip: l10n.addTransaction,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
-      body: Column(
-        children: [
-          const TransactionCalendar(),
-          const _FilterRow(),
-          Expanded(
-            child: transactionsAsync.when(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(allTransactionsProvider);
+          ref.invalidate(calendarSummaryProvider);
+        },
+        color: AppColors.primary,
+        child: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            const SliverToBoxAdapter(
+              child: TransactionCalendar(),
+            ),
+            const SliverToBoxAdapter(
+              child: _FilterRow(),
+            ),
+            transactionsAsync.when(
               skipLoadingOnReload: true,
               data: (transactions) {
                 if (transactions.isEmpty) {
-                  return AppEmptyState(
-                    emoji: '💸',
-                    title: l10n.noTransactionsYetTitle,
-                    subtitle: l10n.noTransactionsYetSubtitle,
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: AppEmptyState(
+                      emoji: '💸',
+                      title: l10n.noTransactionsYetTitle,
+                      subtitle: l10n.noTransactionsYetSubtitle,
+                    ),
                   );
                 }
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(allTransactionsProvider);
-                    ref.invalidate(calendarSummaryProvider);
-                  },
-                  color: AppColors.primary,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.only(top: 8, bottom: 100),
-                    itemCount: transactions.length,
-                    itemBuilder: (context, index) =>
-                        _TransactionTile(transaction: transactions[index]),
+                return SliverPadding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 100),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => _TransactionTile(transaction: transactions[index]),
+                      childCount: transactions.length,
+                    ),
                   ),
                 );
               },
-              loading: () => const SkeletonList(itemCount: 8),
-              error: (e, _) => AppErrorState(
-                message: l10n.failedToLoadTransactionsError,
-                onRetry: () => ref.invalidate(allTransactionsProvider),
+              loading: () => const SliverToBoxAdapter(child: SkeletonList(itemCount: 8)),
+              error: (e, _) => SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppErrorState(
+                  message: l10n.failedToLoadTransactionsError,
+                  onRetry: () => ref.invalidate(allTransactionsProvider),
+                ),
               ),
             ),
+          ],
+        ),
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_showScrollToTop) ...[
+            FloatingActionButton(
+              heroTag: 'scroll_top',
+              mini: true,
+              onPressed: () {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              },
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+          ],
+          AiVoiceButton(
+            onTransactionAdded: () {
+              ref.invalidate(allTransactionsProvider);
+            },
           ),
         ],
       ),
@@ -106,21 +171,39 @@ class _FilterRow extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Type Toggle
+        // Type Toggle and Allocate Button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Container(
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                _buildTypeTab(context, ref, filterState.type, null, l10n.allTypes, isDark),
-                _buildTypeTab(context, ref, filterState.type, 'income', l10n.incomeType, isDark),
-                _buildTypeTab(context, ref, filterState.type, 'expense', l10n.expenseType, isDark),
-              ],
-            ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildTypeTab(context, ref, filterState.type, null, l10n.allTypes, isDark),
+                      _buildTypeTab(context, ref, filterState.type, 'income', l10n.incomeType, isDark),
+                      _buildTypeTab(context, ref, filterState.type, 'expense', l10n.expenseType, isDark),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => showAllocateSavingsSheet(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
+                ),
+              ),
+            ],
           ),
         ),
         
@@ -294,7 +377,7 @@ class _TransactionTile extends ConsumerWidget {
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
     
     final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
@@ -494,3 +577,4 @@ class _SkeletonChipState extends State<_SkeletonChip> with SingleTickerProviderS
     );
   }
 }
+

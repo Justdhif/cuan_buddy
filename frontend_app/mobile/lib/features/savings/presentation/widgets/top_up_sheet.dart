@@ -10,6 +10,7 @@ import '../../../transactions/presentation/providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../providers/savings_provider.dart';
 
 void showTopUpSheet(BuildContext context, Map<String, dynamic> goal) {
@@ -30,9 +31,17 @@ class _TopUpSheet extends ConsumerStatefulWidget {
 }
 
 class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
+  final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   bool _isAdding = true; // true = Add, false = Reduce
   bool _isLoading = false;
+  late String _selectedCurrency;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCurrency = widget.goal['currency'] as String? ?? AppConstants.defaultCurrency;
+  }
 
   @override
   void dispose() {
@@ -41,6 +50,8 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
   }
 
   Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    
     final l10n = AppLocalizations.of(context);
     final amountStr = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (amountStr.isEmpty) return;
@@ -73,7 +84,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       try {
         final categories = await ref.read(categoriesProvider.future);
         final savingsCategory = categories.firstWhere(
-          (c) => c['id'] == widget.goal['categoryId'],
+          (c) => c['name'].toString().toLowerCase() == 'others',
           orElse: () => null,
         );
 
@@ -81,7 +92,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
         await dio.post('/transactions', data: {
           'type': _isAdding ? 'expense' : 'income',
           'amount': amount,
-          'currency': widget.goal['currency'] ?? AppConstants.defaultCurrency,
+          'currency': _selectedCurrency,
           'categoryId': savingsCategory?['id'],
           'note': _isAdding ? l10n.transferToSavings(name) : l10n.withdrawFromSavings(name),
           'date': DateTime.now().toUtc().toIso8601String(),
@@ -118,8 +129,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final goalCurrency = widget.goal['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(goalCurrency);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = widget.goal['name'] as String? ?? l10n.unnamedGoal;
 
@@ -230,24 +239,53 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           const SizedBox(height: 24),
           
           // Amount Input
-          TextFormField(
-            controller: _amountController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              labelText: l10n.amount,
-              prefixText: '$currencySymbol ',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          Form(
+            key: _formKey,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedCurrency,
+                    isExpanded: true,
+                    icon: const Icon(Icons.arrow_drop_down_rounded),
+                    decoration: InputDecoration(
+                      labelText: l10n.currency,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        ),
+                      ),
+                    ),
+                    items: AppConstants.supportedCurrencies.map((c) {
+                      return DropdownMenuItem<String>(
+                        value: c['code'],
+                        child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _selectedCurrency = val);
+                    },
+                  ),
                 ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
-              ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: AppTextField(
+                    controller: _amountController,
+                    label: l10n.amount,
+                    hint: '0',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) return l10n.amountRequired;
+                      if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
+                      return null;
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 32),

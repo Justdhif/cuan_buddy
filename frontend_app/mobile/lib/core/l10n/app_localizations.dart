@@ -389,6 +389,23 @@ abstract class AppLocalizations {
   String get onboardingDesc3;
   String get getStarted;
   String get next;
+
+  // ─── Extra Fields ─────────────────────────────────────────────────────────────
+  String get usernameField;
+  String get usernameHint;
+  String get genderField;
+  String get genderMale;
+  String get genderFemale;
+  String get genderOther;
+  String get bioField;
+  String get bioHint;
+  String get noBioFallback;
+  String get allocateToSavings;
+  String get selectSavingsGoal;
+  String get allocate;
+  String get allocationSuccessful;
+  String get pleaseSelectSavingsGoal;
+  String get changePasswordInfo;
 }
 
 // ─── InheritedWidget Scope ────────────────────────────────────────────────────

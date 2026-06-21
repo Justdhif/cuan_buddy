@@ -397,4 +397,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get aiVoiceSave => 'Save Transaction';
   @override String get aiVoiceBack => 'Record Again';
   @override String get aiVoiceSuccess => 'Transaction saved via AI Voice!';
+
+  // ─── Extra Fields ─────────────────────────────────────────────────────────────
+  @override String get usernameField => 'Username';
+  @override String get usernameHint => 'Enter your username';
+  @override String get genderField => 'Gender';
+  @override String get genderMale => 'Male';
+  @override String get genderFemale => 'Female';
+  @override String get genderOther => 'Other';
+  @override String get bioField => 'Bio';
+  @override String get bioHint => 'Tell us about yourself...';
+  @override String get noBioFallback => 'No bio yet.';
+  @override String get allocateToSavings => 'Allocate to Savings';
+  @override String get selectSavingsGoal => 'Select Savings Goal';
+  @override String get allocate => 'Allocate';
+  @override String get allocationSuccessful => 'Allocation successful';
+  @override String get pleaseSelectSavingsGoal => 'Please select a savings goal';
+  @override String get changePasswordInfo => 'Please enter your current password to create a new one. Make sure your new password is at least 8 characters long.';
 }

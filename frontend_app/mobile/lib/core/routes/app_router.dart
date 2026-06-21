@@ -11,6 +11,8 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/email_verification_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_otp_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 
 // Profile Setup
@@ -20,12 +22,11 @@ import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
 import '../../features/profile/presentation/screens/widget_settings_screen.dart';
 
-import '../../features/profile/presentation/screens/currency_screen.dart';
-
 // Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 import '../../features/budgets/presentation/screens/budgets_screen.dart';
+import '../../features/budgets/presentation/screens/budget_detail_screen.dart';
 import '../../features/savings/presentation/screens/savings_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -77,6 +78,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildPage(state, const ForgotPasswordScreen()),
       ),
       GoRoute(
+        path: '/forgot-password/otp',
+        pageBuilder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return _buildPage(state, ForgotPasswordOtpScreen(email: email));
+        },
+      ),
+      GoRoute(
+        path: '/forgot-password/reset',
+        pageBuilder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          final otp = state.uri.queryParameters['otp'] ?? '';
+          return _buildPage(state, ResetPasswordScreen(email: email, otp: otp));
+        },
+      ),
+      GoRoute(
         path: '/profile-setup',
         pageBuilder: (context, state) => _buildPage(state, const ProfileSetupScreen()),
         redirect: (context, state) {
@@ -108,10 +124,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildPage(state, const WidgetSettingsScreen()),
       ),
       GoRoute(
-        path: '/currency',
-        pageBuilder: (context, state) => _buildPage(state, const CurrencyScreen()),
-      ),
-      GoRoute(
         path: '/change-password',
         pageBuilder: (context, state) => _buildPage(state, const ChangePasswordScreen()),
       ),
@@ -122,6 +134,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/ai-chat',
         pageBuilder: (context, state) => _buildPage(state, const AiChatScreen()),
+      ),
+      GoRoute(
+        path: '/budgets/detail',
+        pageBuilder: (context, state) {
+          final budget = state.extra as Map<String, dynamic>;
+          return _buildPage(state, BudgetDetailScreen(budget: budget));
+        },
       ),
       StatefulShellRoute(
         builder: (context, state, navigationShell) => navigationShell,

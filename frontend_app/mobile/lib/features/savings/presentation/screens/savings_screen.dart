@@ -25,22 +25,47 @@ class SavingsScreen extends ConsumerStatefulWidget {
 class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   String _statusFilter = 'All'; // 'All', 'In Progress', 'Completed'
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 200 && !_showScrollToTop) {
+        setState(() => _showScrollToTop = true);
+      } else if (_scrollController.offset <= 200 && _showScrollToTop) {
+        setState(() => _showScrollToTop = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final savingsState = ref.watch(savingsNotifierProvider);
-    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 24,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         title: Text(l10n.savingsGoals),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
             onPressed: () => showAddSavingsSheet(context),
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: RefreshIndicator(
@@ -48,6 +73,19 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         color: AppColors.primary,
         child: _buildBody(context, ref, savingsState, isDark, currencySymbol),
       ),
+      floatingActionButton: _showScrollToTop 
+          ? FloatingActionButton(
+              onPressed: () {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              },
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -93,16 +131,13 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     }).toList();
 
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         // Summary Header
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: StickyHeaderDelegate(
-            minHeight: 180, // Approximate height for savings card
-            maxHeight: 180,
-            child: Container(
-              color: Theme.of(context).scaffoldBackgroundColor,
-              child: Padding(
+        SliverToBoxAdapter(
+          child: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -176,7 +211,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 ),
               ),
             ),
-          ),
         ),
 
         // Status Filter
@@ -290,7 +324,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
   Widget _buildGoalCard(BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     final name = goal['name'] as String? ?? l10n.unnamedGoal;
@@ -482,7 +516,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   if (goalCurrency != currencyCode)
                     Consumer(
                       builder: (context, ref, _) {
-                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (goalCurrency == currencyCode) return const SizedBox.shrink();
                         
                         final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
@@ -518,7 +552,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   if (goalCurrency != currencyCode)
                     Consumer(
                       builder: (context, ref, _) {
-                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (goalCurrency == currencyCode) return const SizedBox.shrink();
                         
                         final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
@@ -570,3 +604,4 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 }
+

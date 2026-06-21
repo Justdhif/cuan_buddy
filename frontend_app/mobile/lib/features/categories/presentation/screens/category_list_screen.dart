@@ -50,8 +50,7 @@ class CategoryListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.manageCategories, style: AppTypography.textTheme.titleMedium),
-        centerTitle: true,
+        title: Text(l10n.manageCategories),
         actions: [
           IconButton(
             onPressed: () => _showCategoryForm(context),

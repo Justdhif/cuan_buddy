@@ -21,7 +21,6 @@ import '../../../../core/services/widget_service.dart';
 import '../../../../core/providers/widget_preferences_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../widgets/ai_insight_card.dart';
-import '../../../transactions/presentation/widgets/ai_voice_button.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -76,7 +75,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final balance = (data['balance'] as num? ?? 0).toDouble();
         final income = (data['totalIncome'] as num? ?? 0).toDouble();
         final expense = (data['totalExpense'] as num? ?? 0).toDouble();
-        final currency = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+        final currency = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
         
         // Push data to Android Homescreen Widget
         WidgetService.updateWidgetData(balance: balance, income: income, expense: expense, currency: currency);
@@ -92,7 +91,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           final rawS = goal['savedAmount'];
           final target = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
           final saved = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-          final currency = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+          final currency = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
           final emoji = goal['icon'] as String? ?? '🎯';
           final name = goal['name'] as String? ?? 'Savings Goal';
 
@@ -110,14 +109,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
 
     return Scaffold(
-      floatingActionButton: AiVoiceButton(
-        onTransactionAdded: () {
-          ref.invalidate(analyticsSummaryProvider);
-          ref.invalidate(financialHealthProvider);
-          ref.invalidate(recentTransactionsProvider);
-          ref.read(analyticsNotifierProvider.notifier).fetchAllAnalytics();
-        },
-      ),
       body: GestureDetector(
         onTap: () {},
         child: Stack(
@@ -396,7 +387,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final balance = (data['balance'] as num? ?? 0).toDouble();
     final income = (data['totalIncome'] as num? ?? 0).toDouble();
     final expense = (data['totalExpense'] as num? ?? 0).toDouble();
-    final currencyCode = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final fmt = NumberFormat.currency(
         locale: 'en_US',
@@ -487,7 +478,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ? amountRaw.toDouble() 
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
     final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencyCode = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
         locale: 'en_US',
@@ -595,7 +586,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currencyCode =
-        profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+        profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final fmt = NumberFormat.currency(
         locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
@@ -723,7 +714,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currencyCode =
-        profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+        profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final fmt = NumberFormat.currency(
         locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
@@ -1034,3 +1025,4 @@ class _TimeSceneryBackground extends StatelessWidget {
     );
   }
 }
+

@@ -20,8 +20,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Widget Settings', style: AppTypography.textTheme.titleMedium),
-        centerTitle: true,
+        title: const Text('Widget Settings'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
@@ -211,7 +210,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                         final target = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
                         final saved = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
                         final profileAsync = ref.read(profileProvider);
-                        final currency = profileAsync.value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        final currency = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
                         
                         await WidgetService.updateSavingsWidgetData(
                           emoji: goal['icon'] as String? ?? '🎯',
@@ -247,3 +246,4 @@ class WidgetSettingsScreen extends ConsumerWidget {
     );
   }
 }
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -22,22 +23,47 @@ class BudgetsScreen extends ConsumerStatefulWidget {
 class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   String _statusFilter = 'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
+  final ScrollController _scrollController = ScrollController();
+  bool _showScrollToTop = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (_scrollController.offset > 200 && !_showScrollToTop) {
+        setState(() => _showScrollToTop = true);
+      } else if (_scrollController.offset <= 200 && _showScrollToTop) {
+        setState(() => _showScrollToTop = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final budgetsState = ref.watch(budgetsNotifierProvider);
-    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 24,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         title: Text(l10n.budgets),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
             onPressed: () => showAddBudgetSheet(context),
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: RefreshIndicator(
@@ -45,6 +71,19 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         color: AppColors.primary,
         child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
       ),
+      floatingActionButton: _showScrollToTop 
+          ? FloatingActionButton(
+              onPressed: () {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              },
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -62,22 +101,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       decimalDigits: 0,
     );
 
-    // Calculate Summary
-    double totalLimit = 0;
-    double totalSpent = 0;
-
-    for (final b in state.budgets) {
-      final rawL = b['limitAmount'];
-      final rawR = b['rolloverAmount'];
-      final limit = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
-      final rollover = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
-      totalLimit += limit + rollover;
-      final rawS = b['spentAmount'];
-      totalSpent += rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-    }
-    
-    final totalPercentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
-    
     // Filter logic
     final filteredBudgets = state.budgets.where((b) {
       if (_statusFilter == 'All') return true;
@@ -97,16 +120,13 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     }).toList();
 
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         // Summary Header Card
-        SliverPersistentHeader(
-          pinned: true,
-            delegate: StickyHeaderDelegate(
-              minHeight: 140, // Match typical card height
-              maxHeight: 140,
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: Padding(
+        SliverToBoxAdapter(
+          child: Container(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -232,7 +252,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                 ),
               ),
             ),
-          ),
 
         // Status Filter Chips
         SliverToBoxAdapter(
@@ -359,7 +378,7 @@ class _BudgetCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
     final tx = budget as Map<String, dynamic>;
     final rawL = tx['limitAmount'];
     final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
@@ -399,9 +418,11 @@ class _BudgetCard extends ConsumerWidget {
       decimalDigits: 0,
     );
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
+    return GestureDetector(
+      onTap: () => context.push('/budgets/detail', extra: tx),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
@@ -427,6 +448,9 @@ class _BudgetCard extends ConsumerWidget {
                   ),
                 ),
               ),
+              if (safePercentage <= 0.5) const Text(' 🏆', style: TextStyle(fontSize: 16)),
+              if (safePercentage > 0.8 && safePercentage < 1.0) const Text(' 🔥', style: TextStyle(fontSize: 16)),
+              if (safePercentage >= 1.0) const Text(' 🚨', style: TextStyle(fontSize: 16)),
               if (isRecurring) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -515,6 +539,19 @@ class _BudgetCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
+          if (rolloverAmount > 0)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '+${fmt.format(rolloverAmount)} Rollover',
+                style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -531,7 +568,7 @@ class _BudgetCard extends ConsumerWidget {
                   if (txCurrency != AppConstants.defaultCurrency)
                     Consumer(
                       builder: (context, ref, _) {
-                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (txCurrency == currencyCode) return const SizedBox.shrink();
                         
                         final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
@@ -567,7 +604,7 @@ class _BudgetCard extends ConsumerWidget {
                   if (txCurrency != AppConstants.defaultCurrency)
                     Consumer(
                       builder: (context, ref, _) {
-                        final currencyCode = ref.watch(profileProvider).value?['currency'] as String? ?? AppConstants.defaultCurrency;
+                        final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
                         if (txCurrency == currencyCode) return const SizedBox.shrink();
                         
                         final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
@@ -627,6 +664,7 @@ class _BudgetCard extends ConsumerWidget {
           ],
         ],
       ),
-    );
+    ));
   }
 }
+

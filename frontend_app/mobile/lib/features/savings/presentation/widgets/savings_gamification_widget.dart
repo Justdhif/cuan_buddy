@@ -63,87 +63,63 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget> w
       animation: _animation,
       builder: (context, child) {
         final val = _animation.value;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        final percentageInt = (val * 100).clamp(0, 100).toInt();
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // The Track and Emoji
+            // Tree Illustration with Fill Effect
             SizedBox(
-              height: 50,
+              width: 64,
+              height: 64,
               child: Stack(
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.bottomCenter,
                 children: [
-                  // Background Track
-                  Container(
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: AppColors.borderLight.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
+                  Icon(
+                    Icons.park_rounded,
+                    color: AppColors.borderLight.withValues(alpha: 0.5),
+                    size: 64,
                   ),
-                  // Filled Track
-                  FractionallySizedBox(
-                    widthFactor: val.clamp(0.0, 1.0),
-                    child: Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.primary.withValues(alpha: 0.5), AppColors.primary],
-                        ),
-                        borderRadius: BorderRadius.circular(4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                  // Emoji Tracker
-                  Align(
-                    alignment: Alignment(
-                      // Alignment goes from -1.0 to 1.0
-                      -1.0 + (val.clamp(0.0, 1.0) * 2.0),
-                      0,
-                    ),
-                    child: Transform.scale(
-                      scale: 1.0 + (val * 0.2), // slightly grows as it nears the end
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            )
-                          ],
-                        ),
-                        child: Text(
-                          _getEmoji(val),
-                          style: const TextStyle(fontSize: 24),
-                        ),
+                  ClipRect(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      heightFactor: val.clamp(0.0, 1.0),
+                      child: const Icon(
+                        Icons.park_rounded,
+                        color: AppColors.success,
+                        size: 64,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            // Motivation Text
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 500),
-              child: Text(
-                _getMessageForPercentage(widget.percentage, context),
-                key: ValueKey<String>(_getMessageForPercentage(widget.percentage, context)),
-                style: AppTypography.textTheme.labelMedium?.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.primary,
-                ),
-                textAlign: TextAlign.center,
+            const SizedBox(width: 16),
+            // Percentage and Motivation Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$percentageInt%',
+                    style: AppTypography.textTheme.titleLarge?.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 500),
+                    child: Text(
+                      _getMessageForPercentage(widget.percentage, context),
+                      key: ValueKey<String>(_getMessageForPercentage(widget.percentage, context)),
+                      style: AppTypography.textTheme.labelMedium?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.primary,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
