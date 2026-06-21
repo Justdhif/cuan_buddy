@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:record/record.dart';
@@ -31,6 +32,8 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
   Map<String, dynamic>? _extractedData;
   String? _transcription;
   bool _isSaving = false;
+  StreamSubscription<Amplitude>? _amplitudeSubscription;
+  double _amplitude = 0.0;
 
   @override
   void initState() {
@@ -44,6 +47,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
 
   @override
   void dispose() {
+    _amplitudeSubscription?.cancel();
     _audioRecorder.dispose();
     _animationController.dispose();
     _deleteAudioFile();
@@ -71,6 +75,19 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
           const RecordConfig(encoder: AudioEncoder.aacLc),
           path: _audioPath!,
         );
+        
+        _amplitudeSubscription?.cancel();
+        _amplitudeSubscription = _audioRecorder.onAmplitudeChanged(const Duration(milliseconds: 50)).listen((amp) {
+          if (mounted) {
+            setState(() {
+              // Normal speech amplitude typically ranges from -40 to 0. 
+              // Adjust normalization so it looks good visually.
+              final normalized = (amp.current + 40) / 40;
+              _amplitude = normalized.clamp(0.0, 1.0);
+            });
+          }
+        });
+
         setState(() {
           _state = AiVoiceState.recording;
         });
@@ -86,8 +103,9 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     }
   }
 
-  Future<void> _stopRecording() async {
     try {
+      _amplitudeSubscription?.cancel();
+      _amplitude = 0.0;
       final path = await _audioRecorder.stop();
       setState(() {
         _state = AiVoiceState.processing;
@@ -155,13 +173,13 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
       
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        Navigator.pop(context, true); // true indicates successful save
         AppSnackbar.show(
           context,
           title: l10n.success,
           message: l10n.aiVoiceSuccess,
           type: SnackbarType.success,
         );
+        Navigator.pop(context, true); // true indicates successful save
       }
     } catch (e) {
       setState(() => _isSaving = false);
@@ -185,16 +203,16 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
             return GestureDetector(
               onTap: isRecording ? _stopRecording : _startRecording,
               child: Container(
-                width: 100,
-                height: 100,
+                width: 100 + (_amplitude * 20),
+                height: 100 + (_amplitude * 20),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isRecording ? AppColors.danger : AppColors.primary,
                   boxShadow: isRecording ? [
                     BoxShadow(
-                      color: AppColors.danger.withValues(alpha: 0.5 * _animationController.value),
-                      blurRadius: 30 * _animationController.value,
-                      spreadRadius: 15 * _animationController.value,
+                      color: AppColors.danger.withValues(alpha: 0.3 + (_amplitude * 0.4)),
+                      blurRadius: 20 + (_amplitude * 30),
+                      spreadRadius: 10 + (_amplitude * 20),
                     )
                   ] : [
                     BoxShadow(

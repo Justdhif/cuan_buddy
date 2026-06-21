@@ -355,14 +355,20 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                     });
                   },
                 ),
-                if (_isRecurring)
-                  SwitchListTile(
-                    title: Text(l10n.rolloverRemaining, style: AppTypography.textTheme.bodyMedium),
-                    value: _rollover,
-                    activeColor: AppColors.primary,
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (val) => setState(() => _rollover = val),
+                SwitchListTile(
+                  title: Text(
+                    l10n.rolloverRemaining, 
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
+                      color: _isRecurring 
+                          ? null 
+                          : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                    )
                   ),
+                  value: _rollover,
+                  activeColor: AppColors.primary,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: _isRecurring ? (val) => setState(() => _rollover = val) : null,
+                ),
                 const SizedBox(height: 32),
 
                 // ── Save Button ────────────────────────────────────────────

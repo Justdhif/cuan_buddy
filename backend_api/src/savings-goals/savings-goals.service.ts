@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { eq, and, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { savingsGoals } from '../database/schema';
@@ -25,8 +25,20 @@ export class SavingsGoalsService {
     if (createSavingsGoalDto.targetDate) data.targetDate = new Date(createSavingsGoalDto.targetDate);
     if (createSavingsGoalDto.status) data.status = createSavingsGoalDto.status;
 
-    const [newGoal] = await this.db.insert(savingsGoals).values(data).returning();
-    return newGoal;
+    try {
+      const [newGoal] = await this.db.insert(savingsGoals).values(data).returning();
+      return newGoal;
+    } catch (err: any) {
+      if (
+        err?.code === '23505' ||
+        err?.message?.includes('unique') ||
+        err?.cause?.code === '23505' ||
+        err?.cause?.message?.includes('unique')
+      ) {
+        throw new ConflictException('A savings goal with this name already exists');
+      }
+      throw err;
+    }
   }
 
   async findAll(userId: string, query: any) {
