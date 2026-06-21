@@ -136,13 +136,13 @@ class _NotificationTile extends ConsumerWidget {
           message += convertedText;
         }
       } catch (_) {}
-    } else if (title == 'BUDGET_EXCEEDED' || title == 'BUDGET_WARNING' || title == 'BUDGET_PREDICTION_WARNING') {
+    } else if (title == 'BUDGET_EXCEEDED' || title == 'BUDGET_WARNING' || title == 'BUDGET_PREDICTION_WARNING' || title == 'BUDGET_CREATED') {
       final isId = ref.watch(languageProvider) == 'id';
       
       try {
         final payload = jsonDecode(message);
         final monthYear = payload['monthYear'] as String;
-        final categoryName = payload['categoryName'] as String;
+        final categoryName = payload['categoryName'] as String?;
         final currency = payload['currency'] as String? ?? AppConstants.defaultCurrency;
         final txCurrencySymbol = AppConstants.getCurrencySymbol(currency);
         final fmt = NumberFormat.currency(locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
@@ -163,7 +163,13 @@ class _NotificationTile extends ConsumerWidget {
           return str;
         }
 
-        if (title == 'BUDGET_EXCEEDED') {
+        if (title == 'BUDGET_CREATED') {
+          title = isId ? 'Anggaran Baru Dibuat' : 'New Budget Created';
+          final limit = payload['limitAmount'] is num ? (payload['limitAmount'] as num).toDouble() : double.parse(payload['limitAmount'].toString());
+          message = isId
+              ? 'Anggaran untuk bulan $monthYear telah diatur sebesar ${formatWithConversion(limit)}.'
+              : 'Budget for $monthYear has been set to ${formatWithConversion(limit)}.';
+        } else if (title == 'BUDGET_EXCEEDED') {
           title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
           final limit = payload['limitAmount'] is num ? (payload['limitAmount'] as num).toDouble() : double.parse(payload['limitAmount'].toString());
           final spent = payload['totalSpent'] is num ? (payload['totalSpent'] as num).toDouble() : double.parse(payload['totalSpent'].toString());
@@ -184,7 +190,8 @@ class _NotificationTile extends ConsumerWidget {
               : 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: ${formatWithConversion(predicted)}';
         }
       } catch (_) {
-        if (title == 'BUDGET_EXCEEDED') title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
+        if (title == 'BUDGET_CREATED') title = isId ? 'Anggaran Baru Dibuat' : 'New Budget Created';
+        else if (title == 'BUDGET_EXCEEDED') title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
         else if (title == 'BUDGET_WARNING') title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
         else if (title == 'BUDGET_PREDICTION_WARNING') title = isId ? 'Peringatan Prediksi Anggaran' : 'Budget Prediction Warning';
       }

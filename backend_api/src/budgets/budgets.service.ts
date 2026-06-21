@@ -36,8 +36,12 @@ export class BudgetsService {
     // Fire-and-forget: do not await so response is returned immediately
     void this.notificationsService.createAndBroadcast(
       userId,
-      'New Budget Created',
-      `Budget for ${newBudget.monthYear} has been set to ${formatCurrency(newBudget.limitAmount)}.`,
+      'BUDGET_CREATED',
+      JSON.stringify({
+        monthYear: newBudget.monthYear,
+        limitAmount: Number(newBudget.limitAmount),
+        currency: newBudget.currency
+      }),
       'budget'
     );
 
