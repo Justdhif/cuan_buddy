@@ -162,7 +162,9 @@ class BackupWorker {
         await directory.create(recursive: true);
       }
 
-      final savePath = '${directory.path}/${tableName}_template.xlsx';
+      final savePath = tableName == 'all' 
+          ? '${directory.path}/cuanbuddy_templates.zip'
+          : '${directory.path}/${tableName}_template.xlsx';
 
       await repository.downloadTemplate(
         tableName,

@@ -50,6 +50,9 @@ export class BackupController {
   @Get('template/:table')
   @ApiOperation({ summary: 'Download empty Excel template' })
   downloadTemplate(@Param('table') table: string, @Response() res: any) {
+    if (table === 'all') {
+      return this.backupService.downloadAllTemplatesAsZip(res);
+    }
     return this.backupService.downloadTemplate(table, res);
   }
 

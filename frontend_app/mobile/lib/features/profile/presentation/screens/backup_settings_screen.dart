@@ -25,17 +25,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   bool? _backupEnabled;
   String _interval = '7d';
 
-  final List<String> _selectedTables = ['transactions', 'budgets', 'savings_goals'];
 
-  void _toggleTable(String table) {
-    setState(() {
-      if (_selectedTables.contains(table)) {
-        _selectedTables.remove(table);
-      } else {
-        _selectedTables.add(table);
-      }
-    });
-  }
   
   void _showRestoreSheet() {
     showModalBottomSheet(
@@ -210,16 +200,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 ),
               ],
   
-              
-              if (enabled) ...[
-                const SizedBox(height: 24),
-                Text(l10n.selectDataToBackup,
-                    style: AppTypography.textTheme.titleSmall),
-                const SizedBox(height: 12),
-                _buildCheckbox(l10n.transactionsLabel, 'transactions'),
-                _buildCheckbox(l10n.budgetsLabel, 'budgets'),
-                _buildCheckbox(l10n.savingsGoalsLabel, 'savings_goals'),
-              ],
+
   
               if (!widget.isOnboarding) ...[
                 const SizedBox(height: 24),
@@ -228,8 +209,8 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                     Expanded(
                       child: AppButton(
                         label: l10n.backupNow,
-                        onPressed: _selectedTables.isEmpty ? null : () {
-                          ref.read(backupWorkerProvider).runBackupProcess(tables: _selectedTables);
+                        onPressed: () {
+                          ref.read(backupWorkerProvider).runBackupProcess();
                           AppSnackbar.show(
                             context,
                             title: l10n.info,
@@ -411,17 +392,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
     );
   }
 
-  Widget _buildCheckbox(String title, String value) {
-    final isSelected = _selectedTables.contains(value);
-    return CheckboxListTile(
-      title: Text(title, style: AppTypography.textTheme.bodyMedium),
-      value: isSelected,
-      onChanged: (v) => _toggleTable(value),
-      activeColor: AppColors.primary,
-      controlAffinity: ListTileControlAffinity.leading,
-      contentPadding: EdgeInsets.zero,
-    );
-  }
+
 }
 
 class _RestoreSheet extends StatelessWidget {
@@ -522,29 +493,13 @@ class _RestoreSheet extends StatelessWidget {
                     : AppColors.textPrimaryLight,
               )),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildChip(
-                context: context,
-                isDark: isDark,
-                label: l10n.transactionsLabel,
-                onPressed: () => onDownloadTemplate('transactions'),
-              ),
-              _buildChip(
-                context: context,
-                isDark: isDark,
-                label: l10n.budgetsLabel,
-                onPressed: () => onDownloadTemplate('budgets'),
-              ),
-              _buildChip(
-                context: context,
-                isDark: isDark,
-                label: l10n.savingsGoalsLabel,
-                onPressed: () => onDownloadTemplate('savings_goals'),
-              ),
-            ],
+          Center(
+            child: _buildChip(
+              context: context,
+              isDark: isDark,
+              label: 'Download All Templates (.zip)',
+              onPressed: () => onDownloadTemplate('all'),
+            ),
           ),
           const SizedBox(height: 28),
 

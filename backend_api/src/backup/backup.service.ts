@@ -171,6 +171,33 @@ export class BackupService {
   // ─────────────────────────────────────────────
   // TEMPLATE
   // ─────────────────────────────────────────────
+  async downloadAllTemplatesAsZip(res: Response) {
+    const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
+    
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_templates.zip');
+
+    const archiverModule = await import('archiver');
+    const ZipArchive = (archiverModule as any).ZipArchive;
+    const archive = new ZipArchive({ zlib: { level: 9 } });
+    archive.pipe(res);
+
+    for (const tableName of validTables) {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(tableName);
+
+      if (tableName === 'transactions') worksheet.columns = [{ header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
+      else if (tableName === 'budgets') worksheet.columns = [{ header: 'CategoryID', key: 'categoryId' }, { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }];
+      else if (tableName === 'savings_goals') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Target Amount', key: 'targetAmount' }, { header: 'Current Amount', key: 'currentAmount' }, { header: 'Target Date', key: 'targetDate' }, { header: 'Status', key: 'status' }];
+      else if (tableName === 'categories') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }];
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      archive.append(Buffer.from(buffer), { name: `${tableName}_template.xlsx` });
+    }
+
+    await archive.finalize();
+  }
+
   async downloadTemplate(tableName: string, res: Response) {
     const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
     if (!validTables.includes(tableName)) throw new BadRequestException('Invalid table name');

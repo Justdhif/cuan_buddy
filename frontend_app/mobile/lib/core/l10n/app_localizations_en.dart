@@ -334,7 +334,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get budgetsLabel => 'Budgets';
   @override String get savingsGoalsLabel => 'Savings';
   @override String get categoriesLabel => 'Categories';
-  @override String get backupNow => 'Backup Now';
+  @override String get backupNow => 'Backup';
   @override String get restore => 'Restore';
   @override String get finishAndStart => 'Finish & Start 🚀';
   @override String get skip => 'Skip';
@@ -342,7 +342,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get failedToSaveSettings => 'Failed to save settings';
   @override String get restoreData => 'Restore Data';
   @override String get restoreInstructions =>
-      'To restore data correctly, please ensure your Excel or ZIP file follows our standard template structure. You can download the template below, fill it in, and then upload it.';
+      'To restore your data, please upload a valid .zip backup file. You can download the empty .zip template below to see the required format.';
   @override String get downloadTemplates => 'Download Templates';
   @override String get uploadAndRestore => 'Upload & Restore';
   @override String get backupStarted => 'Backup started...';

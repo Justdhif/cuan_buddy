@@ -49,23 +49,12 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: GestureDetector(
-          onTap: () {
-            if (_scrollController.hasClients) {
-              _scrollController.animateTo(
-                0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-              );
-            }
-          },
-          child: Row(
-            children: [
-              const Text('🤖', style: TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
-              Text(l10n.cuanBuddyAI),
-            ],
-          ),
+        title: Row(
+          children: [
+            const Text('🤖', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 8),
+            Text(l10n.cuanBuddyAI),
+          ],
         ),
       ),
       body: Column(

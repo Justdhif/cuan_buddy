@@ -343,7 +343,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get budgetsLabel => 'Anggaran';
   @override String get savingsGoalsLabel => 'Tabungan';
   @override String get categoriesLabel => 'Kategori';
-  @override String get backupNow => 'Backup Sekarang';
+  @override String get backupNow => 'Backup';
   @override String get restore => 'Pulihkan';
   @override String get finishAndStart => 'Selesai & Mulai 🚀';
   @override String get skip => 'Lewati';
@@ -351,7 +351,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get failedToSaveSettings => 'Gagal menyimpan pengaturan';
   @override String get restoreData => 'Pulihkan Data';
   @override String get restoreInstructions =>
-      'Untuk memulihkan data dengan benar, pastikan file Excel atau ZIP kamu mengikuti struktur template standar kami. Kamu bisa unduh template di bawah, isi, lalu unggah.';
+      'Untuk memulihkan data, pastikan kamu mengunggah file backup .zip yang valid. Kamu bisa mengunduh template .zip kosong di bawah ini untuk melihat format yang dibutuhkan.';
   @override String get downloadTemplates => 'Unduh Template';
   @override String get uploadAndRestore => 'Unggah & Pulihkan';
   @override String get backupStarted => 'Backup dimulai...';
