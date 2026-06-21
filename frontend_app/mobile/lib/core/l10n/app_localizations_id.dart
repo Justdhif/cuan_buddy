@@ -217,9 +217,21 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get goalNameHint => 'mis. Mobil Baru';
   @override String get selectDate => 'Pilih tanggal';
   @override String get nameRequired => 'Nama wajib diisi';
-  @override String get saveGoal => 'Simpan Target';
-  @override String get goalSavedSuccess => 'Target berhasil disimpan';
-  @override String get errorSavingGoal => 'Gagal menyimpan target';
+  @override String get saveGoal => 'Simpan Tabungan';
+  @override String get goalSavedSuccess => 'Tabungan berhasil disimpan';
+  @override String get errorSavingGoal => 'Gagal menyimpan tabungan';
+  @override String get editGoal => 'Edit Tabungan';
+  @override String get deleteGoal => 'Hapus Tabungan?';
+  @override String get deleteGoalConfirm => 'Apakah Anda yakin ingin menghapus tabungan ini?';
+  
+  @override String gamificationLevel5(String emoji) => 'Target tercapai! Panen besar! $emoji';
+  @override String gamificationLevel4(String emoji) => 'Sedikit lagi! Pohonmu sudah sangat besar! $emoji';
+  @override String gamificationLevel3(String emoji) => 'Setengah jalan! Terus sirami tabunganmu! $emoji';
+  @override String gamificationLevel2(String emoji) => 'Daunnya mulai tumbuh! Pertahankan! $emoji';
+  @override String gamificationLevel1(String emoji) => 'Bibit mulai ditanam. Yuk rutin menabung! $emoji';
+  @override String transferToSavings(String name) => 'Transfer ke Tabungan: $name';
+  @override String withdrawFromSavings(String name) => 'Tarik dari Tabungan: $name';
+  
   @override String get addFunds => 'Tambah Dana';
   @override String get reduceFunds => 'Kurangi Dana';
   @override String get reduce => 'Kurangi';

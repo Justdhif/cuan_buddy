@@ -415,16 +415,16 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Delete Goal?'),
-                        content: const Text('Are you sure you want to delete this savings goal?'),
+                        title: Text(l10n.deleteGoal),
+                        content: Text(l10n.deleteGoalConfirm),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
+                            child: Text(l10n.cancel),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+                            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
                           ),
                         ],
                       ),
@@ -444,20 +444,20 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   PopupMenuItem(
                     value: 'edit',
                     child: Row(
-                      children: const [
-                        Icon(Icons.edit_rounded, size: 20),
-                        SizedBox(width: 12),
-                        Text('Edit'),
+                      children: [
+                        const Icon(Icons.edit_rounded, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.edit),
                       ],
                     ),
                   ),
                   PopupMenuItem(
                     value: 'delete',
                     child: Row(
-                      children: const [
-                        Icon(Icons.delete_rounded, size: 20, color: AppColors.danger),
-                        SizedBox(width: 12),
-                        Text('Delete', style: TextStyle(color: AppColors.danger)),
+                      children: [
+                        const Icon(Icons.delete_outline_rounded, color: AppColors.danger, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
                       ],
                     ),
                   ),

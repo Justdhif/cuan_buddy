@@ -213,7 +213,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get nameRequired => 'Name is required';
   @override String get saveGoal => 'Save Goal';
   @override String get goalSavedSuccess => 'Goal saved successfully';
-  @override String get errorSavingGoal => 'Error saving goal';
+  @override String get errorSavingGoal => 'Failed to save goal';
+  @override String get editGoal => 'Edit Goal';
+  @override String get deleteGoal => 'Delete Goal?';
+  @override String get deleteGoalConfirm => 'Are you sure you want to delete this savings goal?';
+  
+  @override String gamificationLevel5(String emoji) => 'Target reached! Big harvest! $emoji';
+  @override String gamificationLevel4(String emoji) => 'Almost there! Your tree is huge! $emoji';
+  @override String gamificationLevel3(String emoji) => 'Halfway there! Keep watering your savings! $emoji';
+  @override String gamificationLevel2(String emoji) => 'Leaves are growing! Keep it up! $emoji';
+  @override String gamificationLevel1(String emoji) => 'Seed planted. Keep saving regularly! $emoji';
+  @override String transferToSavings(String name) => 'Transfer to Savings: $name';
+  @override String withdrawFromSavings(String name) => 'Withdraw from Savings: $name';
+  
   @override String get addFunds => 'Add Funds';
   @override String get reduceFunds => 'Reduce Funds';
   @override String get reduce => 'Reduce';

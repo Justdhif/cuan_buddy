@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/app_localizations.dart';
 
 class SavingsGamificationWidget extends StatefulWidget {
   final double percentage; // 0.0 to 1.0
@@ -46,12 +47,14 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget> w
     return '🌱';
   }
 
-  String _getMotivationMsg(double pct) {
-    if (pct >= 1.0) return 'Target tercapai! Panen besar! 🎉';
-    if (pct >= 0.75) return 'Sedikit lagi! Pohonmu sudah sangat besar! 🌳';
-    if (pct >= 0.50) return 'Setengah jalan! Terus sirami tabunganmu! 🪴';
-    if (pct >= 0.25) return 'Daunnya mulai tumbuh! Pertahankan! 🌿';
-    return 'Bibit mulai ditanam. Yuk rutin menabung! 🌱';
+  String _getMessageForPercentage(double pct, BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final emoji = _getEmoji(pct);
+    if (pct >= 1.0) return l10n.gamificationLevel5(emoji);
+    if (pct >= 0.75) return l10n.gamificationLevel4(emoji);
+    if (pct >= 0.50) return l10n.gamificationLevel3(emoji);
+    if (pct >= 0.25) return l10n.gamificationLevel2(emoji);
+    return l10n.gamificationLevel1(emoji);
   }
 
   @override
@@ -134,8 +137,8 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget> w
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 500),
               child: Text(
-                _getMotivationMsg(widget.percentage), // Use widget.percentage to not flicker during animation
-                key: ValueKey<String>(_getMotivationMsg(widget.percentage)),
+                _getMessageForPercentage(widget.percentage, context),
+                key: ValueKey<String>(_getMessageForPercentage(widget.percentage, context)),
                 style: AppTypography.textTheme.labelMedium?.copyWith(
                   fontStyle: FontStyle.italic,
                   color: AppColors.primary,

@@ -41,6 +41,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     final amountStr = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (amountStr.isEmpty) return;
 
@@ -56,7 +57,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       // Prevent negative balance
       if (newAmount < 0) {
         if (mounted) {
-          final l10n = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(l10n.balanceCannotBeNegative)),
           );
@@ -83,7 +83,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           'amount': amount,
           'currency': widget.goal['currency'] ?? AppConstants.defaultCurrency,
           'categoryId': savingsCategory?['id'],
-          'note': _isAdding ? 'Transfer ke Tabungan: $name' : 'Tarik dari Tabungan: $name',
+          'note': _isAdding ? l10n.transferToSavings(name) : l10n.withdrawFromSavings(name),
           'date': DateTime.now().toUtc().toIso8601String(),
         });
 

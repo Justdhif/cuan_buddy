@@ -90,7 +90,7 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.goal == null ? l10n.newGoal : 'Edit Goal',
+                widget.goal == null ? l10n.newGoal : l10n.editGoal,
                 style: AppTypography.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                 ),

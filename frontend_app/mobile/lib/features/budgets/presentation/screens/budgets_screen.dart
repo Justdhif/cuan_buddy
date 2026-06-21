@@ -77,7 +77,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     }
     
     final totalPercentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
-    final safeTotalPercentage = totalPercentage.clamp(0.0, 1.0);
     
     // Filter logic
     final filteredBudgets = state.budgets.where((b) {
