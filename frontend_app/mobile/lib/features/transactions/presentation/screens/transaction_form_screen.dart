@@ -2,6 +2,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -13,20 +14,24 @@ import '../providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 
-// ─── Add Transaction Sheet ────────────────────────────────────────────────────
-class AddTransactionSheet extends ConsumerStatefulWidget {
-  const AddTransactionSheet({super.key, required this.initialType, this.initialTransaction});
+class TransactionFormScreen extends ConsumerStatefulWidget {
+  const TransactionFormScreen({
+    super.key,
+    required this.initialType,
+    this.initialTransaction,
+  });
+
   final String initialType; // 'income' or 'expense'
   final Map<String, dynamic>? initialTransaction;
 
   @override
-  ConsumerState<AddTransactionSheet> createState() =>
-      _AddTransactionSheetState();
+  ConsumerState<TransactionFormScreen> createState() => _TransactionFormScreenState();
 }
 
-class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
+class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   late String _type;
@@ -42,6 +47,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     if (widget.initialTransaction != null) {
       final tx = widget.initialTransaction!;
       _type = tx['type'] as String? ?? widget.initialType;
+      _titleController.text = tx['title'] as String? ?? '';
       _amountController.text = (tx['amount'] ?? '').toString();
       _noteController.text = tx['note'] as String? ?? '';
       _selectedCategoryId = tx['categoryId'] as String?;
@@ -51,14 +57,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       if (tx['currency'] != null) {
         _selectedCurrency = tx['currency'] as String;
       }
-    } else {
-      // If we have access to profile provider here, we could set default to user profile currency.
-      // But we will handle this by letting user choose or using default IDR.
     }
   }
 
   @override
   void dispose() {
+    _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -81,6 +85,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     try {
       final dio = ref.read(dioClientProvider).dio;
       final payload = <String, dynamic>{
+        'title': _titleController.text.trim(),
         'type': _type,
         'amount': double.parse(_amountController.text.replaceAll(',', '')),
         'currency': _selectedCurrency,
@@ -88,7 +93,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         'date': _selectedDate.toUtc().toIso8601String(),
       };
       if (_noteController.text.isNotEmpty) {
-        payload['note'] = _noteController.text;
+        payload['note'] = _noteController.text.trim();
       }
 
       if (widget.initialTransaction != null) {
@@ -103,17 +108,86 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       ref.invalidate(recentTransactionsProvider);
       ref.invalidate(analyticsSummaryProvider);
       ref.invalidate(financialHealthProvider);
-      ref.invalidate(calendarSummaryProvider); // New provider
+      ref.invalidate(calendarSummaryProvider);
       ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
 
       if (mounted) {
-        Navigator.pop(context);
-        AppSnackbar.show(context, title: l10n.success, message: l10n.transactionSaved, type: SnackbarType.success);
+        context.pop();
+        AppSnackbar.show(
+          context,
+          title: l10n.success,
+          message: l10n.transactionSaved,
+          type: SnackbarType.success,
+        );
       }
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: e.toString(),
+          type: SnackbarType.error,
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmAndDelete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.deleteTransaction),
+        content: Text(l10n.deleteTransactionConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isSaving = true);
+      try {
+        final dio = ref.read(dioClientProvider).dio;
+        final id = widget.initialTransaction!['id'];
+        await dio.delete('/transactions/$id');
+
+        ref.invalidate(allTransactionsProvider);
+        ref.invalidate(recentTransactionsProvider);
+        ref.invalidate(analyticsSummaryProvider);
+        ref.invalidate(financialHealthProvider);
+        ref.invalidate(calendarSummaryProvider);
+        ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
+
+        if (mounted) {
+          context.pop();
+          AppSnackbar.show(
+            context,
+            title: l10n.success,
+            message: l10n.deleteTransaction,
+            type: SnackbarType.success,
+          );
+        }
+      } catch (e) {
+        setState(() => _isSaving = false);
+        if (mounted) {
+          AppSnackbar.show(
+            context,
+            title: l10n.error,
+            message: '${l10n.failedToDelete}: $e',
+            type: SnackbarType.error,
+          );
+        }
       }
     }
   }
@@ -124,79 +198,77 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        left: 24,
-        right: 24,
-        top: 12,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.initialTransaction != null ? l10n.editTransaction : l10n.addTransaction,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.pop(),
+        ),
+        actions: [
+          if (widget.initialTransaction != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              onPressed: _confirmAndDelete,
+              tooltip: l10n.deleteTransaction,
+            ),
+        ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                widget.initialTransaction != null ? l10n.editTransaction : l10n.addTransaction,
-                style: AppTypography.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // ── Type Toggle ─────────────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.borderLight.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                _buildTypeTab(
-                  context: context,
-                  targetType: 'expense',
-                  label: l10n.expenseType,
-                  activeColor: AppColors.danger,
-                  isDark: isDark,
-                ),
-                _buildTypeTab(
-                  context: context,
-                  targetType: 'income',
-                  label: l10n.incomeType,
-                  activeColor: AppColors.success,
-                  isDark: isDark,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-          Form(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          physics: const BouncingScrollPhysics(),
+          child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Type Toggle ─────────────────────────────────────────────
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.backgroundDark
+                        : AppColors.borderLight.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildTypeTab(
+                        context: context,
+                        targetType: 'expense',
+                        label: l10n.expenseType,
+                        activeColor: AppColors.danger,
+                        isDark: isDark,
+                      ),
+                      _buildTypeTab(
+                        context: context,
+                        targetType: 'income',
+                        label: l10n.incomeType,
+                        activeColor: AppColors.success,
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // ── Title ─────────────────────────────────────────────
+                AppTextField(
+                  controller: _titleController,
+                  label: l10n.transactionTitle,
+                  hint: l10n.transactionTitleHint,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return l10n.titleRequired;
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 // ── Amount & Currency ─────────────────────────────────────────────
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +291,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                         items: AppConstants.supportedCurrencies.map((c) {
                           return DropdownMenuItem<String>(
                             value: c['code'],
-                            child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                            child: Text(
+                              '${c['code']} (${c['symbol']})',
+                              style: AppTypography.textTheme.bodyMedium,
+                            ),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -256,7 +331,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                     style: const TextStyle(color: AppColors.danger, fontSize: 12),
                   ),
                   data: (allCategories) {
-                    // Filter by type
                     final filtered = allCategories.where((c) {
                       final catType = c['type'] as String?;
                       return catType == _type || catType == null;
@@ -266,9 +340,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                       return Text(
                         l10n.noCategories,
                         style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       );
                     }
@@ -286,51 +358,36 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                           final catName = cat['name'] as String? ?? '';
                           final catEmoji = cat['emojiIcon'] as String? ?? cat['emoji'] as String? ?? '💰';
                           final isSelected = _selectedCategoryId == catId;
-
                           final catColor = AppColors.colorFromHex(cat['colorCode'] as String?, fallback: typeColor);
 
                           return GestureDetector(
                             onTap: () => setState(() {
-                              _selectedCategoryId =
-                                  isSelected ? null : catId;
+                              _selectedCategoryId = isSelected ? null : catId;
                             }),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? catColor.withValues(alpha: 0.15)
-                                    : (isDark
-                                        ? AppColors.surfaceDark
-                                        : const Color(0xFFF3F0FF)),
+                                    : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isSelected
-                                      ? catColor
-                                      : (isDark
-                                          ? AppColors.borderDark
-                                          : AppColors.borderLight),
+                                  color: isSelected ? catColor : (isDark ? AppColors.borderDark : AppColors.borderLight),
                                   width: isSelected ? 1.5 : 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    catEmoji,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
+                                  Text(catEmoji, style: const TextStyle(fontSize: 18)),
                                   const SizedBox(width: 6),
                                   Text(
                                     catName,
-                                    style: AppTypography.textTheme.labelMedium
-                                        ?.copyWith(
+                                    style: AppTypography.textTheme.labelMedium?.copyWith(
                                       color: isSelected ? catColor : null,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     ),
                                   ),
                                 ],
@@ -371,9 +428,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight,
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
                           width: 1,
                         ),
                       ),
@@ -396,37 +451,18 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                 AppButton(
                   label: l10n.saveTransaction,
                   onPressed: _save,
-                  type: _type == 'income'
-                      ? AppButtonType.primary
-                      : AppButtonType.danger,
+                  type: _type == 'income' ? AppButtonType.primary : AppButtonType.danger,
                   isLoading: _isSaving,
                 ),
                 const SizedBox(height: 32),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-
-
-  /// Skeleton loader untuk baris chip kategori
-  Widget _buildCategorySkeletonLoader(bool isDark) {
-    return SizedBox(
-      height: 52,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
-      ),
-    );
-  }
-
-  /// Builds a single type tab, identical to the style in _FilterRow
   Widget _buildTypeTab({
     required BuildContext context,
     required String targetType,
@@ -453,11 +489,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             label,
             textAlign: TextAlign.center,
             style: AppTypography.textTheme.titleSmall?.copyWith(
-              color: isSelected
-                  ? Colors.white
-                  : (isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight),
+              color: isSelected ? Colors.white : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -465,9 +497,21 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       ),
     );
   }
+
+  Widget _buildCategorySkeletonLoader(bool isDark) {
+    return SizedBox(
+      height: 52,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
+      ),
+    );
+  }
 }
 
-// ─── Skeleton Chip ────────────────────────────────────────────────────────────
 class _SkeletonChip extends StatefulWidget {
   const _SkeletonChip({required this.isDark});
   final bool isDark;
@@ -476,8 +520,7 @@ class _SkeletonChip extends StatefulWidget {
   State<_SkeletonChip> createState() => _SkeletonChipState();
 }
 
-class _SkeletonChipState extends State<_SkeletonChip>
-    with SingleTickerProviderStateMixin {
+class _SkeletonChipState extends State<_SkeletonChip> with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
@@ -501,9 +544,7 @@ class _SkeletonChipState extends State<_SkeletonChip>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDark
-        ? const Color(0xFF2D3748)
-        : const Color(0xFFE2E8F0);
+    final baseColor = widget.isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
 
     return AnimatedBuilder(
       animation: _anim,

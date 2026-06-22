@@ -7,11 +7,12 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
-import '../../../../core/widgets/sticky_header_delegate.dart';
 import '../../../../core/services/currency_service.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/budgets_provider.dart';
 import '../widgets/add_budget_sheet.dart';
+import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
+import '../../../profile/data/services/backup_worker.dart';
 
 class BudgetsScreen extends ConsumerStatefulWidget {
   const BudgetsScreen({super.key});
@@ -63,7 +64,44 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             icon: const Icon(Icons.add_rounded),
             onPressed: () => showAddBudgetSheet(context),
           ),
-          const SizedBox(width: 16),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              if (value == 'export') {
+                ref.read(backupWorkerProvider).runBackupProcess(tables: ['budgets']);
+              } else if (value == 'import') {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const SingleTableImportSheet(tableName: 'budgets'),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'export',
+                child: Row(
+                  children: [
+                    const Icon(Icons.file_download_rounded, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.exportData),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    const Icon(Icons.file_upload_rounded, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.importData),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
@@ -344,25 +382,26 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               ),
             ),
           )
-        else
-          SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewportHeight),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-                itemCount: filteredBudgets.length,
-                itemBuilder: (context, index) {
+        else ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
                   return _BudgetCard(
                     budget: filteredBudgets[index],
                     isDark: isDark,
                     currencySymbol: currencySymbol,
                   );
                 },
+                childCount: filteredBudgets.length,
               ),
             ),
-          )
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 120),
+          ),
+        ]
       ],
     );
   }
@@ -630,20 +669,76 @@ class _BudgetCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            // Animated Progress Bar
-            child: TweenAnimationBuilder<double>(
-              tween: Tween<double>(begin: 0, end: safePercentage),
-              duration: const Duration(milliseconds: 1000),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, _) => LinearProgressIndicator(
-                value: value,
-                backgroundColor: isDark ? AppColors.borderDark : AppColors.borderLight,
-                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                minHeight: 8,
-              ),
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              return TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: safePercentage),
+                duration: const Duration(milliseconds: 1000),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, _) {
+                  String emoji = '🤩';
+                  if (value >= 1.0) emoji = '😭';
+                  else if (value > 0.7) emoji = '😰';
+
+                  final maxWidth = constraints.maxWidth;
+                  final activeWidth = maxWidth * value;
+                  const dotSize = 24.0;
+
+                  return SizedBox(
+                    height: dotSize,
+                    child: Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        // Background Bar
+                        Container(
+                          height: 8,
+                          width: maxWidth,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        // Active Bar
+                        Container(
+                          height: 8,
+                          width: activeWidth,
+                          decoration: BoxDecoration(
+                            color: progressColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                        // Dot with Emoji
+                        Positioned(
+                          left: (activeWidth - dotSize / 2).clamp(0.0, maxWidth - dotSize),
+                          child: Container(
+                            width: dotSize,
+                            height: dotSize,
+                            decoration: BoxDecoration(
+                              color: isDark ? AppColors.surfaceDark : Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: progressColor, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: progressColor.withValues(alpha: 0.3),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                emoji,
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
           ),
           if (safePercentage >= 1.0) ...[
             const SizedBox(height: 8),

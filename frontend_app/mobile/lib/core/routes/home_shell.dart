@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import '../theme/app_colors.dart';
 import '../l10n/app_localizations.dart';
-import '../../features/profile/presentation/providers/profile_provider.dart';
 
 class _CustomConvexStyle extends StyleHook {
   final TextStyle baseStyle;
@@ -80,8 +77,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Watch profile for avatar
-    final profileAsync = ref.watch(profileProvider);
+    // Widget build method
 
     return StyleProvider(
       style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
@@ -101,55 +97,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
           TabItem(icon: Icons.pie_chart_outline_rounded, title: l10n.budgets),
           TabItem(icon: Icons.home_rounded, title: l10n.home),
           TabItem(icon: Icons.savings_outlined, title: l10n.savingsGoals),
-          TabItem(
-            title: l10n.profile,
-            icon: profileAsync.when(
-              data: (profile) {
-                final avatarUrl = profile['avatar'] as String?;
-                if (avatarUrl != null && avatarUrl.isNotEmpty) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: currentIndex == 4 ? AppColors.primary : Colors.transparent, 
-                        width: 1.5,
-                      ),
-                    ),
-                    child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: avatarUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Shimmer.fromColors(
-                          baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                          highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-                          child: Container(color: Colors.white),
-                        ),
-                        errorWidget: (_, __, ___) => Icon(
-                          Icons.person_outline_rounded,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                        ),
-                      ),
-                    ),
-                  );
-                }
-                return Icon(
-                  Icons.person_outline_rounded,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                );
-              },
-              loading: () => Shimmer.fromColors(
-                baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
-                child: Container(
-                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-                ),
-              ),
-              error: (_, __) => Icon(
-                Icons.person_outline_rounded,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-              ),
-            ),
-          ),
+          TabItem(icon: Icons.group_outlined, title: l10n.shared),
         ],
       ),
     );

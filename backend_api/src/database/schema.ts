@@ -44,6 +44,7 @@ export const categories = pgTable('categories', {
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title'),
   type: transactionTypeEnum('type').notNull(),
   amount: decimal('amount', { precision: 19, scale: 2 }).notNull(),
   currency: text('currency').default('IDR').notNull(),

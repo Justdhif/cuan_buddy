@@ -109,6 +109,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get transaction => 'Transaction';
   @override String get other => 'Other';
   @override String get you => 'You';
+  @override String get shared => 'Shared';
   @override String get noTransactionsYet => 'No transactions yet';
   @override String get startRecordingTransactions =>
       'Start recording your income & expenses!';
@@ -144,10 +145,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get deleteTransaction => 'Delete Transaction';
   @override String get deleteTransactionConfirm =>
       'Are you sure you want to delete this transaction?';
+  @override String get deleteBudget => 'Delete Budget?';
+  @override String get deleteBudgetConfirm =>
+      'Are you sure you want to delete this budget?';
   @override String get cancel => 'Cancel';
   @override String get failedToDelete => 'Failed to delete';
   @override String get saving => 'Saving...';
   @override String get saveTransaction => 'Save Transaction';
+  @override String get transactionTitle => 'Title';
+  @override String get titleRequired => 'Title is required';
+  @override String get transactionTitleHint => 'E.g., Dinner with family';
   @override String get amount => 'Amount';
   @override String get category => 'Category';
   @override String get noteOptional => 'Note (Optional)';
@@ -182,9 +189,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get month => 'Month';
   @override String get saveBudget => 'Save Budget';
   @override String get budgetSaved => 'Budget saved successfully';
-  @override String get errorSavingBudget => 'Error saving budget';
+  @override String get errorSavingBudget => 'Error saving budget 😅';
   @override String get recurringBudget => 'Recurring Budget (Monthly)';
-  @override String get rolloverRemaining => 'Rollover Remaining Budget';
+  @override String get recurring => 'Recurring';
+  @override String get rolloverRemaining => 'Rollover / Remaining';
+  @override String get rollover => 'Rollover';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override String get savingsGoals => 'Savings';
@@ -284,6 +293,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get logOut => 'Log Out';
   @override String get logOutTitle => 'Log Out';
   @override String get logOutConfirm => 'Are you sure you want to log out?';
+
+  // ─── Transaction Redesign ──────────────────────────────────────────────────
+  @override String get totalCashflow => 'Total cashflow';
+  @override String nTransactions(int count) => '$count transaction${count == 1 ? '' : 's'}';
+  @override String get today => 'Today';
+  @override String get yesterday => 'Yesterday';
+
   @override String get selectCurrency => 'Select Currency';
   @override String get currencyUpdated => 'Currency updated';
   @override String currencyUpdatedTo(String currency) =>
@@ -414,4 +430,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override String get allocationSuccessful => 'Allocation successful';
   @override String get pleaseSelectSavingsGoal => 'Please select a savings goal';
   @override String get changePasswordInfo => 'Please enter your current password to create a new one. Make sure your new password is at least 8 characters long.';
+  
+  // ─── Export & Import ──────────────────────────────────────────────────────────
+  @override String get exportData => 'Export Data';
+  @override String get importData => 'Import Data';
 }

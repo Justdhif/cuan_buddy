@@ -138,6 +138,8 @@ abstract class AppLocalizations {
   String get transaction;
   String get other;
   String get you;
+  String get shared;
+
   String get noTransactionsYet;
   String get startRecordingTransactions;
   String get failedToLoadTransactions;
@@ -163,10 +165,15 @@ abstract class AppLocalizations {
   String get delete;
   String get deleteTransaction;
   String get deleteTransactionConfirm;
+  String get deleteBudget;
+  String get deleteBudgetConfirm;
   String get cancel;
   String get failedToDelete;
   String get saving;
   String get saveTransaction;
+  String get transactionTitle;
+  String get titleRequired;
+  String get transactionTitleHint;
   String get amount;
   String get category;
   String get noteOptional;
@@ -202,7 +209,9 @@ abstract class AppLocalizations {
   String get budgetSaved;
   String get errorSavingBudget;
   String get recurringBudget;
+  String get recurring;
   String get rolloverRemaining;
+  String get rollover;
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   String get savingsGoals;
@@ -380,6 +389,12 @@ abstract class AppLocalizations {
   String spent(String amount);
   String of_(String amount);
 
+  // ─── Transaction Redesign ──────────────────────────────────────────────────
+  String get totalCashflow;
+  String nTransactions(int count);
+  String get today;
+  String get yesterday;
+
   // ─── Onboarding ──────────────────────────────────────────────────────────────
   String get onboardingTitle1;
   String get onboardingDesc1;
@@ -406,6 +421,10 @@ abstract class AppLocalizations {
   String get allocationSuccessful;
   String get pleaseSelectSavingsGoal;
   String get changePasswordInfo;
+
+  // ─── Export & Import ──────────────────────────────────────────────────────────
+  String get exportData;
+  String get importData;
 }
 
 // ─── InheritedWidget Scope ────────────────────────────────────────────────────

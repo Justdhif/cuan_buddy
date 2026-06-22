@@ -43,25 +43,62 @@ class TransactionCalendar extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () {
-              ref.read(transactionFilterProvider.notifier).toggleExpand();
-            },
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  ref.read(transactionFilterProvider.notifier).toggleExpand();
+                },
+                behavior: HitTestBehavior.opaque,
                 child: Container(
-                  width: 40,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: (isDark ? AppColors.borderDark : AppColors.borderLight).withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(10),
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: (isDark ? AppColors.borderDark : AppColors.borderLight).withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+              if (filterState.selectedDate.year != DateTime.now().year ||
+                  filterState.selectedDate.month != DateTime.now().month ||
+                  filterState.selectedDate.day != DateTime.now().day)
+                Positioned(
+                  right: 0,
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final localeCode = ref.watch(languageProvider);
+                      final todayLabel = localeCode == 'id' ? 'Hari ini' : 'Today';
+                      return GestureDetector(
+                        onTap: () {
+                           final today = DateTime.now();
+                           ref.read(transactionFilterProvider.notifier).selectDate(today);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            todayLabel,
+                            style: AppTypography.textTheme.labelSmall?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
         ],
       ),

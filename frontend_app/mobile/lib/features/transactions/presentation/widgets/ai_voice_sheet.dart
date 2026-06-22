@@ -158,6 +158,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     try {
       final dio = ref.read(dioClientProvider).dio;
       final payload = {
+        'title': _extractedData!['title'] ?? _extractedData!['note'] ?? 'Voice Transaction',
         'categoryId': _extractedData!['categoryId'],
         'amount': double.parse(_extractedData!['amount'].toString()),
         'currency': _extractedData!['currency'],
@@ -321,8 +322,12 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
           ),
           child: Column(
             children: [
-              _buildReviewRow(l10n.aiVoiceTitleField, _extractedData!['note'] ?? '-'),
+              _buildReviewRow(l10n.transactionTitle, _extractedData!['title'] ?? _extractedData!['note'] ?? '-'),
               const Divider(height: 24),
+              if (_extractedData!['note'] != null && _extractedData!['note'].toString().trim().isNotEmpty && _extractedData!['note'] != _extractedData!['title']) ...[
+                _buildReviewRow(l10n.noteOptional, _extractedData!['note']),
+                const Divider(height: 24),
+              ],
               _buildReviewRow(l10n.aiVoiceAmountField, fmtOriginal.format(double.tryParse(_extractedData!['amount'].toString()) ?? 0)),
               const Divider(height: 24),
               _buildReviewRow(l10n.aiVoiceTypeField, _extractedData!['type'] == 'income' ? l10n.aiVoiceIncome : l10n.aiVoiceExpense, 

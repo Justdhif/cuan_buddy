@@ -14,8 +14,9 @@ import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
 
 class AddBudgetSheet extends ConsumerStatefulWidget {
-  const AddBudgetSheet({super.key, this.budget});
+  const AddBudgetSheet({super.key, this.budget, this.initialCategoryId});
   final Map<String, dynamic>? budget;
+  final String? initialCategoryId;
 
   @override
   ConsumerState<AddBudgetSheet> createState() => _AddBudgetSheetState();
@@ -38,17 +39,20 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
     if (widget.budget != null) {
       final rawL = widget.budget!['limitAmount'];
       final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
-      // Format amount with commas if needed, but for simplicity just string
       _amountController.text = limitAmount.toStringAsFixed(0);
-      _selectedCategoryId = widget.budget!['categoryId'];
+      _selectedCategoryId = widget.budget!['categoryId']?.toString();
       _selectedCurrency = widget.budget!['currency'] ?? AppConstants.defaultCurrency;
       _isRecurring = widget.budget!['isRecurring'] ?? false;
       _rollover = widget.budget!['rollover'] ?? false;
-      final monthYear = widget.budget!['monthYear']?.toString();
-      if (monthYear != null && monthYear.contains('-')) {
-        final parts = monthYear.split('-');
-        _selectedDate = DateTime(int.parse(parts[0]), int.parse(parts[1]));
+
+      if (widget.budget!['monthYear'] != null) {
+        final parts = widget.budget!['monthYear'].toString().split('-');
+        if (parts.length == 2) {
+          _selectedDate = DateTime(int.parse(parts[0]), int.parse(parts[1]));
+        }
       }
+    } else if (widget.initialCategoryId != null) {
+      _selectedCategoryId = widget.initialCategoryId;
     }
   }
 
@@ -458,7 +462,7 @@ class _SkeletonChipState extends State<_SkeletonChip>
 }
 
 // ─── Show helper ─────────────────────────────────────────────────────────────
-void showAddBudgetSheet(BuildContext context, {Map<String, dynamic>? budget}) {
+void showAddBudgetSheet(BuildContext context, {Map<String, dynamic>? budget, String? initialCategoryId}) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -467,6 +471,6 @@ void showAddBudgetSheet(BuildContext context, {Map<String, dynamic>? budget}) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
     ),
-    builder: (_) => AddBudgetSheet(budget: budget),
+    builder: (_) => AddBudgetSheet(budget: budget, initialCategoryId: initialCategoryId),
   );
 }

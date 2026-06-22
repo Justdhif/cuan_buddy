@@ -25,6 +25,7 @@ import '../../features/profile/presentation/screens/widget_settings_screen.dart'
 // Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
+import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
 import '../../features/budgets/presentation/screens/budgets_screen.dart';
 import '../../features/budgets/presentation/screens/budget_detail_screen.dart';
 import '../../features/savings/presentation/screens/savings_screen.dart';
@@ -32,7 +33,7 @@ import '../../features/notifications/presentation/screens/notifications_screen.d
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/categories/presentation/screens/category_list_screen.dart';
-
+import '../../features/shared/presentation/screens/shared_screen.dart';
 
 CustomTransitionPage _buildPage(GoRouterState state, Widget child) {
   return CustomTransitionPage(
@@ -136,11 +137,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildPage(state, const AiChatScreen()),
       ),
       GoRoute(
+        path: '/transactions/form',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final initialType = extra['initialType'] as String? ?? 'expense';
+          final initialTransaction = extra['initialTransaction'] as Map<String, dynamic>?;
+          return _buildPage(
+            state,
+            TransactionFormScreen(
+              initialType: initialType,
+              initialTransaction: initialTransaction,
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: '/budgets/detail',
         pageBuilder: (context, state) {
           final budget = state.extra as Map<String, dynamic>;
           return _buildPage(state, BudgetDetailScreen(budget: budget));
         },
+      ),
+      GoRoute(
+        path: '/budgets',
+        pageBuilder: (context, state) => _buildPage(state, const BudgetsScreen()),
+      ),
+      GoRoute(
+        path: '/manage-categories',
+        pageBuilder: (context, state) => _buildPage(state, const CategoryListScreen()),
+      ),
+      GoRoute(
+        path: '/home/profile',
+        pageBuilder: (context, state) => _buildPage(state, const ProfileScreen()),
       ),
       StatefulShellRoute(
         builder: (context, state, navigationShell) => navigationShell,
@@ -164,10 +192,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               path: '/home/budgets',
               pageBuilder: (context, state) => _buildPage(state, const BudgetsScreen()),
             ),
-            GoRoute(
-              path: '/home/manage-categories',
-              pageBuilder: (context, state) => _buildPage(state, const CategoryListScreen()),
-            ),
           ]),
           // Branch 2 – Dashboard (Home)
           StatefulShellBranch(routes: [
@@ -183,11 +207,11 @@ final routerProvider = Provider<GoRouter>((ref) {
               pageBuilder: (context, state) => _buildPage(state, const SavingsScreen()),
             ),
           ]),
-          // Branch 4 – Profile
+          // Branch 4 – Shared
           StatefulShellBranch(routes: [
             GoRoute(
-              path: '/home/profile',
-              pageBuilder: (context, state) => _buildPage(state, const ProfileScreen()),
+              path: '/home/shared',
+              pageBuilder: (context, state) => _buildPage(state, const SharedScreen()),
             ),
           ]),
         ],

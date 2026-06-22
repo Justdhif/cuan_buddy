@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const CreateTransactionSchema = z.object({
+  title: z.string().max(255).optional(),
   type: z.enum(['income', 'expense']),
   amount: z.number().positive(),
   currency: z.string().optional(),

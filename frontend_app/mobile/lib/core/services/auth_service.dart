@@ -11,29 +11,64 @@ class AuthService {
     required String accessToken,
     required String refreshToken,
   }) async {
-    await Future.wait([
-      _storage.write(key: AppConstants.accessTokenKey, value: accessToken),
-      _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken),
-    ]);
+    try {
+      await Future.wait([
+        _storage.write(key: AppConstants.accessTokenKey, value: accessToken),
+        _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken),
+      ]);
+    } catch (e) {
+      // If saving fails (e.g. key corruption), attempt to clear and retry once
+      try {
+        await _storage.deleteAll();
+        await Future.wait([
+          _storage.write(key: AppConstants.accessTokenKey, value: accessToken),
+          _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken),
+        ]);
+      } catch (_) {
+        rethrow;
+      }
+    }
   }
 
   Future<String?> getAccessToken() async {
-    return _storage.read(key: AppConstants.accessTokenKey);
+    try {
+      return await _storage.read(key: AppConstants.accessTokenKey);
+    } catch (e) {
+      // If decryption fails, clear tokens to resolve the error state
+      await clearTokens();
+      return null;
+    }
   }
 
   Future<String?> getRefreshToken() async {
-    return _storage.read(key: AppConstants.refreshTokenKey);
+    try {
+      return await _storage.read(key: AppConstants.refreshTokenKey);
+    } catch (e) {
+      // If decryption fails, clear tokens to resolve the error state
+      await clearTokens();
+      return null;
+    }
   }
 
   Future<void> clearTokens() async {
-    await Future.wait([
-      _storage.delete(key: AppConstants.accessTokenKey),
-      _storage.delete(key: AppConstants.refreshTokenKey),
-    ]);
+    try {
+      await Future.wait([
+        _storage.delete(key: AppConstants.accessTokenKey),
+        _storage.delete(key: AppConstants.refreshTokenKey),
+      ]);
+    } catch (e) {
+      try {
+        await _storage.deleteAll();
+      } catch (_) {}
+    }
   }
 
   Future<bool> hasValidToken() async {
-    final token = await getAccessToken();
-    return token != null && token.isNotEmpty;
+    try {
+      final token = await getAccessToken();
+      return token != null && token.isNotEmpty;
+    } catch (e) {
+      return false;
+    }
   }
 }

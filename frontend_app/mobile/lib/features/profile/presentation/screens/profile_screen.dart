@@ -342,7 +342,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 context,
                 icon: Icons.category_outlined,
                 title: l10n.manageCategories,
-                onTap: () => context.push('/home/manage-categories'),
+                onTap: () => context.push('/manage-categories'),
               ),
               _buildListTile(
                 context,

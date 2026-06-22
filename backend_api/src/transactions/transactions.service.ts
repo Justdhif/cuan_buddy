@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq, and, gte, lte, desc, ilike, sql } from 'drizzle-orm';
+import { eq, and, or, gte, lte, desc, ilike, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, budgets } from '../database/schema';
+import { transactions, budgets, categories } from '../database/schema';
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -23,11 +23,28 @@ export class TransactionsService {
   ) {}
 
   async create(userId: string, createTransactionDto: CreateTransactionDto) {
+    let finalTitle = createTransactionDto.title;
+    if (!finalTitle) {
+      finalTitle = createTransactionDto.note;
+    }
+    if (!finalTitle && createTransactionDto.categoryId) {
+      const category = await this.db.query.categories.findFirst({
+        where: eq(categories.id, createTransactionDto.categoryId),
+      });
+      if (category) {
+        finalTitle = category.name;
+      }
+    }
+    if (!finalTitle) {
+      finalTitle = createTransactionDto.type === 'income' ? 'Income' : 'Expense';
+    }
+
     const [newTransaction] = await this.db
       .insert(transactions)
       .values({
         userId,
         ...createTransactionDto,
+        title: finalTitle,
         date: new Date(createTransactionDto.date),
         amount: createTransactionDto.amount.toString(),
       })
@@ -167,7 +184,7 @@ export class TransactionsService {
     if (endDate) conditions.push(lte(transactions.date, new Date(endDate)));
     if (categoryId) conditions.push(eq(transactions.categoryId, categoryId));
     if (type) conditions.push(eq(transactions.type, type));
-    if (search) conditions.push(ilike(transactions.note, `%${search}%`));
+    if (search) conditions.push(or(ilike(transactions.title, `%${search}%`), ilike(transactions.note, `%${search}%`))!);
 
     const offset = (Number(page) - 1) * Number(limit);
 

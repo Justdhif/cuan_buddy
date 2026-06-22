@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
-import '../../../../core/widgets/sticky_header_delegate.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../analytics/presentation/providers/analytics_provider.dart';
@@ -305,6 +306,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
         ),
       ),
+      floatingActionButton: GestureDetector(
+        onTap: () => context.push('/ai-chat'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              )
+            ],
+          ),
+          child: const Icon(
+            Icons.smart_toy_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+      ),
     );
   }
 
@@ -315,9 +339,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     AsyncValue<Map<String, dynamic>> profileAsync,
     double shrinkOffset,
   ) {
-    final profile = profileAsync.value ?? {};
-    final name = profile['fullName'] as String? ?? 'You';
-    final firstName = name.split(' ').first;
     
     final notificationsState = ref.watch(notificationsNotifierProvider);
     final unreadCount = notificationsState.notifications
@@ -358,11 +379,65 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           Row(
             children: [
-              IconButton(
-                onPressed: () => context.push('/ai-chat'),
-                icon: const Text('🤖', style: TextStyle(fontSize: 20)),
-                tooltip: l10n.aiAdvisor,
+              GestureDetector(
+                onTap: () => context.push('/home/profile'),
+                child: profileAsync.when(
+                  data: (profile) {
+                    final avatarUrl = profile['avatar'] as String?;
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                      return Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(shape: BoxShape.circle),
+                        child: ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: avatarUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => Shimmer.fromColors(
+                              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                              highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                              child: Container(color: Colors.white),
+                            ),
+                            errorWidget: (_, __, ___) => Icon(
+                              Icons.person_outline_rounded,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    return Icon(
+                      Icons.person_outline_rounded,
+                      color: Theme.of(context).brightness == Brightness.dark 
+                          ? AppColors.textSecondaryDark 
+                          : AppColors.textSecondaryLight,
+                    );
+                  },
+                  loading: () {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    return Shimmer.fromColors(
+                      baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
+                      highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  },
+                  error: (_, __) => Icon(
+                    Icons.person_outline_rounded,
+                    color: Theme.of(context).brightness == Brightness.dark 
+                        ? AppColors.textSecondaryDark 
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
               ),
+              const SizedBox(width: 8),
               IconButton(
                 onPressed: () => context.push('/notifications'),
                 icon: Stack(
@@ -480,75 +555,102 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildTransactionTile(dynamic transaction, AsyncValue<Map<String, dynamic>> profileAsync) {
+    final l10n = AppLocalizations.of(context);
     final tx = transaction as Map<String, dynamic>;
     final isIncome = tx['type'] == 'income';
     final amountRaw = tx['amount'];
     final amount = amountRaw is num 
         ? amountRaw.toDouble() 
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+    
     final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
     final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(txCurrency);
+    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
         locale: 'en_US',
         symbol: currencySymbol,
+        decimalDigits: 0);
+    final fmtOriginal = NumberFormat.currency(
+        locale: 'en_US',
+        symbol: txCurrencySymbol,
         decimalDigits: 0);
     final dynamic category = tx['category'];
     final emoji = (category is Map
             ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
             : null) ??
         (isIncome ? '💰' : '💸');
-    final title = tx['description'] as String? ??
-        (category is Map ? category['name'] as String? : null) ??
-        l10n.transaction;
-    final rawDate = tx['date'] as String?;
-    final date = rawDate != null
-        ? DateFormat('d MMM', 'en_US').format(DateTime.parse(rawDate))
-        : '';
+        
+    final catName = category is Map ? category['name'] as String? : null;
+    final title = tx['title'] as String? ?? tx['note'] as String? ?? catName ?? l10n.transaction;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-      child: AppCard(
-        elevation: 2,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
+    final catColor = category is Map ? AppColors.colorFromHex(category['colorCode'] as String?, fallback: defaultTypeColor) : defaultTypeColor;
+
+    return InkWell(
+      onTap: () {
+        context.push(
+          '/transactions/form',
+          extra: {
+            'initialType': tx['type'] as String? ?? 'expense',
+            'initialTransaction': tx,
+          },
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
-                color: (isIncome ? AppColors.success : AppColors.danger)
-                    .withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
+                color: catColor,
+                shape: BoxShape.circle,
               ),
               child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 22))),
+                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+              ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: AppTypography.textTheme.titleSmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  Text(date,
-                      style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondaryLight)),
+                  Text(
+                    title,
+                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      catName ?? l10n.transaction,
+                      style: AppTypography.textTheme.labelSmall?.copyWith(
+                        color: AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  '${isIncome ? '+' : '-'}${fmt.format(amount)}',
-                  style: TextStyle(
-                    color: isIncome ? AppColors.successDark : AppColors.dangerDark,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                  '${isIncome ? '▲' : '▼'} ${txCurrency == currencyCode ? fmt.format(amount) : fmtOriginal.format(amount)}',
+                  style: AppTypography.textTheme.titleMedium?.copyWith(
+                    color: isIncome ? AppColors.success : AppColors.danger,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 if (txCurrency != currencyCode)
@@ -560,23 +662,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         to: currencyCode,
                       )));
                       return convertedAsync.when(
-                        data: (converted) {
-                          final userFmt = NumberFormat.currency(
-                              locale: 'en_US',
-                              symbol: AppConstants.getCurrencySymbol(currencyCode),
-                              decimalDigits: 0);
-                          return Text(
-                            '≈ ${isIncome ? '+' : '-'}${userFmt.format(converted)}',
-                            style: AppTypography.textTheme.labelSmall?.copyWith(
-                              color: AppColors.textSecondaryLight,
-                            ),
-                          );
-                        },
-                        loading: () => const SizedBox(
-                          width: 12, height: 12, 
-                          child: CircularProgressIndicator(strokeWidth: 2)
+                        data: (converted) => Text(
+                          '≈ ${isIncome ? '+' : '-'}${fmt.format(converted)}',
+                          style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
                         ),
-                        error: (_, __) => const SizedBox.shrink(),
+                        loading: () => const SizedBox(
+                          width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                        error: (_, __) => const SizedBox(),
                       );
                     },
                   ),
@@ -972,24 +1068,19 @@ class _TimeSceneryBackground extends StatelessWidget {
     final hour = now.hour;
     
     List<Color> gradientColors;
-    String emoji;
     
     if (hour >= 6 && hour < 12) {
       // Morning
       gradientColors = [const Color(0xFF87CEEB).withValues(alpha: 0.6), const Color(0xFFFFE4B5).withValues(alpha: 0.2)];
-      emoji = '🌅';
     } else if (hour >= 12 && hour < 15) {
       // Afternoon
       gradientColors = [const Color(0xFF00BFFF).withValues(alpha: 0.6), const Color(0xFF87CEEB).withValues(alpha: 0.2)];
-      emoji = '☀️';
     } else if (hour >= 15 && hour < 19) {
       // Evening
       gradientColors = [const Color(0xFFFF7E5F).withValues(alpha: 0.6), const Color(0xFFFEB47B).withValues(alpha: 0.2)];
-      emoji = '🌇';
     } else {
       // Night
       gradientColors = [const Color(0xFF2C3E50).withValues(alpha: 0.8), const Color(0xFF000000).withValues(alpha: 0.4)];
-      emoji = '🌙';
     }
 
     return Container(
@@ -1003,14 +1094,7 @@ class _TimeSceneryBackground extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned(
-            right: 40,
-            top: 60,
-            child: Text(
-              emoji,
-              style: const TextStyle(fontSize: 100),
-            ),
-          ),
+
           Positioned(
             bottom: 0,
             left: 0,

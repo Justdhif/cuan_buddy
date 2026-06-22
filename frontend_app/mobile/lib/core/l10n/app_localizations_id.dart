@@ -114,7 +114,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get monthlyTrend => 'Tren Bulanan';
   @override String get transaction => 'Transaksi';
   @override String get other => 'Lainnya';
-  @override String get you => 'Kamu';
+  @override String get you => 'Anda';
+  @override String get shared => 'Bersama';
   @override String get noTransactionsYet => 'Belum ada transaksi';
   @override String get startRecordingTransactions =>
       'Mulai catat pemasukan & pengeluaranmu!';
@@ -150,10 +151,16 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get deleteTransaction => 'Hapus Transaksi';
   @override String get deleteTransactionConfirm =>
       'Apakah kamu yakin ingin menghapus transaksi ini?';
+  @override String get deleteBudget => 'Hapus Anggaran?';
+  @override String get deleteBudgetConfirm =>
+      'Apakah Anda yakin ingin menghapus anggaran ini?';
   @override String get cancel => 'Batal';
   @override String get failedToDelete => 'Gagal menghapus';
   @override String get saving => 'Menyimpan...';
   @override String get saveTransaction => 'Simpan Transaksi';
+  @override String get transactionTitle => 'Judul';
+  @override String get titleRequired => 'Judul wajib diisi';
+  @override String get transactionTitleHint => 'Mis., Makan malam bersama keluarga';
   @override String get amount => 'Jumlah';
   @override String get category => 'Kategori';
   @override String get noteOptional => 'Catatan (Opsional)';
@@ -188,9 +195,11 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get month => 'Bulan';
   @override String get saveBudget => 'Simpan Anggaran';
   @override String get budgetSaved => 'Anggaran berhasil disimpan';
-  @override String get errorSavingBudget => 'Gagal menyimpan anggaran';
+  @override String get errorSavingBudget => 'Gagal menyimpan anggaran 😅';
   @override String get recurringBudget => 'Anggaran Berulang (Tiap Bulan)';
-  @override String get rolloverRemaining => 'Akumulasi Sisa Anggaran (Rollover)';
+  @override String get recurring => 'Berulang';
+  @override String get rolloverRemaining => 'Sisa Bulan Lalu';
+  @override String get rollover => 'Sisa Lanjut';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override String get savingsGoals => 'Tabungan';
@@ -291,6 +300,14 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get logOutTitle => 'Keluar';
   @override String get logOutConfirm =>
       'Apakah kamu yakin ingin keluar?';
+  @override String get confirmLogout => 'Apakah kamu yakin ingin keluar?';
+
+  // ─── Transaction Redesign ──────────────────────────────────────────────────
+  @override String get totalCashflow => 'Total arus kas';
+  @override String nTransactions(int count) => '$count transaksi';
+  @override String get today => 'Hari ini';
+  @override String get yesterday => 'Kemarin';
+
   @override String get selectCurrency => 'Pilih Mata Uang';
   @override String get currencyUpdated => 'Mata uang diperbarui';
   @override String currencyUpdatedTo(String currency) =>
@@ -422,6 +439,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override String get selectSavingsGoal => 'Pilih Target Tabungan';
   @override String get allocate => 'Alokasikan';
   @override String get allocationSuccessful => 'Alokasi berhasil';
-  @override String get pleaseSelectSavingsGoal => 'Silakan pilih target tabungan';
-  @override String get changePasswordInfo => 'Silakan masukkan password saat ini untuk membuat password baru. Pastikan password baru Anda minimal 8 karakter.';
+  @override String get pleaseSelectSavingsGoal => 'Silakan pilih tujuan tabungan';
+  @override String get changePasswordInfo => 'Silakan masukkan kata sandi saat ini untuk membuat kata sandi baru. Pastikan kata sandi barumu minimal 8 karakter.';
+  
+  // ─── Export & Import ──────────────────────────────────────────────────────────
+  @override String get exportData => 'Ekspor Data';
+  @override String get importData => 'Impor Data';
 }

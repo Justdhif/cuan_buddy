@@ -88,7 +88,7 @@ export class BackupService {
         };
       });
       worksheet.columns = [
-        { header: 'ID', key: 'id' }, { header: 'Type', key: 'type' }, 
+        { header: 'ID', key: 'id' }, { header: 'Title', key: 'title' }, { header: 'Type', key: 'type' }, 
         { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' },
         { header: 'Note', key: 'note' }, 
         { header: 'Category Name', key: 'categoryName' },
@@ -186,7 +186,7 @@ export class BackupService {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet(tableName);
 
-      if (tableName === 'transactions') worksheet.columns = [{ header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
+      if (tableName === 'transactions') worksheet.columns = [{ header: 'Title', key: 'title' }, { header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
       else if (tableName === 'budgets') worksheet.columns = [{ header: 'CategoryID', key: 'categoryId' }, { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }];
       else if (tableName === 'savings_goals') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Target Amount', key: 'targetAmount' }, { header: 'Current Amount', key: 'currentAmount' }, { header: 'Target Date', key: 'targetDate' }, { header: 'Status', key: 'status' }];
       else if (tableName === 'categories') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }];
@@ -206,7 +206,7 @@ export class BackupService {
     const worksheet = workbook.addWorksheet(tableName);
 
     // Headers only
-    if (tableName === 'transactions') worksheet.columns = [{ header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
+    if (tableName === 'transactions') worksheet.columns = [{ header: 'Title', key: 'title' }, { header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
     else if (tableName === 'budgets') worksheet.columns = [{ header: 'CategoryID', key: 'categoryId' }, { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }];
     else if (tableName === 'savings_goals') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Target Amount', key: 'targetAmount' }, { header: 'Current Amount', key: 'currentAmount' }, { header: 'Target Date', key: 'targetDate' }, { header: 'Status', key: 'status' }];
     else if (tableName === 'categories') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }];
@@ -267,14 +267,16 @@ export class BackupService {
         });
 
         // Column mapping depends on what we exported.
-        // ID, Type, Amount, Date, Note, Category Name, Category Emoji
+        // ID, Title, Type, Amount, Date, Note, Category Name, Category Emoji
         for (const rowVals of rows) {
-          const type = rowVals[2];
-          const amount = rowVals[3];
-          const date = rowVals[4];
-          const note = rowVals[5];
-          const catName = tableName === 'transactions' ? rowVals[6] : rowVals[2];
-          const catEmoji = tableName === 'transactions' ? rowVals[7] : rowVals[3];
+          const isTx = tableName === 'transactions';
+          const title = isTx ? rowVals[2] : null;
+          const type = isTx ? rowVals[3] : rowVals[2];
+          const amount = isTx ? rowVals[4] : rowVals[3];
+          const date = isTx ? rowVals[5] : rowVals[4];
+          const note = isTx ? rowVals[6] : rowVals[5];
+          const catName = isTx ? rowVals[7] : rowVals[2];
+          const catEmoji = isTx ? rowVals[8] : rowVals[3];
           
           let categoryId = null;
           if (catName) {
@@ -295,6 +297,7 @@ export class BackupService {
           if (tableName === 'transactions') {
             await this.db.insert(transactions).values({
               userId,
+              title: title ? String(title) : null,
               type: String(type) === 'income' ? 'income' : 'expense',
               amount: String(amount),
               date: new Date(date),

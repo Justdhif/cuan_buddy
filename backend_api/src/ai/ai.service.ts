@@ -354,7 +354,8 @@ Extract the following information:
 2. currency: The currency mentioned in the voice (e.g. "USD", "IDR"). If the user says "ribu", "rupiah", "perak" it means IDR. If they say "dollar" it usually means USD. If no currency is mentioned, use the user's default currency: "${defaultCurrency}".
 3. category: The best matching category from this list: [${categoryList}]. If none matches perfectly, pick the closest or "Uncategorized".
 4. type: Either "income" or "expense".
-5. note: A short description of the transaction (in Indonesian if the input is in Indonesian).
+5. title: A short title for the transaction (e.g. "Makan Siang" or "Gaji").
+6. note: Any additional description/note if specified, otherwise an empty string.
 
 Voice Transcription: "${text}"
 
@@ -364,7 +365,8 @@ Reply ONLY with valid JSON:
   "currency": "IDR",
   "category": "Food & Drink",
   "type": "expense",
-  "note": "Makan siang warteg"
+  "title": "Makan siang",
+  "note": "di warteg"
 }
 Do not add any explanations or markdown formatting.`;
 

@@ -6,14 +6,14 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
-import '../../../../core/widgets/sticky_header_delegate.dart';
 import '../../../../core/services/currency_service.dart';
-// Removed app logger
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
 import '../widgets/add_savings_sheet.dart';
 import '../widgets/top_up_sheet.dart';
 import '../widgets/savings_gamification_widget.dart';
+import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
+import '../../../profile/data/services/backup_worker.dart';
 
 class SavingsScreen extends ConsumerStatefulWidget {
   const SavingsScreen({super.key});
@@ -65,7 +65,44 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             icon: const Icon(Icons.add_rounded),
             onPressed: () => showAddSavingsSheet(context),
           ),
-          const SizedBox(width: 16),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (value) {
+              if (value == 'export') {
+                ref.read(backupWorkerProvider).runBackupProcess(tables: ['savings_goals']);
+              } else if (value == 'import') {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const SingleTableImportSheet(tableName: 'savings_goals'),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'export',
+                child: Row(
+                  children: [
+                    const Icon(Icons.file_download_rounded, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.exportData),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'import',
+                child: Row(
+                  children: [
+                    const Icon(Icons.file_upload_rounded, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.importData),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: RefreshIndicator(
@@ -278,22 +315,23 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               ),
             ),
           )
-        else
-          SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewportHeight),
-              child: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 120),
-                itemCount: filteredGoals.length,
-                itemBuilder: (context, index) {
+        else ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
                   final goal = filteredGoals[index];
                   return _buildGoalCard(context, goal, currencySymbol);
                 },
+                childCount: filteredGoals.length,
               ),
             ),
-          )
+          ),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 120),
+          ),
+        ]
       ],
     );
   }
