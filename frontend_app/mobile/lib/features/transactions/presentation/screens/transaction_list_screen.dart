@@ -12,8 +12,6 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
 import '../providers/transaction_provider.dart';
 import '../../../savings/presentation/widgets/allocate_savings_sheet.dart';
-import '../../../budgets/presentation/providers/budgets_provider.dart';
-
 import '../widgets/ai_voice_button.dart';
 import '../widgets/transaction_calendar.dart';
 import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
@@ -167,22 +165,16 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          if (index == 0) {
-                            return _CashflowSummary(
-                              totalIncome: totalIncome,
-                              totalExpense: totalExpense,
-                            );
-                          }
-                          if (index == transactions.length + 1) {
+                          if (index == transactions.length) {
                             return _BottomCashflowSummary(
                               balance: balance,
                               transactionsCount: transactions.length,
                             );
                           }
-                          final item = transactions[index - 1];
+                          final item = transactions[index];
                           return _TransactionTile(transaction: item);
                         },
-                        childCount: transactions.length + 2,
+                        childCount: transactions.length + 1,
                       ),
                     ),
                   );
@@ -197,7 +189,46 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          GestureDetector(
+            onTap: () => showAllocateSavingsSheet(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : Colors.white,
+                border: Border.all(color: AppColors.primary, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 3),
+                  )
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.allocate,
+                    style: AppTypography.textTheme.labelLarge?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           AiVoiceButton(
             onTransactionAdded: () {
               ref.invalidate(allTransactionsProvider);
@@ -216,45 +247,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
 class _FilterRow extends ConsumerWidget {
   const _FilterRow();
 
-  Widget _buildActionButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required Color color,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                label,
-                style: AppTypography.textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -262,18 +254,6 @@ class _FilterRow extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Action Buttons (Allocate)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-          child: _buildActionButton(
-            context: context,
-            icon: Icons.account_balance_wallet_rounded,
-            label: l10n.allocate,
-            onTap: () => showAllocateSavingsSheet(context),
-            color: AppColors.primary,
-          ),
-        ),
-        
         // Category Filter
         Consumer(
           builder: (context, ref, _) {
@@ -496,82 +476,6 @@ class _TransactionTile extends ConsumerWidget {
   }
 }
 
-class _CashflowSummary extends ConsumerWidget {
-  const _CashflowSummary({
-    required this.totalIncome,
-    required this.totalExpense,
-  });
-
-  final double totalIncome;
-  final double totalExpense;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final fmt = NumberFormat.currency(locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    l10n.expenseType,
-                    style: TextStyle(
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '▼ ${fmt.format(totalExpense)}',
-                    style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              height: 24,
-              width: 1,
-              color: AppColors.textSecondaryLight.withValues(alpha: 0.2),
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    l10n.incomeType,
-                    style: TextStyle(
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '▲ ${fmt.format(totalIncome)}',
-                    style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _BottomCashflowSummary extends ConsumerWidget {
   const _BottomCashflowSummary({

@@ -6,6 +6,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../providers/transaction_provider.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/language_provider.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 
 class TransactionCalendar extends ConsumerWidget {
   const TransactionCalendar({super.key});
@@ -15,6 +17,18 @@ class TransactionCalendar extends ConsumerWidget {
     final filterState = ref.watch(transactionFilterProvider);
     final summaryAsync = ref.watch(calendarSummaryProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final transactionsAsync = ref.watch(allTransactionsProvider);
+    double totalIncome = 0;
+    double totalExpense = 0;
+    if (transactionsAsync.hasValue) {
+      for (var tx in transactionsAsync.value!) {
+        final isIncome = tx['type'] == 'income';
+        final amountRaw = tx['amount'];
+        final amount = amountRaw is num ? amountRaw.toDouble() : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+        if (isIncome) totalIncome += amount; else totalExpense += amount;
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -29,7 +43,9 @@ class TransactionCalendar extends ConsumerWidget {
       child: Column(
         children: [
           _buildHeader(context, ref, filterState, isDark),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          _buildCashflowSummary(context, ref, totalIncome, totalExpense, isDark),
+          const Divider(height: 16),
           _buildDaysOfWeek(ref, isDark),
           const SizedBox(height: 8),
           AnimatedSize(
@@ -340,6 +356,65 @@ class TransactionCalendar extends ConsumerWidget {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildCashflowSummary(BuildContext context, WidgetRef ref, double totalIncome, double totalExpense, bool isDark) {
+    final l10n = AppLocalizations.of(context);
+    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+    final fmt = NumberFormat.currency(locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
+
+    return Container(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  l10n.expenseType,
+                  style: TextStyle(
+                    color: (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight).withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '▼ ${fmt.format(totalExpense)}',
+                  style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            height: 20,
+            width: 1,
+            color: (isDark ? AppColors.borderDark : AppColors.borderLight).withValues(alpha: 0.5),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  l10n.incomeType,
+                  style: TextStyle(
+                    color: (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight).withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '▲ ${fmt.format(totalIncome)}',
+                  style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
