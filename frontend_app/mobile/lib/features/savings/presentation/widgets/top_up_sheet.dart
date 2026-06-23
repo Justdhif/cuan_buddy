@@ -104,6 +104,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
         ref.invalidate(analyticsSummaryProvider);
         ref.invalidate(financialHealthProvider);
         ref.invalidate(calendarSummaryProvider);
+        ref.invalidate(monthlySummaryProvider);
       } catch (e) {
         // Just log the error, don't fail the top-up
         debugPrint('Failed to create savings transaction: $e');

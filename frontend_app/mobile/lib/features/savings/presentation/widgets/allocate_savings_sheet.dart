@@ -111,6 +111,7 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
         ref.invalidate(analyticsSummaryProvider);
         ref.invalidate(financialHealthProvider);
         ref.invalidate(calendarSummaryProvider);
+        ref.invalidate(monthlySummaryProvider);
       }
 
       if (mounted) {

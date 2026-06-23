@@ -109,6 +109,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ref.invalidate(analyticsSummaryProvider);
       ref.invalidate(financialHealthProvider);
       ref.invalidate(calendarSummaryProvider);
+      ref.invalidate(monthlySummaryProvider);
       ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
 
       if (mounted) {
@@ -167,6 +168,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         ref.invalidate(analyticsSummaryProvider);
         ref.invalidate(financialHealthProvider);
         ref.invalidate(calendarSummaryProvider);
+        ref.invalidate(monthlySummaryProvider);
         ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
 
         if (mounted) {

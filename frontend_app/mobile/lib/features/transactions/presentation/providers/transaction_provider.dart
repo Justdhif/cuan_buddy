@@ -132,3 +132,48 @@ final allTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   if (data is Map && data['data'] is List) return data['data'] as List;
   return [];
 });
+
+final monthlySummaryProvider = FutureProvider.autoDispose<Map<String, double>>((ref) async {
+  final filter = ref.watch(transactionFilterProvider);
+  final dio = ref.watch(dioClientProvider).dio;
+  
+  final startOfMonth = DateTime(filter.currentMonth.year, filter.currentMonth.month, 1);
+  final endOfMonth = DateTime(filter.currentMonth.year, filter.currentMonth.month + 1, 0, 23, 59, 59);
+
+  final query = <String, dynamic>{
+    'limit': 1000,
+    'startDate': startOfMonth.toUtc().toIso8601String(),
+    'endDate': endOfMonth.toUtc().toIso8601String(),
+  };
+
+  if (filter.categoryId != null) {
+    query['categoryId'] = filter.categoryId;
+  }
+
+  final response = await dio.get('/transactions', queryParameters: query);
+  final data = response.data;
+  List txList = [];
+  if (data is List) {
+    txList = data;
+  } else if (data is Map && data['data'] is List) {
+    txList = data['data'];
+  }
+
+  double totalIncome = 0;
+  double totalExpense = 0;
+  for (var tx in txList) {
+    final isIncome = tx['type'] == 'income';
+    final amountRaw = tx['amount'];
+    final amount = amountRaw is num ? amountRaw.toDouble() : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+    if (isIncome) {
+      totalIncome += amount;
+    } else {
+      totalExpense += amount;
+    }
+  }
+
+  return {
+    'totalIncome': totalIncome,
+    'totalExpense': totalExpense,
+  };
+});

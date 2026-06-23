@@ -18,17 +18,9 @@ class TransactionCalendar extends ConsumerWidget {
     final summaryAsync = ref.watch(calendarSummaryProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final transactionsAsync = ref.watch(allTransactionsProvider);
-    double totalIncome = 0;
-    double totalExpense = 0;
-    if (transactionsAsync.hasValue) {
-      for (var tx in transactionsAsync.value!) {
-        final isIncome = tx['type'] == 'income';
-        final amountRaw = tx['amount'];
-        final amount = amountRaw is num ? amountRaw.toDouble() : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-        if (isIncome) totalIncome += amount; else totalExpense += amount;
-      }
-    }
+    final monthlySummaryAsync = ref.watch(monthlySummaryProvider);
+    final double totalIncome = monthlySummaryAsync.valueOrNull?['totalIncome'] ?? 0.0;
+    final double totalExpense = monthlySummaryAsync.valueOrNull?['totalExpense'] ?? 0.0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

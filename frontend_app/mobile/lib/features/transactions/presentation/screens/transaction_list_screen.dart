@@ -110,6 +110,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
         onRefresh: () async {
           ref.invalidate(allTransactionsProvider);
           ref.invalidate(calendarSummaryProvider);
+          ref.invalidate(monthlySummaryProvider);
         },
         color: AppColors.primary,
         child: CustomScrollView(
@@ -194,9 +195,9 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
           GestureDetector(
             onTap: () => showAllocateSavingsSheet(context),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
+                shape: BoxShape.circle,
                 color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : Colors.white,
                 border: Border.all(color: AppColors.primary, width: 1.5),
                 boxShadow: [
@@ -208,23 +209,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                   )
                 ],
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.allocate,
-                    style: AppTypography.textTheme.labelLarge?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+              child: const Icon(
+                Icons.account_balance_wallet_rounded,
+                color: AppColors.primary,
+                size: 24,
               ),
             ),
           ),
