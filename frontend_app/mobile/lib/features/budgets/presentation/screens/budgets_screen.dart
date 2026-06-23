@@ -9,7 +9,6 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/budgets_provider.dart';
-import '../widgets/add_budget_sheet.dart';
 import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
 import '../../../profile/data/services/backup_worker.dart';
 
@@ -61,7 +60,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
-            onPressed: () => showAddBudgetSheet(context),
+            onPressed: () => context.push('/budgets/form'),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
@@ -124,6 +123,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       symbol: currencySymbol,
       decimalDigits: 0,
     );
+    final localeCode = Localizations.localeOf(context).languageCode;
 
     // Filter logic
     final filteredBudgets = state.budgets.where((b) {
@@ -154,200 +154,286 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           child: Container(
             color: Theme.of(context).scaffoldBackgroundColor,
             child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        // Circular Progress
-                        SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: Consumer(
-                            builder: (context, ref, child) {
-                              final summaryAsync = ref.watch(convertedBudgetsSummaryProvider('All'));
-                              return summaryAsync.when(
-                                data: (summary) {
-                                  final totalLimit = summary['totalLimit'] ?? 0.0;
-                                  final totalSpent = summary['totalSpent'] ?? 0.0;
-                                  final percentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
-                                  final safePercentage = percentage.clamp(0.0, 1.0);
-                                  
-                                  Color progressColor = AppColors.success;
-                                  if (safePercentage >= 1.0) {
-                                    progressColor = AppColors.danger;
-                                  } else if (safePercentage > 0.7) {
-                                    progressColor = AppColors.warning;
-                                  }
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final summaryAsync = ref.watch(convertedBudgetsSummaryProvider('All'));
+                  return summaryAsync.when(
+                    data: (summary) {
+                      final totalLimit = summary['totalLimit'] ?? 0.0;
+                      final totalSpent = summary['totalSpent'] ?? 0.0;
+                      final remaining = totalLimit - totalSpent;
+                      
+                      final percentage = totalLimit > 0 ? (totalSpent / totalLimit) : 0.0;
+                      final safePercentage = percentage.clamp(0.0, 1.0);
 
-                                  return Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      CircularProgressIndicator(
-                                        value: 1.0,
-                                        strokeWidth: 8,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                          isDark ? AppColors.surfaceDark : const Color(0xFFF0EFF8),
-                                        ),
-                                      ),
-                                      CircularProgressIndicator(
-                                        value: safePercentage,
-                                        strokeWidth: 8,
-                                        backgroundColor: Colors.transparent,
-                                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                                      ),
-                                      Center(
-                                        child: Text(
-                                          '${(safePercentage * 100).toStringAsFixed(0)}%',
-                                          style: AppTypography.textTheme.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: progressColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
-                                loading: () => const CircularProgressIndicator(),
-                                error: (_, __) => const Icon(Icons.error, color: AppColors.danger),
-                              );
-                            },
+                      final remainingFormatted = fmt.format(remaining.abs());
+                      final totalLimitFormatted = fmt.format(totalLimit);
+
+                      final String subtitle;
+                      if (remaining >= 0) {
+                        subtitle = localeCode == 'id'
+                            ? '$remainingFormatted tersisa dari $totalLimitFormatted'
+                            : '$remainingFormatted remaining of $totalLimitFormatted';
+                      } else {
+                        subtitle = localeCode == 'id'
+                            ? '$remainingFormatted terlampaui dari $totalLimitFormatted'
+                            : '$remainingFormatted exceeded of $totalLimitFormatted';
+                      }
+
+                      // Define dynamic colors based on consumption percentage
+                      Color progressBarColor;
+                      if (percentage >= 1.0) {
+                        progressBarColor = AppColors.danger;
+                      } else if (percentage >= 0.8) {
+                        progressBarColor = AppColors.warning;
+                      } else if (percentage >= 0.5) {
+                        progressBarColor = const Color(0xFFF59E0B);
+                      } else {
+                        progressBarColor = AppColors.primary;
+                      }
+
+                      // Monthly period calculations
+                      final now = DateTime.now();
+                      final startDate = DateTime(now.year, now.month, 1);
+                      final endDate = DateTime(now.year, now.month + 1, 0);
+
+                      final today = DateTime(now.year, now.month, now.day);
+                      double todayProgressFraction = 0.0;
+                      if (today.isBefore(startDate)) {
+                        todayProgressFraction = 0.0;
+                      } else if (today.isAfter(endDate)) {
+                        todayProgressFraction = 1.0;
+                      } else {
+                        final totalDays = endDate.difference(startDate).inDays + 1;
+                        final elapsedDays = today.difference(startDate).inDays;
+                        todayProgressFraction = elapsedDays / totalDays;
+                      }
+
+                      final remainingDays = endDate.isAfter(today) ? endDate.difference(today).inDays + 1 : 0;
+                      final dailyAllowance = remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
+
+                      final String infoText;
+                      if (remaining >= 0) {
+                        if (remainingDays > 0) {
+                          final allowanceFormatted = fmt.format(dailyAllowance);
+                          infoText = localeCode == 'id'
+                              ? 'Anda bisa membelanjakan $allowanceFormatted/hari untuk $remainingDays hari ke depan'
+                              : 'You can spend $allowanceFormatted/day for $remainingDays more days';
+                        } else {
+                          infoText = localeCode == 'id'
+                              ? 'Periode anggaran telah berakhir'
+                              : 'Budget period has ended';
+                        }
+                      } else {
+                        final limitExceededFormatted = fmt.format(remaining.abs());
+                        infoText = localeCode == 'id'
+                            ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
+                            : 'Budget exceeded by $limitExceededFormatted';
+                      }
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: percentage >= 1.0
+                                ? AppColors.danger.withValues(alpha: 0.5)
+                                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                            width: percentage >= 1.0 ? 1.5 : 1,
                           ),
                         ),
-                        const SizedBox(width: 20),
-                        // Texts
-                        Expanded(
-                          child: Consumer(
-                            builder: (context, ref, child) {
-                              final summaryAsync = ref.watch(convertedBudgetsSummaryProvider('All'));
-                              return summaryAsync.when(
-                                data: (summary) {
-                                  final totalLimit = summary['totalLimit'] ?? 0.0;
-                                  final totalSpent = summary['totalSpent'] ?? 0.0;
-                                  final percentage = totalLimit > 0 ? totalSpent / totalLimit : 0.0;
-                                  
-                                  Color summaryColor = AppColors.success;
-                                  if (percentage >= 1.0) {
-                                    summaryColor = AppColors.danger;
-                                  } else if (percentage > 0.7) {
-                                    summaryColor = AppColors.warning;
-                                  }
-
-                                  return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            // Top half: Gradient
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primary,
+                                    Color.lerp(AppColors.primary, Colors.black, 0.45) ?? AppColors.primary
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Text(
+                                      '💼',
+                                      style: TextStyle(fontSize: 22),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.totalBudget,
+                                          style: AppTypography.textTheme.titleMedium?.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          subtitle,
+                                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                            color: Colors.white.withValues(alpha: 0.85),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Bottom half: Solid
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              color: isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
                                       Text(
-                                        l10n.totalBudget,
-                                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                        DateFormat('d MMM', localeCode).format(startDate),
+                                        style: AppTypography.textTheme.labelSmall?.copyWith(
                                           color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        fmt.format(totalLimit),
-                                        style: AppTypography.textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final maxWidth = constraints.maxWidth;
+                                            final todayPosition = maxWidth * todayProgressFraction;
+                                            const todayLabelWidth = 50.0;
+
+                                            return SizedBox(
+                                              height: 52,
+                                              child: Stack(
+                                                clipBehavior: Clip.none,
+                                                children: [
+                                                  Positioned(
+                                                    bottom: 6,
+                                                    left: 0,
+                                                    right: 0,
+                                                    child: Container(
+                                                      height: 20,
+                                                      decoration: BoxDecoration(
+                                                        color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                                                        borderRadius: BorderRadius.circular(10),
+                                                      ),
+                                                      child: Stack(
+                                                        children: [
+                                                          FractionallySizedBox(
+                                                            widthFactor: safePercentage,
+                                                            child: Container(
+                                                              decoration: BoxDecoration(
+                                                                color: progressBarColor,
+                                                                borderRadius: BorderRadius.circular(10),
+                                                              ),
+                                                              alignment: Alignment.center,
+                                                              child: safePercentage > 0.15 ? Text(
+                                                                '${(safePercentage * 100).toInt()}%',
+                                                                style: const TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 10,
+                                                                  fontWeight: FontWeight.bold,
+                                                                ),
+                                                              ) : null,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  if (todayProgressFraction > 0.0 && todayProgressFraction < 1.0)
+                                                    Positioned(
+                                                      left: todayPosition - (todayLabelWidth / 2),
+                                                      top: 0,
+                                                      child: SizedBox(
+                                                        width: todayLabelWidth,
+                                                        child: Column(
+                                                          mainAxisSize: MainAxisSize.min,
+                                                          children: [
+                                                            Container(
+                                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                                              decoration: BoxDecoration(
+                                                                color: isDark ? Colors.white : AppColors.primary,
+                                                                borderRadius: BorderRadius.circular(6),
+                                                              ),
+                                                              child: Text(
+                                                                localeCode == 'id' ? 'Hari ini' : 'Today',
+                                                                style: TextStyle(
+                                                                  color: isDark ? Colors.black : Colors.white,
+                                                                  fontSize: 8,
+                                                                  fontWeight: FontWeight.bold,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(height: 2),
+                                                            Container(
+                                                              width: 1.5,
+                                                              height: 34,
+                                                              color: isDark ? Colors.white70 : AppColors.primary,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                ],
+                                              ),
+                                            );
+                                          },
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
+                                      const SizedBox(width: 12),
                                       Text(
-                                        l10n.spent(fmt.format(totalSpent)),
-                                        style: AppTypography.textTheme.labelMedium?.copyWith(
-                                          color: summaryColor,
+                                        DateFormat('d MMM', localeCode).format(endDate),
+                                        style: AppTypography.textTheme.labelSmall?.copyWith(
+                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ],
-                                  );
-                                },
-                                loading: () => const SizedBox(),
-                                error: (_, __) => const SizedBox(),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-        // Status Filter Chips
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: 60,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              children: ['All', 'On Track', 'Warning', 'Exceeded'].asMap().entries.map((entry) {
-                final index = entry.key;
-                final status = entry.value;
-                final isSelected = _statusFilter == status;
-                Color statusColor = AppColors.primary;
-                if (status == 'On Track') statusColor = AppColors.success;
-                if (status == 'Warning') statusColor = AppColors.warning;
-                if (status == 'Exceeded') statusColor = AppColors.danger;
-
-                final String translatedStatus = switch (status) {
-                  'All' => l10n.all,
-                  'On Track' => l10n.onTrack,
-                  'Warning' => l10n.warning,
-                  'Exceeded' => l10n.exceeded,
-                  _ => status,
-                };
-                
-                final String emoji = switch (status) {
-                  'All' => '📁',
-                  'On Track' => '✅',
-                  'Warning' => '⚠️',
-                  'Exceeded' => '❌',
-                  _ => '📁',
-                };
-
-                return Padding(
-                  padding: EdgeInsets.only(right: index == 3 ? 0 : 8),
-                  child: GestureDetector(
-                    onTap: () {
-                      if (!isSelected) setState(() => _statusFilter = status);
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeInOut,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected ? statusColor.withValues(alpha: 0.15) : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSelected ? statusColor : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                          width: isSelected ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(emoji, style: const TextStyle(fontSize: 16)),
-                          const SizedBox(width: 6),
-                          Text(
-                            translatedStatus,
-                            style: AppTypography.textTheme.labelMedium?.copyWith(
-                              color: isSelected ? statusColor : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    infoText,
+                                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
+                          ],
+                        ),
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (_, __) => const SizedBox(),
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -497,26 +583,43 @@ class _BudgetCard extends ConsumerWidget {
     final baseColor = AppColors.colorFromHex(catHex, fallback: AppColors.primary);
     final topGradientColor = baseColor;
     final bottomGradientColor = Color.lerp(baseColor, Colors.black, 0.45) ?? baseColor;
-    final progressBarColor = spentAmount > totalLimitAmount ? AppColors.danger : baseColor;
 
-    return GestureDetector(
-      onTap: () => context.push('/budgets/detail', extra: tx),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: spentAmount > totalLimitAmount
-                ? AppColors.danger.withValues(alpha: 0.5)
-                : (isDark ? AppColors.borderDark : AppColors.borderLight),
-            width: spentAmount > totalLimitAmount ? 1.5 : 1,
-          ),
+    // Define dynamic colors based on consumption percentage
+    Color progressBarColor;
+    if (percentage >= 1.0) {
+      progressBarColor = AppColors.danger;
+    } else if (percentage >= 0.8) {
+      progressBarColor = AppColors.warning;
+    } else if (percentage >= 0.5) {
+      progressBarColor = const Color(0xFFF59E0B);
+    } else {
+      progressBarColor = baseColor;
+    }
+
+    final catEmoji = tx['category']?['emojiIcon'] as String? ??
+        tx['category']?['emoji'] as String? ??
+        tx['emoji'] as String? ??
+        tx['emojiIcon'] as String? ??
+        '📦';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: spentAmount > totalLimitAmount
+              ? AppColors.danger.withValues(alpha: 0.5)
+              : (isDark ? AppColors.borderDark : AppColors.borderLight),
+          width: spentAmount > totalLimitAmount ? 1.5 : 1,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            // ─── Top Section: Gradient ───────────────────────────────────────
-            Container(
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // ─── Top Section: Gradient ───────────────────────────────────────
+          GestureDetector(
+            onTap: () => context.push('/budgets/form', extra: {'budget': tx}),
+            child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -526,8 +629,22 @@ class _BudgetCard extends ConsumerWidget {
                 ),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      catEmoji,
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,10 +654,10 @@ class _BudgetCard extends ConsumerWidget {
                           style: AppTypography.textTheme.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                            fontSize: 18,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         Text(
                           subtitle,
                           style: AppTypography.textTheme.bodyMedium?.copyWith(
@@ -551,230 +668,165 @@ class _BudgetCard extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
-                    ),
-                    child: PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      onSelected: (value) async {
-                        if (value == 'edit') {
-                          showAddBudgetSheet(context, budget: tx);
-                        } else if (value == 'delete') {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: const Text('Delete Budget?'),
-                              content: const Text('Are you sure you want to delete this budget?'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(ctx, true),
-                                  child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
-                                ),
-                              ],
-                            ),
-                          );
-                          if (confirm == true) {
-                            try {
-                              await ref.read(budgetsNotifierProvider.notifier).deleteBudget(tx['id']);
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
-                              }
-                            }
-                          }
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: const [
-                              Icon(Icons.edit_rounded, size: 20),
-                              SizedBox(width: 12),
-                              Text('Edit'),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: const [
-                              Icon(Icons.delete_rounded, size: 20, color: AppColors.danger),
-                              SizedBox(width: 12),
-                              Text('Delete', style: TextStyle(color: AppColors.danger)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
+          ),
 
-            // ─── Bottom Section: Solid ────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              color: isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Progress Bar & Dates Row
-                  Row(
-                    children: [
-                      Text(
-                        DateFormat('d MMM', localeCode).format(startDate),
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                          fontWeight: FontWeight.w600,
-                        ),
+          // ─── Bottom Section: Solid ────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            color: isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Progress Bar & Dates Row
+                Row(
+                  children: [
+                    Text(
+                      DateFormat('d MMM', localeCode).format(startDate),
+                      style: AppTypography.textTheme.labelSmall?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final maxWidth = constraints.maxWidth;
-                            final todayPosition = maxWidth * todayProgressFraction;
-                            const todayLabelWidth = 50.0;
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final maxWidth = constraints.maxWidth;
+                          final todayPosition = maxWidth * todayProgressFraction;
+                          const todayLabelWidth = 50.0;
 
-                            return SizedBox(
-                              height: 52,
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  // Progress Bar Background & Active Fill
-                                  Positioned(
-                                    bottom: 6,
-                                    left: 0,
-                                    right: 0,
-                                    child: Container(
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          FractionallySizedBox(
-                                            widthFactor: safePercentage,
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: progressBarColor,
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              alignment: Alignment.center,
-                                              child: safePercentage > 0.15 ? Text(
-                                                '${(safePercentage * 100).toInt()}%',
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ) : null,
+                          return SizedBox(
+                            height: 52,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Progress Bar Background & Active Fill
+                                Positioned(
+                                  bottom: 6,
+                                  left: 0,
+                                  right: 0,
+                                  child: Container(
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                      color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        FractionallySizedBox(
+                                          widthFactor: safePercentage,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: progressBarColor,
+                                              borderRadius: BorderRadius.circular(10),
                                             ),
+                                            alignment: Alignment.center,
+                                            child: safePercentage > 0.15 ? Text(
+                                              '${(safePercentage * 100).toInt()}%',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ) : null,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+
+                                // Proportional "Hari ini" Indicator
+                                if (todayProgressFraction > 0.0 && todayProgressFraction < 1.0)
+                                  Positioned(
+                                    left: todayPosition - (todayLabelWidth / 2),
+                                    top: 0,
+                                    child: SizedBox(
+                                      width: todayLabelWidth,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? Colors.white : AppColors.primary,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              localeCode == 'id' ? 'Hari ini' : 'Today',
+                                              style: TextStyle(
+                                                color: isDark ? Colors.black : Colors.white,
+                                                fontSize: 8,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Container(
+                                            width: 1.5,
+                                            height: 34,
+                                            color: isDark ? Colors.white70 : AppColors.primary,
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
-
-                                  // Proportional "Hari ini" Indicator
-                                  if (todayProgressFraction > 0.0 && todayProgressFraction < 1.0)
-                                    Positioned(
-                                      left: todayPosition - (todayLabelWidth / 2),
-                                      top: 0,
-                                      child: SizedBox(
-                                        width: todayLabelWidth,
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                              decoration: BoxDecoration(
-                                                color: isDark ? Colors.white : AppColors.primary,
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                localeCode == 'id' ? 'Hari ini' : 'Today',
-                                                style: TextStyle(
-                                                  color: isDark ? Colors.black : Colors.white,
-                                                  fontSize: 8,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Container(
-                                              width: 1.5,
-                                              height: 24,
-                                              color: isDark ? Colors.white70 : AppColors.primary,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        DateFormat('d MMM', localeCode).format(endDate),
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      DateFormat('d MMM', localeCode).format(endDate),
+                      style: AppTypography.textTheme.labelSmall?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w600,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
 
-                  // Daily Allowance Info
-                  Builder(
-                    builder: (context) {
-                      final String infoText;
-                      if (remaining >= 0) {
-                        if (remainingDays > 0) {
-                          final allowanceFormatted = fmt.format(dailyAllowance);
-                          infoText = localeCode == 'id'
-                              ? 'Anda bisa membelanjakan $allowanceFormatted/hari untuk $remainingDays hari ke depan'
-                              : 'You can spend $allowanceFormatted/day for $remainingDays more days';
-                        } else {
-                          infoText = localeCode == 'id'
-                              ? 'Periode anggaran telah berakhir'
-                              : 'Budget period has ended';
-                        }
-                      } else {
-                        final limitExceededFormatted = fmt.format(remaining.abs());
+                // Daily Allowance Info
+                Builder(
+                  builder: (context) {
+                    final String infoText;
+                    if (remaining >= 0) {
+                      if (remainingDays > 0) {
+                        final allowanceFormatted = fmt.format(dailyAllowance);
                         infoText = localeCode == 'id'
-                            ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
-                            : 'Budget exceeded by $limitExceededFormatted';
+                            ? 'Anda bisa membelanjakan $allowanceFormatted/hari untuk $remainingDays hari ke depan'
+                            : 'You can spend $allowanceFormatted/day for $remainingDays more days';
+                      } else {
+                        infoText = localeCode == 'id'
+                            ? 'Periode anggaran telah berakhir'
+                            : 'Budget period has ended';
                       }
+                    } else {
+                      final limitExceededFormatted = fmt.format(remaining.abs());
+                      infoText = localeCode == 'id'
+                          ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
+                          : 'Budget exceeded by $limitExceededFormatted';
+                    }
 
-                      return Text(
-                        infoText,
-                        style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                    return Text(
+                      infoText,
+                      style: AppTypography.textTheme.bodySmall?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

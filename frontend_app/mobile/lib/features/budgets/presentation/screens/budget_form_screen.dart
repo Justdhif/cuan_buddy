@@ -2,6 +2,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -13,16 +14,16 @@ import '../providers/budgets_provider.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
 
-class AddBudgetSheet extends ConsumerStatefulWidget {
-  const AddBudgetSheet({super.key, this.budget, this.initialCategoryId});
+class BudgetFormScreen extends ConsumerStatefulWidget {
+  const BudgetFormScreen({super.key, this.budget, this.initialCategoryId});
   final Map<String, dynamic>? budget;
   final String? initialCategoryId;
 
   @override
-  ConsumerState<AddBudgetSheet> createState() => _AddBudgetSheetState();
+  ConsumerState<BudgetFormScreen> createState() => _BudgetFormScreenState();
 }
 
-class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
+class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
@@ -92,14 +93,14 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
         await dio.post('/budgets', data: payload);
         ref.invalidate(budgetsNotifierProvider);
         if (mounted) {
-          Navigator.pop(context);
+          context.pop();
           AppSnackbar.show(context, title: l10n.success, message: 'Budget saved successfully', type: SnackbarType.success);
         }
       } else {
         await dio.patch('/budgets/${widget.budget!['id']}', data: payload);
         ref.invalidate(budgetsNotifierProvider);
         if (mounted) {
-          Navigator.pop(context);
+          context.pop();
           AppSnackbar.show(context, title: l10n.success, message: 'Budget updated successfully', type: SnackbarType.success);
         }
       }
@@ -107,6 +108,40 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
       setState(() => _isSaving = false);
       if (mounted) {
         AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
+      }
+    }
+  }
+
+  Future<void> _deleteBudget() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Budget?'),
+        content: const Text('Are you sure you want to delete this budget?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        await ref.read(budgetsNotifierProvider.notifier).deleteBudget(widget.budget!['id']);
+        if (mounted) {
+          context.pop(); // Pop form screen
+          AppSnackbar.show(context, title: l10n.success, message: 'Budget deleted successfully', type: SnackbarType.success);
+        }
+      } catch (e) {
+        if (mounted) {
+          AppSnackbar.show(context, title: l10n.error, message: 'Failed to delete budget: $e', type: SnackbarType.error);
+        }
       }
     }
   }
@@ -120,45 +155,33 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
     final expenseCategories = categoriesAsync.whenData((all) =>
         all.where((c) => c['type'] == 'expense' || c['type'] == null).toList());
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        left: 24,
-        right: 24,
-        top: 12,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        title: Text(
+          widget.budget == null ? l10n.setBudget : 'Edit Budget',
+          style: AppTypography.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          if (widget.budget != null)
+            IconButton(
+              onPressed: _deleteBudget,
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              tooltip: 'Delete Budget',
             ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                widget.budget == null ? l10n.setBudget : 'Edit Budget',
-                style: AppTypography.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Form(
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,7 +233,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 // ── Category ──────────────────────────────────────────────
                 Text(l10n.category, style: AppTypography.textTheme.labelMedium),
@@ -304,7 +327,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                     );
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
                 // ── Month Picker ───────────────────────────────────────────
                 InkWell(
@@ -344,8 +367,8 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                
+                const SizedBox(height: 24),
+
                 // ── Recurring & Rollover Toggles ───────────────────────────
                 SwitchListTile(
                   title: Text(l10n.recurringBudget, style: AppTypography.textTheme.bodyMedium),
@@ -361,10 +384,10 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                 ),
                 SwitchListTile(
                   title: Text(
-                    l10n.rolloverRemaining, 
+                    l10n.rolloverRemaining,
                     style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: _isRecurring 
-                          ? null 
+                      color: _isRecurring
+                          ? null
                           : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
                     )
                   ),
@@ -373,7 +396,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                   contentPadding: EdgeInsets.zero,
                   onChanged: _isRecurring ? (val) => setState(() => _rollover = val) : null,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
 
                 // ── Save Button ────────────────────────────────────────────
                 AppButton(
@@ -386,7 +409,7 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -459,18 +482,4 @@ class _SkeletonChipState extends State<_SkeletonChip>
       ),
     );
   }
-}
-
-// ─── Show helper ─────────────────────────────────────────────────────────────
-void showAddBudgetSheet(BuildContext context, {Map<String, dynamic>? budget, String? initialCategoryId}) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-    ),
-    builder: (_) => AddBudgetSheet(budget: budget, initialCategoryId: initialCategoryId),
-  );
 }

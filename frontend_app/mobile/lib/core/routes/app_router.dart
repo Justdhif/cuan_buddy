@@ -27,7 +27,7 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
 import '../../features/budgets/presentation/screens/budgets_screen.dart';
-import '../../features/budgets/presentation/screens/budget_detail_screen.dart';
+import '../../features/budgets/presentation/screens/budget_form_screen.dart';
 import '../../features/savings/presentation/screens/savings_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -152,10 +152,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/budgets/detail',
+        path: '/budgets/form',
         pageBuilder: (context, state) {
-          final budget = state.extra as Map<String, dynamic>;
-          return _buildPage(state, BudgetDetailScreen(budget: budget));
+          final extra = state.extra as Map<String, dynamic>?;
+          return _buildPage(
+            state,
+            BudgetFormScreen(
+              budget: extra?['budget'] as Map<String, dynamic>?,
+              initialCategoryId: extra?['initialCategoryId'] as String?,
+            ),
+          );
         },
       ),
       GoRoute(
