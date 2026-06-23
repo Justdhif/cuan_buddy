@@ -25,13 +25,6 @@ class TransactionCalendar extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
       child: Column(
         children: [
           _buildHeader(context, ref, filterState, isDark),
@@ -50,36 +43,15 @@ class TransactionCalendar extends ConsumerWidget {
               error: (e, _) => const SizedBox(height: 80, child: Center(child: Text('Failed to load calendar'))),
             ),
           ),
-          const SizedBox(height: 8),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  ref.read(transactionFilterProvider.notifier).toggleExpand();
-                },
-                behavior: HitTestBehavior.opaque,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Center(
-                    child: Container(
-                      width: 40,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: (isDark ? AppColors.borderDark : AppColors.borderLight).withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (filterState.selectedDate.year != DateTime.now().year ||
-                  filterState.selectedDate.month != DateTime.now().month ||
-                  filterState.selectedDate.day != DateTime.now().day)
-                Positioned(
-                  right: 0,
-                  child: Consumer(
+          if (filterState.selectedDate.year != DateTime.now().year ||
+              filterState.selectedDate.month != DateTime.now().month ||
+              filterState.selectedDate.day != DateTime.now().day)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Consumer(
                     builder: (context, ref, child) {
                       final localeCode = ref.watch(languageProvider);
                       final todayLabel = localeCode == 'id' ? 'Hari ini' : 'Today';
@@ -105,9 +77,9 @@ class TransactionCalendar extends ConsumerWidget {
                       );
                     },
                   ),
-                ),
-            ],
-          ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -185,33 +157,27 @@ class TransactionCalendar extends ConsumerWidget {
     
     final List<DateTime> days = [];
 
-    if (state.isExpanded) {
-      final firstDayOfMonth = DateTime(state.currentMonth.year, state.currentMonth.month, 1);
-      final lastDayOfMonth = DateTime(state.currentMonth.year, state.currentMonth.month + 1, 0);
-      
-      int firstWeekday = firstDayOfMonth.weekday;
-      if (firstWeekday == 7) firstWeekday = 0; // Make Sunday 0
+    final firstDayOfMonth = DateTime(state.currentMonth.year, state.currentMonth.month, 1);
+    final lastDayOfMonth = DateTime(state.currentMonth.year, state.currentMonth.month + 1, 0);
+    
+    int firstWeekday = firstDayOfMonth.weekday;
+    if (firstWeekday == 7) firstWeekday = 0; // Make Sunday 0
 
-      for (int i = firstWeekday - 1; i >= 0; i--) {
-        days.add(firstDayOfMonth.subtract(Duration(days: i + 1)));
-      }
-      for (int i = 0; i < lastDayOfMonth.day; i++) {
-        days.add(DateTime(state.currentMonth.year, state.currentMonth.month, i + 1));
-      }
-      final remainingDays = 42 - days.length; // Max 6 weeks
+    for (int i = firstWeekday - 1; i >= 0; i--) {
+      days.add(firstDayOfMonth.subtract(Duration(days: i + 1)));
+    }
+    for (int i = 0; i < lastDayOfMonth.day; i++) {
+      days.add(DateTime(state.currentMonth.year, state.currentMonth.month, i + 1));
+    }
+    
+    const totalGridDays = 35; // Exactly 5 weeks
+    final remainingDays = totalGridDays - days.length;
+    if (remainingDays > 0) {
       for (int i = 0; i < remainingDays; i++) {
         days.add(lastDayOfMonth.add(Duration(days: i + 1)));
       }
-    } else {
-      // 1-week view anchored around selectedDate
-      final anchorDate = state.selectedDate;
-      int weekday = anchorDate.weekday;
-      if (weekday == 7) weekday = 0; // Make Sunday 0
-
-      final startOfWeek = anchorDate.subtract(Duration(days: weekday));
-      for (int i = 0; i < 7; i++) {
-        days.add(startOfWeek.add(Duration(days: i)));
-      }
+    } else if (days.length > totalGridDays) {
+      days.removeRange(totalGridDays, days.length);
     }
 
     return GridView.builder(
