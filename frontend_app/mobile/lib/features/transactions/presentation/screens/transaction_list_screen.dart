@@ -156,7 +156,11 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                     final isIncome = tx['type'] == 'income';
                     final amountRaw = tx['amount'];
                     final amount = amountRaw is num ? amountRaw.toDouble() : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-                    if (isIncome) totalIncome += amount; else totalExpense += amount;
+                    if (isIncome) {
+                      totalIncome += amount;
+                    } else {
+                      totalExpense += amount;
+                    }
                   }
                   
                   final balance = totalIncome - totalExpense;
@@ -188,9 +192,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
           ],
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           GestureDetector(
             onTap: () => showAllocateSavingsSheet(context),
