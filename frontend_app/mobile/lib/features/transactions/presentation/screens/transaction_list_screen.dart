@@ -160,7 +160,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               pinned: true,
               floating: false,
               snap: false,
-              expandedHeight: 140,
+              expandedHeight: 110,
               backgroundColor: bgColor,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
@@ -353,7 +353,7 @@ class _TransactionHeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 8, 0),
+      padding: const EdgeInsets.fromLTRB(24, 0, 8, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -388,8 +388,8 @@ class _TransactionHeroHeader extends StatelessWidget {
           ),
           // Right: illustration image from assets
           SizedBox(
-            width: 130,
-            height: 130,
+            width: 100,
+            height: 100,
             child: Image.asset(
               'assets/images/transaction_hero.png',
               fit: BoxFit.contain,
