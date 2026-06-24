@@ -37,6 +37,10 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     fields: [transactions.categoryId],
     references: [categories.id],
   }),
+  savingsGoal: one(savingsGoals, {
+    fields: [transactions.savingsGoalId],
+    references: [savingsGoals.id],
+  }),
 }));
 
 export const budgetsRelations = relations(budgets, ({ one }) => ({
@@ -50,11 +54,12 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
   }),
 }));
 
-export const savingsGoalsRelations = relations(savingsGoals, ({ one }) => ({
+export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => ({
   user: one(users, {
     fields: [savingsGoals.userId],
     references: [users.id],
   }),
+  transactions: many(transactions),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({

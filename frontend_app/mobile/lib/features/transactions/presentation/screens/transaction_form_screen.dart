@@ -13,7 +13,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
-
+import '../../../savings/presentation/providers/savings_provider.dart';
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({
     super.key,
@@ -36,6 +36,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _noteController = TextEditingController();
   late String _type;
   String? _selectedCategoryId;
+  String? _selectedSavingsGoalId;
   DateTime _selectedDate = DateTime.now();
   String _selectedCurrency = AppConstants.defaultCurrency;
   bool _isSaving = false;
@@ -51,6 +52,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       _amountController.text = (tx['amount'] ?? '').toString();
       _noteController.text = tx['note'] as String? ?? '';
       _selectedCategoryId = tx['categoryId'] as String?;
+      _selectedSavingsGoalId = tx['savingsGoalId'] as String?;
       if (tx['date'] != null) {
         _selectedDate = DateTime.parse(tx['date'] as String).toLocal();
       }
@@ -90,6 +92,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         'amount': double.parse(_amountController.text.replaceAll(',', '')),
         'currency': _selectedCurrency,
         'categoryId': _selectedCategoryId,
+        'savingsGoalId': _selectedSavingsGoalId,
         'date': _selectedDate.toUtc().toIso8601String(),
       };
       if (_noteController.text.isNotEmpty) {
@@ -199,6 +202,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final typeColor = _type == 'income' ? AppColors.success : AppColors.danger;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
+    final savingsState = ref.watch(savingsNotifierProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -402,6 +406,96 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+
+                // ── Savings Goals ──────────────────────────────────────
+                if (!savingsState.isLoading && savingsState.goals.isNotEmpty) ...[
+                  SizedBox(
+                    height: 52,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.zero,
+                      itemCount: savingsState.goals.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          // "Tidak ada tujuan" (None) button
+                          final isSelected = _selectedSavingsGoalId == null;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedSavingsGoalId = null),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeInOut,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.15)
+                                    : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Tidak ada tujuan',
+                                    style: AppTypography.textTheme.labelMedium?.copyWith(
+                                      color: isSelected ? AppColors.primary : null,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        final goal = savingsState.goals[index - 1];
+                        final goalId = goal['id'] as String?;
+                        final goalName = goal['name'] as String? ?? '';
+                        final isSelected = _selectedSavingsGoalId == goalId;
+                        // Use a generic emoji for goals if none is saved
+                        final goalEmoji = '🎨'; // Using emoji from screenshot as default or parse if exists
+                        
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedSavingsGoalId = goalId),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            curve: Curves.easeInOut,
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.success.withValues(alpha: 0.15)
+                                  : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected ? AppColors.success : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(goalEmoji, style: const TextStyle(fontSize: 18)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  goalName,
+                                  style: AppTypography.textTheme.labelMedium?.copyWith(
+                                    color: isSelected ? AppColors.success : null,
+                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // ── Note ───────────────────────────────────────────────
                 AppTextField(

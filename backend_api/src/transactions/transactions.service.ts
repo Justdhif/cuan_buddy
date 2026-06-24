@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, and, or, gte, lte, desc, ilike, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, budgets, categories } from '../database/schema';
+import { transactions, budgets, categories, savingsGoals } from '../database/schema';
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -50,6 +50,10 @@ export class TransactionsService {
       })
       .returning();
 
+    if (newTransaction.savingsGoalId) {
+      void this.applySavingsGoalEffect(userId, newTransaction.savingsGoalId, newTransaction.type as 'income' | 'expense', Number(newTransaction.amount));
+    }
+
     // Fire-and-forget: notification
     void this.notificationsService.createAndBroadcast(
       userId,
@@ -77,6 +81,36 @@ export class TransactionsService {
     }
 
     return newTransaction;
+  }
+
+  private async applySavingsGoalEffect(userId: string, goalId: string | null, type: 'income' | 'expense', amount: number, isRevert: boolean = false) {
+    if (!goalId) return;
+    const goal = await this.db.query.savingsGoals.findFirst({
+      where: and(eq(savingsGoals.id, goalId), eq(savingsGoals.userId, userId))
+    });
+    if (!goal) return;
+
+    let adjustment = type === 'income' ? amount : -amount;
+    if (isRevert) {
+      adjustment = -adjustment;
+    }
+
+    const newAmount = Number(goal.currentAmount) + adjustment;
+    const updateData: any = { currentAmount: newAmount.toString(), updatedAt: new Date() };
+
+    if (newAmount >= Number(goal.targetAmount) && goal.status !== 'completed' && adjustment > 0) {
+      updateData.status = 'completed';
+      void this.notificationsService.createAndBroadcast(
+        userId,
+        'Goal Reached! 🎉',
+        `Congratulations! You have reached your savings goal: ${goal.name}.`,
+        'goal'
+      );
+    } else if (newAmount < Number(goal.targetAmount) && goal.status === 'completed' && adjustment < 0) {
+      updateData.status = 'in_progress';
+    }
+
+    await this.db.update(savingsGoals).set(updateData).where(eq(savingsGoals.id, goalId));
   }
 
   private async checkBudgetThreshold(userId: string, categoryId: string, transactionDate: Date) {
@@ -195,6 +229,7 @@ export class TransactionsService {
       offset: offset,
       with: {
         category: true,
+        savingsGoal: true,
       },
     });
 
@@ -222,7 +257,7 @@ export class TransactionsService {
   async findOne(userId: string, id: string) {
     const transaction = await this.db.query.transactions.findFirst({
       where: and(eq(transactions.id, id), eq(transactions.userId, userId)),
-      with: { category: true },
+      with: { category: true, savingsGoal: true },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');
@@ -234,7 +269,11 @@ export class TransactionsService {
     id: string,
     updateTransactionDto: UpdateTransactionDto,
   ) {
-    // Optimized: single query — update with ownership check, no separate findOne
+    const oldTx = await this.db.query.transactions.findFirst({
+      where: and(eq(transactions.id, id), eq(transactions.userId, userId)),
+    });
+    if (!oldTx) throw new NotFoundException('Transaction not found');
+
     const updateData: any = { ...updateTransactionDto, updatedAt: new Date() };
     if (updateTransactionDto.date)
       updateData.date = new Date(updateTransactionDto.date);
@@ -248,17 +287,32 @@ export class TransactionsService {
       .returning();
 
     if (!updated) throw new NotFoundException('Transaction not found');
+
+    // Handle savings goal sync
+    // 1. Revert old
+    if (oldTx.savingsGoalId) {
+      await this.applySavingsGoalEffect(userId, oldTx.savingsGoalId, oldTx.type as 'income' | 'expense', Number(oldTx.amount), true);
+    }
+    // 2. Apply new
+    if (updated.savingsGoalId) {
+      await this.applySavingsGoalEffect(userId, updated.savingsGoalId, updated.type as 'income' | 'expense', Number(updated.amount), false);
+    }
+
     return updated;
   }
 
   async remove(userId: string, id: string) {
-    // Optimized: single query — delete with ownership check, no separate findOne
     const [deleted] = await this.db
       .delete(transactions)
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
-      .returning({ id: transactions.id });
+      .returning();
 
     if (!deleted) throw new NotFoundException('Transaction not found');
+
+    if (deleted.savingsGoalId) {
+      await this.applySavingsGoalEffect(userId, deleted.savingsGoalId, deleted.type as 'income' | 'expense', Number(deleted.amount), true);
+    }
+
     return { message: 'Transaction removed successfully' };
   }
 

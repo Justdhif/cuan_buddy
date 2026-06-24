@@ -11,7 +11,6 @@ import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
 import '../providers/transaction_provider.dart';
-import '../../../savings/presentation/widgets/allocate_savings_sheet.dart';
 import '../widgets/ai_voice_sheet.dart';
 import '../widgets/transaction_calendar.dart';
 import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
@@ -31,8 +30,8 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   // Speed-dial FAB state
   bool _fabOpen = false;
   late AnimationController _fabController;
-  late Animation<double> _fade1, _fade2, _fade3;
-  late Animation<Offset> _slide1, _slide2, _slide3;
+  late Animation<double> _fade1, _fade2;
+  late Animation<Offset> _slide1, _slide2;
 
   @override
   void initState() {
@@ -41,23 +40,17 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
       duration: const Duration(milliseconds: 380),
       vsync: this,
     );
-    // Staggered intervals: btn1 first (closest to main), btn3 last (topmost)
+    // Staggered intervals: btn1 first (closest to main), btn2 last (topmost)
     _fade1 = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.55, curve: Curves.easeOut)),
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
     );
     _fade2 = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.2, 0.75, curve: Curves.easeOut)),
-    );
-    _fade3 = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fabController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
     );
     _slide1 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.55, curve: Curves.easeOut)),
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
     );
     _slide2 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.2, 0.75, curve: Curves.easeOut)),
-    );
-    _slide3 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
       CurvedAnimation(parent: _fabController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
     );
   }
@@ -277,18 +270,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Sub 3 – Allocate (top, animates last)
-              _buildSubFab(
-                icon: Icons.account_balance_wallet_rounded,
-                onTap: () {
-                  _toggleFab();
-                  showAllocateSavingsSheet(context);
-                },
-                fadeAnim: _fade3,
-                slideAnim: _slide3,
-              ),
-              const SizedBox(height: 12),
-              // Sub 2 – Mic (middle, animates second)
+              // Sub 2 – Mic (top, animates second)
               _buildSubFab(
                 icon: Icons.mic_rounded,
                 onTap: () async {
@@ -302,7 +284,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                 slideAnim: _slide2,
               ),
               const SizedBox(height: 12),
-              // Sub 1 – Add Transaction (bottom, animates first)
+              // Sub 1 – Manual (bottom, animates first)
               _buildSubFab(
                 icon: Icons.receipt_long_rounded,
                 onTap: () {
@@ -480,6 +462,7 @@ class _TransactionTile extends ConsumerWidget {
         symbol: txCurrencySymbol,
         decimalDigits: 0);
     final dynamic category = tx['category'];
+    final dynamic savingsGoal = tx['savingsGoal'];
     final emoji = (category is Map
             ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
             : null) ??
@@ -530,18 +513,38 @@ class _TransactionTile extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      catName ?? l10n.transaction,
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          catName ?? l10n.transaction,
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondaryLight,
+                          ),
+                        ),
                       ),
-                    ),
+                      if (savingsGoal != null && savingsGoal is Map)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '🎨 ${savingsGoal['name']}',
+                            style: AppTypography.textTheme.labelSmall?.copyWith(
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),

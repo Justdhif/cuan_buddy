@@ -49,6 +49,7 @@ export const transactions = pgTable('transactions', {
   amount: decimal('amount', { precision: 19, scale: 2 }).notNull(),
   currency: text('currency').default('IDR').notNull(),
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  savingsGoalId: uuid('savings_goal_id').references(() => savingsGoals.id, { onDelete: 'set null' }),
   note: text('note'),
   date: timestamp('date').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

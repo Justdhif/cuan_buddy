@@ -7,6 +7,7 @@ export const CreateTransactionSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().optional(),
   categoryId: z.string().uuid().optional(),
+  savingsGoalId: z.string().uuid().optional(),
   note: z.string().max(255).optional(),
   date: z.string().datetime(),
 });
