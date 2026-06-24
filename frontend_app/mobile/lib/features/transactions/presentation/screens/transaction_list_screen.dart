@@ -25,8 +25,9 @@ class TransactionListScreen extends ConsumerStatefulWidget {
 }
 
 class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  bool _headerCollapsed = false;
 
   // Speed-dial FAB state
   bool _fabOpen = false;
@@ -64,6 +65,14 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           parent: _fabController,
           curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
     );
+
+    _scrollController.addListener(() {
+      // Collapse header when scrolled past ~100px
+      final collapsed = _scrollController.offset > 100;
+      if (collapsed != _headerCollapsed) {
+        setState(() => _headerCollapsed = collapsed);
+      }
+    });
   }
 
   @override
@@ -132,67 +141,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
         kToolbarHeight -
         MediaQuery.of(context).padding.top -
         80;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 24,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: GestureDetector(
-          onTap: () {
-            _scrollController.animateTo(
-              0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          },
-          child: Text(l10n.transactions),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (value) {
-              if (value == 'export') {
-                ref
-                    .read(backupWorkerProvider)
-                    .runBackupProcess(tables: ['transactions']);
-              } else if (value == 'import') {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (ctx) =>
-                      const SingleTableImportSheet(tableName: 'transactions'),
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'export',
-                child: Row(
-                  children: [
-                    const Icon(Icons.file_download_rounded, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.exportData),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'import',
-                child: Row(
-                  children: [
-                    const Icon(Icons.file_upload_rounded, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.importData),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(allTransactionsProvider);
@@ -205,6 +157,86 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               parent: BouncingScrollPhysics()),
           controller: _scrollController,
           slivers: [
+            // ── Hero SliverAppBar ──────────────────────────────────────────
+            SliverAppBar(
+              pinned: true,
+              floating: false,
+              snap: false,
+              expandedHeight: 140,
+              backgroundColor: bgColor,
+              surfaceTintColor: Colors.transparent,
+              scrolledUnderElevation: 0,
+              titleSpacing: 0,
+              // Collapsed app bar title (shows when scrolled)
+              title: AnimatedOpacity(
+                opacity: _headerCollapsed ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: GestureDetector(
+                    onTap: () => _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    ),
+                    child: Text(
+                      l10n.transactions,
+                      style: AppTypography.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert_rounded),
+                  onSelected: (value) {
+                    if (value == 'export') {
+                      ref
+                          .read(backupWorkerProvider)
+                          .runBackupProcess(tables: ['transactions']);
+                    } else if (value == 'import') {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => const SingleTableImportSheet(
+                            tableName: 'transactions'),
+                      );
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'export',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.file_download_rounded, size: 20),
+                          const SizedBox(width: 12),
+                          Text(l10n.exportData),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'import',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.file_upload_rounded, size: 20),
+                          const SizedBox(width: 12),
+                          Text(l10n.importData),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 8),
+              ],
+              // Expanded hero header
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.pin,
+                background: _TransactionHeroHeader(isDark: isDark),
+              ),
+            ),
             const SliverToBoxAdapter(
               child: TransactionCalendar(),
             ),
@@ -356,8 +388,68 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   }
 }
 
+// ── Hero Header Widget ────────────────────────────────────────────────────────
+class _TransactionHeroHeader extends StatelessWidget {
+  const _TransactionHeroHeader({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 8, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left: title + description
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  l10n.transactions,
+                  style: AppTypography.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.transactionsSubtitle,
+                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Right: illustration image from assets
+          SizedBox(
+            width: 130,
+            height: 130,
+            child: Image.asset(
+              'assets/images/transaction_hero.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
 class _FilterRow extends ConsumerWidget {
   const _FilterRow();
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

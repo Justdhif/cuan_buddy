@@ -204,8 +204,8 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
         monthlySummaryAsync.valueOrNull?['totalExpense'] ?? 0.0;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+      padding: const EdgeInsets.only(top: 12, bottom: 8),
       child: Column(
         children: [
           _buildHeader(context, filterState, isDark),
@@ -378,12 +378,13 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
     }
 
     return GridView.builder(
+      padding: EdgeInsets.zero,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: days.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.8,
+        childAspectRatio: 1.0,
       ),
       itemBuilder: (context, index) {
         final date = days[index];

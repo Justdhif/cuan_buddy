@@ -229,6 +229,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get transactions => 'Transactions';
   @override
+  String get transactionsSubtitle => 'Track all your income\n& expenses 👌';
+  @override
   String get addTransaction => 'Add Transaction';
   @override
   String get allTypes => 'All Types';

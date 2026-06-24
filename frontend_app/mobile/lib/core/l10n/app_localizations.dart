@@ -154,6 +154,7 @@ abstract class AppLocalizations {
 
   // ─── Transactions ─────────────────────────────────────────────────────────────
   String get transactions;
+  String get transactionsSubtitle;
   String get addTransaction;
   String get allTypes;
   String get allCategories;

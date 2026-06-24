@@ -233,6 +233,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get transactions => 'Transaksi';
   @override
+  String get transactionsSubtitle => 'Pantau semua pemasukan\ndan pengeluaranmu 👌';
+  @override
   String get addTransaction => 'Tambah Transaksi';
   @override
   String get allTypes => 'Semua Tipe';
