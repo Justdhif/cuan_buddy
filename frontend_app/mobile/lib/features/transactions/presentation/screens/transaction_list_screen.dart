@@ -25,7 +25,6 @@ class TransactionListScreen extends ConsumerStatefulWidget {
 class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
     with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
-  bool _headerCollapsed = false;
   double _scrollOffset = 0.0;
 
   // Speed-dial FAB state
@@ -66,12 +65,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
     );
 
     _scrollController.addListener(() {
-      final offset = _scrollController.offset;
-      final collapsed = offset > 80;
-      setState(() {
-        _scrollOffset = offset;
-        _headerCollapsed = collapsed;
-      });
+      setState(() => _scrollOffset = _scrollController.offset);
     });
   }
 
@@ -351,9 +345,7 @@ class _TransactionHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return SafeArea(
-      bottom: false,
-      child: Padding(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 8, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -369,7 +361,7 @@ class _TransactionHeroHeader extends StatelessWidget {
                 Builder(builder: (context) {
                   final expandedH = 120.0;
                   // progress 0 → 1 as scroll goes 0 → expandedH
-                  final progress = (_scrollOffset / expandedH).clamp(0.0, 1.0);
+                  final progress = (scrollOffset / expandedH).clamp(0.0, 1.0);
                   // Title travels upward to reach AppBar position
                   final translateY = -expandedH * progress;
                   // Fade out between 50%–90% of the scroll
@@ -413,7 +405,6 @@ class _TransactionHeroHeader extends StatelessWidget {
             ),
           ),
         ],
-      ),
       ),
     );
   }
