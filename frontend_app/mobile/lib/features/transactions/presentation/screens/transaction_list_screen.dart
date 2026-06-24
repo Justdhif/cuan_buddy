@@ -26,6 +26,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
     with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   bool _headerCollapsed = false;
+  double _scrollOffset = 0.0;
 
   // Speed-dial FAB state
   bool _fabOpen = false;
@@ -65,11 +66,12 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
     );
 
     _scrollController.addListener(() {
-      // Collapse header when scrolled past ~100px
-      final collapsed = _scrollController.offset > 100;
-      if (collapsed != _headerCollapsed) {
-        setState(() => _headerCollapsed = collapsed);
-      }
+      final offset = _scrollController.offset;
+      final collapsed = offset > 80;
+      setState(() {
+        _scrollOffset = offset;
+        _headerCollapsed = collapsed;
+      });
     });
   }
 
@@ -166,31 +168,36 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               scrolledUnderElevation: 0,
               titleSpacing: 0,
               // Collapsed app bar title (shows when scrolled)
-              title: AnimatedOpacity(
-                opacity: _headerCollapsed ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: GestureDetector(
-                    onTap: () => _scrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    ),
-                    child: Text(
-                      l10n.transactions,
-                      style: AppTypography.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+              title: Builder(builder: (context) {
+                final t = ((_scrollOffset - 60) / 40).clamp(0.0, 1.0);
+                return Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 8 * (1 - t)),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8),
+                      child: GestureDetector(
+                        onTap: () => _scrollController.animateTo(
+                          0,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeOut,
+                        ),
+                        child: Text(
+                          l10n.transactions,
+                          style: AppTypography.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
 
               // Expanded hero header
               flexibleSpace: FlexibleSpaceBar(
                 collapseMode: CollapseMode.none,
-                background: _TransactionHeroHeader(isDark: isDark),
+                background: _TransactionHeroHeader(isDark: isDark, scrollOffset: _scrollOffset),
               ),
             ),
             const SliverToBoxAdapter(
@@ -346,8 +353,9 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
 
 // ── Hero Header Widget ────────────────────────────────────────────────────────
 class _TransactionHeroHeader extends StatelessWidget {
-  const _TransactionHeroHeader({required this.isDark});
+  const _TransactionHeroHeader({required this.isDark, required this.scrollOffset});
   final bool isDark;
+  final double scrollOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -366,15 +374,26 @@ class _TransactionHeroHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
-                Text(
-                  l10n.transactions,
-                  style: AppTypography.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight,
-                  ),
-                ),
+                Builder(builder: (context) {
+                  // Fade + slide up as scrolled (0→60px range)
+                  final t = (scrollOffset / 60).clamp(0.0, 1.0);
+                  final opacity = (1.0 - t).clamp(0.0, 1.0);
+                  return Opacity(
+                    opacity: opacity,
+                    child: Transform.translate(
+                      offset: Offset(0, -12 * t),
+                      child: Text(
+                        l10n.transactions,
+                        style: AppTypography.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
                 const SizedBox(height: 6),
                 Text(
                   l10n.transactionsSubtitle,
