@@ -189,7 +189,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
 
               // Expanded hero header
               flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
+                collapseMode: CollapseMode.none,
                 background: _TransactionHeroHeader(isDark: isDark),
               ),
             ),
