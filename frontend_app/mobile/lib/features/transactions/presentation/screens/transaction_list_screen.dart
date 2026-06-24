@@ -160,7 +160,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               pinned: true,
               floating: false,
               snap: false,
-              expandedHeight: 90,
+              expandedHeight: 160,
               backgroundColor: bgColor,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
@@ -352,7 +352,9 @@ class _TransactionHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
+    return SafeArea(
+      bottom: false,
+      child: Padding(
       padding: const EdgeInsets.fromLTRB(24, 16, 8, 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -396,6 +398,7 @@ class _TransactionHeroHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
