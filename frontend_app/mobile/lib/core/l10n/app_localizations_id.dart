@@ -355,9 +355,17 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get savingsGoals => 'Tabungan';
   @override
-  String get totalSaved => 'Total Tersimpan';
+  String get totalSaved => 'Total Saldo';
   @override
-  String get goals => 'Tujuan';
+  String get savingSummary => 'Ringkasan Tabungan';
+  @override
+  String get totalTarget => 'Total Target';
+  @override
+  String get progressTotal => 'Progress Total';
+  @override
+  String get numberOfSavings => 'Jumlah Tabungan';
+  @override
+  String get goals => 'Goals';
   @override
   String get completed => 'Selesai';
   @override
@@ -536,8 +544,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get logOutTitle => 'Keluar';
   @override
   String get logOutConfirm => 'Apakah kamu yakin ingin keluar?';
-  @override
-  String get confirmLogout => 'Apakah kamu yakin ingin keluar?';
 
   // ─── Transaction Redesign ──────────────────────────────────────────────────
   @override

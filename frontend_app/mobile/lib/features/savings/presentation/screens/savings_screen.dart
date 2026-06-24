@@ -150,22 +150,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       decimalDigits: 0,
     );
 
-    // Calculate Completed Goals
-    int completedGoals = 0;
 
-    for (final g in state.goals) {
-      final rawT = g['targetAmount'];
-      final t = rawT is num
-          ? rawT.toDouble()
-          : double.tryParse(rawT?.toString() ?? '0') ?? 0;
-      final rawC = g['currentAmount'];
-      final c = rawC is num
-          ? rawC.toDouble()
-          : double.tryParse(rawC?.toString() ?? '0') ?? 0;
-      if (g['status'] == 'completed' || (t > 0 && c >= t)) {
-        completedGoals++;
-      }
-    }
 
     // Filter goals
     final filteredGoals = state.goals.where((g) {
@@ -197,92 +182,158 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       slivers: [
         // Summary Header
         SliverToBoxAdapter(
-          child: Container(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primary, Color(0xFF6B58E6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    )
-                  ],
-                ),
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final summaryAsync =
-                        ref.watch(convertedSavingsSummaryProvider('All'));
-                    return summaryAsync.when(
-                      data: (summary) {
-                        final totalSaved = summary['totalSaved'] ?? 0.0;
-                        final totalTarget = summary['totalTarget'] ?? 0.0;
-                        return Column(
-                          children: [
-                            Text(
-                              l10n.totalSaved,
-                              style:
-                                  AppTypography.textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontWeight: FontWeight.w500,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  )
+                ],
+              ),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final summaryAsync =
+                      ref.watch(convertedSavingsSummaryProvider('All'));
+                  return summaryAsync.when(
+                    data: (summary) {
+                      final totalSaved = summary['totalSaved'] ?? 0.0;
+                      final totalTarget = summary['totalTarget'] ?? 0.0;
+                      final percentage = totalTarget > 0 ? (totalSaved / totalTarget) : 0.0;
+                      final safePercentage = percentage.clamp(0.0, 1.0);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.savingSummary,
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. Total Saldo
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  iconColor: AppColors.success,
+                                  label: l10n.totalSaved,
+                                  valueWidget: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          fmt.format(totalSaved),
+                                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 13,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Icon(Icons.chevron_right_rounded, size: 14, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                                    ],
+                                  ),
+                                  isDark: isDark,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              fmt.format(totalSaved),
-                              style: AppTypography.textTheme.headlineMedium
-                                  ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
+                              // 2. Total Target
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.track_changes_rounded,
+                                  iconColor: AppColors.primary,
+                                  label: l10n.totalTarget,
+                                  valueWidget: Text(
+                                    fmt.format(totalTarget),
+                                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  isDark: isDark,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                _buildSummaryItem(
-                                  l10n.goals,
-                                  state.goals.length.toString(),
+                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
+                              // 3. Progress Total
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.pie_chart_rounded,
+                                  iconColor: const Color(0xFF9b51e0),
+                                  label: l10n.progressTotal,
+                                  valueWidget: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${(safePercentage * 100).toInt()}%',
+                                        style: AppTypography.textTheme.titleSmall?.copyWith(
+                                          color: AppColors.success,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: safePercentage,
+                                          minHeight: 4,
+                                          backgroundColor: AppColors.success.withValues(alpha: 0.15),
+                                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  isDark: isDark,
                                 ),
-                                Container(
-                                    width: 1,
-                                    height: 30,
-                                    color: Colors.white.withValues(alpha: 0.2)),
-                                _buildSummaryItem(
-                                  l10n.completed,
-                                  completedGoals.toString(),
+                              ),
+                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
+                              // 4. Jumlah Tabungan
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.flag_rounded,
+                                  iconColor: const Color(0xFFf2994a),
+                                  label: l10n.numberOfSavings,
+                                  valueWidget: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        state.goals.length.toString(),
+                                        style: AppTypography.textTheme.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Icon(Icons.chevron_right_rounded, size: 14, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                                    ],
+                                  ),
+                                  isDark: isDark,
                                 ),
-                                Container(
-                                    width: 1,
-                                    height: 30,
-                                    color: Colors.white.withValues(alpha: 0.2)),
-                                _buildSummaryItem(
-                                  l10n.remaining,
-                                  fmt.format(totalTarget > totalSaved
-                                      ? totalTarget - totalSaved
-                                      : 0),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                      loading: () => const Center(
-                          child:
-                              CircularProgressIndicator(color: Colors.white)),
-                      error: (_, __) => const SizedBox(),
-                    );
-                  },
-                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const Center(
+                        child:
+                            CircularProgressIndicator()),
+                    error: (_, __) => const SizedBox(),
+                  );
+                },
               ),
             ),
           ),
@@ -390,23 +441,41 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 
-  Widget _buildSummaryItem(String label, String value) {
+  Widget _buildSummaryMetric({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required Widget valueWidget,
+    required bool isDark,
+  }) {
     return Column(
       children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
           label,
           style: AppTypography.textTheme.labelSmall?.copyWith(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            fontSize: 10,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTypography.textTheme.titleSmall?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        const SizedBox(height: 6),
+        valueWidget,
       ],
     );
   }

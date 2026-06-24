@@ -353,6 +353,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get totalSaved => 'Total Saved';
   @override
+  String get savingSummary => 'Saving Summary';
+  @override
+  String get totalTarget => 'Total Target';
+  @override
+  String get progressTotal => 'Total Progress';
+  @override
+  String get numberOfSavings => 'Number of Savings';
+  @override
   String get goals => 'Goals';
   @override
   String get completed => 'Completed';

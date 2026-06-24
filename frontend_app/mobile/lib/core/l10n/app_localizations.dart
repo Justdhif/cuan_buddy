@@ -216,6 +216,10 @@ abstract class AppLocalizations {
   // ─── Savings ──────────────────────────────────────────────────────────────────
   String get savingsGoals;
   String get totalSaved;
+  String get savingSummary;
+  String get totalTarget;
+  String get progressTotal;
+  String get numberOfSavings;
   String get goals;
   String get completed;
   String get remaining;
