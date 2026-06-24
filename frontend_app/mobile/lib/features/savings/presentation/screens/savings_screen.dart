@@ -540,13 +540,38 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         ? fmt.format(targetAmount)
         : fmtOriginal.format(targetAmount);
 
+    String? dailySaveText;
+    if (!isCompleted && targetDateStr != null && targetAmount > currentAmount) {
+      try {
+        final targetDate = DateTime.parse(targetDateStr).toLocal();
+        final now = DateTime.now();
+        final diffDays = targetDate.difference(now).inDays;
+        
+        final isId = Localizations.localeOf(context).languageCode == 'id';
+        final perDayStr = isId ? '/hari' : '/day';
+
+        if (diffDays > 0) {
+          final dailyAmount = (targetAmount - currentAmount) / diffDays;
+          final String dailyFmt = goalCurrency == currencyCode
+              ? fmt.format(dailyAmount)
+              : fmtOriginal.format(dailyAmount);
+          dailySaveText = '$dailyFmt$perDayStr';
+        } else if (diffDays == 0) {
+          final String dailyFmt = goalCurrency == currencyCode
+              ? fmt.format(targetAmount - currentAmount)
+              : fmtOriginal.format(targetAmount - currentAmount);
+          dailySaveText = '$dailyFmt$perDayStr';
+        }
+      } catch (_) {}
+    }
+
     return GestureDetector(
       onTap: () {
         // Could navigate to detail screen in future
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -564,200 +589,208 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             ),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Icon circle ────────────────────────────────────
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: goalColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 28)),
-              ),
-            ),
-            const SizedBox(width: 14),
-            // ── Content ────────────────────────────────────────
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name + badge row
-                  Row(
+            // ── Top Row: Icon + Title/Amount + Menu ────────────────────────
+            Row(
+              children: [
+                // Icon circle
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: goalColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Title and amount
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (isCompleted) ...[
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
+                      Row(
+                        children: [
+                          if (isCompleted) ...[
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.success,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: AppTypography.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Expanded(
-                        child: Text(
-                          name,
-                          style:
-                              AppTypography.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$currentFmt / $targetFmt',
+                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
-                      // More menu
-                      SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: PopupMenuButton<String>(
-                          padding: EdgeInsets.zero,
-                          icon: Icon(
-                            Icons.more_vert_rounded,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                            size: 18,
+                    ],
+                  ),
+                ),
+                // More menu
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.more_vert_rounded,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                      size: 18,
+                    ),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    onSelected: (value) async {
+                      if (value == 'edit') {
+                        showAddSavingsSheet(context, goal: goal);
+                      } else if (value == 'delete') {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: Text(l10n.deleteGoal),
+                            content: Text(l10n.deleteGoalConfirm),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(ctx, false),
+                                child: Text(l10n.cancel),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(ctx, true),
+                                child: Text(l10n.delete,
+                                    style: const TextStyle(
+                                        color: AppColors.danger)),
+                              ),
+                            ],
                           ),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
-                          onSelected: (value) async {
-                            if (value == 'edit') {
-                              showAddSavingsSheet(context, goal: goal);
-                            } else if (value == 'delete') {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: Text(l10n.deleteGoal),
-                                  content: Text(l10n.deleteGoalConfirm),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, false),
-                                      child: Text(l10n.cancel),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(ctx, true),
-                                      child: Text(l10n.delete,
-                                          style: const TextStyle(
-                                              color: AppColors.danger)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                try {
-                                  await ref
-                                      .read(savingsNotifierProvider.notifier)
-                                      .deleteGoal(goal['id']);
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content: Text(
-                                                'Failed to delete: $e')));
-                                  }
-                                }
-                              }
+                        );
+                        if (confirm == true) {
+                          try {
+                            await ref
+                                .read(savingsNotifierProvider.notifier)
+                                .deleteGoal(goal['id']);
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          'Failed to delete: $e')));
                             }
-                          },
-                          itemBuilder: (context) => [
-                            PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.edit_rounded, size: 18),
-                                  const SizedBox(width: 10),
-                                  Text(l10n.edit),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.delete_outline_rounded,
-                                      color: AppColors.danger, size: 18),
-                                  const SizedBox(width: 10),
-                                  Text(l10n.delete,
-                                      style: const TextStyle(
-                                          color: AppColors.danger)),
-                                ],
-                              ),
-                            ),
+                          }
+                        }
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit_rounded, size: 18),
+                            const SizedBox(width: 10),
+                            Text(l10n.edit),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline_rounded,
+                                color: AppColors.danger, size: 18),
+                            const SizedBox(width: 10),
+                            Text(l10n.delete,
+                                style: const TextStyle(
+                                    color: AppColors.danger)),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  // Amount text
-                  Text(
-                    '$currentFmt / $targetFmt',
-                    style: AppTypography.textTheme.bodySmall?.copyWith(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // ── Progress bar ────────────────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: safePercentage,
+                      minHeight: 8,
+                      backgroundColor: goalColor.withValues(alpha: 0.15),
+                      valueColor: AlwaysStoppedAnimation<Color>(goalColor),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  // Progress bar + percentage
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  percentageText,
+                  style: AppTypography.textTheme.labelSmall?.copyWith(
+                    color: goalColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            // ── Target date & Daily Save ────────────────────────────────────
+            if (targetDateFormatted != null) ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   Row(
                     children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: safePercentage,
-                            minHeight: 7,
-                            backgroundColor: goalColor.withValues(alpha: 0.15),
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(goalColor),
-                          ),
-                        ),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 14,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 6),
                       Text(
-                        percentageText,
+                        'Target: $targetDateFormatted',
                         style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: goalColor,
-                          fontWeight: FontWeight.w700,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
                   ),
-                  // Target date chip
-                  if (targetDateFormatted != null) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule_rounded,
-                          size: 13,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Target: $targetDateFormatted',
-                          style: AppTypography.textTheme.labelSmall?.copyWith(
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                          ),
-                        ),
-                      ],
+                  if (dailySaveText != null)
+                    Text(
+                      dailySaveText,
+                      style: AppTypography.textTheme.labelSmall?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ],
                 ],
               ),
-            ),
+            ],
           ],
         ),
       ),
