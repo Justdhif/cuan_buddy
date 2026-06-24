@@ -368,17 +368,23 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      Text(
-                                        DateFormat('d MMM', localeCode)
-                                            .format(startDate),
-                                        style: AppTypography
-                                            .textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: isDark
-                                              ? AppColors.textSecondaryDark
-                                              : AppColors.textSecondaryLight,
-                                          fontWeight: FontWeight.w600,
+                                      Container(
+                                        height: 20,
+                                        margin: const EdgeInsets.only(bottom: 6),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          DateFormat('d MMM', localeCode)
+                                              .format(startDate),
+                                          style: AppTypography
+                                              .textTheme.labelSmall
+                                              ?.copyWith(
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -527,16 +533,21 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      Text(
-                                        DateFormat('d MMM', localeCode)
-                                            .format(endDate),
-                                        style: AppTypography
-                                            .textTheme.labelSmall
-                                            ?.copyWith(
-                                          color: isDark
-                                              ? AppColors.textSecondaryDark
-                                              : AppColors.textSecondaryLight,
-                                          fontWeight: FontWeight.w600,
+                                      Container(
+                                        height: 20,
+                                        margin: const EdgeInsets.only(bottom: 6),
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          DateFormat('d MMM', localeCode)
+                                              .format(endDate),
+                                          style: AppTypography
+                                              .textTheme.labelSmall
+                                              ?.copyWith(
+                                            color: isDark
+                                                ? AppColors.textSecondaryDark
+                                                : AppColors.textSecondaryLight,
+                                            fontWeight: FontWeight.w600,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -838,14 +849,20 @@ class _BudgetCard extends ConsumerWidget {
               children: [
                 // Progress Bar & Dates Row
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      DateFormat('d MMM', localeCode).format(startDate),
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      height: 20,
+                      margin: const EdgeInsets.only(bottom: 6),
+                      alignment: Alignment.center,
+                      child: Text(
+                        DateFormat('d MMM', localeCode).format(startDate),
+                        style: AppTypography.textTheme.labelSmall?.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -957,13 +974,18 @@ class _BudgetCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      DateFormat('d MMM', localeCode).format(endDate),
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      height: 20,
+                      margin: const EdgeInsets.only(bottom: 6),
+                      alignment: Alignment.center,
+                      child: Text(
+                        DateFormat('d MMM', localeCode).format(endDate),
+                        style: AppTypography.textTheme.labelSmall?.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],
