@@ -21,7 +21,6 @@ class SavingsScreen extends ConsumerStatefulWidget {
 
 class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  String _statusFilter = 'All'; // 'All', 'In Progress', 'Completed'
   final ScrollController _scrollController = ScrollController();
   @override
   void initState() {
@@ -152,23 +151,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
 
 
-    // Filter goals
-    final filteredGoals = state.goals.where((g) {
-      if (_statusFilter == 'All') return true;
-      final rawT = g['targetAmount'];
-      final t = rawT is num
-          ? rawT.toDouble()
-          : double.tryParse(rawT?.toString() ?? '0') ?? 0;
-      final rawC = g['currentAmount'];
-      final c = rawC is num
-          ? rawC.toDouble()
-          : double.tryParse(rawC?.toString() ?? '0') ?? 0;
-      final isCompleted = g['status'] == 'completed' || (t > 0 && c >= t);
-
-      if (_statusFilter == 'Completed') return isCompleted;
-      if (_statusFilter == 'In Progress') return !isCompleted;
-      return true;
-    }).toList();
+    // Use all goals, no filter
+    final filteredGoals = state.goals;
 
     final viewportHeight = MediaQuery.of(context).size.height -
         kToolbarHeight -
@@ -227,35 +211,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                                   icon: Icons.account_balance_wallet_rounded,
                                   iconColor: AppColors.success,
                                   label: l10n.totalSaved,
-                                  valueWidget: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          fmt.format(totalSaved),
-                                          style: AppTypography.textTheme.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: 13,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      Icon(Icons.chevron_right_rounded, size: 14, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                                    ],
-                                  ),
-                                  isDark: isDark,
-                                ),
-                              ),
-                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 2. Total Target
-                              Expanded(
-                                child: _buildSummaryMetric(
-                                  icon: Icons.track_changes_rounded,
-                                  iconColor: AppColors.primary,
-                                  label: l10n.totalTarget,
                                   valueWidget: Text(
-                                    fmt.format(totalTarget),
+                                    fmt.format(totalSaved),
                                     style: AppTypography.textTheme.titleSmall?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13,
@@ -267,7 +224,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                                 ),
                               ),
                               Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 3. Progress Total
+                              // 2. Progress Total
                               Expanded(
                                 child: _buildSummaryMetric(
                                   icon: Icons.pie_chart_rounded,
@@ -300,25 +257,20 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                                 ),
                               ),
                               Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 4. Jumlah Tabungan
+                              // 3. Total Target
                               Expanded(
                                 child: _buildSummaryMetric(
-                                  icon: Icons.flag_rounded,
-                                  iconColor: const Color(0xFFf2994a),
-                                  label: l10n.numberOfSavings,
-                                  valueWidget: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        state.goals.length.toString(),
-                                        style: AppTypography.textTheme.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Icon(Icons.chevron_right_rounded, size: 14, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                                    ],
+                                  icon: Icons.track_changes_rounded,
+                                  iconColor: AppColors.primary,
+                                  label: l10n.totalTarget,
+                                  valueWidget: Text(
+                                    fmt.format(totalTarget),
+                                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   isDark: isDark,
                                 ),
@@ -339,59 +291,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           ),
         ),
 
-        // Status Filter
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark
-                    ? AppColors.surfaceDark
-                    : AppColors.borderLight.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: ['All', 'In Progress', 'Completed'].map((status) {
-                  final isSelected = _statusFilter == status;
-                  final String translatedStatus = switch (status) {
-                    'All' => l10n.all,
-                    'In Progress' => l10n.inProgress,
-                    'Completed' => l10n.completed,
-                    _ => status,
-                  };
-
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _statusFilter = status),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.primary
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          translatedStatus,
-                          textAlign: TextAlign.center,
-                          style: AppTypography.textTheme.titleSmall?.copyWith(
-                            color: isSelected
-                                ? Colors.white
-                                : (isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ),
-
         // Goals List
         if (state.goals.isEmpty)
           SliverToBoxAdapter(
@@ -401,22 +300,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 emoji: '🎯',
                 title: l10n.noSavingsGoals,
                 subtitle: l10n.noSavingsGoalsSubtitle,
-              ),
-            ),
-          )
-        else if (filteredGoals.isEmpty)
-          SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewportHeight),
-              child: AppEmptyState(
-                emoji: '🔍',
-                title: l10n.noGoalsFilter(switch (_statusFilter) {
-                  'All' => l10n.all,
-                  'In Progress' => l10n.inProgress,
-                  'Completed' => l10n.completed,
-                  _ => _statusFilter,
-                }),
-                subtitle: l10n.tryChangingFilter,
               ),
             ),
           )
