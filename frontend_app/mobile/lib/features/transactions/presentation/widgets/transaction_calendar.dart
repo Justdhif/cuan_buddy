@@ -18,130 +18,158 @@ class TransactionCalendar extends ConsumerStatefulWidget {
 
 class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
 
-  Future<void> _showMonthYearPicker(BuildContext context, TransactionFilterState state, bool isDark) async {
+  /// Opens a month-only grid picker. Returns the picked month index or null.
+  Future<void> _showMonthPicker(BuildContext context, TransactionFilterState state, bool isDark) async {
     final localeCode = ref.read(languageProvider);
-    final String title = localeCode == 'id' ? 'Pilih Bulan & Tahun' : 'Select Month & Year';
-    
-    int tempYear = state.currentMonth.year;
-    
-    final DateTime? pickedDate = await showDialog<DateTime>(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-              title: Text(
-                title,
-                style: AppTypography.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                ),
-              ),
-              content: SizedBox(
-                width: 300,
-                height: 280,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Year selector row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.chevron_left_rounded),
-                          onPressed: () {
-                            setState(() {
-                              tempYear--;
-                            });
-                          },
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                        ),
-                        Text(
-                          '$tempYear',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.chevron_right_rounded),
-                          onPressed: () {
-                            setState(() {
-                              tempYear++;
-                            });
-                          },
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Month Grid (3 columns, 4 rows)
-                    Expanded(
-                      child: GridView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 1.5,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemCount: 12,
-                        itemBuilder: (context, index) {
-                          final monthIndex = index + 1;
-                          final isSelected = state.currentMonth.month == monthIndex && state.currentMonth.year == tempYear;
-                          
-                          final dummyDate = DateTime(tempYear, monthIndex, 1);
-                          final monthLabel = DateFormat('MMMM', localeCode).format(dummyDate);
+    final String title = localeCode == 'id' ? 'Pilih Bulan' : 'Select Month';
 
-                          return InkWell(
-                            onTap: () {
-                              Navigator.of(context).pop(DateTime(tempYear, monthIndex, 1));
-                            },
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                gradient: isSelected ? AppColors.primaryGradient : null,
-                                color: isSelected 
-                                    ? null 
-                                    : (isDark ? AppColors.borderDark.withValues(alpha: 0.3) : Colors.grey[100]),
-                                borderRadius: BorderRadius.circular(12),
-                                border: isSelected
-                                    ? null
-                                    : Border.all(
-                                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                                      ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                monthLabel,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: isSelected 
-                                      ? Colors.white 
-                                      : (isDark ? Colors.white : AppColors.textPrimaryLight),
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+    final int? pickedMonth = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        title: Text(
+          title,
+          style: AppTypography.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+          ),
+        ),
+        content: SizedBox(
+          width: 300,
+          height: 240,
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 1.5,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: 12,
+            itemBuilder: (_, index) {
+              final monthIndex = index + 1;
+              final isSelected = state.currentMonth.month == monthIndex;
+              final dummyDate = DateTime(state.currentMonth.year, monthIndex, 1);
+              final monthLabel = DateFormat('MMMM', localeCode).format(dummyDate);
+              return InkWell(
+                onTap: () => Navigator.of(ctx).pop(monthIndex),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: isSelected ? AppColors.primaryGradient : null,
+                    color: isSelected
+                        ? null
+                        : (isDark ? AppColors.borderDark.withValues(alpha: 0.3) : Colors.grey[100]),
+                    borderRadius: BorderRadius.circular(12),
+                    border: isSelected
+                        ? null
+                        : Border.all(
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    monthLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 12,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          }
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ),
     );
 
-    if (pickedDate != null) {
-      ref.read(transactionFilterProvider.notifier).updateMonth(pickedDate);
+    if (pickedMonth != null) {
+      ref.read(transactionFilterProvider.notifier).updateMonth(
+        DateTime(state.currentMonth.year, pickedMonth, 1),
+      );
+    }
+  }
+
+  /// Opens a year-only scroll picker. Returns the picked year or null.
+  Future<void> _showYearPicker(BuildContext context, TransactionFilterState state, bool isDark) async {
+    final localeCode = ref.read(languageProvider);
+    final String title = localeCode == 'id' ? 'Pilih Tahun' : 'Select Year';
+    final int currentYear = DateTime.now().year;
+    final int startYear = currentYear - 10;
+    final int endYear = currentYear + 5;
+    final int initialIndex = state.currentMonth.year - startYear;
+    final ScrollController yearScrollCtrl = ScrollController(
+      initialScrollOffset: initialIndex * 52.0,
+    );
+
+    final int? pickedYear = await showDialog<int>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        title: Text(
+          title,
+          style: AppTypography.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+          ),
+        ),
+        content: SizedBox(
+          width: 200,
+          height: 260,
+          child: ListView.builder(
+            controller: yearScrollCtrl,
+            itemCount: endYear - startYear + 1,
+            itemExtent: 52,
+            itemBuilder: (_, index) {
+              final year = startYear + index;
+              final isSelected = state.currentMonth.year == year;
+              return InkWell(
+                onTap: () => Navigator.of(ctx).pop(year),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: isSelected ? AppColors.primaryGradient : null,
+                    color: isSelected
+                        ? null
+                        : (isDark ? AppColors.borderDark.withValues(alpha: 0.3) : Colors.grey[100]),
+                    borderRadius: BorderRadius.circular(12),
+                    border: isSelected
+                        ? null
+                        : Border.all(
+                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '$year',
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    yearScrollCtrl.dispose();
+
+    if (pickedYear != null) {
+      ref.read(transactionFilterProvider.notifier).updateMonth(
+        DateTime(pickedYear, state.currentMonth.month, 1),
+      );
     }
   }
 
@@ -185,11 +213,13 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
 
   Widget _buildHeader(BuildContext context, TransactionFilterState state, bool isDark) {
     final localeCode = ref.watch(languageProvider);
-    final monthFormat = DateFormat('MMMM yyyy', localeCode);
+    final monthName = DateFormat('MMMM', localeCode).format(state.currentMonth);
+    final yearName = DateFormat('yyyy').format(state.currentMonth);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        // Left chevron
         IconButton(
           icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () {
@@ -202,27 +232,41 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
             }
           },
           color: isDark ? Colors.white : AppColors.textPrimaryLight,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
         ),
-        TextButton(
-          onPressed: () => _showMonthYearPicker(context, state, isDark),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-            side: BorderSide(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+
+        // Center: tappable month text + tappable year text
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: () => _showMonthPicker(context, state, isDark),
+              child: Text(
+                monthName,
+                style: AppTypography.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                ),
+              ),
             ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            const SizedBox(width: 6),
+            GestureDetector(
+              onTap: () => _showYearPicker(context, state, isDark),
+              child: Text(
+                yearName,
+                style: AppTypography.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
             ),
-          ),
-          child: Text(
-            monthFormat.format(state.currentMonth),
-            style: AppTypography.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : AppColors.textPrimaryLight,
-            ),
-          ),
+          ],
         ),
+
+        // Right chevron
         IconButton(
           icon: const Icon(Icons.chevron_right_rounded),
           onPressed: () {
@@ -235,6 +279,8 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
             }
           },
           color: isDark ? Colors.white : AppColors.textPrimaryLight,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
         ),
       ],
     );
@@ -400,11 +446,19 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
   Widget _buildLegend(BuildContext context, TransactionFilterState state, bool isDark) {
     final l10n = AppLocalizations.of(context);
     
-    // Left Component: Today button (icon-only)
+    // Determine if today is already the selected date
+    final now = DateTime.now();
+    final isTodaySelected = state.selectedDate.year == now.year &&
+        state.selectedDate.month == now.month &&
+        state.selectedDate.day == now.day;
+
+    // Left Component: Today button (icon-only, disabled when today is selected)
     final todayButton = InkWell(
-      onTap: () {
-        ref.read(transactionFilterProvider.notifier).selectDate(DateTime.now());
-      },
+      onTap: isTodaySelected
+          ? null
+          : () {
+              ref.read(transactionFilterProvider.notifier).selectDate(DateTime.now());
+            },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         width: 36,
@@ -412,14 +466,18 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
           border: Border.all(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            color: isTodaySelected
+                ? (isDark ? AppColors.borderDark.withValues(alpha: 0.3) : AppColors.borderLight.withValues(alpha: 0.4))
+                : (isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           Icons.today_rounded,
           size: 20,
-          color: isDark ? Colors.white : AppColors.textPrimaryLight,
+          color: isTodaySelected
+              ? (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight).withValues(alpha: 0.4)
+              : (isDark ? Colors.white : AppColors.textPrimaryLight),
         ),
       ),
     );
