@@ -157,20 +157,18 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               parent: BouncingScrollPhysics()),
           controller: _scrollController,
           slivers: [
-            // ── Hero SliverAppBar ──────────────────────────────────────────
+            // ── Thin pinned AppBar (title shows when scrolled) ────────────────
             SliverAppBar(
               pinned: true,
               floating: false,
               snap: false,
-              expandedHeight: 120,
               backgroundColor: bgColor,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
               titleSpacing: 24,
-              // Collapsed app bar title (shows when scrolled, after hero title has moved up)
               title: Builder(builder: (context) {
-                // Only show after hero title has mostly moved out
-                final t = ((_scrollOffset - 85) / 30).clamp(0.0, 1.0);
+                // Hero title height ~120px, show AppBar title after that
+                final t = ((_scrollOffset - 90) / 30).clamp(0.0, 1.0);
                 return Opacity(
                   opacity: t,
                   child: GestureDetector(
@@ -188,12 +186,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                   ),
                 );
               }),
-
-              // Expanded hero header
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.none,
-                background: _TransactionHeroHeader(isDark: isDark, scrollOffset: _scrollOffset),
-              ),
+            ),
+            // ── Hero content — scrolls naturally with the page ────────────────
+            SliverToBoxAdapter(
+              child: _TransactionHeroHeader(isDark: isDark, scrollOffset: _scrollOffset),
             ),
             const SliverToBoxAdapter(
               child: TransactionCalendar(),
