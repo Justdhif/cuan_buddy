@@ -1,3 +1,4 @@
+import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -139,52 +140,34 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(allTransactionsProvider);
-          ref.invalidate(calendarSummaryProvider);
-          ref.invalidate(monthlySummaryProvider);
-        },
-        color: AppColors.primary,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics()),
-          controller: _scrollController,
-          slivers: [
-            // ── Thin pinned AppBar (title shows when scrolled) ────────────────
-            SliverAppBar(
-              pinned: true,
-              floating: false,
-              snap: false,
-              backgroundColor: bgColor,
-              surfaceTintColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              titleSpacing: 24,
-              title: Builder(builder: (context) {
-                // Hero title height ~120px, show AppBar title after that
-                final t = ((_scrollOffset - 90) / 30).clamp(0.0, 1.0);
-                return Opacity(
-                  opacity: t,
-                  child: GestureDetector(
-                    onTap: () => _scrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                    ),
-                    child: Text(
-                      l10n.transactions,
-                      style: AppTypography.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-            // ── Hero content — scrolls naturally with the page ────────────────
-            SliverToBoxAdapter(
-              child: _TransactionHeroHeader(isDark: isDark, scrollOffset: _scrollOffset),
-            ),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(allTransactionsProvider);
+              ref.invalidate(calendarSummaryProvider);
+              ref.invalidate(monthlySummaryProvider);
+            },
+            color: AppColors.primary,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
+              controller: _scrollController,
+              slivers: [
+                // ── Thin pinned AppBar (no title — floating title handles it) ──
+                SliverAppBar(
+                  pinned: true,
+                  floating: false,
+                  snap: false,
+                  backgroundColor: bgColor,
+                  surfaceTintColor: Colors.transparent,
+                  scrolledUnderElevation: 0,
+                  automaticallyImplyLeading: false,
+                ),
+                // ── Hero content — scrolls naturally with the page ─────────────
+                SliverToBoxAdapter(
+                  child: _TransactionHeroHeader(isDark: isDark),
+                ),
             const SliverToBoxAdapter(
               child: TransactionCalendar(),
             ),
@@ -263,6 +246,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           ],
         ),
       ),
+          // ── Floating animated title (moves from hero to AppBar) ──────────────
+          _buildFloatingTitle(context, l10n, isDark, bgColor),
+        ],
+      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -334,13 +321,58 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
       ),
     );
   }
+
+  /// Floating title that physically moves from hero position to AppBar as user scrolls.
+  Widget _buildFloatingTitle(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+    Color bgColor,
+  ) {
+    final statusBarH = MediaQuery.of(context).padding.top;
+    const appBarH = kToolbarHeight;
+    // Hero title Y: statusBar + appBar (pinned) + 12 padding + 8 SizedBox + ~14 half-text
+    final heroTitleY = statusBarH + appBarH + 12.0 + 8.0 + 14.0;
+    // AppBar title Y: vertically centered in AppBar
+    final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
+    final travelDist = heroTitleY - appBarTitleY;
+
+    // t: 0 = title at hero, 1 = title at AppBar
+    final t = (_scrollOffset / travelDist).clamp(0.0, 1.0);
+    final currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
+
+    // Font size: headlineMedium -> titleLarge
+    final heroSize = AppTypography.textTheme.headlineMedium?.fontSize ?? 28.0;
+    final appBarSize = AppTypography.textTheme.titleLarge?.fontSize ?? 22.0;
+    final currentSize = lerpDouble(heroSize, appBarSize, t)!;
+
+    return Positioned(
+      top: currentY,
+      left: 24.0,
+      right: 120.0,
+      child: IgnorePointer(
+        child: Text(
+          l10n.transactions,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: currentSize,
+            fontWeight: FontWeight.bold,
+            fontFamily: AppTypography.textTheme.headlineMedium?.fontFamily,
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Hero Header Widget ────────────────────────────────────────────────────────
 class _TransactionHeroHeader extends StatelessWidget {
-  const _TransactionHeroHeader({required this.isDark, required this.scrollOffset});
+  const _TransactionHeroHeader({required this.isDark});
   final bool isDark;
-  final double scrollOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -357,31 +389,16 @@ class _TransactionHeroHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
-                // Title moves upward as user scrolls, then fades out
-                Builder(builder: (context) {
-                  final expandedH = 120.0;
-                  // progress 0 → 1 as scroll goes 0 → expandedH
-                  final progress = (scrollOffset / expandedH).clamp(0.0, 1.0);
-                  // Title travels upward to reach AppBar position
-                  final translateY = -expandedH * progress;
-                  // Fade out between 50%–90% of the scroll
-                  final opacity = 1.0 - ((progress - 0.45) / 0.45).clamp(0.0, 1.0);
-                  return Transform.translate(
-                    offset: Offset(0, translateY),
-                    child: Opacity(
-                      opacity: opacity,
-                      child: Text(
-                        l10n.transactions,
-                        style: AppTypography.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimaryLight,
-                        ),
-                      ),
+                // Invisible placeholder — floating title handles rendering
+                Opacity(
+                  opacity: 0,
+                  child: Text(
+                    l10n.transactions,
+                    style: AppTypography.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                }),
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   l10n.transactionsSubtitle,
@@ -409,8 +426,6 @@ class _TransactionHeroHeader extends StatelessWidget {
     );
   }
 }
-
-
 
 class _FilterRow extends ConsumerWidget {
   const _FilterRow();
