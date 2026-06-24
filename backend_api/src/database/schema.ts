@@ -74,6 +74,8 @@ export const savingsGoals = pgTable('savings_goals', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  emojiIcon: text('emoji_icon').default('🎯'),
+  colorCode: text('color_code').default('#6C63FF'),
   targetAmount: decimal('target_amount', { precision: 19, scale: 2 }).notNull(),
   currentAmount: decimal('current_amount', { precision: 19, scale: 2 }).default('0').notNull(),
   currency: text('currency').default('IDR').notNull(),

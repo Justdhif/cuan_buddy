@@ -1,4 +1,6 @@
 import '../../../../core/utils/app_snackbar.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -23,28 +25,41 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _targetAmountController = TextEditingController();
-  final _currentAmountController = TextEditingController();
   DateTime? _selectedDate;
   String _selectedCurrency = AppConstants.defaultCurrency;
+  String _selectedEmoji = '🎯';
+  Color _selectedColor = AppColors.primary;
   bool _isSaving = false;
+
+  Color _colorFromHex(String? hexString) {
+    if (hexString == null || hexString.isEmpty) return AppColors.primary;
+    final buffer = StringBuffer();
+    if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
+    buffer.write(hexString.replaceFirst('#', ''));
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+
+  String _colorToHex(Color color) {
+    final argb = color.toARGB32();
+    final r = (argb >> 16) & 0xFF;
+    final g = (argb >> 8) & 0xFF;
+    final b = argb & 0xFF;
+    return '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'.toUpperCase();
+  }
 
   @override
   void initState() {
     super.initState();
     if (widget.goal != null) {
       _nameController.text = widget.goal!['name'] ?? '';
+      _selectedEmoji = widget.goal!['emojiIcon'] as String? ?? '🎯';
+      _selectedColor = _colorFromHex(widget.goal!['colorCode'] as String?);
 
       final rawT = widget.goal!['targetAmount'];
       final targetAmount = rawT is num
           ? rawT.toDouble()
           : double.tryParse(rawT?.toString() ?? '0') ?? 0;
       _targetAmountController.text = targetAmount.toStringAsFixed(0);
-
-      final rawC = widget.goal!['currentAmount'];
-      final currentAmount = rawC is num
-          ? rawC.toDouble()
-          : double.tryParse(rawC?.toString() ?? '0') ?? 0;
-      _currentAmountController.text = currentAmount.toStringAsFixed(0);
 
       _selectedCurrency =
           widget.goal!['currency'] ?? AppConstants.defaultCurrency;
@@ -60,8 +75,46 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
   void dispose() {
     _nameController.dispose();
     _targetAmountController.dispose();
-    _currentAmountController.dispose();
     super.dispose();
+  }
+
+  void _showEmojiPicker() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: 300,
+          child: EmojiPicker(
+            onEmojiSelected: (category, emoji) {
+              setState(() {
+                _selectedEmoji = emoji.emoji;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showColorPicker() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Pick Color'),
+          content: SingleChildScrollView(
+            child: BlockPicker(
+              pickerColor: _selectedColor,
+              onColorChanged: (Color color) {
+                setState(() => _selectedColor = color);
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -107,22 +160,69 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
             ],
           ),
           const SizedBox(height: 24),
+          // ── Icon & Color Row ─────────────────────────────────────────────────
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  FocusScope.of(context).unfocus();
+                  _showEmojiPicker();
+                },
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: _selectedColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _selectedColor, width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      _selectedEmoji,
+                      style: const TextStyle(fontSize: 26),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: () {
+                  FocusScope.of(context).unfocus();
+                  _showColorPicker();
+                },
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: _selectedColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppTextField(
+                  controller: _nameController,
+                  label: l10n.goalName,
+                  hint: l10n.goalNameHint,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return l10n.nameRequired;
+                    return null;
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppTextField(
-                  controller: _nameController,
-                  label: l10n.goalName,
-                  hint: l10n.goalNameHint,
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return l10n.nameRequired;
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
                 // ── Target Amount & Currency ──────────────────────────────────────────
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,8 +252,7 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null)
-                            setState(() => _selectedCurrency = val);
+                          if (val != null) setState(() => _selectedCurrency = val);
                         },
                       ),
                     ),
@@ -164,8 +263,8 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                         controller: _targetAmountController,
                         label: l10n.targetAmount,
                         hint: '0',
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
                         validator: (value) {
                           if (value == null || value.isEmpty)
                             return l10n.amountRequired;
@@ -176,32 +275,6 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  controller: _currentAmountController,
-                  label: l10n.initialAmountSaved,
-                  hint: '0',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      AppConstants.getCurrencySymbol(_selectedCurrency),
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value != null &&
-                        value.isNotEmpty &&
-                        double.tryParse(value) == null) {
-                      return l10n.invalidAmount;
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 16),
                 InkWell(
@@ -261,12 +334,10 @@ class _AddSavingsSheetState extends ConsumerState<AddSavingsSheet> {
                       try {
                         final payload = {
                           'name': _nameController.text,
+                          'emojiIcon': _selectedEmoji,
+                          'colorCode': _colorToHex(_selectedColor),
                           'targetAmount':
                               double.parse(_targetAmountController.text),
-                          'currentAmount':
-                              _currentAmountController.text.isNotEmpty
-                                  ? double.parse(_currentAmountController.text)
-                                  : 0,
                           'currency': _selectedCurrency,
                         };
                         if (_selectedDate != null) {

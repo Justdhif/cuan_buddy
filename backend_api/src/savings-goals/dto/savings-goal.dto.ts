@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 export const CreateSavingsGoalSchema = z.object({
   name: z.string().min(1),
+  emojiIcon: z.string().optional(),
+  colorCode: z.string().optional(),
   targetAmount: z.number().positive(),
   currentAmount: z.number().min(0).optional(),
   currency: z.string().optional(),
