@@ -154,16 +154,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                   parent: BouncingScrollPhysics()),
               controller: _scrollController,
               slivers: [
-                // ── Thin pinned AppBar (no title — floating title handles it) ──
-                SliverAppBar(
-                  pinned: true,
-                  floating: false,
-                  snap: false,
-                  backgroundColor: bgColor,
-                  surfaceTintColor: Colors.transparent,
-                  scrolledUnderElevation: 0,
-                  automaticallyImplyLeading: false,
-                ),
                 // ── Hero content — scrolls naturally with the page ─────────────
                 SliverToBoxAdapter(
                   child: _TransactionHeroHeader(isDark: isDark),
@@ -246,6 +236,22 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           ],
         ),
       ),
+          // ── Pinned AppBar Background (appears on scroll) ─────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Builder(builder: (context) {
+              final t = (_scrollOffset / 60).clamp(0.0, 1.0);
+              return Opacity(
+                opacity: t,
+                child: Container(
+                  height: MediaQuery.of(context).padding.top + kToolbarHeight,
+                  color: bgColor,
+                ),
+              );
+            }),
+          ),
           // ── Floating animated title (moves from hero to AppBar) ──────────────
           _buildFloatingTitle(context, l10n, isDark, bgColor),
         ],
@@ -331,14 +337,14 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   ) {
     final statusBarH = MediaQuery.of(context).padding.top;
     const appBarH = kToolbarHeight;
-    // Hero title Y: statusBar + appBar (pinned) + 12 padding + 8 SizedBox + ~14 half-text
-    final heroTitleY = statusBarH + appBarH + 12.0 + 8.0 + 14.0;
+    // Hero title Y: statusBar + 12 padding + 8 SizedBox + ~14 half-text
+    final heroTitleY = statusBarH + 12.0 + 8.0 + 14.0;
     // AppBar title Y: vertically centered in AppBar
     final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
     final travelDist = heroTitleY - appBarTitleY;
 
     // t: 0 = title at hero, 1 = title at AppBar
-    final t = (_scrollOffset / travelDist).clamp(0.0, 1.0);
+    final t = (_scrollOffset / travelDist.abs()).clamp(0.0, 1.0);
     var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
 
     // Adjust for overscroll (pull to refresh)
@@ -383,9 +389,11 @@ class _TransactionHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 8, 0),
-      child: Row(
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 8, 0),
+        child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Left: title + description
@@ -428,6 +436,7 @@ class _TransactionHeroHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
