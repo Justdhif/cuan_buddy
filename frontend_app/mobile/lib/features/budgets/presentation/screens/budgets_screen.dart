@@ -150,7 +150,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       symbol: currencySymbol,
       decimalDigits: 0,
     );
-    final localeCode = Localizations.localeOf(context).languageCode;
 
     // Filter logic
     final filteredBudgets = state.budgets.where((b) {
@@ -372,6 +371,45 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             child: SizedBox(height: 120),
           ),
         ]
+      ],
+    );
+  }
+
+  Widget _buildSummaryMetric({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required Widget valueWidget,
+    required bool isDark,
+  }) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          label,
+          style: AppTypography.textTheme.labelSmall?.copyWith(
+            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 6),
+        valueWidget,
       ],
     );
   }
@@ -774,45 +812,6 @@ class _BudgetCard extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSummaryMetric({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required Widget valueWidget,
-    required bool isDark,
-  }) {
-    return Column(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            icon,
-            color: iconColor,
-            size: 24,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: AppTypography.textTheme.labelSmall?.copyWith(
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            fontSize: 10,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 6),
-        valueWidget,
-      ],
     );
   }
 }
