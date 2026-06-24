@@ -483,7 +483,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: goalColor.withValues(alpha: 0.12),
+                    color: goalColor,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -618,28 +618,36 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             ),
             const SizedBox(height: 16),
             // ── Progress bar ────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: safePercentage,
-                      minHeight: 8,
-                      backgroundColor: goalColor.withValues(alpha: 0.15),
-                      valueColor: AlwaysStoppedAnimation<Color>(goalColor),
+            Container(
+              height: 20,
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Stack(
+                children: [
+                  FractionallySizedBox(
+                    widthFactor: safePercentage,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: goalColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: safePercentage > 0.15
+                          ? Text(
+                              percentageText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  percentageText,
-                  style: AppTypography.textTheme.labelSmall?.copyWith(
-                    color: goalColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             // ── Target date & Daily Save ────────────────────────────────────
             if (targetDateFormatted != null) ...[
