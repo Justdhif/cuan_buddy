@@ -333,10 +333,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
       ),
     );
   }
-
-  void _showAddSheet(BuildContext context) {
-    context.push('/transactions/form', extra: {'initialType': 'expense'});
-  }
 }
 
 class _FilterRow extends ConsumerWidget {

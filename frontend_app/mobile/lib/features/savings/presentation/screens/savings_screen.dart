@@ -9,8 +9,8 @@ import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/services/currency_service.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
+import '../../../core/utils/currency_formatter.dart';
 import '../widgets/add_savings_sheet.dart';
-import '../widgets/top_up_sheet.dart';
 import '../widgets/savings_gamification_widget.dart';
 import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
 import '../../../profile/data/services/backup_worker.dart';
@@ -616,24 +616,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           const SizedBox(height: 12),
           SavingsGamificationWidget(percentage: safePercentage),
           
-          // Action Button
-          if (!isCompleted) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => showTopUpSheet(context, goal),
-                icon: const Icon(Icons.edit_note_rounded, size: 18),
-                label: Text(l10n.updateFunds),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

@@ -409,6 +409,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
                 // ── Savings Goals ──────────────────────────────────────
                 if (!savingsState.isLoading && savingsState.goals.isNotEmpty) ...[
+                  Text(
+                    l10n.selectSavingsGoal,
+                    style: AppTypography.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 12),
                   SizedBox(
                     height: 52,
                     child: ListView.separated(
@@ -440,7 +445,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    'Tidak ada tujuan',
+                                    l10n.noSavingsGoals,
                                     style: AppTypography.textTheme.labelMedium?.copyWith(
                                       color: isSelected ? AppColors.primary : null,
                                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
