@@ -175,7 +175,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                   child: Transform.translate(
                     offset: Offset(0, 8 * (1 - t)),
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.only(left: 16),
                       child: GestureDetector(
                         onTap: () => _scrollController.animateTo(
                           0,
