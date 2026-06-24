@@ -143,11 +143,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           child: Text(l10n.transactions),
         ),
         actions: [
-          IconButton(
-            onPressed: () => _showAddSheet(context),
-            icon: const Icon(Icons.add_rounded),
-            tooltip: l10n.addTransaction,
-          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
@@ -278,55 +273,48 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // ── Staggered sub-buttons (visible only when FAB is open) ──
-          AnimatedSize(
-            duration: const Duration(milliseconds: 320),
-            curve: Curves.easeInOut,
-            alignment: Alignment.bottomCenter,
-            child: _fabOpen
-                ? Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Sub 3 – Allocate (top, animates last)
-                      _buildSubFab(
-                        icon: Icons.account_balance_wallet_rounded,
-                        onTap: () {
-                          _toggleFab();
-                          showAllocateSavingsSheet(context);
-                        },
-                        fadeAnim: _fade3,
-                        slideAnim: _slide3,
-                      ),
-                      const SizedBox(height: 12),
-                      // Sub 2 – Mic (middle, animates second)
-                      _buildSubFab(
-                        icon: Icons.mic_rounded,
-                        onTap: () async {
-                          _toggleFab();
-                          final result = await showAiVoiceSheet(context);
-                          if (result == true) {
-                            ref.invalidate(allTransactionsProvider);
-                          }
-                        },
-                        fadeAnim: _fade2,
-                        slideAnim: _slide2,
-                      ),
-                      const SizedBox(height: 12),
-                      // Sub 1 – Add Transaction (bottom, animates first)
-                      _buildSubFab(
-                        icon: Icons.receipt_long_rounded,
-                        onTap: () {
-                          _toggleFab();
-                          context.push('/transactions/form',
-                              extra: {'initialType': 'expense'});
-                        },
-                        fadeAnim: _fade1,
-                        slideAnim: _slide1,
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                  )
-                : const SizedBox.shrink(),
+          // ── Staggered sub-buttons (always in tree for smooth exit animation) ──
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Sub 3 – Allocate (top, animates last)
+              _buildSubFab(
+                icon: Icons.account_balance_wallet_rounded,
+                onTap: () {
+                  _toggleFab();
+                  showAllocateSavingsSheet(context);
+                },
+                fadeAnim: _fade3,
+                slideAnim: _slide3,
+              ),
+              const SizedBox(height: 12),
+              // Sub 2 – Mic (middle, animates second)
+              _buildSubFab(
+                icon: Icons.mic_rounded,
+                onTap: () async {
+                  _toggleFab();
+                  final result = await showAiVoiceSheet(context);
+                  if (result == true) {
+                    ref.invalidate(allTransactionsProvider);
+                  }
+                },
+                fadeAnim: _fade2,
+                slideAnim: _slide2,
+              ),
+              const SizedBox(height: 12),
+              // Sub 1 – Add Transaction (bottom, animates first)
+              _buildSubFab(
+                icon: Icons.receipt_long_rounded,
+                onTap: () {
+                  _toggleFab();
+                  context.push('/transactions/form',
+                      extra: {'initialType': 'expense'});
+                },
+                fadeAnim: _fade1,
+                slideAnim: _slide1,
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
           // ── Main + FAB (rotates 45° → × when open) ──
           GestureDetector(
