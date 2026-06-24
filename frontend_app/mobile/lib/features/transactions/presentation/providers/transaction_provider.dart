@@ -11,7 +11,7 @@ class TransactionFilterState {
   TransactionFilterState({
     required this.currentMonth,
     required this.selectedDate,
-    this.isExpanded = true,
+    this.isExpanded = false,
     this.type,
     this.categoryId,
   });
@@ -39,7 +39,7 @@ class TransactionFilterNotifier extends StateNotifier<TransactionFilterState> {
   TransactionFilterNotifier() : super(TransactionFilterState(
     currentMonth: DateTime.now(),
     selectedDate: DateTime.now(),
-    isExpanded: true,
+    isExpanded: false,
   ));
 
   void toggleExpand() {

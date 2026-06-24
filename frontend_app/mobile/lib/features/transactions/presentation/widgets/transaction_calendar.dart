@@ -188,7 +188,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
     final monthFormat = DateFormat('MMMM yyyy', localeCode);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         IconButton(
           icon: const Icon(Icons.chevron_left_rounded),
@@ -203,7 +203,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
           },
           color: isDark ? Colors.white : AppColors.textPrimaryLight,
         ),
-        const SizedBox(width: 8),
         TextButton(
           onPressed: () => _showMonthYearPicker(context, state, isDark),
           style: TextButton.styleFrom(
@@ -224,7 +223,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
         IconButton(
           icon: const Icon(Icons.chevron_right_rounded),
           onPressed: () {
