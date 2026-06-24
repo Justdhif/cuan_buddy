@@ -205,7 +205,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
-      padding: const EdgeInsets.only(top: 12, bottom: 8),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Column(
         children: [
           _buildHeader(context, filterState, isDark),

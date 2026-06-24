@@ -58,49 +58,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           },
           child: Text(l10n.savingsGoals),
         ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (value) {
-              if (value == 'export') {
-                ref
-                    .read(backupWorkerProvider)
-                    .runBackupProcess(tables: ['savings_goals']);
-              } else if (value == 'import') {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (ctx) =>
-                      const SingleTableImportSheet(tableName: 'savings_goals'),
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'export',
-                child: Row(
-                  children: [
-                    const Icon(Icons.file_download_rounded, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.exportData),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'import',
-                child: Row(
-                  children: [
-                    const Icon(Icons.file_upload_rounded, size: 20),
-                    const SizedBox(width: 12),
-                    Text(l10n.importData),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8),
-        ],
+
       ),
       body: RefreshIndicator(
         onRefresh: () =>
