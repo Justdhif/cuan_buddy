@@ -160,7 +160,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               pinned: true,
               floating: false,
               snap: false,
-              expandedHeight: 145,
+              expandedHeight: 120,
               backgroundColor: bgColor,
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
