@@ -12,10 +12,12 @@ import '../providers/auth_provider.dart';
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   final String email;
   final String otp;
-  const ResetPasswordScreen({super.key, required this.email, required this.otp});
+  const ResetPasswordScreen(
+      {super.key, required this.email, required this.otp});
 
   @override
-  ConsumerState<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  ConsumerState<ResetPasswordScreen> createState() =>
+      _ResetPasswordScreenState();
 }
 
 class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
@@ -35,7 +37,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Future<void> _resetPassword() async {
     final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_newPasswordController.text != _confirmPasswordController.text) {
       AppSnackbar.show(
         context,
@@ -53,7 +55,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             otp: widget.otp,
             newPassword: _newPasswordController.text,
           );
-      
+
       // If user was logged in (e.g., accessed from profile), log them out
       await ref.read(authNotifierProvider.notifier).logout();
 
@@ -61,7 +63,8 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
       setState(() => _resetSuccess = true);
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.info, message: e.toString(), type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,7 +73,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -90,12 +93,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               else ...[
                 Text(
                   l10n.resetPassword,
-                  style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                  style: AppTypography.textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Enter your new password below.',
-                  style: AppTypography.textTheme.bodyLarge?.copyWith(color: AppColors.textSecondaryLight),
+                  style: AppTypography.textTheme.bodyLarge
+                      ?.copyWith(color: AppColors.textSecondaryLight),
                 ),
                 const SizedBox(height: 32),
                 Form(
@@ -107,9 +112,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         label: l10n.newPassword,
                         hint: l10n.passwordMinHint,
                         isPassword: true,
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                        prefixIcon:
+                            const Icon(Icons.lock_outline_rounded, size: 20),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return l10n.passwordRequired;
+                          if (v == null || v.isEmpty)
+                            return l10n.passwordRequired;
                           if (v.length < 8) return l10n.passwordMin8;
                           return null;
                         },
@@ -120,10 +127,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         label: 'Confirm Password',
                         hint: l10n.passwordMinHint,
                         isPassword: true,
-                        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                        prefixIcon:
+                            const Icon(Icons.lock_outline_rounded, size: 20),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return l10n.passwordRequired;
-                          if (v != _newPasswordController.text) return 'Passwords do not match';
+                          if (v == null || v.isEmpty)
+                            return l10n.passwordRequired;
+                          if (v != _newPasswordController.text)
+                            return 'Passwords do not match';
                           return null;
                         },
                       ),
@@ -153,11 +163,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             const Text('🎉', style: TextStyle(fontSize: 80)),
             const SizedBox(height: 24),
             Text(l10n.passwordChangedSuccess,
-                style: AppTypography.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: AppTypography.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center),
             const SizedBox(height: 12),
             Text(l10n.canNowLoginNewPassword,
-                style: AppTypography.textTheme.bodyLarge?.copyWith(color: AppColors.textSecondaryLight),
+                style: AppTypography.textTheme.bodyLarge
+                    ?.copyWith(color: AppColors.textSecondaryLight),
                 textAlign: TextAlign.center),
             const SizedBox(height: 32),
             AppButton(

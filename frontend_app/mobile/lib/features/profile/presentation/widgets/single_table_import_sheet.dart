@@ -173,8 +173,8 @@ class SingleTableImportSheet extends ConsumerWidget {
           AppButton(
             label: l10n.uploadAndRestore,
             onPressed: () {
-                Navigator.pop(context);
-                worker.runRestoreProcess();
+              Navigator.pop(context);
+              worker.runRestoreProcess();
             },
           ),
         ],

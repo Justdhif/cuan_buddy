@@ -58,7 +58,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       context.go('/backup-settings');
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToSaveProfile}: $e', type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.error,
+          message: '${l10n.failedToSaveProfile}: $e',
+          type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -126,7 +129,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       prefixIcon:
                           const Icon(Icons.person_outline_rounded, size: 20),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return l10n.fullNameRequired;
+                        if (v == null || v.isEmpty)
+                          return l10n.fullNameRequired;
                         if (v.trim().length < 2) return l10n.nameTooShortSetup;
                         return null;
                       },

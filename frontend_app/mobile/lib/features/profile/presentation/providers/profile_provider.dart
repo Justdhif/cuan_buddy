@@ -11,6 +11,7 @@ final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 });
 
 // ─── Backup Settings Provider ─────────────────────────────────────────────────
-final backupSettingsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final backupSettingsProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   return ref.watch(profileRepositoryProvider).getBackupSettings();
 });

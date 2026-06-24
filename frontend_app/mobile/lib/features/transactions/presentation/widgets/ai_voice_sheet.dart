@@ -24,7 +24,8 @@ class AiVoiceSheet extends ConsumerStatefulWidget {
   ConsumerState<AiVoiceSheet> createState() => _AiVoiceSheetState();
 }
 
-class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerProviderStateMixin {
+class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
+    with SingleTickerProviderStateMixin {
   AiVoiceState _state = AiVoiceState.idle;
   late final AudioRecorder _audioRecorder;
   String? _audioPath;
@@ -69,18 +70,21 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     try {
       if (await _audioRecorder.hasPermission()) {
         final dir = await getApplicationDocumentsDirectory();
-        _audioPath = '${dir.path}/voice_transaction_${DateTime.now().millisecondsSinceEpoch}.m4a';
-        
+        _audioPath =
+            '${dir.path}/voice_transaction_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
         await _audioRecorder.start(
           const RecordConfig(encoder: AudioEncoder.aacLc),
           path: _audioPath!,
         );
-        
+
         _amplitudeSubscription?.cancel();
-        _amplitudeSubscription = _audioRecorder.onAmplitudeChanged(const Duration(milliseconds: 50)).listen((amp) {
+        _amplitudeSubscription = _audioRecorder
+            .onAmplitudeChanged(const Duration(milliseconds: 50))
+            .listen((amp) {
           if (mounted) {
             setState(() {
-              // Normal speech amplitude typically ranges from -40 to 0. 
+              // Normal speech amplitude typically ranges from -40 to 0.
               // Adjust normalization so it looks good visually.
               final normalized = (amp.current + 40) / 40;
               _amplitude = normalized.clamp(0.0, 1.0);
@@ -97,7 +101,10 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        AppSnackbar.show(context, title: l10n.error, message: '${l10n.aiVoiceFailed} $e', type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error,
+            message: '${l10n.aiVoiceFailed} $e',
+            type: SnackbarType.error);
         Navigator.pop(context);
       }
     }
@@ -120,14 +127,19 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        AppSnackbar.show(context, title: l10n.error, message: '${l10n.aiVoiceFailed} $e', type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error,
+            message: '${l10n.aiVoiceFailed} $e',
+            type: SnackbarType.error);
         Navigator.pop(context);
       }
     }
   }
 
   Future<void> _processVoice(String path) async {
-    final result = await ref.read(aiNotifierProvider.notifier).processVoiceTransaction(path);
+    final result = await ref
+        .read(aiNotifierProvider.notifier)
+        .processVoiceTransaction(path);
     await _deleteAudioFile(); // clean up after processing
 
     if (result != null && result['extracted'] != null) {
@@ -158,7 +170,9 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
     try {
       final dio = ref.read(dioClientProvider).dio;
       final payload = {
-        'title': _extractedData!['title'] ?? _extractedData!['note'] ?? 'Voice Transaction',
+        'title': _extractedData!['title'] ??
+            _extractedData!['note'] ??
+            'Voice Transaction',
         'categoryId': _extractedData!['categoryId'],
         'amount': double.parse(_extractedData!['amount'].toString()),
         'currency': _extractedData!['currency'],
@@ -168,11 +182,11 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
       };
 
       await dio.post('/transactions', data: payload);
-      
+
       // Invalidate providers
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(recentTransactionsProvider);
-      
+
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         AppSnackbar.show(
@@ -187,7 +201,8 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
       setState(() => _isSaving = false);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     }
   }
@@ -210,20 +225,23 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isRecording ? AppColors.danger : AppColors.primary,
-                  boxShadow: isRecording ? [
-                    BoxShadow(
-                      color: AppColors.danger.withValues(alpha: 0.3 + (_amplitude * 0.4)),
-                      blurRadius: 20 + (_amplitude * 30),
-                      spreadRadius: 10 + (_amplitude * 20),
-                    )
-                  ] : [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    )
-                  ],
+                  boxShadow: isRecording
+                      ? [
+                          BoxShadow(
+                            color: AppColors.danger
+                                .withValues(alpha: 0.3 + (_amplitude * 0.4)),
+                            blurRadius: 20 + (_amplitude * 30),
+                            spreadRadius: 10 + (_amplitude * 20),
+                          )
+                        ]
+                      : [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
                 ),
                 child: const Icon(
                   Icons.mic,
@@ -237,7 +255,8 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
         const SizedBox(height: 32),
         Text(
           isRecording ? l10n.aiVoiceListening : l10n.aiVoiceTitle,
-          style: AppTypography.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: AppTypography.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
@@ -264,7 +283,8 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
         const SizedBox(height: 32),
         Text(
           l10n.aiVoiceAnalyzing,
-          style: AppTypography.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: AppTypography.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
@@ -282,10 +302,11 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
 
   Widget _buildReviewUI() {
     if (_extractedData == null) return const SizedBox();
-    
+
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondaryColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final secondaryColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     final fmtOriginal = NumberFormat.currency(
       locale: 'id_ID',
       symbol: '${_extractedData!['currency']} ',
@@ -299,7 +320,8 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
         const SizedBox(height: 16),
         Text(
           l10n.aiVoiceTitle,
-          style: AppTypography.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: AppTypography.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
@@ -312,28 +334,44 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
-        
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.backgroundDark : AppColors.borderLight.withValues(alpha: 0.3),
+            color: isDark
+                ? AppColors.backgroundDark
+                : AppColors.borderLight.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+            border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
           child: Column(
             children: [
-              _buildReviewRow(l10n.transactionTitle, _extractedData!['title'] ?? _extractedData!['note'] ?? '-'),
+              _buildReviewRow(l10n.transactionTitle,
+                  _extractedData!['title'] ?? _extractedData!['note'] ?? '-'),
               const Divider(height: 24),
-              if (_extractedData!['note'] != null && _extractedData!['note'].toString().trim().isNotEmpty && _extractedData!['note'] != _extractedData!['title']) ...[
+              if (_extractedData!['note'] != null &&
+                  _extractedData!['note'].toString().trim().isNotEmpty &&
+                  _extractedData!['note'] != _extractedData!['title']) ...[
                 _buildReviewRow(l10n.noteOptional, _extractedData!['note']),
                 const Divider(height: 24),
               ],
-              _buildReviewRow(l10n.aiVoiceAmountField, fmtOriginal.format(double.tryParse(_extractedData!['amount'].toString()) ?? 0)),
+              _buildReviewRow(
+                  l10n.aiVoiceAmountField,
+                  fmtOriginal.format(
+                      double.tryParse(_extractedData!['amount'].toString()) ??
+                          0)),
               const Divider(height: 24),
-              _buildReviewRow(l10n.aiVoiceTypeField, _extractedData!['type'] == 'income' ? l10n.aiVoiceIncome : l10n.aiVoiceExpense, 
-                  color: _extractedData!['type'] == 'income' ? AppColors.success : AppColors.danger),
+              _buildReviewRow(
+                  l10n.aiVoiceTypeField,
+                  _extractedData!['type'] == 'income'
+                      ? l10n.aiVoiceIncome
+                      : l10n.aiVoiceExpense,
+                  color: _extractedData!['type'] == 'income'
+                      ? AppColors.success
+                      : AppColors.danger),
               const Divider(height: 24),
-              _buildReviewRow(l10n.aiVoiceCategoryField, _extractedData!['category'] ?? 'Uncategorized'),
+              _buildReviewRow(l10n.aiVoiceCategoryField,
+                  _extractedData!['category'] ?? 'Uncategorized'),
             ],
           ),
         ),
@@ -409,7 +447,8 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet> with SingleTickerPr
               ),
             ),
           ),
-          if (_state == AiVoiceState.idle || _state == AiVoiceState.recording) _buildRecordingUI(),
+          if (_state == AiVoiceState.idle || _state == AiVoiceState.recording)
+            _buildRecordingUI(),
           if (_state == AiVoiceState.processing) _buildProcessingUI(),
           if (_state == AiVoiceState.review) _buildReviewUI(),
         ],

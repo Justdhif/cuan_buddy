@@ -8,8 +8,8 @@ abstract class AppLocalizations {
 
   /// Resolve the current [AppLocalizations] from the nearest [AppLocalizationsScope].
   static AppLocalizations of(BuildContext context) {
-    final scope = context
-        .dependOnInheritedWidgetOfExactType<AppLocalizationsScope>();
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<AppLocalizationsScope>();
     return scope?.localizations ?? const AppLocalizationsEn();
   }
 
@@ -240,11 +240,11 @@ abstract class AppLocalizations {
   String get saveGoal;
   String get goalSavedSuccess;
   String get errorSavingGoal;
-  
+
   String get editGoal;
   String get deleteGoal;
   String get deleteGoalConfirm;
-  
+
   String gamificationLevel5(String emoji);
   String gamificationLevel4(String emoji);
   String gamificationLevel3(String emoji);
@@ -252,7 +252,7 @@ abstract class AppLocalizations {
   String gamificationLevel1(String emoji);
   String transferToSavings(String name);
   String withdrawFromSavings(String name);
-  
+
   String get addFunds;
   String get reduceFunds;
   String get reduce;

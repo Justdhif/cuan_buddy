@@ -51,9 +51,12 @@ class AppButton extends StatelessWidget {
             : Text(label);
 
     final padding = switch (size) {
-      AppButtonSize.small => const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      AppButtonSize.medium => const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
-      AppButtonSize.large => const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      AppButtonSize.small =>
+        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      AppButtonSize.medium =>
+        const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+      AppButtonSize.large =>
+        const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
     };
 
     final fontSize = switch (size) {
@@ -71,8 +74,10 @@ class AppButton extends StatelessWidget {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             padding: padding,
-            textStyle: AppTypography.textTheme.labelLarge?.copyWith(fontSize: fontSize),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: AppTypography.textTheme.labelLarge
+                ?.copyWith(fontSize: fontSize),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 0,
           ),
           child: child,
@@ -84,8 +89,10 @@ class AppButton extends StatelessWidget {
             backgroundColor: AppColors.secondary,
             foregroundColor: Colors.white,
             padding: padding,
-            textStyle: AppTypography.textTheme.labelLarge?.copyWith(fontSize: fontSize),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: AppTypography.textTheme.labelLarge
+                ?.copyWith(fontSize: fontSize),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 0,
           ),
           child: child,
@@ -97,8 +104,10 @@ class AppButton extends StatelessWidget {
             foregroundColor: AppColors.primary,
             side: const BorderSide(color: AppColors.primary, width: 1.5),
             padding: padding,
-            textStyle: AppTypography.textTheme.labelLarge?.copyWith(fontSize: fontSize),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: AppTypography.textTheme.labelLarge
+                ?.copyWith(fontSize: fontSize),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
           child: child,
         );
@@ -108,7 +117,8 @@ class AppButton extends StatelessWidget {
           style: TextButton.styleFrom(
             foregroundColor: AppColors.primary,
             padding: padding,
-            textStyle: AppTypography.textTheme.labelLarge?.copyWith(fontSize: fontSize),
+            textStyle: AppTypography.textTheme.labelLarge
+                ?.copyWith(fontSize: fontSize),
           ),
           child: child,
         );
@@ -119,8 +129,10 @@ class AppButton extends StatelessWidget {
             backgroundColor: AppColors.danger,
             foregroundColor: Colors.white,
             padding: padding,
-            textStyle: AppTypography.textTheme.labelLarge?.copyWith(fontSize: fontSize),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: AppTypography.textTheme.labelLarge
+                ?.copyWith(fontSize: fontSize),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 0,
           ),
           child: child,

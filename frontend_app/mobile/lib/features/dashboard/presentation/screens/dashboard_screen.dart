@@ -70,16 +70,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
 
-    ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider, (previous, next) {
+    ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
+        (previous, next) {
       if (next.hasValue && next.value != null) {
         final data = next.value!;
         final balance = (data['balance'] as num? ?? 0).toDouble();
         final income = (data['totalIncome'] as num? ?? 0).toDouble();
         final expense = (data['totalExpense'] as num? ?? 0).toDouble();
-        final currency = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-        
+        final currency = profileAsync.valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
+
         // Push data to Android Homescreen Widget
-        WidgetService.updateWidgetData(balance: balance, income: income, expense: expense, currency: currency);
+        WidgetService.updateWidgetData(
+            balance: balance,
+            income: income,
+            expense: expense,
+            currency: currency);
       }
     });
 
@@ -90,9 +96,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           final goal = next.goals.firstWhere((g) => g['id'] == selectedGoalId);
           final rawT = goal['targetAmount'];
           final rawS = goal['savedAmount'];
-          final target = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
-          final saved = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-          final currency = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+          final target = rawT is num
+              ? rawT.toDouble()
+              : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+          final saved = rawS is num
+              ? rawS.toDouble()
+              : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+          final currency = profileAsync.valueOrNull?['currency'] as String? ??
+              AppConstants.defaultCurrency;
           final emoji = goal['icon'] as String? ?? '🎯';
           final name = goal['name'] as String? ?? 'Savings Goal';
 
@@ -138,7 +149,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ref.invalidate(analyticsSummaryProvider);
                   ref.invalidate(financialHealthProvider);
                   ref.invalidate(recentTransactionsProvider);
-                  ref.read(analyticsNotifierProvider.notifier).fetchAllAnalytics();
+                  ref
+                      .read(analyticsNotifierProvider.notifier)
+                      .fetchAllAnalytics();
                 },
                 color: AppColors.primary,
                 child: CustomScrollView(
@@ -151,157 +164,165 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         maxHeight: 120,
                         baseColor: Theme.of(context).scaffoldBackgroundColor,
                         builder: (context, shrinkOffset) {
-                          return _buildHeader(context, ref, profileAsync, shrinkOffset);
+                          return _buildHeader(
+                              context, ref, profileAsync, shrinkOffset);
                         },
                       ),
                     ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                  child: summaryAsync.when(
-                    skipLoadingOnReload: true,
-                    data: (data) => _buildBalanceCard(data, profileAsync),
-                    loading: () => const SkeletonCard(height: 220),
-                    error: (_, __) => const SkeletonCard(height: 220),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: AiInsightCard(),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: healthAsync.when(
-                    skipLoadingOnReload: true,
-                    data: (data) => _buildHealthWidget(data),
-                    loading: () => const SkeletonCard(height: 80),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(l10n.recentActivities,
-                          style: AppTypography.textTheme.titleMedium),
-                      TextButton(
-                        onPressed: () => context.go('/home/transactions'),
-                        child: Text(l10n.seeAll),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                        child: summaryAsync.when(
+                          skipLoadingOnReload: true,
+                          data: (data) => _buildBalanceCard(data, profileAsync),
+                          loading: () => const SkeletonCard(height: 220),
+                          error: (_, __) => const SkeletonCard(height: 220),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              transactionsAsync.when(
-                skipLoadingOnReload: true,
-                data: (transactions) {
-                  if (transactions.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: AppEmptyState(
-                        emoji: '💸',
-                        title: l10n.noTransactionsYetTitle,
-                        subtitle: l10n.noTransactionsYetSubtitle,
+                    ),
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: AiInsightCard(),
                       ),
-                    );
-                  }
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) => _buildTransactionTile(transactions[i], profileAsync),
-                      childCount: transactions.length,
                     ),
-                  );
-                },
-                loading: () => const SliverToBoxAdapter(child: SkeletonList()),
-                error: (_, __) => SliverToBoxAdapter(
-                  child: AppErrorState(message: l10n.failedToLoadTransactionsError),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: healthAsync.when(
+                          skipLoadingOnReload: true,
+                          data: (data) => _buildHealthWidget(data),
+                          loading: () => const SkeletonCard(height: 80),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(l10n.recentActivities,
+                                style: AppTypography.textTheme.titleMedium),
+                            TextButton(
+                              onPressed: () => context.go('/home/transactions'),
+                              child: Text(l10n.seeAll),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    transactionsAsync.when(
+                      skipLoadingOnReload: true,
+                      data: (transactions) {
+                        if (transactions.isEmpty) {
+                          return SliverToBoxAdapter(
+                            child: AppEmptyState(
+                              emoji: '💸',
+                              title: l10n.noTransactionsYetTitle,
+                              subtitle: l10n.noTransactionsYetSubtitle,
+                            ),
+                          );
+                        }
+                        return SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (ctx, i) => _buildTransactionTile(
+                                transactions[i], profileAsync),
+                            childCount: transactions.length,
+                          ),
+                        );
+                      },
+                      loading: () =>
+                          const SliverToBoxAdapter(child: SkeletonList()),
+                      error: (_, __) => SliverToBoxAdapter(
+                        child: AppErrorState(
+                            message: l10n.failedToLoadTransactionsError),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-              // ── Analytics: Spending by Category ─────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(l10n.spendingByCategory,
-                          style: AppTypography.textTheme.titleMedium),
-                    ],
-                  ),
-                ),
-              ),
-              if (analyticsState.isLoading && analyticsState.spendingByCategory.isEmpty)
-                const SliverToBoxAdapter(child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: SkeletonList(itemCount: 3),
-                ))
-              else if (analyticsState.spendingByCategory.isEmpty)
-                SliverToBoxAdapter(
-                  child: AppEmptyState(
-                    emoji: '📊',
-                    title: l10n.noSpendingData,
-                    subtitle: l10n.addExpensesToSeeBreakdown,
-                  ),
-                )
-              else
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 20, right: 20, top: 16),
-                    child: _buildSpendingChart(
-                      context,
-                      analyticsState.spendingByCategory,
-                      profileAsync,
+                    // ── Analytics: Spending by Category ─────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(l10n.spendingByCategory,
+                                style: AppTypography.textTheme.titleMedium),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    if (analyticsState.isLoading &&
+                        analyticsState.spendingByCategory.isEmpty)
+                      const SliverToBoxAdapter(
+                          child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: SkeletonList(itemCount: 3),
+                      ))
+                    else if (analyticsState.spendingByCategory.isEmpty)
+                      SliverToBoxAdapter(
+                        child: AppEmptyState(
+                          emoji: '📊',
+                          title: l10n.noSpendingData,
+                          subtitle: l10n.addExpensesToSeeBreakdown,
+                        ),
+                      )
+                    else
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.only(
+                              left: 20, right: 20, top: 16),
+                          child: _buildSpendingChart(
+                            context,
+                            analyticsState.spendingByCategory,
+                            profileAsync,
+                          ),
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-              // ── Analytics: Monthly Trend ─────────────────────────────
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                  child: Text(l10n.monthlyTrend,
-                      style: AppTypography.textTheme.titleMedium),
+                    // ── Analytics: Monthly Trend ─────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        child: Text(l10n.monthlyTrend,
+                            style: AppTypography.textTheme.titleMedium),
+                      ),
+                    ),
+                    if (analyticsState.isLoading &&
+                        analyticsState.monthlyTrend.isEmpty)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: SkeletonCard(height: 220),
+                        ),
+                      )
+                    else if (analyticsState.monthlyTrend.isEmpty)
+                      SliverToBoxAdapter(
+                        child: AppEmptyState(
+                          emoji: '📈',
+                          title: l10n.noTrendData,
+                          subtitle: l10n.startRecordingToSeeTrend,
+                        ),
+                      )
+                    else
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildMonthlyTrendChart(
+                            context,
+                            analyticsState.monthlyTrend,
+                            profileAsync,
+                          ),
+                        ),
+                      ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                  ],
                 ),
               ),
-              if (analyticsState.isLoading && analyticsState.monthlyTrend.isEmpty)
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: SkeletonCard(height: 220),
-                  ),
-                )
-              else if (analyticsState.monthlyTrend.isEmpty)
-                SliverToBoxAdapter(
-                  child: AppEmptyState(
-                    emoji: '📈',
-                    title: l10n.noTrendData,
-                    subtitle: l10n.startRecordingToSeeTrend,
-                  ),
-                )
-              else
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildMonthlyTrendChart(
-                      context,
-                      analyticsState.monthlyTrend,
-                      profileAsync,
-                    ),
-                  ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
-            ],
-          ),
-        ),
             ),
           ],
         ),
@@ -332,14 +353,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-
   Widget _buildHeader(
     BuildContext context,
     WidgetRef ref,
     AsyncValue<Map<String, dynamic>> profileAsync,
     double shrinkOffset,
   ) {
-    
     final notificationsState = ref.watch(notificationsNotifierProvider);
     final unreadCount = notificationsState.notifications
         .where((n) => !(n['isRead'] as bool? ?? false))
@@ -384,7 +403,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: profileAsync.when(
                   data: (profile) {
                     final avatarUrl = profile['avatar'] as String?;
-                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
                     if (avatarUrl != null && avatarUrl.isNotEmpty) {
                       return Container(
                         width: 36,
@@ -395,13 +415,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             imageUrl: avatarUrl,
                             fit: BoxFit.cover,
                             placeholder: (_, __) => Shimmer.fromColors(
-                              baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                              highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                              baseColor: isDark
+                                  ? Colors.grey[800]!
+                                  : Colors.grey[300]!,
+                              highlightColor: isDark
+                                  ? Colors.grey[700]!
+                                  : Colors.grey[100]!,
                               child: Container(color: Colors.white),
                             ),
                             errorWidget: (_, __, ___) => Icon(
                               Icons.person_outline_rounded,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ),
@@ -409,16 +435,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     }
                     return Icon(
                       Icons.person_outline_rounded,
-                      color: Theme.of(context).brightness == Brightness.dark 
-                          ? AppColors.textSecondaryDark 
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textSecondaryDark
                           : AppColors.textSecondaryLight,
                     );
                   },
                   loading: () {
-                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
                     return Shimmer.fromColors(
-                      baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
-                      highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+                      baseColor: isDark
+                          ? const Color(0xFF2D3748)
+                          : const Color(0xFFE2E8F0),
+                      highlightColor: isDark
+                          ? const Color(0xFF4A5568)
+                          : const Color(0xFFF7FAFC),
                       child: Container(
                         width: 36,
                         height: 36,
@@ -431,8 +462,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   },
                   error: (_, __) => Icon(
                     Icons.person_outline_rounded,
-                    color: Theme.of(context).brightness == Brightness.dark 
-                        ? AppColors.textSecondaryDark 
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.textSecondaryDark
                         : AppColors.textSecondaryLight,
                   ),
                 ),
@@ -467,16 +498,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildBalanceCard(Map<String, dynamic> data, AsyncValue<Map<String, dynamic>> profileAsync) {
+  Widget _buildBalanceCard(Map<String, dynamic> data,
+      AsyncValue<Map<String, dynamic>> profileAsync) {
     final balance = (data['balance'] as num? ?? 0).toDouble();
     final income = (data['totalIncome'] as num? ?? 0).toDouble();
     final expense = (data['totalExpense'] as num? ?? 0).toDouble();
-    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
+        AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final fmt = NumberFormat.currency(
-        locale: 'en_US',
-        symbol: currencySymbol,
-        decimalDigits: 0);
+        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
 
     return GlassCard(
       child: Column(
@@ -503,11 +534,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(
-                  child: _miniStat(l10n.income, fmt.format(income))),
+              Expanded(child: _miniStat(l10n.income, fmt.format(income))),
               const SizedBox(width: 12),
-              Expanded(
-                  child: _miniStat(l10n.expense, fmt.format(expense))),
+              Expanded(child: _miniStat(l10n.expense, fmt.format(expense))),
             ],
           ),
         ],
@@ -554,38 +583,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return FinancialHealthWidget(healthState: healthState, message: message);
   }
 
-  Widget _buildTransactionTile(dynamic transaction, AsyncValue<Map<String, dynamic>> profileAsync) {
+  Widget _buildTransactionTile(
+      dynamic transaction, AsyncValue<Map<String, dynamic>> profileAsync) {
     final l10n = AppLocalizations.of(context);
     final tx = transaction as Map<String, dynamic>;
     final isIncome = tx['type'] == 'income';
     final amountRaw = tx['amount'];
-    final amount = amountRaw is num 
-        ? amountRaw.toDouble() 
+    final amount = amountRaw is num
+        ? amountRaw.toDouble()
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-    
-    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+
+    final txCurrency =
+        tx['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
+        AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
-        locale: 'en_US',
-        symbol: currencySymbol,
-        decimalDigits: 0);
+        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
     final fmtOriginal = NumberFormat.currency(
-        locale: 'en_US',
-        symbol: txCurrencySymbol,
-        decimalDigits: 0);
+        locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
     final dynamic category = tx['category'];
     final emoji = (category is Map
             ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
             : null) ??
         (isIncome ? '💰' : '💸');
-        
+
     final catName = category is Map ? category['name'] as String? : null;
-    final title = tx['title'] as String? ?? tx['note'] as String? ?? catName ?? l10n.transaction;
+    final title = tx['title'] as String? ??
+        tx['note'] as String? ??
+        catName ??
+        l10n.transaction;
 
     final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
-    final catColor = category is Map ? AppColors.colorFromHex(category['colorCode'] as String?, fallback: defaultTypeColor) : defaultTypeColor;
+    final catColor = category is Map
+        ? AppColors.colorFromHex(category['colorCode'] as String?,
+            fallback: defaultTypeColor)
+        : defaultTypeColor;
 
     return InkWell(
       onTap: () {
@@ -627,9 +661,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                      color:
+                          AppColors.textSecondaryLight.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -656,7 +692,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 if (txCurrency != currencyCode)
                   Consumer(
                     builder: (context, ref, _) {
-                      final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                      final convertedAsync =
+                          ref.watch(convertedAmountProvider(ConversionParams(
                         amount: amount,
                         from: txCurrency,
                         to: currencyCode,
@@ -671,7 +708,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                         ),
                         loading: () => const SizedBox(
-                          width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                            width: 20,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2)),
                         error: (_, __) => const SizedBox(),
                       );
                     },
@@ -690,8 +729,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     AsyncValue<Map<String, dynamic>> profileAsync,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyCode =
-        profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
+        AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final fmt = NumberFormat.currency(
         locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
@@ -818,8 +857,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     AsyncValue<Map<String, dynamic>> profileAsync,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyCode =
-        profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
+        AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final fmt = NumberFormat.currency(
         locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
@@ -901,7 +940,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   drawVerticalLine: false,
                   horizontalInterval: yMax / 4,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
@@ -914,7 +954,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       final row = data[group.x] as Map<String, dynamic>;
-                      final label = rodIndex == 0 ? l10n.incomeType : l10n.expenseType;
+                      final label =
+                          rodIndex == 0 ? l10n.incomeType : l10n.expenseType;
                       final val = rodIndex == 0
                           ? (row['income'] as num?)?.toDouble() ?? 0
                           : (row['expense'] as num?)?.toDouble() ?? 0;
@@ -972,10 +1013,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         if (idx < 0 || idx >= data.length) {
                           return const SizedBox.shrink();
                         }
-                        final month =
-                            (data[idx] as Map<String, dynamic>)['month']
-                                as String? ??
-                                '';
+                        final month = (data[idx]
+                                as Map<String, dynamic>)['month'] as String? ??
+                            '';
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
@@ -1036,7 +1076,8 @@ class _DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     // Opacity increases as we scroll up to 50 pixels
     final double opacity = (shrinkOffset / 50).clamp(0.0, 1.0);
     return Container(
@@ -1066,21 +1107,33 @@ class _TimeSceneryBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final hour = now.hour;
-    
+
     List<Color> gradientColors;
-    
+
     if (hour >= 6 && hour < 12) {
       // Morning
-      gradientColors = [const Color(0xFF87CEEB).withValues(alpha: 0.6), const Color(0xFFFFE4B5).withValues(alpha: 0.2)];
+      gradientColors = [
+        const Color(0xFF87CEEB).withValues(alpha: 0.6),
+        const Color(0xFFFFE4B5).withValues(alpha: 0.2)
+      ];
     } else if (hour >= 12 && hour < 15) {
       // Afternoon
-      gradientColors = [const Color(0xFF00BFFF).withValues(alpha: 0.6), const Color(0xFF87CEEB).withValues(alpha: 0.2)];
+      gradientColors = [
+        const Color(0xFF00BFFF).withValues(alpha: 0.6),
+        const Color(0xFF87CEEB).withValues(alpha: 0.2)
+      ];
     } else if (hour >= 15 && hour < 19) {
       // Evening
-      gradientColors = [const Color(0xFFFF7E5F).withValues(alpha: 0.6), const Color(0xFFFEB47B).withValues(alpha: 0.2)];
+      gradientColors = [
+        const Color(0xFFFF7E5F).withValues(alpha: 0.6),
+        const Color(0xFFFEB47B).withValues(alpha: 0.2)
+      ];
     } else {
       // Night
-      gradientColors = [const Color(0xFF2C3E50).withValues(alpha: 0.8), const Color(0xFF000000).withValues(alpha: 0.4)];
+      gradientColors = [
+        const Color(0xFF2C3E50).withValues(alpha: 0.8),
+        const Color(0xFF000000).withValues(alpha: 0.4)
+      ];
     }
 
     return Container(
@@ -1094,7 +1147,6 @@ class _TimeSceneryBackground extends StatelessWidget {
       ),
       child: Stack(
         children: [
-
           Positioned(
             bottom: 0,
             left: 0,
@@ -1106,7 +1158,9 @@ class _TimeSceneryBackground extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.0),
+                    Theme.of(context)
+                        .scaffoldBackgroundColor
+                        .withValues(alpha: 0.0),
                     Theme.of(context).scaffoldBackgroundColor,
                   ],
                 ),
@@ -1118,4 +1172,3 @@ class _TimeSceneryBackground extends StatelessWidget {
     );
   }
 }
-

@@ -88,6 +88,7 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
       rethrow;
     }
   }
+
   Future<void> updateGoal(String id, Map<String, dynamic> data) async {
     try {
       final dio = ref.read(dioClientProvider).dio;
@@ -111,17 +112,21 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
   }
 }
 
-final savingsNotifierProvider = StateNotifierProvider<SavingsNotifier, SavingsState>((ref) {
+final savingsNotifierProvider =
+    StateNotifierProvider<SavingsNotifier, SavingsState>((ref) {
   return SavingsNotifier(ref);
 });
 
-final convertedSavingsSummaryProvider = FutureProvider.autoDispose.family<Map<String, double>, String>((ref, filter) async {
+final convertedSavingsSummaryProvider = FutureProvider.autoDispose
+    .family<Map<String, double>, String>((ref, filter) async {
   final savingsState = ref.watch(savingsNotifierProvider);
-  if (savingsState.goals.isEmpty) return {'totalTarget': 0.0, 'totalSaved': 0.0};
+  if (savingsState.goals.isEmpty)
+    return {'totalTarget': 0.0, 'totalSaved': 0.0};
 
   final currencyService = ref.watch(currencyServiceProvider);
   final profile = ref.watch(profileProvider);
-  final baseCurrency = profile.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+  final baseCurrency = profile.valueOrNull?['currency'] as String? ??
+      AppConstants.defaultCurrency;
 
   double totalTarget = 0;
   double totalSaved = 0;
@@ -130,18 +135,25 @@ final convertedSavingsSummaryProvider = FutureProvider.autoDispose.family<Map<St
     if (filter == 'In Progress' && goal['status'] == 'completed') continue;
     if (filter == 'Completed' && goal['status'] != 'completed') continue;
 
-    final gCurrency = goal['currency'] as String? ?? AppConstants.defaultCurrency;
+    final gCurrency =
+        goal['currency'] as String? ?? AppConstants.defaultCurrency;
     final rawT = goal['targetAmount'];
-    final target = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+    final target = rawT is num
+        ? rawT.toDouble()
+        : double.tryParse(rawT?.toString() ?? '0') ?? 0;
     final rawC = goal['currentAmount'];
-    final current = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+    final current = rawC is num
+        ? rawC.toDouble()
+        : double.tryParse(rawC?.toString() ?? '0') ?? 0;
 
     if (gCurrency == baseCurrency) {
       totalTarget += target;
       totalSaved += current;
     } else {
-      final convTarget = await currencyService.convert(target, gCurrency, baseCurrency);
-      final convSaved = await currencyService.convert(current, gCurrency, baseCurrency);
+      final convTarget =
+          await currencyService.convert(target, gCurrency, baseCurrency);
+      final convSaved =
+          await currencyService.convert(current, gCurrency, baseCurrency);
       totalTarget += convTarget;
       totalSaved += convSaved;
     }
@@ -149,4 +161,3 @@ final convertedSavingsSummaryProvider = FutureProvider.autoDispose.family<Map<St
 
   return {'totalTarget': totalTarget, 'totalSaved': totalSaved};
 });
-

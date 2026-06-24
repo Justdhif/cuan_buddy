@@ -37,7 +37,8 @@ class BackupWorker {
     }
   }
 
-  Future<void> runBackupProcess({List<String> tables = const [], bool isAuto = false}) async {
+  Future<void> runBackupProcess(
+      {List<String> tables = const [], bool isAuto = false}) async {
     final notificationService = NotificationService();
     try {
       await notificationService.showProgressNotification(
@@ -75,10 +76,16 @@ class BackupWorker {
         await directory.create(recursive: true);
       }
 
-      final dateStr = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+      final dateStr = DateTime.now()
+          .toIso8601String()
+          .replaceAll(':', '-')
+          .split('.')
+          .first;
       final isSingle = tables.length == 1;
       final ext = isSingle ? 'xlsx' : 'zip';
-      final fileName = isSingle ? '${tables[0]}_backup_$dateStr.$ext' : 'cuanbuddy_backup_$dateStr.$ext';
+      final fileName = isSingle
+          ? '${tables[0]}_backup_$dateStr.$ext'
+          : 'cuanbuddy_backup_$dateStr.$ext';
       final savePath = '${directory.path}/$fileName';
 
       await notificationService.showProgressNotification(
@@ -127,7 +134,7 @@ class BackupWorker {
       );
     }
   }
-  
+
   Future<void> downloadTemplate(String tableName) async {
     final notificationService = NotificationService();
     try {
@@ -162,7 +169,7 @@ class BackupWorker {
         await directory.create(recursive: true);
       }
 
-      final savePath = tableName == 'all' 
+      final savePath = tableName == 'all'
           ? '${directory.path}/cuanbuddy_templates.zip'
           : '${directory.path}/${tableName}_template.xlsx';
 
@@ -238,7 +245,6 @@ class BackupWorker {
     }
   }
 }
-
 
 final backupWorkerProvider = Provider<BackupWorker>((ref) {
   return BackupWorker(ref, ref.watch(profileRepositoryProvider));

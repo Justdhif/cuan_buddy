@@ -40,7 +40,8 @@ class DioClient {
 }
 
 class AuthInterceptor extends Interceptor {
-  AuthInterceptor({required this.authService, required this.dio, required this.prefs});
+  AuthInterceptor(
+      {required this.authService, required this.dio, required this.prefs});
 
   final AuthService authService;
   final Dio dio;

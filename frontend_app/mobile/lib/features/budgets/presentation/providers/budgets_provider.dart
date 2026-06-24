@@ -72,6 +72,7 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
       rethrow;
     }
   }
+
   Future<void> updateBudget({
     required String id,
     required double limitAmount,
@@ -100,17 +101,21 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
   }
 }
 
-final budgetsNotifierProvider = StateNotifierProvider<BudgetsNotifier, BudgetsState>((ref) {
+final budgetsNotifierProvider =
+    StateNotifierProvider<BudgetsNotifier, BudgetsState>((ref) {
   return BudgetsNotifier(ref);
 });
 
-final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<String, double>, String>((ref, filter) async {
+final convertedBudgetsSummaryProvider = FutureProvider.autoDispose
+    .family<Map<String, double>, String>((ref, filter) async {
   final budgetsState = ref.watch(budgetsNotifierProvider);
-  if (budgetsState.budgets.isEmpty) return {'totalLimit': 0.0, 'totalSpent': 0.0};
-  
+  if (budgetsState.budgets.isEmpty)
+    return {'totalLimit': 0.0, 'totalSpent': 0.0};
+
   final currencyService = ref.watch(currencyServiceProvider);
   final profile = ref.watch(profileProvider);
-  final baseCurrency = profile.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+  final baseCurrency = profile.valueOrNull?['currency'] as String? ??
+      AppConstants.defaultCurrency;
 
   double totalLimit = 0;
   double totalSpent = 0;
@@ -118,12 +123,18 @@ final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<St
   for (final b in budgetsState.budgets) {
     final rawL = b['limitAmount'];
     final rawR = b['rolloverAmount'];
-    final limit = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
-    final rollover = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+    final limit = rawL is num
+        ? rawL.toDouble()
+        : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+    final rollover = rawR is num
+        ? rawR.toDouble()
+        : double.tryParse(rawR?.toString() ?? '0') ?? 0;
     final tL = limit + rollover;
-    
+
     final rawS = b['spentAmount'];
-    final spent = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+    final spent = rawS is num
+        ? rawS.toDouble()
+        : double.tryParse(rawS?.toString() ?? '0') ?? 0;
 
     if (filter != 'All') {
       final p = tL > 0 ? spent / tL : 0.0;
@@ -133,13 +144,15 @@ final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<St
     }
 
     final bCurrency = b['currency'] as String? ?? AppConstants.defaultCurrency;
-    
+
     if (bCurrency == baseCurrency) {
       totalLimit += tL;
       totalSpent += spent;
     } else {
-      final convLimit = await currencyService.convert(tL, bCurrency, baseCurrency);
-      final convSpent = await currencyService.convert(spent, bCurrency, baseCurrency);
+      final convLimit =
+          await currencyService.convert(tL, bCurrency, baseCurrency);
+      final convSpent =
+          await currencyService.convert(spent, bCurrency, baseCurrency);
       totalLimit += convLimit;
       totalSpent += convSpent;
     }
@@ -147,4 +160,3 @@ final convertedBudgetsSummaryProvider = FutureProvider.autoDispose.family<Map<St
 
   return {'totalLimit': totalLimit, 'totalSpent': totalSpent};
 });
-

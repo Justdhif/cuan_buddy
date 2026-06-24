@@ -87,7 +87,8 @@ class AppColors {
   ];
 
   // ─── Utilities ───────────────────────────────────────────────────────────────
-  static Color colorFromHex(String? hexString, {Color fallback = AppColors.primary}) {
+  static Color colorFromHex(String? hexString,
+      {Color fallback = AppColors.primary}) {
     if (hexString == null || hexString.isEmpty) return fallback;
     final buffer = StringBuffer();
     if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');

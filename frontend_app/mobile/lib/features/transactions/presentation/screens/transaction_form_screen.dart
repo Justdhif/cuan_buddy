@@ -14,6 +14,7 @@ import '../providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
+
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({
     super.key,
@@ -25,7 +26,8 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? initialTransaction;
 
   @override
-  ConsumerState<TransactionFormScreen> createState() => _TransactionFormScreenState();
+  ConsumerState<TransactionFormScreen> createState() =>
+      _TransactionFormScreenState();
 }
 
 class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
@@ -207,7 +209,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.initialTransaction != null ? l10n.editTransaction : l10n.addTransaction,
+          widget.initialTransaction != null
+              ? l10n.editTransaction
+              : l10n.addTransaction,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
@@ -217,7 +221,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         actions: [
           if (widget.initialTransaction != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.danger),
               onPressed: _confirmAndDelete,
               tooltip: l10n.deleteTransaction,
             ),
@@ -290,7 +295,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
                             ),
                           ),
                         ),
@@ -304,7 +311,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null) setState(() => _selectedCurrency = val);
+                          if (val != null)
+                            setState(() => _selectedCurrency = val);
                         },
                       ),
                     ),
@@ -315,10 +323,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         controller: _amountController,
                         label: l10n.amount,
                         hint: '0',
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return l10n.amountRequired;
-                          if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
+                          if (value == null || value.isEmpty)
+                            return l10n.amountRequired;
+                          if (double.tryParse(value.replaceAll(',', '')) ==
+                              null) return l10n.invalidAmount;
                           return null;
                         },
                       ),
@@ -334,7 +345,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   loading: () => _buildCategorySkeletonLoader(isDark),
                   error: (_, __) => Text(
                     l10n.failedToLoadCategories,
-                    style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                    style:
+                        const TextStyle(color: AppColors.danger, fontSize: 12),
                   ),
                   data: (allCategories) {
                     final filtered = allCategories.where((c) {
@@ -346,7 +358,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       return Text(
                         l10n.noCategories,
                         style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       );
                     }
@@ -362,9 +376,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           final cat = filtered[index];
                           final catId = cat['id'] as String?;
                           final catName = cat['name'] as String? ?? '';
-                          final catEmoji = cat['emojiIcon'] as String? ?? cat['emoji'] as String? ?? '💰';
+                          final catEmoji = cat['emojiIcon'] as String? ??
+                              cat['emoji'] as String? ??
+                              '💰';
                           final isSelected = _selectedCategoryId == catId;
-                          final catColor = AppColors.colorFromHex(cat['colorCode'] as String?, fallback: typeColor);
+                          final catColor = AppColors.colorFromHex(
+                              cat['colorCode'] as String?,
+                              fallback: typeColor);
 
                           return GestureDetector(
                             onTap: () => setState(() {
@@ -373,27 +391,38 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? catColor.withValues(alpha: 0.15)
-                                    : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                                    : (isDark
+                                        ? AppColors.surfaceDark
+                                        : const Color(0xFFF3F0FF)),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isSelected ? catColor : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                  color: isSelected
+                                      ? catColor
+                                      : (isDark
+                                          ? AppColors.borderDark
+                                          : AppColors.borderLight),
                                   width: isSelected ? 1.5 : 1,
                                 ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(catEmoji, style: const TextStyle(fontSize: 18)),
+                                  Text(catEmoji,
+                                      style: const TextStyle(fontSize: 18)),
                                   const SizedBox(width: 6),
                                   Text(
                                     catName,
-                                    style: AppTypography.textTheme.labelMedium?.copyWith(
+                                    style: AppTypography.textTheme.labelMedium
+                                        ?.copyWith(
                                       color: isSelected ? catColor : null,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                     ),
                                   ),
                                 ],
@@ -408,7 +437,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 const SizedBox(height: 16),
 
                 // ── Savings Goals ──────────────────────────────────────
-                if (!savingsState.isLoading && savingsState.goals.isNotEmpty) ...[
+                if (!savingsState.isLoading &&
+                    savingsState.goals.isNotEmpty) ...[
                   Text(
                     l10n.selectSavingsGoal,
                     style: AppTypography.textTheme.titleSmall,
@@ -426,18 +456,26 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           // "Tidak ada tujuan" (None) button
                           final isSelected = _selectedSavingsGoalId == null;
                           return GestureDetector(
-                            onTap: () => setState(() => _selectedSavingsGoalId = null),
+                            onTap: () =>
+                                setState(() => _selectedSavingsGoalId = null),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
                               curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.primary.withValues(alpha: 0.15)
-                                    : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                                    : (isDark
+                                        ? AppColors.surfaceDark
+                                        : const Color(0xFFF3F0FF)),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : (isDark
+                                          ? AppColors.borderDark
+                                          : AppColors.borderLight),
                                   width: isSelected ? 1.5 : 1,
                                 ),
                               ),
@@ -446,9 +484,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 children: [
                                   Text(
                                     l10n.noSavingsGoals,
-                                    style: AppTypography.textTheme.labelMedium?.copyWith(
-                                      color: isSelected ? AppColors.primary : null,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    style: AppTypography.textTheme.labelMedium
+                                        ?.copyWith(
+                                      color:
+                                          isSelected ? AppColors.primary : null,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                     ),
                                   ),
                                 ],
@@ -456,40 +498,54 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             ),
                           );
                         }
-                        
+
                         final goal = savingsState.goals[index - 1];
                         final goalId = goal['id'] as String?;
                         final goalName = goal['name'] as String? ?? '';
                         final isSelected = _selectedSavingsGoalId == goalId;
                         // Use a generic emoji for goals if none is saved
-                        final goalEmoji = '🎨'; // Using emoji from screenshot as default or parse if exists
-                        
+                        final goalEmoji =
+                            '🎨'; // Using emoji from screenshot as default or parse if exists
+
                         return GestureDetector(
-                          onTap: () => setState(() => _selectedSavingsGoalId = goalId),
+                          onTap: () =>
+                              setState(() => _selectedSavingsGoalId = goalId),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             curve: Curves.easeInOut,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.success.withValues(alpha: 0.15)
-                                  : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                                  : (isDark
+                                      ? AppColors.surfaceDark
+                                      : const Color(0xFFF3F0FF)),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isSelected ? AppColors.success : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                color: isSelected
+                                    ? AppColors.success
+                                    : (isDark
+                                        ? AppColors.borderDark
+                                        : AppColors.borderLight),
                                 width: isSelected ? 1.5 : 1,
                               ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(goalEmoji, style: const TextStyle(fontSize: 18)),
+                                Text(goalEmoji,
+                                    style: const TextStyle(fontSize: 18)),
                                 const SizedBox(width: 6),
                                 Text(
                                   goalName,
-                                  style: AppTypography.textTheme.labelMedium?.copyWith(
-                                    color: isSelected ? AppColors.success : null,
-                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  style: AppTypography.textTheme.labelMedium
+                                      ?.copyWith(
+                                    color:
+                                        isSelected ? AppColors.success : null,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -529,7 +585,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
                           width: 1,
                         ),
                       ),
@@ -552,7 +610,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 AppButton(
                   label: l10n.saveTransaction,
                   onPressed: _save,
-                  type: _type == 'income' ? AppButtonType.primary : AppButtonType.danger,
+                  type: _type == 'income'
+                      ? AppButtonType.primary
+                      : AppButtonType.danger,
                   isLoading: _isSaving,
                 ),
                 const SizedBox(height: 32),
@@ -590,7 +650,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             label,
             textAlign: TextAlign.center,
             style: AppTypography.textTheme.titleSmall?.copyWith(
-              color: isSelected ? Colors.white : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+              color: isSelected
+                  ? Colors.white
+                  : (isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -621,7 +685,8 @@ class _SkeletonChip extends StatefulWidget {
   State<_SkeletonChip> createState() => _SkeletonChipState();
 }
 
-class _SkeletonChipState extends State<_SkeletonChip> with SingleTickerProviderStateMixin {
+class _SkeletonChipState extends State<_SkeletonChip>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
@@ -645,7 +710,8 @@ class _SkeletonChipState extends State<_SkeletonChip> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
+    final baseColor =
+        widget.isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
 
     return AnimatedBuilder(
       animation: _anim,

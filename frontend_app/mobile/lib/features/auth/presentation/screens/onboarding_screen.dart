@@ -42,7 +42,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final slides = [
       _OnboardingData(
         emoji: '💸',
@@ -73,7 +73,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             Align(
               alignment: Alignment.topRight,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: AnimatedOpacity(
                   opacity: _currentPage == 2 ? 0.0 : 1.0,
                   duration: const Duration(milliseconds: 200),
@@ -84,7 +85,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       child: Text(
                         l10n.skip,
                         style: TextStyle(
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -120,7 +123,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: slide.gradient[0].withValues(alpha: 0.35),
+                                color:
+                                    slide.gradient[0].withValues(alpha: 0.35),
                                 blurRadius: 30,
                                 offset: const Offset(0, 12),
                               ),
@@ -139,9 +143,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         Text(
                           slide.title,
                           textAlign: TextAlign.center,
-                          style: AppTypography.textTheme.headlineMedium?.copyWith(
+                          style:
+                              AppTypography.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                            color: isDark
+                                ? Colors.white
+                                : AppColors.textPrimaryLight,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -151,7 +158,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           slide.desc,
                           textAlign: TextAlign.center,
                           style: AppTypography.textTheme.bodyLarge?.copyWith(
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                             height: 1.5,
                           ),
                         ),
@@ -180,7 +189,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.primary
-                              : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                              : (isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       );

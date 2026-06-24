@@ -48,10 +48,12 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     }
   }
 
-  Future<bool> addCategory(String name, String emojiIcon, String colorCode) async {
+  Future<bool> addCategory(
+      String name, String emojiIcon, String colorCode) async {
     try {
       state = state.copyWith(isLoading: true, clearError: true);
-      await repository.createCategory(name: name, emojiIcon: emojiIcon, colorCode: colorCode);
+      await repository.createCategory(
+          name: name, emojiIcon: emojiIcon, colorCode: colorCode);
       await fetchCategories();
       return true;
     } catch (e) {
@@ -81,6 +83,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
   }
 }
 
-final categoryNotifierProvider = StateNotifierProvider<CategoryNotifier, CategoryState>((ref) {
+final categoryNotifierProvider =
+    StateNotifierProvider<CategoryNotifier, CategoryState>((ref) {
   return CategoryNotifier(ref.watch(categoryRepositoryProvider));
 });

@@ -129,8 +129,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.emailRequired;
-                        if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (value == null || value.isEmpty)
+                          return l10n.emailRequired;
+                        if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(value)) {
                           return l10n.invalidEmail;
                         }
                         return null;
@@ -148,7 +150,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _login(),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.passwordRequired;
+                        if (value == null || value.isEmpty)
+                          return l10n.passwordRequired;
                         return null;
                       },
                     ),
@@ -190,7 +193,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           onTap: () => context.push('/register'),
                           child: Text(
                             l10n.signUpNow,
-                            style: AppTypography.textTheme.labelMedium?.copyWith(
+                            style:
+                                AppTypography.textTheme.labelMedium?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
                             ),

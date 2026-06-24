@@ -78,9 +78,8 @@ class CuanBuddyApp extends ConsumerWidget {
         builder: (context, child) {
           // Clamp text scale to prevent very large/small text from breaking layout
           final mediaQuery = MediaQuery.of(context);
-          final clampedScale = mediaQuery.textScaler
-              .scale(1.0)
-              .clamp(0.85, 1.3);
+          final clampedScale =
+              mediaQuery.textScaler.scale(1.0).clamp(0.85, 1.3);
           return MediaQuery(
             data: mediaQuery.copyWith(
               textScaler: TextScaler.linear(clampedScale),

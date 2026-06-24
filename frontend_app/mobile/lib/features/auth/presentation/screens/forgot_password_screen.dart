@@ -13,7 +13,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -50,10 +51,12 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         message: l10n.otpSentToEmail,
         type: SnackbarType.success,
       );
-      context.push('/forgot-password/otp?email=${Uri.encodeComponent(_emailController.text.trim())}');
+      context.push(
+          '/forgot-password/otp?email=${Uri.encodeComponent(_emailController.text.trim())}');
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.info, message: e.toString(), type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -115,5 +118,4 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       ),
     );
   }
-
 }

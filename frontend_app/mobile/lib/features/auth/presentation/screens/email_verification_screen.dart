@@ -14,10 +14,12 @@ class EmailVerificationScreen extends ConsumerStatefulWidget {
   final String? email;
 
   @override
-  ConsumerState<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  ConsumerState<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
 }
 
-class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScreen> {
+class _EmailVerificationScreenState
+    extends ConsumerState<EmailVerificationScreen> {
   bool _isWaiting = false;
   bool _isLoading = false;
   bool _isVerified = false;
@@ -34,9 +36,12 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
     try {
-      final msg = await ref.read(authNotifierProvider.notifier).sendVerificationEmail(widget.email!);
+      final msg = await ref
+          .read(authNotifierProvider.notifier)
+          .sendVerificationEmail(widget.email!);
       if (!mounted) return;
-      AppSnackbar.show(context, title: l10n.success, message: msg, type: SnackbarType.success);
+      AppSnackbar.show(context,
+          title: l10n.success, message: msg, type: SnackbarType.success);
       setState(() {
         _isWaiting = true;
         _isLoading = false;
@@ -44,7 +49,8 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.info, message: e.toString(), type: SnackbarType.error);
     }
   }
 
@@ -53,7 +59,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
     try {
-      final isActive = await ref.read(authNotifierProvider.notifier).checkVerificationStatus(widget.email!);
+      final isActive = await ref
+          .read(authNotifierProvider.notifier)
+          .checkVerificationStatus(widget.email!);
       if (!mounted) return;
       setState(() => _isLoading = false);
 
@@ -79,7 +87,8 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.info, message: e.toString(), type: SnackbarType.error);
     }
   }
 

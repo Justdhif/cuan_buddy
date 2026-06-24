@@ -12,7 +12,6 @@ import '../../../../core/providers/language_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/profile_provider.dart';
 
-
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -63,7 +62,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         onSelect: (code) async {
           Navigator.pop(ctx);
           try {
-            await ref.read(profileRepositoryProvider).updateProfile(currency: code);
+            await ref
+                .read(profileRepositoryProvider)
+                .updateProfile(currency: code);
             ref.invalidate(profileProvider);
           } catch (e) {
             if (mounted) {
@@ -414,8 +415,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildSection(
-      BuildContext context, {required String title, required List<Widget> children}) {
+  Widget _buildSection(BuildContext context,
+      {required String title, required List<Widget> children}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,14 +446,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor = isDark ? AppColors.textSecondaryDark : AppColors.textPrimaryLight;
-    final arrowColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final iconColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textPrimaryLight;
+    final arrowColor =
+        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     return ListTile(
       leading: Icon(icon, color: iconColor),
       title: Text(title, style: AppTypography.textTheme.bodyLarge),
       trailing: trailing ??
-          Icon(Icons.arrow_forward_ios_rounded,
-              size: 16, color: arrowColor),
+          Icon(Icons.arrow_forward_ios_rounded, size: 16, color: arrowColor),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
@@ -499,7 +501,12 @@ class _LanguagePickerSheet extends StatelessWidget {
 
   static const _languages = [
     {'code': 'en', 'name': 'English', 'flag': '🇬🇧', 'native': 'English'},
-    {'code': 'id', 'name': 'Indonesia', 'flag': '🇮🇩', 'native': 'Bahasa Indonesia'},
+    {
+      'code': 'id',
+      'name': 'Indonesia',
+      'flag': '🇮🇩',
+      'native': 'Bahasa Indonesia'
+    },
   ];
 
   @override
@@ -534,7 +541,8 @@ class _LanguagePickerSheet extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primary.withValues(alpha: 0.12)
@@ -543,9 +551,8 @@ class _LanguagePickerSheet extends StatelessWidget {
                             : AppColors.borderLight.withValues(alpha: 0.3)),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : Colors.transparent,
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
                       width: 2,
                     ),
                   ),
@@ -559,14 +566,16 @@ class _LanguagePickerSheet extends StatelessWidget {
                           children: [
                             Text(
                               lang['name']!,
-                              style: AppTypography.textTheme.titleSmall?.copyWith(
+                              style:
+                                  AppTypography.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: isSelected ? AppColors.primary : null,
                               ),
                             ),
                             Text(
                               lang['native']!,
-                              style: AppTypography.textTheme.bodySmall?.copyWith(
+                              style:
+                                  AppTypography.textTheme.bodySmall?.copyWith(
                                 color: isDark
                                     ? AppColors.textSecondaryDark
                                     : AppColors.textSecondaryLight,
@@ -638,7 +647,8 @@ class _CurrencyPickerSheet extends StatelessWidget {
                   shrinkWrap: true,
                   itemCount: AppConstants.supportedCurrencies.length,
                   separatorBuilder: (context, index) => Divider(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                     height: 1,
                   ),
                   itemBuilder: (context, index) {
@@ -649,15 +659,20 @@ class _CurrencyPickerSheet extends StatelessWidget {
                       leading: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
+                          color: isDark
+                              ? AppColors.surfaceDark
+                              : AppColors.backgroundLight,
                           shape: BoxShape.circle,
                         ),
                         child: Text(curr['symbol']!),
                       ),
-                      title: Text(curr['name']!, style: AppTypography.textTheme.bodyLarge),
-                      subtitle: Text(curr['code']!, style: AppTypography.textTheme.bodySmall),
+                      title: Text(curr['name']!,
+                          style: AppTypography.textTheme.bodyLarge),
+                      subtitle: Text(curr['code']!,
+                          style: AppTypography.textTheme.bodySmall),
                       trailing: isSelected
-                          ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                          ? const Icon(Icons.check_circle_rounded,
+                              color: AppColors.primary)
                           : null,
                       onTap: () => onSelect(curr['code']!),
                     );

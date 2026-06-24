@@ -69,32 +69,39 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 final isUser = msg.role == 'user';
 
                 return Align(
-                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment:
+                      isUser ? Alignment.centerRight : Alignment.centerLeft,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     constraints: BoxConstraints(
                       maxWidth: MediaQuery.of(context).size.width * 0.75,
                     ),
                     decoration: BoxDecoration(
-                      color: isUser 
-                          ? AppColors.primary 
-                          : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+                      color: isUser
+                          ? AppColors.primary
+                          : (isDark
+                              ? AppColors.surfaceDark
+                              : AppColors.surfaceLight),
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
                         bottomLeft: Radius.circular(isUser ? 16 : 4),
                         bottomRight: Radius.circular(isUser ? 4 : 16),
                       ),
-                      border: isUser 
-                          ? null 
-                          : Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                      border: isUser
+                          ? null
+                          : Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight),
                     ),
                     child: Text(
                       msg.content,
                       style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: isUser 
-                            ? Colors.white 
+                        color: isUser
+                            ? Colors.white
                             : (isDark ? Colors.white : Colors.black),
                         height: 1.5,
                       ),
@@ -116,7 +123,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 color: Theme.of(context).scaffoldBackgroundColor,
                 border: Border(
                   top: BorderSide(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                   ),
                 ),
               ),
@@ -127,18 +135,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                       controller: _controller,
                       decoration: InputDecoration(
                         hintText: l10n.askAboutFinances,
-                        hintStyle: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                        hintStyle: TextStyle(
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        fillColor: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.surfaceLight,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
                       ),
                       onSubmitted: (text) {
                         if (text.trim().isNotEmpty) {
-                          ref.read(aiNotifierProvider.notifier).sendMessage(text.trim());
+                          ref
+                              .read(aiNotifierProvider.notifier)
+                              .sendMessage(text.trim());
                           _controller.clear();
                         }
                       },
@@ -156,7 +172,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     child: CircleAvatar(
                       backgroundColor: AppColors.primary,
                       radius: 24,
-                      child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      child: const Icon(Icons.send_rounded,
+                          color: Colors.white, size: 20),
                     ),
                   ),
                 ],

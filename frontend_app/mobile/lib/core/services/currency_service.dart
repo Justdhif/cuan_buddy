@@ -32,14 +32,15 @@ class CurrencyService {
 
     // Otherwise, fetch from API
     try {
-      final response = await _dio.get('https://open.er-api.com/v6/latest/$baseCurrency');
+      final response =
+          await _dio.get('https://open.er-api.com/v6/latest/$baseCurrency');
       if (response.statusCode == 200 && response.data['result'] == 'success') {
         final rates = response.data['rates'] as Map<String, dynamic>;
-        
+
         // Cache the result
         await prefs.setString(cacheKey, jsonEncode(rates));
         await prefs.setString(dateKey, DateTime.now().toIso8601String());
-        
+
         return rates;
       }
     } catch (e) {
@@ -51,7 +52,8 @@ class CurrencyService {
     return null;
   }
 
-  Future<double> convert(double amount, String fromCurrency, String toCurrency) async {
+  Future<double> convert(
+      double amount, String fromCurrency, String toCurrency) async {
     if (fromCurrency == toCurrency) return amount;
 
     // We fetch rates based on the `fromCurrency`
@@ -60,7 +62,7 @@ class CurrencyService {
       final rate = (rates[toCurrency] as num).toDouble();
       return amount * rate;
     }
-    
+
     // If exact base fails, try reverse
     final reverseRates = await getRates(toCurrency);
     if (reverseRates != null && reverseRates.containsKey(fromCurrency)) {
@@ -97,7 +99,8 @@ class ConversionParams {
   int get hashCode => amount.hashCode ^ from.hashCode ^ to.hashCode;
 }
 
-final convertedAmountProvider = FutureProvider.family<double, ConversionParams>((ref, params) async {
+final convertedAmountProvider =
+    FutureProvider.family<double, ConversionParams>((ref, params) async {
   final service = ref.watch(currencyServiceProvider);
   return await service.convert(params.amount, params.from, params.to);
 });

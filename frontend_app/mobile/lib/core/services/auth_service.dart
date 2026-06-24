@@ -22,7 +22,8 @@ class AuthService {
         await _storage.deleteAll();
         await Future.wait([
           _storage.write(key: AppConstants.accessTokenKey, value: accessToken),
-          _storage.write(key: AppConstants.refreshTokenKey, value: refreshToken),
+          _storage.write(
+              key: AppConstants.refreshTokenKey, value: refreshToken),
         ]);
       } catch (_) {
         rethrow;

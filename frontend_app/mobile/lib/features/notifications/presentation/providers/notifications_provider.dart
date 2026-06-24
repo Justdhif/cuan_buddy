@@ -66,17 +66,30 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               'You have a new notification';
 
           final isId = ref.read(languageProvider) == 'id';
-          final defaultCurrency = ref.read(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+          final defaultCurrency =
+              ref.read(profileProvider).valueOrNull?['currency'] as String? ??
+                  AppConstants.defaultCurrency;
 
-          Future<String> formatWithConversion(double amount, String currency) async {
+          Future<String> formatWithConversion(
+              double amount, String currency) async {
             final txCurrencySymbol = AppConstants.getCurrencySymbol(currency);
-            final fmt = NumberFormat.currency(locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
+            final fmt = NumberFormat.currency(
+                locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
             String str = fmt.format(amount);
             if (currency != defaultCurrency) {
               try {
-                final converted = await ref.read(convertedAmountProvider(ConversionParams(amount: amount, from: currency, to: defaultCurrency)).future);
-                final defCurrencySymbol = AppConstants.getCurrencySymbol(defaultCurrency);
-                final defFmt = NumberFormat.currency(locale: 'en_US', symbol: defCurrencySymbol, decimalDigits: 0);
+                final converted = await ref.read(convertedAmountProvider(
+                        ConversionParams(
+                            amount: amount,
+                            from: currency,
+                            to: defaultCurrency))
+                    .future);
+                final defCurrencySymbol =
+                    AppConstants.getCurrencySymbol(defaultCurrency);
+                final defFmt = NumberFormat.currency(
+                    locale: 'en_US',
+                    symbol: defCurrencySymbol,
+                    decimalDigits: 0);
                 final convertedStr = defFmt.format(converted);
                 str += ' (≈ $convertedStr)';
               } catch (_) {}
@@ -85,16 +98,21 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
           }
 
           if (title == 'TRANSACTION_RECORDED') {
-            title = isId ? 'Transaksi Baru Tercatat' : 'New Transaction Recorded';
+            title =
+                isId ? 'Transaksi Baru Tercatat' : 'New Transaction Recorded';
             try {
               final payload = jsonDecode(message);
               final type = payload['type'];
-              final amount = payload['amount'] is num ? (payload['amount'] as num).toDouble() : double.parse(payload['amount'].toString());
+              final amount = payload['amount'] is num
+                  ? (payload['amount'] as num).toDouble()
+                  : double.parse(payload['amount'].toString());
               final currency = payload['currency'] as String;
-              
-              final typeStr = type == 'income' ? (isId ? 'pemasukan' : 'income') : (isId ? 'pengeluaran' : 'expense');
+
+              final typeStr = type == 'income'
+                  ? (isId ? 'pemasukan' : 'income')
+                  : (isId ? 'pengeluaran' : 'expense');
               final amountStr = await formatWithConversion(amount, currency);
-              message = isId 
+              message = isId
                   ? 'Anda telah berhasil mencatat $typeStr sebesar $amountStr.'
                   : 'You have successfully recorded a $typeStr of $amountStr.';
             } catch (_) {}
@@ -103,11 +121,13 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
             try {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
-              final limit = payload['limitAmount'] is num ? (payload['limitAmount'] as num).toDouble() : double.parse(payload['limitAmount'].toString());
+              final limit = payload['limitAmount'] is num
+                  ? (payload['limitAmount'] as num).toDouble()
+                  : double.parse(payload['limitAmount'].toString());
               final currency = payload['currency'] as String;
-              
+
               final limitStr = await formatWithConversion(limit, currency);
-              message = isId 
+              message = isId
                   ? 'Anggaran untuk bulan $monthYear telah diatur sebesar $limitStr.'
                   : 'Budget for $monthYear has been set to $limitStr.';
             } catch (_) {}
@@ -117,13 +137,17 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
               final categoryName = payload['categoryName'] ?? 'kategori';
-              final limit = payload['limitAmount'] is num ? (payload['limitAmount'] as num).toDouble() : double.parse(payload['limitAmount'].toString());
-              final spent = payload['totalSpent'] is num ? (payload['totalSpent'] as num).toDouble() : double.parse(payload['totalSpent'].toString());
+              final limit = payload['limitAmount'] is num
+                  ? (payload['limitAmount'] as num).toDouble()
+                  : double.parse(payload['limitAmount'].toString());
+              final spent = payload['totalSpent'] is num
+                  ? (payload['totalSpent'] as num).toDouble()
+                  : double.parse(payload['totalSpent'].toString());
               final currency = payload['currency'] as String;
-              
+
               final limitStr = await formatWithConversion(limit, currency);
               final spentStr = await formatWithConversion(spent, currency);
-              message = isId 
+              message = isId
                   ? 'Anda telah melampaui batas anggaran $monthYear untuk $categoryName! Batas: $limitStr, Terpakai: $spentStr'
                   : 'You have exceeded your $monthYear budget for $categoryName! Limit: $limitStr, Spent: $spentStr';
             } catch (_) {}
@@ -133,22 +157,29 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
               final categoryName = payload['categoryName'] ?? 'kategori';
-              final ratio = payload['ratio'] is num ? (payload['ratio'] as num).toDouble() : double.parse(payload['ratio'].toString());
-              message = isId 
+              final ratio = payload['ratio'] is num
+                  ? (payload['ratio'] as num).toDouble()
+                  : double.parse(payload['ratio'].toString());
+              message = isId
                   ? 'Hati-hati! Anda telah menggunakan ${(ratio * 100).round()}% dari anggaran $monthYear untuk $categoryName.'
                   : 'Watch out! You have spent ${(ratio * 100).round()}% of your $monthYear budget for $categoryName.';
             } catch (_) {}
           } else if (title == 'BUDGET_PREDICTION_WARNING') {
-            title = isId ? 'Peringatan Prediksi Anggaran' : 'Budget Prediction Warning';
+            title = isId
+                ? 'Peringatan Prediksi Anggaran'
+                : 'Budget Prediction Warning';
             try {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
               final categoryName = payload['categoryName'] ?? 'kategori';
-              final predicted = payload['predicted'] is num ? (payload['predicted'] as num).toDouble() : double.parse(payload['predicted'].toString());
+              final predicted = payload['predicted'] is num
+                  ? (payload['predicted'] as num).toDouble()
+                  : double.parse(payload['predicted'].toString());
               final currency = payload['currency'] as String;
-              
-              final predictedStr = await formatWithConversion(predicted, currency);
-              message = isId 
+
+              final predictedStr =
+                  await formatWithConversion(predicted, currency);
+              message = isId
                   ? 'Berdasarkan pengeluaran Anda, Anda diprediksi akan melampaui anggaran $monthYear untuk $categoryName. Estimasi pengeluaran: $predictedStr'
                   : 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: $predictedStr';
             } catch (_) {}
@@ -219,4 +250,3 @@ final notificationsNotifierProvider =
     StateNotifierProvider<NotificationsNotifier, NotificationsState>((ref) {
   return NotificationsNotifier(ref);
 });
-

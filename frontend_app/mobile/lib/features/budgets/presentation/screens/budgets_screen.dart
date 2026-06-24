@@ -21,7 +21,8 @@ class BudgetsScreen extends ConsumerStatefulWidget {
 
 class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  final String _statusFilter = 'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
+  final String _statusFilter =
+      'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
   final ScrollController _scrollController = ScrollController();
   @override
   void initState() {
@@ -37,7 +38,9 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   @override
   Widget build(BuildContext context) {
     final budgetsState = ref.watch(budgetsNotifierProvider);
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode =
+        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -62,13 +65,16 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
               if (value == 'export') {
-                ref.read(backupWorkerProvider).runBackupProcess(tables: ['budgets']);
+                ref
+                    .read(backupWorkerProvider)
+                    .runBackupProcess(tables: ['budgets']);
               } else if (value == 'import') {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (ctx) => const SingleTableImportSheet(tableName: 'budgets'),
+                  builder: (ctx) =>
+                      const SingleTableImportSheet(tableName: 'budgets'),
                 );
               }
             },
@@ -99,7 +105,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(budgetsNotifierProvider.notifier).fetchBudgets(),
+        onRefresh: () =>
+            ref.read(budgetsNotifierProvider.notifier).fetchBudgets(),
         color: AppColors.primary,
         child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
       ),
@@ -129,7 +136,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, BudgetsState state, bool isDark, String currencySymbol) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, BudgetsState state,
+      bool isDark, String currencySymbol) {
     if (state.isLoading && state.budgets.isEmpty) {
       return const SkeletonList();
     }
@@ -149,23 +157,33 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       if (_statusFilter == 'All') return true;
       final rawL = b['limitAmount'];
       final rawR = b['rolloverAmount'];
-      final limit = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
-      final rollover = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+      final limit = rawL is num
+          ? rawL.toDouble()
+          : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+      final rollover = rawR is num
+          ? rawR.toDouble()
+          : double.tryParse(rawR?.toString() ?? '0') ?? 0;
       final totalLimit = limit + rollover;
       final rawS = b['spentAmount'];
-      final spent = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+      final spent = rawS is num
+          ? rawS.toDouble()
+          : double.tryParse(rawS?.toString() ?? '0') ?? 0;
       final p = totalLimit > 0 ? spent / totalLimit : 0.0;
-      
+
       if (_statusFilter == 'Exceeded') return p >= 1.0;
       if (_statusFilter == 'Warning') return p > 0.7 && p < 1.0;
       if (_statusFilter == 'On Track') return p <= 0.7;
       return true;
     }).toList();
 
-    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
+    final viewportHeight = MediaQuery.of(context).size.height -
+        kToolbarHeight -
+        MediaQuery.of(context).padding.top -
+        80;
 
     return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
         // Summary Header Card
@@ -176,14 +194,16 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Consumer(
                 builder: (context, ref, child) {
-                  final summaryAsync = ref.watch(convertedBudgetsSummaryProvider('All'));
+                  final summaryAsync =
+                      ref.watch(convertedBudgetsSummaryProvider('All'));
                   return summaryAsync.when(
                     data: (summary) {
                       final totalLimit = summary['totalLimit'] ?? 0.0;
                       final totalSpent = summary['totalSpent'] ?? 0.0;
                       final remaining = totalLimit - totalSpent;
-                      
-                      final percentage = totalLimit > 0 ? (totalSpent / totalLimit) : 0.0;
+
+                      final percentage =
+                          totalLimit > 0 ? (totalSpent / totalLimit) : 0.0;
                       final safePercentage = percentage.clamp(0.0, 1.0);
 
                       final remainingFormatted = fmt.format(remaining.abs());
@@ -224,13 +244,18 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                       } else if (today.isAfter(endDate)) {
                         todayProgressFraction = 1.0;
                       } else {
-                        final totalDays = endDate.difference(startDate).inDays + 1;
+                        final totalDays =
+                            endDate.difference(startDate).inDays + 1;
                         final elapsedDays = today.difference(startDate).inDays;
                         todayProgressFraction = elapsedDays / totalDays;
                       }
 
-                      final remainingDays = endDate.isAfter(today) ? endDate.difference(today).inDays + 1 : 0;
-                      final dailyAllowance = remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
+                      final remainingDays = endDate.isAfter(today)
+                          ? endDate.difference(today).inDays + 1
+                          : 0;
+                      final dailyAllowance = remainingDays > 0 && remaining > 0
+                          ? remaining / remainingDays
+                          : 0.0;
 
                       final String infoText;
                       if (remaining >= 0) {
@@ -245,7 +270,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                               : 'Budget period has ended';
                         }
                       } else {
-                        final limitExceededFormatted = fmt.format(remaining.abs());
+                        final limitExceededFormatted =
+                            fmt.format(remaining.abs());
                         infoText = localeCode == 'id'
                             ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
                             : 'Budget exceeded by $limitExceededFormatted';
@@ -257,7 +283,9 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                           border: Border.all(
                             color: percentage >= 1.0
                                 ? AppColors.danger.withValues(alpha: 0.5)
-                                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                : (isDark
+                                    ? AppColors.borderDark
+                                    : AppColors.borderLight),
                             width: percentage >= 1.0 ? 1.5 : 1,
                           ),
                         ),
@@ -271,7 +299,9 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                 gradient: LinearGradient(
                                   colors: [
                                     AppColors.primary,
-                                    Color.lerp(AppColors.primary, Colors.black, 0.45) ?? AppColors.primary
+                                    Color.lerp(AppColors.primary, Colors.black,
+                                            0.45) ??
+                                        AppColors.primary
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -285,7 +315,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                     height: 48,
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.2),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.2),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Text(
@@ -296,11 +327,14 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           l10n.totalBudget,
-                                          style: AppTypography.textTheme.titleMedium?.copyWith(
+                                          style: AppTypography
+                                              .textTheme.titleMedium
+                                              ?.copyWith(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 18,
@@ -309,8 +343,11 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           subtitle,
-                                          style: AppTypography.textTheme.bodyMedium?.copyWith(
-                                            color: Colors.white.withValues(alpha: 0.85),
+                                          style: AppTypography
+                                              .textTheme.bodyMedium
+                                              ?.copyWith(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.85),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -322,17 +359,25 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                             ),
                             // Bottom half: Solid
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                              color: isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 16),
+                              color: isDark
+                                  ? const Color(0xFF161F28)
+                                  : const Color(0xFFF8F9FA),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
                                       Text(
-                                        DateFormat('d MMM', localeCode).format(startDate),
-                                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        DateFormat('d MMM', localeCode)
+                                            .format(startDate),
+                                        style: AppTypography
+                                            .textTheme.labelSmall
+                                            ?.copyWith(
+                                          color: isDark
+                                              ? AppColors.textSecondaryDark
+                                              : AppColors.textSecondaryLight,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -340,8 +385,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                       Expanded(
                                         child: LayoutBuilder(
                                           builder: (context, constraints) {
-                                            final maxWidth = constraints.maxWidth;
-                                            final todayPosition = maxWidth * todayProgressFraction;
+                                            final maxWidth =
+                                                constraints.maxWidth;
+                                            final todayPosition = maxWidth *
+                                                todayProgressFraction;
                                             const todayLabelWidth = 50.0;
 
                                             return SizedBox(
@@ -356,62 +403,118 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                                     child: Container(
                                                       height: 20,
                                                       decoration: BoxDecoration(
-                                                        color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
-                                                        borderRadius: BorderRadius.circular(10),
+                                                        color: isDark
+                                                            ? AppColors
+                                                                .borderDark
+                                                            : const Color(
+                                                                0xFFE2E8F0),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10),
                                                       ),
                                                       child: Stack(
                                                         children: [
                                                           FractionallySizedBox(
-                                                            widthFactor: safePercentage,
+                                                            widthFactor:
+                                                                safePercentage,
                                                             child: Container(
-                                                              decoration: BoxDecoration(
-                                                                color: progressBarColor,
-                                                                borderRadius: BorderRadius.circular(10),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color:
+                                                                    progressBarColor,
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            10),
                                                               ),
-                                                              alignment: Alignment.center,
-                                                              child: safePercentage > 0.15 ? Text(
-                                                                '${(safePercentage * 100).toInt()}%',
-                                                                style: const TextStyle(
-                                                                  color: Colors.white,
-                                                                  fontSize: 10,
-                                                                  fontWeight: FontWeight.bold,
-                                                                ),
-                                                              ) : null,
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
+                                                              child:
+                                                                  safePercentage >
+                                                                          0.15
+                                                                      ? Text(
+                                                                          '${(safePercentage * 100).toInt()}%',
+                                                                          style:
+                                                                              const TextStyle(
+                                                                            color:
+                                                                                Colors.white,
+                                                                            fontSize:
+                                                                                10,
+                                                                            fontWeight:
+                                                                                FontWeight.bold,
+                                                                          ),
+                                                                        )
+                                                                      : null,
                                                             ),
                                                           ),
                                                         ],
                                                       ),
                                                     ),
                                                   ),
-                                                  if (todayProgressFraction > 0.0 && todayProgressFraction < 1.0)
+                                                  if (todayProgressFraction >
+                                                          0.0 &&
+                                                      todayProgressFraction <
+                                                          1.0)
                                                     Positioned(
-                                                      left: todayPosition - (todayLabelWidth / 2),
+                                                      left: todayPosition -
+                                                          (todayLabelWidth / 2),
                                                       top: 0,
                                                       child: SizedBox(
                                                         width: todayLabelWidth,
                                                         child: Column(
-                                                          mainAxisSize: MainAxisSize.min,
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
                                                           children: [
                                                             Container(
-                                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                                              decoration: BoxDecoration(
-                                                                color: isDark ? Colors.white : AppColors.primary,
-                                                                borderRadius: BorderRadius.circular(6),
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                      horizontal:
+                                                                          4,
+                                                                      vertical:
+                                                                          1),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: isDark
+                                                                    ? Colors
+                                                                        .white
+                                                                    : AppColors
+                                                                        .primary,
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            6),
                                                               ),
                                                               child: Text(
-                                                                localeCode == 'id' ? 'Hari ini' : 'Today',
-                                                                style: TextStyle(
-                                                                  color: isDark ? Colors.black : Colors.white,
+                                                                localeCode ==
+                                                                        'id'
+                                                                    ? 'Hari ini'
+                                                                    : 'Today',
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: isDark
+                                                                      ? Colors
+                                                                          .black
+                                                                      : Colors
+                                                                          .white,
                                                                   fontSize: 8,
-                                                                  fontWeight: FontWeight.bold,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
                                                               ),
                                                             ),
-                                                            const SizedBox(height: 2),
+                                                            const SizedBox(
+                                                                height: 2),
                                                             Container(
                                                               width: 1.5,
                                                               height: 34,
-                                                              color: isDark ? Colors.white70 : AppColors.primary,
+                                                              color: isDark
+                                                                  ? Colors
+                                                                      .white70
+                                                                  : AppColors
+                                                                      .primary,
                                                             ),
                                                           ],
                                                         ),
@@ -425,9 +528,14 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
-                                        DateFormat('d MMM', localeCode).format(endDate),
-                                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        DateFormat('d MMM', localeCode)
+                                            .format(endDate),
+                                        style: AppTypography
+                                            .textTheme.labelSmall
+                                            ?.copyWith(
+                                          color: isDark
+                                              ? AppColors.textSecondaryDark
+                                              : AppColors.textSecondaryLight,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -436,8 +544,11 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                   const SizedBox(height: 12),
                                   Text(
                                     infoText,
-                                    style: AppTypography.textTheme.bodySmall?.copyWith(
-                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                    style: AppTypography.textTheme.bodySmall
+                                        ?.copyWith(
+                                      color: isDark
+                                          ? AppColors.textSecondaryDark
+                                          : AppColors.textSecondaryLight,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -448,7 +559,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                         ),
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (_, __) => const SizedBox(),
                   );
                 },
@@ -512,7 +624,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 }
 
 class _BudgetCard extends ConsumerWidget {
-  const _BudgetCard({required this.budget, required this.isDark, required this.currencySymbol});
+  const _BudgetCard(
+      {required this.budget,
+      required this.isDark,
+      required this.currencySymbol});
   final dynamic budget;
   final bool isDark;
   final String currencySymbol;
@@ -520,25 +635,37 @@ class _BudgetCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode =
+        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
     final localeCode = Localizations.localeOf(context).languageCode;
 
     final tx = budget as Map<String, dynamic>;
     final rawL = tx['limitAmount'];
-    final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+    final limitAmount = rawL is num
+        ? rawL.toDouble()
+        : double.tryParse(rawL?.toString() ?? '0') ?? 0;
     final rawS = tx['spentAmount'];
-    final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+    final spentAmount = rawS is num
+        ? rawS.toDouble()
+        : double.tryParse(rawS?.toString() ?? '0') ?? 0;
     final rawR = tx['rolloverAmount'];
-    final rolloverAmount = rawR is num ? rawR.toDouble() : double.tryParse(rawR?.toString() ?? '0') ?? 0;
+    final rolloverAmount = rawR is num
+        ? rawR.toDouble()
+        : double.tryParse(rawR?.toString() ?? '0') ?? 0;
     final totalLimitAmount = limitAmount + rolloverAmount;
 
-    final categoryName = tx['category']?['name'] as String? ?? tx['categoryName'] as String? ?? l10n.budget;
+    final categoryName = tx['category']?['name'] as String? ??
+        tx['categoryName'] as String? ??
+        l10n.budget;
     final monthYear = tx['monthYear'] as String? ?? '';
 
-    final percentage = totalLimitAmount > 0 ? (spentAmount / totalLimitAmount) : 0.0;
+    final percentage =
+        totalLimitAmount > 0 ? (spentAmount / totalLimitAmount) : 0.0;
     final safePercentage = percentage.clamp(0.0, 1.0);
 
-    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
+    final txCurrency =
+        tx['currency'] as String? ?? AppConstants.defaultCurrency;
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
 
     final fmtOriginal = NumberFormat.currency(
@@ -546,7 +673,7 @@ class _BudgetCard extends ConsumerWidget {
       symbol: txCurrencySymbol,
       decimalDigits: 0,
     );
-    
+
     final fmt = NumberFormat.currency(
       locale: 'en_US',
       symbol: currencySymbol,
@@ -567,7 +694,8 @@ class _BudgetCard extends ConsumerWidget {
       endDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
     }
 
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final today =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
     double todayProgressFraction = 0.0;
     if (today.isBefore(startDate)) {
       todayProgressFraction = 0.0;
@@ -579,12 +707,18 @@ class _BudgetCard extends ConsumerWidget {
       todayProgressFraction = elapsedDays / totalDays;
     }
 
-    final remainingDays = endDate.isAfter(today) ? endDate.difference(today).inDays + 1 : 0;
+    final remainingDays =
+        endDate.isAfter(today) ? endDate.difference(today).inDays + 1 : 0;
     final remaining = totalLimitAmount - spentAmount;
-    final dailyAllowance = remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
+    final dailyAllowance =
+        remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
 
-    final remainingFormatted = txCurrency == currencyCode ? fmt.format(remaining.abs()) : fmtOriginal.format(remaining.abs());
-    final totalLimitFormatted = txCurrency == currencyCode ? fmt.format(totalLimitAmount) : fmtOriginal.format(totalLimitAmount);
+    final remainingFormatted = txCurrency == currencyCode
+        ? fmt.format(remaining.abs())
+        : fmtOriginal.format(remaining.abs());
+    final totalLimitFormatted = txCurrency == currencyCode
+        ? fmt.format(totalLimitAmount)
+        : fmtOriginal.format(totalLimitAmount);
 
     final String subtitle;
     if (remaining >= 0) {
@@ -598,10 +732,13 @@ class _BudgetCard extends ConsumerWidget {
     }
 
     // Color theme from database
-    final catHex = tx['category']?['colorCode'] as String? ?? tx['colorCode'] as String?;
-    final baseColor = AppColors.colorFromHex(catHex, fallback: AppColors.primary);
+    final catHex =
+        tx['category']?['colorCode'] as String? ?? tx['colorCode'] as String?;
+    final baseColor =
+        AppColors.colorFromHex(catHex, fallback: AppColors.primary);
     final topGradientColor = baseColor;
-    final bottomGradientColor = Color.lerp(baseColor, Colors.black, 0.45) ?? baseColor;
+    final bottomGradientColor =
+        Color.lerp(baseColor, Colors.black, 0.45) ?? baseColor;
 
     // Define dynamic colors based on consumption percentage
     Color progressBarColor;
@@ -705,7 +842,9 @@ class _BudgetCard extends ConsumerWidget {
                     Text(
                       DateFormat('d MMM', localeCode).format(startDate),
                       style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -714,7 +853,8 @@ class _BudgetCard extends ConsumerWidget {
                       child: LayoutBuilder(
                         builder: (context, constraints) {
                           final maxWidth = constraints.maxWidth;
-                          final todayPosition = maxWidth * todayProgressFraction;
+                          final todayPosition =
+                              maxWidth * todayProgressFraction;
                           const todayLabelWidth = 50.0;
 
                           return SizedBox(
@@ -730,7 +870,9 @@ class _BudgetCard extends ConsumerWidget {
                                   child: Container(
                                     height: 20,
                                     decoration: BoxDecoration(
-                                      color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                                      color: isDark
+                                          ? AppColors.borderDark
+                                          : const Color(0xFFE2E8F0),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Stack(
@@ -740,17 +882,21 @@ class _BudgetCard extends ConsumerWidget {
                                           child: Container(
                                             decoration: BoxDecoration(
                                               color: progressBarColor,
-                                              borderRadius: BorderRadius.circular(10),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                             alignment: Alignment.center,
-                                            child: safePercentage > 0.15 ? Text(
-                                              '${(safePercentage * 100).toInt()}%',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ) : null,
+                                            child: safePercentage > 0.15
+                                                ? Text(
+                                                    '${(safePercentage * 100).toInt()}%',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  )
+                                                : null,
                                           ),
                                         ),
                                       ],
@@ -759,7 +905,8 @@ class _BudgetCard extends ConsumerWidget {
                                 ),
 
                                 // Proportional "Hari ini" Indicator
-                                if (todayProgressFraction > 0.0 && todayProgressFraction < 1.0)
+                                if (todayProgressFraction > 0.0 &&
+                                    todayProgressFraction < 1.0)
                                   Positioned(
                                     left: todayPosition - (todayLabelWidth / 2),
                                     top: 0,
@@ -769,15 +916,23 @@ class _BudgetCard extends ConsumerWidget {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4, vertical: 1),
                                             decoration: BoxDecoration(
-                                              color: isDark ? Colors.white : AppColors.primary,
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : AppColors.primary,
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              localeCode == 'id' ? 'Hari ini' : 'Today',
+                                              localeCode == 'id'
+                                                  ? 'Hari ini'
+                                                  : 'Today',
                                               style: TextStyle(
-                                                color: isDark ? Colors.black : Colors.white,
+                                                color: isDark
+                                                    ? Colors.black
+                                                    : Colors.white,
                                                 fontSize: 8,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -787,7 +942,9 @@ class _BudgetCard extends ConsumerWidget {
                                           Container(
                                             width: 1.5,
                                             height: 34,
-                                            color: isDark ? Colors.white70 : AppColors.primary,
+                                            color: isDark
+                                                ? Colors.white70
+                                                : AppColors.primary,
                                           ),
                                         ],
                                       ),
@@ -803,7 +960,9 @@ class _BudgetCard extends ConsumerWidget {
                     Text(
                       DateFormat('d MMM', localeCode).format(endDate),
                       style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -827,7 +986,8 @@ class _BudgetCard extends ConsumerWidget {
                             : 'Budget period has ended';
                       }
                     } else {
-                      final limitExceededFormatted = fmt.format(remaining.abs());
+                      final limitExceededFormatted =
+                          fmt.format(remaining.abs());
                       infoText = localeCode == 'id'
                           ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
                           : 'Budget exceeded by $limitExceededFormatted';
@@ -836,7 +996,9 @@ class _BudgetCard extends ConsumerWidget {
                     return Text(
                       infoText,
                       style: AppTypography.textTheme.bodySmall?.copyWith(
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                         fontWeight: FontWeight.w500,
                       ),
                     );
@@ -850,4 +1012,3 @@ class _BudgetCard extends ConsumerWidget {
     );
   }
 }
-

@@ -31,7 +31,8 @@ class PreferencesService {
 
   // ─── Currency ────────────────────────────────────────────────────────────────
   String get currencyCode =>
-      _prefs.getString(AppConstants.currencyCodeKey) ?? AppConstants.defaultCurrency;
+      _prefs.getString(AppConstants.currencyCodeKey) ??
+      AppConstants.defaultCurrency;
 
   Future<void> setCurrencyCode(String code) async {
     await _prefs.setString(AppConstants.currencyCodeKey, code);
@@ -39,7 +40,8 @@ class PreferencesService {
 
   // ─── Language ─────────────────────────────────────────────────────────────────
   String get languageCode =>
-      _prefs.getString(AppConstants.languageKey) ?? AppConstants.defaultLanguage;
+      _prefs.getString(AppConstants.languageKey) ??
+      AppConstants.defaultLanguage;
 
   Future<void> setLanguageCode(String code) async {
     await _prefs.setString(AppConstants.languageKey, code);

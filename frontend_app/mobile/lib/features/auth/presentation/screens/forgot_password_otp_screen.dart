@@ -15,10 +15,12 @@ class ForgotPasswordOtpScreen extends ConsumerStatefulWidget {
   const ForgotPasswordOtpScreen({super.key, required this.email});
 
   @override
-  ConsumerState<ForgotPasswordOtpScreen> createState() => _ForgotPasswordOtpScreenState();
+  ConsumerState<ForgotPasswordOtpScreen> createState() =>
+      _ForgotPasswordOtpScreenState();
 }
 
-class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScreen> {
+class _ForgotPasswordOtpScreenState
+    extends ConsumerState<ForgotPasswordOtpScreen> {
   final _otpController = TextEditingController();
   bool _isLoading = false;
   int _resendTimer = 60;
@@ -53,7 +55,9 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
     final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
     try {
-      await ref.read(authRepositoryProvider).forgotPassword(email: widget.email);
+      await ref
+          .read(authRepositoryProvider)
+          .forgotPassword(email: widget.email);
       if (!mounted) return;
       AppSnackbar.show(
         context,
@@ -64,7 +68,8 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
       _startTimer();
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: l10n.info, message: e.toString(), type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.info, message: e.toString(), type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -81,7 +86,8 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
       );
       return;
     }
-    context.push('/forgot-password/reset?email=${Uri.encodeComponent(widget.email)}&otp=${_otpController.text}');
+    context.push(
+        '/forgot-password/reset?email=${Uri.encodeComponent(widget.email)}&otp=${_otpController.text}');
   }
 
   @override
@@ -98,7 +104,8 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight),
       ),
     );
 
@@ -121,15 +128,16 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
               const SizedBox(height: 24),
               Text(
                 l10n.enterOtpSentToEmail,
-                style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                style: AppTypography.textTheme.headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
               Text(
                 '${l10n.otpSentToEmail}: ${widget.email}',
-                style: AppTypography.textTheme.bodyLarge?.copyWith(color: AppColors.textSecondaryLight),
+                style: AppTypography.textTheme.bodyLarge
+                    ?.copyWith(color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 32),
-              
               Center(
                 child: Pinput(
                   controller: _otpController,
@@ -139,7 +147,6 @@ class _ForgotPasswordOtpScreenState extends ConsumerState<ForgotPasswordOtpScree
                   onCompleted: (pin) => _onVerify(),
                 ),
               ),
-              
               const SizedBox(height: 32),
               AppButton(
                 label: 'Verify OTP',

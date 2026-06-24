@@ -9,10 +9,11 @@ class SharedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shared', style: TextStyle(fontWeight: FontWeight.bold)),
+        title:
+            const Text('Shared', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
@@ -31,7 +32,9 @@ class SharedScreen extends StatelessWidget {
               'Coming Soon',
               style: AppTypography.textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 12),
@@ -41,7 +44,9 @@ class SharedScreen extends StatelessWidget {
                 'Collaborate and manage finances together with your partner or friends.',
                 textAlign: TextAlign.center,
                 style: AppTypography.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ),
             ),

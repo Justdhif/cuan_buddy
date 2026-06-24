@@ -143,7 +143,8 @@ class SkeletonCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
       baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
-      highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+      highlightColor:
+          isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
       child: Container(
         height: height,
         margin: const EdgeInsets.only(bottom: 12),
@@ -166,7 +167,8 @@ class SkeletonList extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
       baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
-      highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+      highlightColor:
+          isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
       child: Column(
         children: List.generate(
           itemCount,

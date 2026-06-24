@@ -9,18 +9,22 @@ class SavingsGamificationWidget extends StatefulWidget {
   const SavingsGamificationWidget({super.key, required this.percentage});
 
   @override
-  State<SavingsGamificationWidget> createState() => _SavingsGamificationWidgetState();
+  State<SavingsGamificationWidget> createState() =>
+      _SavingsGamificationWidgetState();
 }
 
-class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget> with SingleTickerProviderStateMixin {
+class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
-    _animation = Tween<double>(begin: 0, end: widget.percentage).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500));
+    _animation = Tween<double>(begin: 0, end: widget.percentage).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
 
@@ -28,7 +32,10 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget> w
   void didUpdateWidget(SavingsGamificationWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.percentage != widget.percentage) {
-      _animation = Tween<double>(begin: _animation.value, end: widget.percentage).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+      _animation = Tween<double>(
+              begin: _animation.value, end: widget.percentage)
+          .animate(
+              CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
       _controller.forward(from: 0);
     }
   }
@@ -111,7 +118,8 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget> w
                     duration: const Duration(milliseconds: 500),
                     child: Text(
                       _getMessageForPercentage(widget.percentage, context),
-                      key: ValueKey<String>(_getMessageForPercentage(widget.percentage, context)),
+                      key: ValueKey<String>(
+                          _getMessageForPercentage(widget.percentage, context)),
                       style: AppTypography.textTheme.labelMedium?.copyWith(
                         fontStyle: FontStyle.italic,
                         color: AppColors.primary,

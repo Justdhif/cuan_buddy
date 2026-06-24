@@ -20,7 +20,8 @@ class TransactionListScreen extends ConsumerStatefulWidget {
   const TransactionListScreen({super.key});
 
   @override
-  ConsumerState<TransactionListScreen> createState() => _TransactionListScreenState();
+  ConsumerState<TransactionListScreen> createState() =>
+      _TransactionListScreenState();
 }
 
 class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
@@ -42,16 +43,26 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
     );
     // Staggered intervals: btn1 first (closest to main), btn2 last (topmost)
     _fade1 = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+      CurvedAnimation(
+          parent: _fabController,
+          curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
     );
     _fade2 = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+      CurvedAnimation(
+          parent: _fabController,
+          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
     );
-    _slide1 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+    _slide1 =
+        Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
+      CurvedAnimation(
+          parent: _fabController,
+          curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
     );
-    _slide2 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _fabController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+    _slide2 =
+        Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
+      CurvedAnimation(
+          parent: _fabController,
+          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
     );
   }
 
@@ -117,7 +128,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(allTransactionsProvider);
-    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
+    final viewportHeight = MediaQuery.of(context).size.height -
+        kToolbarHeight -
+        MediaQuery.of(context).padding.top -
+        80;
 
     return Scaffold(
       appBar: AppBar(
@@ -140,13 +154,16 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
               if (value == 'export') {
-                ref.read(backupWorkerProvider).runBackupProcess(tables: ['transactions']);
+                ref
+                    .read(backupWorkerProvider)
+                    .runBackupProcess(tables: ['transactions']);
               } else if (value == 'import') {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (ctx) => const SingleTableImportSheet(tableName: 'transactions'),
+                  builder: (ctx) =>
+                      const SingleTableImportSheet(tableName: 'transactions'),
                 );
               }
             },
@@ -184,7 +201,8 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
         },
         color: AppColors.primary,
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
           controller: _scrollController,
           slivers: [
             const SliverToBoxAdapter(
@@ -204,7 +222,8 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                   ),
                 ),
               )
-            else if (transactionsAsync.hasValue && transactionsAsync.value!.isEmpty)
+            else if (transactionsAsync.hasValue &&
+                transactionsAsync.value!.isEmpty)
               SliverToBoxAdapter(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: viewportHeight),
@@ -221,18 +240,20 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                   final transactions = transactionsAsync.value!;
                   double totalIncome = 0;
                   double totalExpense = 0;
-                  
+
                   for (var tx in transactions) {
                     final isIncome = tx['type'] == 'income';
                     final amountRaw = tx['amount'];
-                    final amount = amountRaw is num ? amountRaw.toDouble() : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+                    final amount = amountRaw is num
+                        ? amountRaw.toDouble()
+                        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
                     if (isIncome) {
                       totalIncome += amount;
                     } else {
                       totalExpense += amount;
                     }
                   }
-                  
+
                   final balance = totalIncome - totalExpense;
 
                   return SliverPadding(
@@ -350,7 +371,7 @@ class _FilterRow extends ConsumerWidget {
           builder: (context, ref, _) {
             final categoriesAsync = ref.watch(categoriesProvider);
             final filterState = ref.watch(transactionFilterProvider);
-            
+
             return SizedBox(
               height: 40,
               child: categoriesAsync.when(
@@ -365,24 +386,40 @@ class _FilterRow extends ConsumerWidget {
                         label: l10n.allCategories,
                         color: AppColors.primary,
                         onTap: () {
-                          ref.read(transactionFilterProvider.notifier).setCategory(null);
-                          ref.read(transactionFilterProvider.notifier).setType(null);
+                          ref
+                              .read(transactionFilterProvider.notifier)
+                              .setCategory(null);
+                          ref
+                              .read(transactionFilterProvider.notifier)
+                              .setType(null);
                         },
                       ),
                       ...categories.map((cat) {
-                        final isSelected = filterState.categoryId == cat['id']?.toString();
-                        final defaultTypeColor = cat['type'] == 'income' ? AppColors.success : (cat['type'] == 'expense' ? AppColors.danger : AppColors.primary);
-                        final catColor = AppColors.colorFromHex(cat['colorCode'] as String?, fallback: defaultTypeColor);
+                        final isSelected =
+                            filterState.categoryId == cat['id']?.toString();
+                        final defaultTypeColor = cat['type'] == 'income'
+                            ? AppColors.success
+                            : (cat['type'] == 'expense'
+                                ? AppColors.danger
+                                : AppColors.primary);
+                        final catColor = AppColors.colorFromHex(
+                            cat['colorCode'] as String?,
+                            fallback: defaultTypeColor);
                         return Padding(
                           padding: const EdgeInsets.only(left: 8),
                           child: _buildCategoryChip(
                             context: context,
                             isSelected: isSelected,
-                            label: '${cat['emojiIcon'] ?? cat['emoji'] ?? '📁'} ${cat['name'] ?? 'Unknown'}',
+                            label:
+                                '${cat['emojiIcon'] ?? cat['emoji'] ?? '📁'} ${cat['name'] ?? 'Unknown'}',
                             color: catColor,
                             onTap: () {
-                               ref.read(transactionFilterProvider.notifier).setCategory(cat['id']?.toString());
-                               ref.read(transactionFilterProvider.notifier).setType(null);
+                              ref
+                                  .read(transactionFilterProvider.notifier)
+                                  .setCategory(cat['id']?.toString());
+                              ref
+                                  .read(transactionFilterProvider.notifier)
+                                  .setType(null);
                             },
                           ),
                         );
@@ -414,15 +451,25 @@ class _FilterRow extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color : (isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5)),
+          color: isSelected
+              ? color
+              : (isDark
+                  ? AppColors.surfaceDark
+                  : AppColors.borderLight.withValues(alpha: 0.5)),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected ? null : Border.all(color: color.withValues(alpha: 0.3)),
+          border: isSelected
+              ? null
+              : Border.all(color: color.withValues(alpha: 0.3)),
         ),
         alignment: Alignment.center,
         child: Text(
           label,
           style: AppTypography.textTheme.labelMedium?.copyWith(
-            color: isSelected ? Colors.white : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+            color: isSelected
+                ? Colors.white
+                : (isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
           ),
         ),
@@ -441,34 +488,39 @@ class _TransactionTile extends ConsumerWidget {
     final tx = transaction as Map<String, dynamic>;
     final isIncome = tx['type'] == 'income';
     final amountRaw = tx['amount'];
-    final amount = amountRaw is num 
-        ? amountRaw.toDouble() 
+    final amount = amountRaw is num
+        ? amountRaw.toDouble()
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-    
-    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+
+    final txCurrency =
+        tx['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode =
+        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
     final fmt = NumberFormat.currency(
-        locale: 'en_US',
-        symbol: currencySymbol,
-        decimalDigits: 0);
+        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
     final fmtOriginal = NumberFormat.currency(
-        locale: 'en_US',
-        symbol: txCurrencySymbol,
-        decimalDigits: 0);
+        locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
     final dynamic category = tx['category'];
     final dynamic savingsGoal = tx['savingsGoal'];
     final emoji = (category is Map
             ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
             : null) ??
         (isIncome ? '💰' : '💸');
-        
+
     final catName = category is Map ? category['name'] as String? : null;
-    final title = tx['title'] as String? ?? tx['note'] as String? ?? catName ?? l10n.transaction;
+    final title = tx['title'] as String? ??
+        tx['note'] as String? ??
+        catName ??
+        l10n.transaction;
 
     final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
-    final catColor = category is Map ? AppColors.colorFromHex(category['colorCode'] as String?, fallback: defaultTypeColor) : defaultTypeColor;
+    final catColor = category is Map
+        ? AppColors.colorFromHex(category['colorCode'] as String?,
+            fallback: defaultTypeColor)
+        : defaultTypeColor;
 
     return InkWell(
       onTap: () {
@@ -514,9 +566,11 @@ class _TransactionTile extends ConsumerWidget {
                     runSpacing: 4,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
+                          color: AppColors.textSecondaryLight
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -528,7 +582,8 @@ class _TransactionTile extends ConsumerWidget {
                       ),
                       if (savingsGoal != null && savingsGoal is Map)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -559,7 +614,8 @@ class _TransactionTile extends ConsumerWidget {
                 if (txCurrency != currencyCode)
                   Consumer(
                     builder: (context, ref, _) {
-                      final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                      final convertedAsync =
+                          ref.watch(convertedAmountProvider(ConversionParams(
                         amount: amount,
                         from: txCurrency,
                         to: currencyCode,
@@ -574,7 +630,9 @@ class _TransactionTile extends ConsumerWidget {
                           ),
                         ),
                         loading: () => const SizedBox(
-                          width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                            width: 20,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2)),
                         error: (_, __) => const SizedBox(),
                       );
                     },
@@ -588,7 +646,6 @@ class _TransactionTile extends ConsumerWidget {
   }
 }
 
-
 class _BottomCashflowSummary extends ConsumerWidget {
   const _BottomCashflowSummary({
     required this.balance,
@@ -601,9 +658,12 @@ class _BottomCashflowSummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode =
+        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final fmt = NumberFormat.currency(locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
+    final fmt = NumberFormat.currency(
+        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -651,7 +711,8 @@ class _CategoryFilterSkeleton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
       baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
-      highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+      highlightColor:
+          isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),

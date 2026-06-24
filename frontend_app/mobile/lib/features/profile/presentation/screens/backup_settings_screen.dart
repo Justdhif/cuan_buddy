@@ -25,23 +25,18 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   bool? _backupEnabled;
   String _interval = '7d';
 
-
-  
   void _showRestoreSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _RestoreSheet(
-        onRestore: () {
-          Navigator.pop(context);
-          ref.read(backupWorkerProvider).runRestoreProcess();
-        },
-        onDownloadTemplate: (table) {
-          Navigator.pop(context);
-          ref.read(backupWorkerProvider).downloadTemplate(table);
-        }
-      ),
+      builder: (context) => _RestoreSheet(onRestore: () {
+        Navigator.pop(context);
+        ref.read(backupWorkerProvider).runRestoreProcess();
+      }, onDownloadTemplate: (table) {
+        Navigator.pop(context);
+        ref.read(backupWorkerProvider).downloadTemplate(table);
+      }),
     );
   }
 
@@ -49,9 +44,24 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   bool _initialised = false;
 
   final _intervals = const [
-    {'value': '24h', 'label': 'Every Day', 'icon': '📅', 'desc': 'Daily automatic backup'},
-    {'value': '7d', 'label': 'Every Week', 'icon': '📆', 'desc': 'Weekly automatic backup'},
-    {'value': '1m', 'label': 'Every Month', 'icon': '🗓', 'desc': 'Monthly automatic backup'},
+    {
+      'value': '24h',
+      'label': 'Every Day',
+      'icon': '📅',
+      'desc': 'Daily automatic backup'
+    },
+    {
+      'value': '7d',
+      'label': 'Every Week',
+      'icon': '📆',
+      'desc': 'Weekly automatic backup'
+    },
+    {
+      'value': '1m',
+      'label': 'Every Month',
+      'icon': '🗓',
+      'desc': 'Monthly automatic backup'
+    },
   ];
 
   void _initFromSettings(Map<String, dynamic> settings) {
@@ -82,7 +92,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      AppSnackbar.show(context, title: l10n.info, message: '${l10n.failedToSaveSettings}: ${e.toString()}', type: SnackbarType.error);
+      AppSnackbar.show(context,
+          title: l10n.info,
+          message: '${l10n.failedToSaveSettings}: ${e.toString()}',
+          type: SnackbarType.error);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -166,10 +179,10 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 ),
                 const SizedBox(height: 32),
               ],
-  
+
               // ─── Enable Toggle Card ─────────────────────────────────
               _buildToggleTile(enabled),
-  
+
               // ─── Frequency Options ──────────────────────────────────
               if (enabled) ...[
                 const SizedBox(height: 24),
@@ -199,9 +212,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                   },
                 ),
               ],
-  
 
-  
               if (!widget.isOnboarding) ...[
                 const SizedBox(height: 24),
                 Row(
@@ -233,16 +244,18 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 ),
                 const SizedBox(height: 24),
               ],
-  
+
               // ─── Save / Finish Button ───────────────────────────────
               AppButton(
-                label: widget.isOnboarding ? l10n.finishAndStart : l10n.saveChanges,
+                label: widget.isOnboarding
+                    ? l10n.finishAndStart
+                    : l10n.saveChanges,
                 onPressed: _isLoading
                     ? null
                     : () => _saveSettings(navigateAway: widget.isOnboarding),
                 isLoading: _isLoading,
               ),
-  
+
               if (widget.isOnboarding) ...[
                 const SizedBox(height: 12),
                 AppButton(
@@ -251,7 +264,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                   type: AppButtonType.text,
                 ),
               ],
-  
+
               const SizedBox(height: 16),
             ],
           ),
@@ -305,9 +318,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                 Text(l10n.autoBackup,
                     style: AppTypography.textTheme.titleSmall),
                 Text(
-                  enabled
-                      ? l10n.autoBackupActive
-                      : l10n.backupYourDataAuto,
+                  enabled ? l10n.autoBackupActive : l10n.backupYourDataAuto,
                   style: AppTypography.textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? AppColors.textSecondaryDark
@@ -384,19 +395,17 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle_rounded,
-                  color: AppColors.primary),
+              const Icon(Icons.check_circle_rounded, color: AppColors.primary),
           ],
         ),
       ),
     );
   }
-
-
 }
 
 class _RestoreSheet extends StatelessWidget {
-  const _RestoreSheet({required this.onRestore, required this.onDownloadTemplate});
+  const _RestoreSheet(
+      {required this.onRestore, required this.onDownloadTemplate});
 
   final VoidCallback onRestore;
   final Function(String) onDownloadTemplate;

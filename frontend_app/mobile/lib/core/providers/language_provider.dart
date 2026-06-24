@@ -17,8 +17,7 @@ class LanguageNotifier extends StateNotifier<String> {
 
 /// Provides the current language code ('en' or 'id').
 /// Persisted to SharedPreferences across app restarts.
-final languageProvider =
-    StateNotifierProvider<LanguageNotifier, String>((ref) {
+final languageProvider = StateNotifierProvider<LanguageNotifier, String>((ref) {
   final prefs = ref.watch(preferencesServiceProvider);
   return LanguageNotifier(prefs);
 });

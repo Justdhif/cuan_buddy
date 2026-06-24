@@ -57,19 +57,22 @@ class AuthRepository {
   }
 
   Future<String> sendVerificationEmail(String email) async {
-    final response = await _dio.post('/auth/send-verification', data: {'email': email});
+    final response =
+        await _dio.post('/auth/send-verification', data: {'email': email});
     final data = response.data as Map<String, dynamic>;
     return data['message'] as String? ?? 'Verification email sent!';
   }
 
   Future<bool> checkVerificationStatus(String email) async {
-    final response = await _dio.get('/auth/status', queryParameters: {'email': email});
+    final response =
+        await _dio.get('/auth/status', queryParameters: {'email': email});
     final data = response.data as Map<String, dynamic>;
     return data['isActive'] as bool? ?? false;
   }
 
   Future<String> forgotPassword({required String email}) async {
-    final response = await _dio.post('/auth/forgot-password', data: {'email': email});
+    final response =
+        await _dio.post('/auth/forgot-password', data: {'email': email});
     final data = response.data as Map<String, dynamic>;
     return data['message'] as String? ?? 'OTP sent!';
   }

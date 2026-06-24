@@ -50,7 +50,7 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
     try {
       final dio = ref.read(dioClientProvider).dio;
       final currencyService = ref.read(currencyServiceProvider);
-      
+
       // We need to get the user's base currency to convert transactions properly
       String baseCurrency = 'IDR'; // fallback
       try {
@@ -61,10 +61,12 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
       } catch (_) {}
 
       // Fetch all transactions to calculate the accurate converted summary
-      final txRes = await dio.get('/transactions', queryParameters: {'limit': 10000});
+      final txRes =
+          await dio.get('/transactions', queryParameters: {'limit': 10000});
       final txData = txRes.data;
       List txList = [];
-      if (txData is List) txList = txData;
+      if (txData is List)
+        txList = txData;
       else if (txData is Map && txData['data'] is List) txList = txData['data'];
 
       double totalIncome = 0;
@@ -75,7 +77,8 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
         final type = tx['type'];
         final txCurrency = tx['currency'] ?? baseCurrency;
 
-        final convertedAmount = await currencyService.convert(amount, txCurrency, baseCurrency);
+        final convertedAmount =
+            await currencyService.convert(amount, txCurrency, baseCurrency);
 
         if (type == 'income') totalIncome += convertedAmount;
         if (type == 'expense') totalExpense += convertedAmount;
@@ -94,9 +97,11 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
 
       state = state.copyWith(
         summary: customSummary,
-        spendingByCategory: spendingRes.data is List ? spendingRes.data as List : [],
+        spendingByCategory:
+            spendingRes.data is List ? spendingRes.data as List : [],
         monthlyTrend: trendRes.data is List ? trendRes.data as List : [],
-        financialHealth: healthRes.data is Map ? healthRes.data as Map<String, dynamic> : {},
+        financialHealth:
+            healthRes.data is Map ? healthRes.data as Map<String, dynamic> : {},
         isLoading: false,
       );
     } catch (e) {
@@ -105,6 +110,7 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
   }
 }
 
-final analyticsNotifierProvider = StateNotifierProvider<AnalyticsNotifier, AnalyticsState>((ref) {
+final analyticsNotifierProvider =
+    StateNotifierProvider<AnalyticsNotifier, AnalyticsState>((ref) {
   return AnalyticsNotifier(ref);
 });

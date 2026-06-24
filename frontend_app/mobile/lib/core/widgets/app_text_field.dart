@@ -75,7 +75,9 @@ class _AppTextFieldState extends State<AppTextField> {
         suffixIcon: widget.isPassword
             ? IconButton(
                 icon: Icon(
-                  _obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  _obscureText
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
                   size: 20,
                 ),
                 onPressed: () => setState(() => _obscureText = !_obscureText),
@@ -128,7 +130,10 @@ class PasswordStrengthIndicator extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.copyWith(color: color),
             ),
           ),
         ],

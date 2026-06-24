@@ -18,9 +18,12 @@ class WidgetService {
     );
 
     try {
-      await HomeWidget.saveWidgetData<String>('balance', formatCurrency.format(balance));
-      await HomeWidget.saveWidgetData<String>('income', formatCurrency.format(income));
-      await HomeWidget.saveWidgetData<String>('expense', formatCurrency.format(expense));
+      await HomeWidget.saveWidgetData<String>(
+          'balance', formatCurrency.format(balance));
+      await HomeWidget.saveWidgetData<String>(
+          'income', formatCurrency.format(income));
+      await HomeWidget.saveWidgetData<String>(
+          'expense', formatCurrency.format(expense));
       await HomeWidget.updateWidget(androidName: androidWidgetName);
     } catch (e) {
       // Ignore widget update errors on platforms that don't support it
@@ -42,14 +45,19 @@ class WidgetService {
       decimalDigits: 0,
     );
 
-    final percent = targetAmount > 0 ? ((savedAmount / targetAmount) * 100).clamp(0, 100).toInt() : 0;
-    final progressText = '${formatCurrency.format(savedAmount)} / ${formatCurrency.format(targetAmount)}';
+    final percent = targetAmount > 0
+        ? ((savedAmount / targetAmount) * 100).clamp(0, 100).toInt()
+        : 0;
+    final progressText =
+        '${formatCurrency.format(savedAmount)} / ${formatCurrency.format(targetAmount)}';
 
     try {
       await HomeWidget.saveWidgetData<String>('savings_emoji', emoji);
       await HomeWidget.saveWidgetData<String>('savings_name', name);
-      await HomeWidget.saveWidgetData<String>('savings_progress_text', progressText);
-      await HomeWidget.saveWidgetData<String>('savings_percent', percent.toString());
+      await HomeWidget.saveWidgetData<String>(
+          'savings_progress_text', progressText);
+      await HomeWidget.saveWidgetData<String>(
+          'savings_percent', percent.toString());
       await HomeWidget.updateWidget(androidName: androidSavingsWidgetName);
     } catch (e) {
       // Ignore widget update errors

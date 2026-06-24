@@ -54,7 +54,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       if (next is AuthStateError) {
-        AppSnackbar.show(context, title: l10n.error, message: next.message, type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error, message: next.message, type: SnackbarType.error);
         ref.read(authNotifierProvider.notifier).clearError();
       }
     });
@@ -129,7 +130,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.fullNameRequired;
+                        if (value == null || value.isEmpty)
+                          return l10n.fullNameRequired;
                         if (value.trim().length < 2) return l10n.nameTooShort;
                         return null;
                       },
@@ -143,8 +145,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.emailRequired;
-                        if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (value == null || value.isEmpty)
+                          return l10n.emailRequired;
+                        if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                            .hasMatch(value)) {
                           return l10n.invalidEmail;
                         }
                         return null;
@@ -160,7 +164,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       textInputAction: TextInputAction.next,
                       onChanged: (value) => setState(() => _password = value),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.passwordRequired;
+                        if (value == null || value.isEmpty)
+                          return l10n.passwordRequired;
                         if (value.length < 8) return l10n.passwordMin8;
                         return null;
                       },
@@ -180,8 +185,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _register(),
                       validator: (value) {
-                        if (value == null || value.isEmpty) return l10n.confirmPasswordRequired;
-                        if (value != _passwordController.text) return l10n.passwordsDoNotMatch;
+                        if (value == null || value.isEmpty)
+                          return l10n.confirmPasswordRequired;
+                        if (value != _passwordController.text)
+                          return l10n.passwordsDoNotMatch;
                         return null;
                       },
                     ),
@@ -208,7 +215,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           onTap: () => context.pop(),
                           child: Text(
                             l10n.logInLink,
-                            style: AppTypography.textTheme.labelMedium?.copyWith(
+                            style:
+                                AppTypography.textTheme.labelMedium?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w700,
                             ),

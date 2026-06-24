@@ -27,7 +27,8 @@ class _AllocateSavingsSheet extends ConsumerStatefulWidget {
   const _AllocateSavingsSheet();
 
   @override
-  ConsumerState<_AllocateSavingsSheet> createState() => _AllocateSavingsSheetState();
+  ConsumerState<_AllocateSavingsSheet> createState() =>
+      _AllocateSavingsSheetState();
 }
 
 class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
@@ -40,7 +41,8 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currency = ref.read(profileProvider).valueOrNull?['currency'] as String?;
+      final currency =
+          ref.read(profileProvider).valueOrNull?['currency'] as String?;
       if (currency != null) {
         setState(() {
           _selectedCurrency = currency;
@@ -82,11 +84,15 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
 
       if (goal.isNotEmpty) {
         final rawC = goal['currentAmount'];
-        final currentAmount = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+        final currentAmount = rawC is num
+            ? rawC.toDouble()
+            : double.tryParse(rawC?.toString() ?? '0') ?? 0;
         final newAmount = currentAmount + amount;
         final goalName = goal['name'] as String? ?? 'Goal';
-        
-        await ref.read(savingsNotifierProvider.notifier).updateBalance(_selectedGoalId!, newAmount);
+
+        await ref
+            .read(savingsNotifierProvider.notifier)
+            .updateBalance(_selectedGoalId!, newAmount);
 
         // 2. Create expense transaction
         final categories = await ref.read(categoriesProvider.future);
@@ -117,13 +123,17 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         Navigator.pop(context);
-        AppSnackbar.show(context, title: l10n.success, message: l10n.allocationSuccessful, type: SnackbarType.success);
+        AppSnackbar.show(context,
+            title: l10n.success,
+            message: l10n.allocationSuccessful,
+            type: SnackbarType.success);
       }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     }
   }
@@ -133,7 +143,7 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final savingsState = ref.watch(savingsNotifierProvider);
-    
+
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
@@ -207,14 +217,17 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        color: isDark
+                            ? AppColors.borderDark
+                            : AppColors.borderLight,
                       ),
                     ),
                   ),
                   items: AppConstants.supportedCurrencies.map((c) {
                     return DropdownMenuItem<String>(
                       value: c['code'],
-                      child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                      child: Text('${c['code']} (${c['symbol']})',
+                          style: AppTypography.textTheme.bodyMedium),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -229,10 +242,13 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
                   controller: _amountController,
                   label: l10n.amount,
                   hint: '0',
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
-                    if (value == null || value.isEmpty) return l10n.amountRequired;
-                    if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
+                    if (value == null || value.isEmpty)
+                      return l10n.amountRequired;
+                    if (double.tryParse(value.replaceAll(',', '')) == null)
+                      return l10n.invalidAmount;
                     return null;
                   },
                 ),

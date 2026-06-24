@@ -5,7 +5,7 @@ import '../../../../core/providers/core_providers.dart';
 class ChatMessage {
   final String role; // 'user' or 'assistant'
   final String content;
-  
+
   ChatMessage({required this.role, required this.content});
 }
 
@@ -34,12 +34,14 @@ class AiState {
 }
 
 class AiNotifier extends StateNotifier<AiState> {
-  AiNotifier(this.ref) : super(AiState(messages: [
-    ChatMessage(
-      role: 'assistant', 
-      content: 'Hi! I am CuanBuddy AI. You can ask me anything about your finances, budget recommendations, or spending habits.',
-    )
-  ]));
+  AiNotifier(this.ref)
+      : super(AiState(messages: [
+          ChatMessage(
+            role: 'assistant',
+            content:
+                'Hi! I am CuanBuddy AI. You can ask me anything about your finances, budget recommendations, or spending habits.',
+          )
+        ]));
 
   final Ref ref;
 
@@ -54,23 +56,22 @@ class AiNotifier extends StateNotifier<AiState> {
     try {
       final dio = ref.read(dioClientProvider).dio;
       final response = await dio.post('/ai/chat', data: {'message': text});
-      
-      final replyText = response.data['reply'] as String? ?? 'Sorry, I could not process that.';
+
+      final replyText = response.data['reply'] as String? ??
+          'Sorry, I could not process that.';
       final aiMsg = ChatMessage(role: 'assistant', content: replyText);
-      
+
       state = state.copyWith(
         messages: [...state.messages, aiMsg],
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(
-        error: e.toString(),
-        isLoading: false,
-        messages: [
-          ...state.messages,
-          ChatMessage(role: 'assistant', content: 'Oops! I am having trouble connecting to the server.')
-        ]
-      );
+      state = state.copyWith(error: e.toString(), isLoading: false, messages: [
+        ...state.messages,
+        ChatMessage(
+            role: 'assistant',
+            content: 'Oops! I am having trouble connecting to the server.')
+      ]);
     }
   }
 
@@ -79,12 +80,13 @@ class AiNotifier extends StateNotifier<AiState> {
     try {
       final dio = ref.read(dioClientProvider).dio;
       final formData = FormData.fromMap({
-        'audio': await MultipartFile.fromFile(filePath, filename: filePath.split('/').last),
+        'audio': await MultipartFile.fromFile(filePath,
+            filename: filePath.split('/').last),
       });
 
       final response = await dio.post('/ai/voice-transaction', data: formData);
       state = state.copyWith(isLoading: false);
-      
+
       // Return the parsed data
       return response.data as Map<String, dynamic>;
     } catch (e) {
@@ -104,11 +106,13 @@ final aiNotifierProvider = StateNotifierProvider<AiNotifier, AiState>((ref) {
 final aiInsightsProvider = FutureProvider<String>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
   final response = await dio.get('/ai/insights');
-  return response.data['insights'] as String? ?? 'No insights available right now.';
+  return response.data['insights'] as String? ??
+      'No insights available right now.';
 });
 
 final aiBudgetRecommendationProvider = FutureProvider<String>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
   final response = await dio.get('/ai/budget-recommendation');
-  return response.data['recommendation'] as String? ?? 'No recommendations available.';
+  return response.data['recommendation'] as String? ??
+      'No recommendations available.';
 });

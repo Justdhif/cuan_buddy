@@ -33,11 +33,14 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.profile['fullName']);
-    _usernameController = TextEditingController(text: widget.profile['username']);
-    _phoneController = TextEditingController(text: widget.profile['phoneNumber'] ?? widget.profile['phone'] ?? '');
+    _usernameController =
+        TextEditingController(text: widget.profile['username']);
+    _phoneController = TextEditingController(
+        text: widget.profile['phoneNumber'] ?? widget.profile['phone'] ?? '');
     _emailController = TextEditingController(text: widget.profile['email']);
     _bioController = TextEditingController(text: widget.profile['bio']);
-    _currencyController = TextEditingController(text: widget.profile['currency'] ?? 'IDR');
+    _currencyController =
+        TextEditingController(text: widget.profile['currency'] ?? 'IDR');
     _selectedGender = widget.profile['gender'];
     final birthDateStr = widget.profile['birthDate'] as String?;
     if (birthDateStr != null) {
@@ -59,20 +62,28 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    
+
     try {
       await ref.read(profileRepositoryProvider).updateProfile(
-        fullName: _nameController.text.trim(),
-        username: _usernameController.text.trim().isNotEmpty ? _usernameController.text.trim() : null,
-        phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        currency: _currencyController.text.trim().isNotEmpty ? _currencyController.text.trim().toUpperCase() : null,
-        birthDate: _selectedDate?.toUtc().toIso8601String(),
-        gender: _selectedGender,
-        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-      );
-      
+            fullName: _nameController.text.trim(),
+            username: _usernameController.text.trim().isNotEmpty
+                ? _usernameController.text.trim()
+                : null,
+            phoneNumber: _phoneController.text.trim().isNotEmpty
+                ? _phoneController.text.trim()
+                : null,
+            currency: _currencyController.text.trim().isNotEmpty
+                ? _currencyController.text.trim().toUpperCase()
+                : null,
+            birthDate: _selectedDate?.toUtc().toIso8601String(),
+            gender: _selectedGender,
+            bio: _bioController.text.trim().isNotEmpty
+                ? _bioController.text.trim()
+                : null,
+          );
+
       ref.invalidate(profileProvider);
-      
+
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +98,10 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
       setState(() => _isSaving = false);
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToUpdateProfile}: $e', type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error,
+            message: '${l10n.failedToUpdateProfile}: $e',
+            type: SnackbarType.error);
       }
     }
   }
@@ -144,7 +158,8 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   label: 'Full Name',
                   hint: 'Enter your full name',
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) return 'Full name is required';
+                    if (value == null || value.trim().isEmpty)
+                      return 'Full name is required';
                     return null;
                   },
                 ),
@@ -175,7 +190,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   onTap: () async {
                     final pickedDate = await showDatePicker(
                       context: context,
-                      initialDate: _selectedDate ?? DateTime.now().subtract(const Duration(days: 365 * 20)),
+                      initialDate: _selectedDate ??
+                          DateTime.now()
+                              .subtract(const Duration(days: 365 * 20)),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now(),
                     );
@@ -189,7 +206,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
                           width: 1,
                         ),
                       ),
@@ -198,12 +217,14 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _selectedDate != null 
-                            ? DateFormat('dd MMM yyyy').format(_selectedDate!) 
-                            : 'Select date',
+                          _selectedDate != null
+                              ? DateFormat('dd MMM yyyy').format(_selectedDate!)
+                              : 'Select date',
                           style: AppTypography.textTheme.bodyLarge?.copyWith(
-                            color: _selectedDate == null 
-                                ? (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight) 
+                            color: _selectedDate == null
+                                ? (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight)
                                 : null,
                           ),
                         ),
@@ -226,7 +247,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        color: isDark
+                            ? AppColors.borderDark
+                            : AppColors.borderLight,
                         width: 1,
                       ),
                     ),

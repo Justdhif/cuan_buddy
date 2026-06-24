@@ -17,22 +17,29 @@ class AiBudgetInsightCard extends ConsumerWidget {
     return insightsAsync.when(
       data: (insight) => _buildMarquee(context, insight, isDark),
       loading: () => _buildLoadingState(isDark),
-      error: (err, stack) => _buildMarquee(context, '✨ AI Budget: Unable to connect to server.', isDark),
+      error: (err, stack) => _buildMarquee(
+          context, '✨ AI Budget: Unable to connect to server.', isDark),
     );
   }
 
   Widget _buildMarquee(BuildContext context, String insight, bool isDark) {
     // Clean text: Marquee requires a single line, so replace newlines with bullets
     final cleanInsight = insight.replaceAll(RegExp(r'\n+'), '   •   ');
-    
+
     return Container(
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark 
-              ? [AppColors.primary.withValues(alpha: 0.15), AppColors.secondary.withValues(alpha: 0.05)]
-              : [AppColors.primary.withValues(alpha: 0.1), AppColors.secondary.withValues(alpha: 0.02)],
+          colors: isDark
+              ? [
+                  AppColors.primary.withValues(alpha: 0.15),
+                  AppColors.secondary.withValues(alpha: 0.05)
+                ]
+              : [
+                  AppColors.primary.withValues(alpha: 0.1),
+                  AppColors.secondary.withValues(alpha: 0.02)
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -51,7 +58,9 @@ class AiBudgetInsightCard extends ConsumerWidget {
               child: Marquee(
                 text: cleanInsight,
                 style: AppTypography.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
                   fontWeight: FontWeight.w600,
                 ),
                 scrollAxis: Axis.horizontal,

@@ -36,11 +36,12 @@ class TransactionFilterState {
 }
 
 class TransactionFilterNotifier extends StateNotifier<TransactionFilterState> {
-  TransactionFilterNotifier() : super(TransactionFilterState(
-    currentMonth: DateTime.now(),
-    selectedDate: DateTime.now(),
-    isExpanded: false,
-  ));
+  TransactionFilterNotifier()
+      : super(TransactionFilterState(
+          currentMonth: DateTime.now(),
+          selectedDate: DateTime.now(),
+          isExpanded: false,
+        ));
 
   void toggleExpand() {
     state = state.copyWith(isExpanded: !state.isExpanded);
@@ -73,11 +74,14 @@ class TransactionFilterNotifier extends StateNotifier<TransactionFilterState> {
   }
 
   void setCategory(String? categoryId) {
-    state = state.copyWith(categoryId: categoryId, clearCategoryId: categoryId == null);
+    state = state.copyWith(
+        categoryId: categoryId, clearCategoryId: categoryId == null);
   }
 }
 
-final transactionFilterProvider = StateNotifierProvider<TransactionFilterNotifier, TransactionFilterState>((ref) {
+final transactionFilterProvider =
+    StateNotifierProvider<TransactionFilterNotifier, TransactionFilterState>(
+        (ref) {
   return TransactionFilterNotifier();
 });
 
@@ -90,15 +94,17 @@ final categoriesProvider = FutureProvider<List<dynamic>>((ref) async {
   return [];
 });
 
-final calendarSummaryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+final calendarSummaryProvider =
+    FutureProvider.autoDispose<List<dynamic>>((ref) async {
   final filter = ref.watch(transactionFilterProvider);
   final dio = ref.watch(dioClientProvider).dio;
-  
-  final response = await dio.get('/transactions/calendar-summary', queryParameters: {
+
+  final response =
+      await dio.get('/transactions/calendar-summary', queryParameters: {
     'month': filter.currentMonth.month,
     'year': filter.currentMonth.year,
   });
-  
+
   final data = response.data;
   if (data is List) return data;
   if (data is Map && data['data'] is List) return data['data'] as List;
@@ -108,14 +114,16 @@ final calendarSummaryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) 
 final allTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   final filter = ref.watch(transactionFilterProvider);
   final dio = ref.watch(dioClientProvider).dio;
-  
+
   final query = <String, dynamic>{
     'limit': 100, // Fetch up to 100 for the day
   };
 
   // Always filter by selectedDate
-  final start = DateTime(filter.selectedDate.year, filter.selectedDate.month, filter.selectedDate.day);
-  final end = DateTime(filter.selectedDate.year, filter.selectedDate.month, filter.selectedDate.day, 23, 59, 59);
+  final start = DateTime(filter.selectedDate.year, filter.selectedDate.month,
+      filter.selectedDate.day);
+  final end = DateTime(filter.selectedDate.year, filter.selectedDate.month,
+      filter.selectedDate.day, 23, 59, 59);
   query['startDate'] = start.toUtc().toIso8601String();
   query['endDate'] = end.toUtc().toIso8601String();
 
@@ -133,12 +141,15 @@ final allTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   return [];
 });
 
-final monthlySummaryProvider = FutureProvider.autoDispose<Map<String, double>>((ref) async {
+final monthlySummaryProvider =
+    FutureProvider.autoDispose<Map<String, double>>((ref) async {
   final filter = ref.watch(transactionFilterProvider);
   final dio = ref.watch(dioClientProvider).dio;
-  
-  final startOfMonth = DateTime(filter.currentMonth.year, filter.currentMonth.month, 1);
-  final endOfMonth = DateTime(filter.currentMonth.year, filter.currentMonth.month + 1, 0, 23, 59, 59);
+
+  final startOfMonth =
+      DateTime(filter.currentMonth.year, filter.currentMonth.month, 1);
+  final endOfMonth = DateTime(
+      filter.currentMonth.year, filter.currentMonth.month + 1, 0, 23, 59, 59);
 
   final query = <String, dynamic>{
     'limit': 1000,
@@ -164,7 +175,9 @@ final monthlySummaryProvider = FutureProvider.autoDispose<Map<String, double>>((
   for (var tx in txList) {
     final isIncome = tx['type'] == 'income';
     final amountRaw = tx['amount'];
-    final amount = amountRaw is num ? amountRaw.toDouble() : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+    final amount = amountRaw is num
+        ? amountRaw.toDouble()
+        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
     if (isIncome) {
       totalIncome += amount;
     } else {

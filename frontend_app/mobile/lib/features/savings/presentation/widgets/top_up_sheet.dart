@@ -40,7 +40,8 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
   @override
   void initState() {
     super.initState();
-    _selectedCurrency = widget.goal['currency'] as String? ?? AppConstants.defaultCurrency;
+    _selectedCurrency =
+        widget.goal['currency'] as String? ?? AppConstants.defaultCurrency;
   }
 
   @override
@@ -51,7 +52,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final l10n = AppLocalizations.of(context);
     final amountStr = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
     if (amountStr.isEmpty) return;
@@ -62,9 +63,11 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
     setState(() => _isLoading = true);
 
     try {
-      final currentAmount = (widget.goal['currentAmount'] as num?)?.toDouble() ?? 0;
-      final newAmount = _isAdding ? currentAmount + amount : currentAmount - amount;
-      
+      final currentAmount =
+          (widget.goal['currentAmount'] as num?)?.toDouble() ?? 0;
+      final newAmount =
+          _isAdding ? currentAmount + amount : currentAmount - amount;
+
       // Prevent negative balance
       if (newAmount < 0) {
         if (mounted) {
@@ -78,7 +81,9 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
 
       final id = widget.goal['id'] as String;
       final name = widget.goal['name'] as String? ?? 'Goal';
-      await ref.read(savingsNotifierProvider.notifier).updateBalance(id, newAmount);
+      await ref
+          .read(savingsNotifierProvider.notifier)
+          .updateBalance(id, newAmount);
 
       // Create a transaction for this savings operation
       try {
@@ -94,7 +99,9 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           'amount': amount,
           'currency': _selectedCurrency,
           'categoryId': savingsCategory?['id'],
-          'note': _isAdding ? l10n.transferToSavings(name) : l10n.withdrawFromSavings(name),
+          'note': _isAdding
+              ? l10n.transferToSavings(name)
+              : l10n.withdrawFromSavings(name),
           'date': DateTime.now().toUtc().toIso8601String(),
         });
 
@@ -113,12 +120,17 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
         Navigator.pop(context);
-        AppSnackbar.show(context, title: l10n.success, message: _isAdding ? l10n.fundsAddedSuccess : l10n.fundsReducedSuccess, type: SnackbarType.success);
+        AppSnackbar.show(context,
+            title: l10n.success,
+            message:
+                _isAdding ? l10n.fundsAddedSuccess : l10n.fundsReducedSuccess,
+            type: SnackbarType.success);
       }
     } catch (e) {
       if (mounted) {
         final l10n = AppLocalizations.of(context);
-        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     } finally {
       if (mounted) {
@@ -162,7 +174,8 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(l10n.updateGoalTitle(name), style: AppTypography.textTheme.titleMedium),
+              Text(l10n.updateGoalTitle(name),
+                  style: AppTypography.textTheme.titleMedium),
               IconButton(
                 icon: const Icon(Icons.close_rounded),
                 onPressed: () => Navigator.pop(context),
@@ -170,12 +183,13 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Add or Reduce Selector
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+              color:
+                  isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -186,22 +200,31 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: _isAdding 
-                            ? (isDark ? AppColors.surfaceDark : AppColors.surfaceLight)
+                        color: _isAdding
+                            ? (isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surfaceLight)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: _isAdding
-                            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                            ? [
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 4)
+                              ]
                             : null,
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         l10n.addFunds,
                         style: TextStyle(
-                          fontWeight: _isAdding ? FontWeight.bold : FontWeight.normal,
-                          color: _isAdding 
+                          fontWeight:
+                              _isAdding ? FontWeight.bold : FontWeight.normal,
+                          color: _isAdding
                               ? AppColors.primary
-                              : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                              : (isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight),
                         ),
                       ),
                     ),
@@ -213,22 +236,31 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
-                        color: !_isAdding 
-                            ? (isDark ? AppColors.surfaceDark : AppColors.surfaceLight)
+                        color: !_isAdding
+                            ? (isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surfaceLight)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: !_isAdding
-                            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                            ? [
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 4)
+                              ]
                             : null,
                       ),
                       alignment: Alignment.center,
                       child: Text(
                         l10n.reduce,
                         style: TextStyle(
-                          fontWeight: !_isAdding ? FontWeight.bold : FontWeight.normal,
-                          color: !_isAdding 
+                          fontWeight:
+                              !_isAdding ? FontWeight.bold : FontWeight.normal,
+                          color: !_isAdding
                               ? AppColors.danger
-                              : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                              : (isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight),
                         ),
                       ),
                     ),
@@ -238,7 +270,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
             ),
           ),
           const SizedBox(height: 24),
-          
+
           // Amount Input
           Form(
             key: _formKey,
@@ -256,14 +288,17 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
-                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
                         ),
                       ),
                     ),
                     items: AppConstants.supportedCurrencies.map((c) {
                       return DropdownMenuItem<String>(
                         value: c['code'],
-                        child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                        child: Text('${c['code']} (${c['symbol']})',
+                            style: AppTypography.textTheme.bodyMedium),
                       );
                     }).toList(),
                     onChanged: (val) {
@@ -278,10 +313,13 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
                     controller: _amountController,
                     label: l10n.amount,
                     hint: '0',
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return l10n.amountRequired;
-                      if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
+                      if (value == null || value.isEmpty)
+                        return l10n.amountRequired;
+                      if (double.tryParse(value.replaceAll(',', '')) == null)
+                        return l10n.invalidAmount;
                       return null;
                     },
                   ),
@@ -290,7 +328,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           AppButton(
             label: _isAdding ? l10n.addFunds : l10n.reduceFunds,
             onPressed: _submit,

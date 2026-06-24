@@ -76,20 +76,27 @@ class _CuanBuddyNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Widget build method
 
     return StyleProvider(
       style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
       child: ConvexAppBar(
         style: TabStyle.fixedCircle,
-        backgroundColor: isDark ? AppColors.surfaceDark : Theme.of(context).scaffoldBackgroundColor,
-        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : Theme.of(context).scaffoldBackgroundColor,
+        color:
+            isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
         activeColor: AppColors.primary,
-        shadowColor: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.black12,
+        shadowColor:
+            isDark ? Colors.black.withValues(alpha: 0.6) : Colors.black12,
         cornerRadius: 0,
         elevation: isDark ? 8 : 4,
-        height: 60 + (MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom * 0.6 : 0),
+        height: 60 +
+            (MediaQuery.of(context).padding.bottom > 0
+                ? MediaQuery.of(context).padding.bottom * 0.6
+                : 0),
         initialActiveIndex: currentIndex,
         onTap: onTap,
         items: [

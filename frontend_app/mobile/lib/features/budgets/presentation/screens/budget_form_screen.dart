@@ -39,10 +39,13 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     super.initState();
     if (widget.budget != null) {
       final rawL = widget.budget!['limitAmount'];
-      final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+      final limitAmount = rawL is num
+          ? rawL.toDouble()
+          : double.tryParse(rawL?.toString() ?? '0') ?? 0;
       _amountController.text = limitAmount.toStringAsFixed(0);
       _selectedCategoryId = widget.budget!['categoryId']?.toString();
-      _selectedCurrency = widget.budget!['currency'] ?? AppConstants.defaultCurrency;
+      _selectedCurrency =
+          widget.budget!['currency'] ?? AppConstants.defaultCurrency;
       _isRecurring = widget.budget!['isRecurring'] ?? false;
       _rollover = widget.budget!['rollover'] ?? false;
 
@@ -94,20 +97,27 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         ref.invalidate(budgetsNotifierProvider);
         if (mounted) {
           context.pop();
-          AppSnackbar.show(context, title: l10n.success, message: 'Budget saved successfully', type: SnackbarType.success);
+          AppSnackbar.show(context,
+              title: l10n.success,
+              message: 'Budget saved successfully',
+              type: SnackbarType.success);
         }
       } else {
         await dio.patch('/budgets/${widget.budget!['id']}', data: payload);
         ref.invalidate(budgetsNotifierProvider);
         if (mounted) {
           context.pop();
-          AppSnackbar.show(context, title: l10n.success, message: 'Budget updated successfully', type: SnackbarType.success);
+          AppSnackbar.show(context,
+              title: l10n.success,
+              message: 'Budget updated successfully',
+              type: SnackbarType.success);
         }
       }
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: l10n.error, message: e.toString(), type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error, message: e.toString(), type: SnackbarType.error);
       }
     }
   }
@@ -125,7 +135,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child:
+                const Text('Delete', style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -133,14 +144,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
 
     if (confirm == true && mounted) {
       try {
-        await ref.read(budgetsNotifierProvider.notifier).deleteBudget(widget.budget!['id']);
+        await ref
+            .read(budgetsNotifierProvider.notifier)
+            .deleteBudget(widget.budget!['id']);
         if (mounted) {
           context.pop(); // Pop form screen
-          AppSnackbar.show(context, title: l10n.success, message: 'Budget deleted successfully', type: SnackbarType.success);
+          AppSnackbar.show(context,
+              title: l10n.success,
+              message: 'Budget deleted successfully',
+              type: SnackbarType.success);
         }
       } catch (e) {
         if (mounted) {
-          AppSnackbar.show(context, title: l10n.error, message: 'Failed to delete budget: $e', type: SnackbarType.error);
+          AppSnackbar.show(context,
+              title: l10n.error,
+              message: 'Failed to delete budget: $e',
+              type: SnackbarType.error);
         }
       }
     }
@@ -171,7 +190,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           if (widget.budget != null)
             IconButton(
               onPressed: _deleteBudget,
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.danger),
               tooltip: 'Delete Budget',
             ),
           const SizedBox(width: 8),
@@ -201,18 +221,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
                             ),
                           ),
                         ),
                         items: AppConstants.supportedCurrencies.map((c) {
                           return DropdownMenuItem<String>(
                             value: c['code'],
-                            child: Text('${c['code']} (${c['symbol']})', style: AppTypography.textTheme.bodyMedium),
+                            child: Text('${c['code']} (${c['symbol']})',
+                                style: AppTypography.textTheme.bodyMedium),
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null) setState(() => _selectedCurrency = val);
+                          if (val != null)
+                            setState(() => _selectedCurrency = val);
                         },
                       ),
                     ),
@@ -223,10 +247,13 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         controller: _amountController,
                         label: l10n.limitAmount,
                         hint: '0',
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return l10n.amountRequired;
-                          if (double.tryParse(value.replaceAll(',', '')) == null) return l10n.invalidAmount;
+                          if (value == null || value.isEmpty)
+                            return l10n.amountRequired;
+                          if (double.tryParse(value.replaceAll(',', '')) ==
+                              null) return l10n.invalidAmount;
                           return null;
                         },
                       ),
@@ -242,7 +269,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                   loading: () => _buildCategorySkeletonLoader(isDark),
                   error: (_, __) => Text(
                     l10n.failedToLoadCategories,
-                    style: const TextStyle(color: AppColors.danger, fontSize: 12),
+                    style:
+                        const TextStyle(color: AppColors.danger, fontSize: 12),
                   ),
                   data: (filtered) {
                     if (filtered.isEmpty) {
@@ -261,8 +289,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         scrollDirection: Axis.horizontal,
                         padding: EdgeInsets.zero,
                         itemCount: filtered.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(width: 8),
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final cat = filtered[index];
                           final catId = cat['id'] as String?;
@@ -274,8 +301,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
 
                           return GestureDetector(
                             onTap: () => setState(() {
-                              _selectedCategoryId =
-                                  isSelected ? null : catId;
+                              _selectedCategoryId = isSelected ? null : catId;
                             }),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
@@ -310,9 +336,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     catName,
                                     style: AppTypography.textTheme.labelMedium
                                         ?.copyWith(
-                                      color: isSelected
-                                          ? AppColors.primary
-                                          : null,
+                                      color:
+                                          isSelected ? AppColors.primary : null,
                                       fontWeight: isSelected
                                           ? FontWeight.w700
                                           : FontWeight.w500,
@@ -371,7 +396,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
 
                 // ── Recurring & Rollover Toggles ───────────────────────────
                 SwitchListTile(
-                  title: Text(l10n.recurringBudget, style: AppTypography.textTheme.bodyMedium),
+                  title: Text(l10n.recurringBudget,
+                      style: AppTypography.textTheme.bodyMedium),
                   value: _isRecurring,
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
@@ -383,18 +409,20 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                   },
                 ),
                 SwitchListTile(
-                  title: Text(
-                    l10n.rolloverRemaining,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: _isRecurring
-                          ? null
-                          : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                    )
-                  ),
+                  title: Text(l10n.rolloverRemaining,
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: _isRecurring
+                            ? null
+                            : (isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
+                      )),
                   value: _rollover,
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
-                  onChanged: _isRecurring ? (val) => setState(() => _rollover = val) : null,
+                  onChanged: _isRecurring
+                      ? (val) => setState(() => _rollover = val)
+                      : null,
                 ),
                 const SizedBox(height: 40),
 
@@ -463,9 +491,8 @@ class _SkeletonChipState extends State<_SkeletonChip>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = widget.isDark
-        ? const Color(0xFF2D3748)
-        : const Color(0xFFE2E8F0);
+    final baseColor =
+        widget.isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
 
     return AnimatedBuilder(
       animation: _anim,

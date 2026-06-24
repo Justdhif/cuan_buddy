@@ -53,11 +53,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/splash',
-        pageBuilder: (context, state) => _buildPage(state, const SplashScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const SplashScreen()),
       ),
       GoRoute(
         path: '/onboarding',
-        pageBuilder: (context, state) => _buildPage(state, const OnboardingScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const OnboardingScreen()),
       ),
       GoRoute(
         path: '/login',
@@ -65,7 +67,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/register',
-        pageBuilder: (context, state) => _buildPage(state, const RegisterScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const RegisterScreen()),
       ),
       GoRoute(
         path: '/verify-email',
@@ -76,7 +79,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/forgot-password',
-        pageBuilder: (context, state) => _buildPage(state, const ForgotPasswordScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ForgotPasswordScreen()),
       ),
       GoRoute(
         path: '/forgot-password/otp',
@@ -95,7 +99,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile-setup',
-        pageBuilder: (context, state) => _buildPage(state, const ProfileSetupScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ProfileSetupScreen()),
         redirect: (context, state) {
           if (prefsService.profileComplete) return '/backup-settings';
           return null;
@@ -103,7 +108,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/backup-settings',
-        pageBuilder: (context, state) => _buildPage(state, const BackupSettingsScreen(isOnboarding: true)),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const BackupSettingsScreen(isOnboarding: true)),
         redirect: (context, state) {
           if (prefsService.backupSetupComplete) return '/home/dashboard';
           return null;
@@ -111,7 +117,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile/backup',
-        pageBuilder: (context, state) => _buildPage(state, const BackupSettingsScreen(isOnboarding: false)),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const BackupSettingsScreen(isOnboarding: false)),
       ),
       GoRoute(
         path: '/profile/edit',
@@ -122,26 +129,31 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile/widgets',
-        pageBuilder: (context, state) => _buildPage(state, const WidgetSettingsScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const WidgetSettingsScreen()),
       ),
       GoRoute(
         path: '/change-password',
-        pageBuilder: (context, state) => _buildPage(state, const ChangePasswordScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ChangePasswordScreen()),
       ),
       GoRoute(
         path: '/notifications',
-        pageBuilder: (context, state) => _buildPage(state, const NotificationsScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const NotificationsScreen()),
       ),
       GoRoute(
         path: '/ai-chat',
-        pageBuilder: (context, state) => _buildPage(state, const AiChatScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const AiChatScreen()),
       ),
       GoRoute(
         path: '/transactions/form',
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final initialType = extra['initialType'] as String? ?? 'expense';
-          final initialTransaction = extra['initialTransaction'] as Map<String, dynamic>?;
+          final initialTransaction =
+              extra['initialTransaction'] as Map<String, dynamic>?;
           return _buildPage(
             state,
             TransactionFormScreen(
@@ -166,15 +178,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/budgets',
-        pageBuilder: (context, state) => _buildPage(state, const BudgetsScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const BudgetsScreen()),
       ),
       GoRoute(
         path: '/manage-categories',
-        pageBuilder: (context, state) => _buildPage(state, const CategoryListScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const CategoryListScreen()),
       ),
       GoRoute(
         path: '/home/profile',
-        pageBuilder: (context, state) => _buildPage(state, const ProfileScreen()),
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ProfileScreen()),
       ),
       StatefulShellRoute(
         builder: (context, state, navigationShell) => navigationShell,
@@ -189,35 +204,40 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/transactions',
-              pageBuilder: (context, state) => _buildPage(state, const TransactionListScreen()),
+              pageBuilder: (context, state) =>
+                  _buildPage(state, const TransactionListScreen()),
             ),
           ]),
           // Branch 1 – Budgets
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/budgets',
-              pageBuilder: (context, state) => _buildPage(state, const BudgetsScreen()),
+              pageBuilder: (context, state) =>
+                  _buildPage(state, const BudgetsScreen()),
             ),
           ]),
           // Branch 2 – Dashboard (Home)
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/dashboard',
-              pageBuilder: (context, state) => _buildPage(state, const DashboardScreen()),
+              pageBuilder: (context, state) =>
+                  _buildPage(state, const DashboardScreen()),
             ),
           ]),
           // Branch 3 – Savings
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/savings',
-              pageBuilder: (context, state) => _buildPage(state, const SavingsScreen()),
+              pageBuilder: (context, state) =>
+                  _buildPage(state, const SavingsScreen()),
             ),
           ]),
           // Branch 4 – Shared
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/shared',
-              pageBuilder: (context, state) => _buildPage(state, const SharedScreen()),
+              pageBuilder: (context, state) =>
+                  _buildPage(state, const SharedScreen()),
             ),
           ]),
         ],

@@ -40,7 +40,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   @override
   Widget build(BuildContext context) {
     final savingsState = ref.watch(savingsNotifierProvider);
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode =
+        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -61,21 +63,20 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           child: Text(l10n.savingsGoals),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            onPressed: () => showAddSavingsSheet(context),
-          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
               if (value == 'export') {
-                ref.read(backupWorkerProvider).runBackupProcess(tables: ['savings_goals']);
+                ref
+                    .read(backupWorkerProvider)
+                    .runBackupProcess(tables: ['savings_goals']);
               } else if (value == 'import') {
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (ctx) => const SingleTableImportSheet(tableName: 'savings_goals'),
+                  builder: (ctx) =>
+                      const SingleTableImportSheet(tableName: 'savings_goals'),
                 );
               }
             },
@@ -106,14 +107,39 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(savingsNotifierProvider.notifier).fetchGoals(),
+        onRefresh: () =>
+            ref.read(savingsNotifierProvider.notifier).fetchGoals(),
         color: AppColors.primary,
         child: _buildBody(context, ref, savingsState, isDark, currencySymbol),
+      ),
+      floatingActionButton: GestureDetector(
+        onTap: () => showAddSavingsSheet(context),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, SavingsState state, bool isDark, String currencySymbol) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, SavingsState state,
+      bool isDark, String currencySymbol) {
     if (state.isLoading && state.goals.isEmpty) {
       return const SkeletonList();
     }
@@ -132,9 +158,13 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
     for (final g in state.goals) {
       final rawT = g['targetAmount'];
-      final t = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+      final t = rawT is num
+          ? rawT.toDouble()
+          : double.tryParse(rawT?.toString() ?? '0') ?? 0;
       final rawC = g['currentAmount'];
-      final c = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+      final c = rawC is num
+          ? rawC.toDouble()
+          : double.tryParse(rawC?.toString() ?? '0') ?? 0;
       if (g['status'] == 'completed' || (t > 0 && c >= t)) {
         completedGoals++;
       }
@@ -144,20 +174,28 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     final filteredGoals = state.goals.where((g) {
       if (_statusFilter == 'All') return true;
       final rawT = g['targetAmount'];
-      final t = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+      final t = rawT is num
+          ? rawT.toDouble()
+          : double.tryParse(rawT?.toString() ?? '0') ?? 0;
       final rawC = g['currentAmount'];
-      final c = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+      final c = rawC is num
+          ? rawC.toDouble()
+          : double.tryParse(rawC?.toString() ?? '0') ?? 0;
       final isCompleted = g['status'] == 'completed' || (t > 0 && c >= t);
-      
+
       if (_statusFilter == 'Completed') return isCompleted;
       if (_statusFilter == 'In Progress') return !isCompleted;
       return true;
     }).toList();
 
-    final viewportHeight = MediaQuery.of(context).size.height - kToolbarHeight - MediaQuery.of(context).padding.top - 80;
+    final viewportHeight = MediaQuery.of(context).size.height -
+        kToolbarHeight -
+        MediaQuery.of(context).padding.top -
+        80;
 
     return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
         // Summary Header
@@ -165,79 +203,92 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           child: Container(
             color: Theme.of(context).scaffoldBackgroundColor,
             child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, Color(0xFF6B58E6)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      )
-                    ],
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, Color(0xFF6B58E6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final summaryAsync = ref.watch(convertedSavingsSummaryProvider('All'));
-                      return summaryAsync.when(
-                        data: (summary) {
-                          final totalSaved = summary['totalSaved'] ?? 0.0;
-                          final totalTarget = summary['totalTarget'] ?? 0.0;
-                          return Column(
-                            children: [
-                              Text(
-                                l10n.totalSaved,
-                                style: AppTypography.textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.8),
-                                  fontWeight: FontWeight.w500,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final summaryAsync =
+                        ref.watch(convertedSavingsSummaryProvider('All'));
+                    return summaryAsync.when(
+                      data: (summary) {
+                        final totalSaved = summary['totalSaved'] ?? 0.0;
+                        final totalTarget = summary['totalTarget'] ?? 0.0;
+                        return Column(
+                          children: [
+                            Text(
+                              l10n.totalSaved,
+                              style:
+                                  AppTypography.textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              fmt.format(totalSaved),
+                              style: AppTypography.textTheme.headlineMedium
+                                  ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                _buildSummaryItem(
+                                  l10n.goals,
+                                  state.goals.length.toString(),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                fmt.format(totalSaved),
-                                style: AppTypography.textTheme.headlineMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
+                                Container(
+                                    width: 1,
+                                    height: 30,
+                                    color: Colors.white.withValues(alpha: 0.2)),
+                                _buildSummaryItem(
+                                  l10n.completed,
+                                  completedGoals.toString(),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _buildSummaryItem(
-                                    l10n.goals,
-                                    state.goals.length.toString(),
-                                  ),
-                                  Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-                                  _buildSummaryItem(
-                                    l10n.completed,
-                                    completedGoals.toString(),
-                                  ),
-                                  Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.2)),
-                                  _buildSummaryItem(
-                                    l10n.remaining,
-                                    fmt.format(totalTarget > totalSaved ? totalTarget - totalSaved : 0),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        },
-                        loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
-                        error: (_, __) => const SizedBox(),
-                      );
-                    },
-                  ),
+                                Container(
+                                    width: 1,
+                                    height: 30,
+                                    color: Colors.white.withValues(alpha: 0.2)),
+                                _buildSummaryItem(
+                                  l10n.remaining,
+                                  fmt.format(totalTarget > totalSaved
+                                      ? totalTarget - totalSaved
+                                      : 0),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => const Center(
+                          child:
+                              CircularProgressIndicator(color: Colors.white)),
+                      error: (_, __) => const SizedBox(),
+                    );
+                  },
                 ),
               ),
             ),
+          ),
         ),
 
         // Status Filter
@@ -246,7 +297,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Container(
               decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.borderLight.withValues(alpha: 0.5),
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : AppColors.borderLight.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -265,16 +318,20 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : Colors.transparent,
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           translatedStatus,
                           textAlign: TextAlign.center,
                           style: AppTypography.textTheme.titleSmall?.copyWith(
-                            color: isSelected 
-                                ? Colors.white 
-                                : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                            color: isSelected
+                                ? Colors.white
+                                : (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -357,23 +414,31 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 
-  Widget _buildGoalCard(BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
+  Widget _buildGoalCard(
+      BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencyCode =
+        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+            AppConstants.defaultCurrency;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final name = goal['name'] as String? ?? l10n.unnamedGoal;
     final rawT = goal['targetAmount'];
-    final targetAmount = rawT is num ? rawT.toDouble() : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+    final targetAmount = rawT is num
+        ? rawT.toDouble()
+        : double.tryParse(rawT?.toString() ?? '0') ?? 0;
     final rawC = goal['currentAmount'];
-    final currentAmount = rawC is num ? rawC.toDouble() : double.tryParse(rawC?.toString() ?? '0') ?? 0;
+    final currentAmount = rawC is num
+        ? rawC.toDouble()
+        : double.tryParse(rawC?.toString() ?? '0') ?? 0;
     final targetDateStr = goal['targetDate'] as String?;
-    
+
     final percentage = targetAmount > 0 ? (currentAmount / targetAmount) : 0.0;
     final safePercentage = percentage.clamp(0.0, 1.0);
     final isCompleted = goal['status'] == 'completed' || safePercentage >= 1.0;
 
-    final goalCurrency = goal['currency'] as String? ?? AppConstants.defaultCurrency;
+    final goalCurrency =
+        goal['currency'] as String? ?? AppConstants.defaultCurrency;
     final goalCurrencySymbol = AppConstants.getCurrencySymbol(goalCurrency);
 
     final fmtOriginal = NumberFormat.currency(
@@ -396,7 +461,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         final targetDate = DateTime.parse(targetDateStr).toLocal();
         final now = DateTime.now();
         final diff = targetDate.difference(now).inDays;
-        
+
         if (diff < 0) {
           countdownText = l10n.daysOverdue(diff.abs());
           countdownColor = AppColors.danger;
@@ -405,7 +470,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           countdownColor = AppColors.warning;
         } else {
           countdownText = l10n.daysLeft(diff);
-          countdownColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+          countdownColor = isDark
+              ? AppColors.textSecondaryDark
+              : AppColors.textSecondaryLight;
         }
       } catch (_) {}
     }
@@ -417,7 +484,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isCompleted 
+          color: isCompleted
               ? AppColors.success.withValues(alpha: 0.5)
               : (isDark ? AppColors.borderDark : AppColors.borderLight),
           width: isCompleted ? 1.5 : 1,
@@ -439,14 +506,16 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               ),
               if (isCompleted)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 14),
+                      const Icon(Icons.check_circle_rounded,
+                          color: AppColors.success, size: 14),
                       const SizedBox(width: 4),
                       Text(
                         l10n.completedBadge,
@@ -460,9 +529,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 )
               else if (countdownText != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: (countdownColor ?? AppColors.primary).withValues(alpha: 0.1),
+                    color: (countdownColor ?? AppColors.primary)
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -475,8 +546,13 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 ),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert_rounded, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, size: 20),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                icon: Icon(Icons.more_vert_rounded,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                    size: 20),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
                 onSelected: (value) async {
                   if (value == 'edit') {
                     showAddSavingsSheet(context, goal: goal);
@@ -493,17 +569,22 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, true),
-                            child: Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
+                            child: Text(l10n.delete,
+                                style:
+                                    const TextStyle(color: AppColors.danger)),
                           ),
                         ],
                       ),
                     );
                     if (confirm == true) {
                       try {
-                        await ref.read(savingsNotifierProvider.notifier).deleteGoal(goal['id']);
+                        await ref
+                            .read(savingsNotifierProvider.notifier)
+                            .deleteGoal(goal['id']);
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to delete: $e')));
                         }
                       }
                     }
@@ -524,9 +605,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        const Icon(Icons.delete_outline_rounded, color: AppColors.danger, size: 20),
+                        const Icon(Icons.delete_outline_rounded,
+                            color: AppColors.danger, size: 20),
                         const SizedBox(width: 12),
-                        Text(l10n.delete, style: const TextStyle(color: AppColors.danger)),
+                        Text(l10n.delete,
+                            style: const TextStyle(color: AppColors.danger)),
                       ],
                     ),
                   ),
@@ -542,7 +625,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    goalCurrency == currencyCode ? fmt.format(currentAmount) : fmtOriginal.format(currentAmount),
+                    goalCurrency == currencyCode
+                        ? fmt.format(currentAmount)
+                        : fmtOriginal.format(currentAmount),
                     style: AppTypography.textTheme.titleMedium?.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.bold,
@@ -551,10 +636,15 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                   if (goalCurrency != currencyCode)
                     Consumer(
                       builder: (context, ref, _) {
-                        final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-                        if (goalCurrency == currencyCode) return const SizedBox.shrink();
-                        
-                        final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                        final currencyCode = ref
+                                .watch(profileProvider)
+                                .valueOrNull?['currency'] as String? ??
+                            AppConstants.defaultCurrency;
+                        if (goalCurrency == currencyCode)
+                          return const SizedBox.shrink();
+
+                        final convertedAsync =
+                            ref.watch(convertedAmountProvider(ConversionParams(
                           amount: currentAmount,
                           from: goalCurrency,
                           to: currencyCode,
@@ -568,7 +658,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                               fontSize: 12,
                             ),
                           ),
-                          loading: () => const SizedBox(width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          loading: () => const SizedBox(
+                              width: 20,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2)),
                           error: (_, __) => const SizedBox(),
                         );
                       },
@@ -579,18 +672,27 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    l10n.of_(goalCurrency == currencyCode ? fmt.format(targetAmount) : fmtOriginal.format(targetAmount)),
+                    l10n.of_(goalCurrency == currencyCode
+                        ? fmt.format(targetAmount)
+                        : fmtOriginal.format(targetAmount)),
                     style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
                     ),
                   ),
                   if (goalCurrency != currencyCode)
                     Consumer(
                       builder: (context, ref, _) {
-                        final currencyCode = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-                        if (goalCurrency == currencyCode) return const SizedBox.shrink();
-                        
-                        final convertedAsync = ref.watch(convertedAmountProvider(ConversionParams(
+                        final currencyCode = ref
+                                .watch(profileProvider)
+                                .valueOrNull?['currency'] as String? ??
+                            AppConstants.defaultCurrency;
+                        if (goalCurrency == currencyCode)
+                          return const SizedBox.shrink();
+
+                        final convertedAsync =
+                            ref.watch(convertedAmountProvider(ConversionParams(
                           amount: targetAmount,
                           from: goalCurrency,
                           to: currencyCode,
@@ -604,7 +706,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                               fontSize: 12,
                             ),
                           ),
-                          loading: () => const SizedBox(width: 20, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+                          loading: () => const SizedBox(
+                              width: 20,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2)),
                           error: (_, __) => const SizedBox(),
                         );
                       },
@@ -615,10 +720,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           ),
           const SizedBox(height: 12),
           SavingsGamificationWidget(percentage: safePercentage),
-          
         ],
       ),
     );
   }
 }
-

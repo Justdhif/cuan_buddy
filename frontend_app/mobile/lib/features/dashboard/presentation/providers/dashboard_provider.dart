@@ -3,10 +3,11 @@ import '../../../../core/providers/core_providers.dart';
 
 import '../../../../core/services/currency_service.dart';
 
-final analyticsSummaryProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final analyticsSummaryProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
   final currencyService = ref.watch(currencyServiceProvider);
-  
+
   // We need to get the user's base currency to convert transactions properly
   String baseCurrency = 'IDR'; // fallback
   try {
@@ -17,10 +18,12 @@ final analyticsSummaryProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
   } catch (_) {}
 
   // Fetch all transactions to calculate the accurate converted summary
-  final txRes = await dio.get('/transactions', queryParameters: {'limit': 10000});
+  final txRes =
+      await dio.get('/transactions', queryParameters: {'limit': 10000});
   final txData = txRes.data;
   List txList = [];
-  if (txData is List) txList = txData;
+  if (txData is List)
+    txList = txData;
   else if (txData is Map && txData['data'] is List) txList = txData['data'];
 
   double totalIncome = 0;
@@ -31,7 +34,8 @@ final analyticsSummaryProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
     final type = tx['type'];
     final txCurrency = tx['currency'] ?? baseCurrency;
 
-    final convertedAmount = await currencyService.convert(amount, txCurrency, baseCurrency);
+    final convertedAmount =
+        await currencyService.convert(amount, txCurrency, baseCurrency);
 
     if (type == 'income') totalIncome += convertedAmount;
     if (type == 'expense') totalExpense += convertedAmount;
@@ -45,7 +49,8 @@ final analyticsSummaryProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
   };
 });
 
-final financialHealthProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final financialHealthProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
   final response = await dio.get('/analytics/financial-health');
   return response.data as Map<String, dynamic>;
@@ -53,7 +58,8 @@ final financialHealthProvider = FutureProvider<Map<String, dynamic>>((ref) async
 
 final recentTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
-  final response = await dio.get('/transactions', queryParameters: {'limit': 5});
+  final response =
+      await dio.get('/transactions', queryParameters: {'limit': 5});
   final data = response.data;
   if (data is List) return data;
   if (data is Map && data['data'] is List) return data['data'] as List;

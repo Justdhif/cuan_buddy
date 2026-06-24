@@ -17,8 +17,15 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../providers/profile_provider.dart';
 
 const List<String> _avatarSeeds = [
-  'alpha', 'bravo', 'charlie', 'delta', 'echo',
-  'foxtrot', 'golf', 'hotel', 'india',
+  'alpha',
+  'bravo',
+  'charlie',
+  'delta',
+  'echo',
+  'foxtrot',
+  'golf',
+  'hotel',
+  'india',
 ];
 
 String _dicebearUrl(String seed) =>
@@ -55,10 +62,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
   @override
   void initState() {
     super.initState();
-    _nameController =
-        TextEditingController(text: widget.profile['fullName'] as String? ?? '');
-    _usernameController =
-        TextEditingController(text: widget.profile['username'] as String? ?? '');
+    _nameController = TextEditingController(
+        text: widget.profile['fullName'] as String? ?? '');
+    _usernameController = TextEditingController(
+        text: widget.profile['username'] as String? ?? '');
     _phoneController = TextEditingController(
         text: widget.profile['phoneNumber'] as String? ??
             widget.profile['phone'] as String? ??
@@ -101,9 +108,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       maxWidth: 1024,
       maxHeight: 1024,
     );
-    
+
     if (pickedFile == null) return;
-    
+
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: pickedFile.path,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
@@ -122,7 +129,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
         ),
       ],
     );
-    
+
     if (croppedFile != null) {
       setState(() {
         _selectedLocalFile = File(croppedFile.path);
@@ -141,21 +148,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       // If user picked a local file, upload it now
       if (_selectedLocalFile != null) {
         final dio = ref.read(dioClientProvider).dio;
-        
+
         // Read file bytes and validate size (max ~3MB to stay under Vercel 4.5MB limit)
         final Uint8List rawBytes = await _selectedLocalFile!.readAsBytes();
-        
+
         // Determine file extension for filename
         final ext = _selectedLocalFile!.path.split('.').last.toLowerCase();
         final filename = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
-        
+
         final formData = FormData.fromMap({
           'file': MultipartFile.fromBytes(
             rawBytes,
             filename: filename,
           ),
         });
-        
+
         final response = await dio.post(
           '/profiles/avatar/upload',
           data: formData,
@@ -168,17 +175,25 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
 
       // Update profile fields
       await ref.read(profileRepositoryProvider).updateProfile(
-        fullName: _nameController.text.trim(),
-        username: _usernameController.text.trim().isNotEmpty ? _usernameController.text.trim() : null,
-        phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        birthDate: _selectedDate?.toUtc().toIso8601String(),
-        gender: _selectedGender,
-        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
-      );
+            fullName: _nameController.text.trim(),
+            username: _usernameController.text.trim().isNotEmpty
+                ? _usernameController.text.trim()
+                : null,
+            phoneNumber: _phoneController.text.trim().isNotEmpty
+                ? _phoneController.text.trim()
+                : null,
+            birthDate: _selectedDate?.toUtc().toIso8601String(),
+            gender: _selectedGender,
+            bio: _bioController.text.trim().isNotEmpty
+                ? _bioController.text.trim()
+                : null,
+          );
 
       // If user picked a dicebear avatar, update it (if it's local file, upload endpoint already updated DB)
       final currentAvatar = widget.profile['avatar'] as String?;
-      if (finalAvatarUrl != null && finalAvatarUrl != currentAvatar && _selectedLocalFile == null) {
+      if (finalAvatarUrl != null &&
+          finalAvatarUrl != currentAvatar &&
+          _selectedLocalFile == null) {
         await ref
             .read(profileRepositoryProvider)
             .updateAvatar(avatarUrl: finalAvatarUrl);
@@ -198,7 +213,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     } catch (e) {
       setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context, title: l10n.error, message: '${l10n.failedToUpdateProfile}: $e', type: SnackbarType.error);
+        AppSnackbar.show(context,
+            title: l10n.error,
+            message: '${l10n.failedToUpdateProfile}: $e',
+            type: SnackbarType.error);
       }
     }
   }
@@ -328,15 +346,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
                 const SizedBox(height: 16),
 
                 // ─── Gender ────────────────────────────────────────────────
-                Text(l10n.genderField, style: AppTypography.textTheme.labelMedium),
+                Text(l10n.genderField,
+                    style: AppTypography.textTheme.labelMedium),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _buildGenderToggle('male', l10n.genderMale, Icons.male_rounded, isDark),
+                    _buildGenderToggle(
+                        'male', l10n.genderMale, Icons.male_rounded, isDark),
                     const SizedBox(width: 8),
-                    _buildGenderToggle('female', l10n.genderFemale, Icons.female_rounded, isDark),
+                    _buildGenderToggle('female', l10n.genderFemale,
+                        Icons.female_rounded, isDark),
                     const SizedBox(width: 8),
-                    _buildGenderToggle('other', l10n.genderOther, Icons.transgender_rounded, isDark),
+                    _buildGenderToggle('other', l10n.genderOther,
+                        Icons.transgender_rounded, isDark),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -364,7 +386,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     );
   }
 
-  Widget _buildGenderToggle(String value, String label, IconData icon, bool isDark) {
+  Widget _buildGenderToggle(
+      String value, String label, IconData icon, bool isDark) {
     final isSelected = _selectedGender == value;
     return Expanded(
       child: GestureDetector(
@@ -373,13 +396,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected 
-                ? AppColors.primary 
+            color: isSelected
+                ? AppColors.primary
                 : (isDark ? AppColors.surfaceDark : Colors.white),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected 
-                  ? AppColors.primary 
+              color: isSelected
+                  ? AppColors.primary
                   : (isDark ? AppColors.borderDark : AppColors.borderLight),
             ),
           ),
@@ -390,8 +413,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
               Text(
                 label,
                 style: AppTypography.textTheme.bodySmall?.copyWith(
-                  color: isSelected 
-                      ? Colors.white 
+                  color: isSelected
+                      ? Colors.white
                       : (isDark ? Colors.white : AppColors.textPrimaryLight),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
@@ -427,7 +450,7 @@ class _AvatarPickerSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    
+
     // We display 1 preview + 1 upload circle + 9 dicebears = 10 items total
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +478,8 @@ class _AvatarPickerSection extends StatelessWidget {
                         height: 120,
                         fit: BoxFit.cover,
                       )
-                    : (selectedAvatarUrl != null && selectedAvatarUrl!.isNotEmpty)
+                    : (selectedAvatarUrl != null &&
+                            selectedAvatarUrl!.isNotEmpty)
                         ? CachedNetworkImage(
                             imageUrl: selectedAvatarUrl!,
                             width: 120,
@@ -501,9 +525,10 @@ class _AvatarPickerSection extends StatelessWidget {
           itemBuilder: (context, index) {
             // First item is the "Upload" circle
             if (index == 0) {
-              final isSelected = selectedLocalFile != null || 
-                (selectedAvatarUrl != null && !avatarOptions.contains(selectedAvatarUrl));
-              
+              final isSelected = selectedLocalFile != null ||
+                  (selectedAvatarUrl != null &&
+                      !avatarOptions.contains(selectedAvatarUrl));
+
               return GestureDetector(
                 onTap: onUploadTap,
                 child: AnimatedContainer(
@@ -513,7 +538,9 @@ class _AvatarPickerSection extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: AppColors.primary.withValues(alpha: 0.1),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.5),
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.primary.withValues(alpha: 0.5),
                       width: isSelected ? 3 : 2,
                     ),
                     boxShadow: isSelected
@@ -536,7 +563,9 @@ class _AvatarPickerSection extends StatelessWidget {
                                 height: double.infinity,
                                 fit: BoxFit.cover,
                               )
-                            : (currentProfileAvatar != null && !avatarOptions.contains(currentProfileAvatar))
+                            : (currentProfileAvatar != null &&
+                                    !avatarOptions
+                                        .contains(currentProfileAvatar))
                                 ? CachedNetworkImage(
                                     imageUrl: currentProfileAvatar!,
                                     width: double.infinity,
@@ -546,12 +575,15 @@ class _AvatarPickerSection extends StatelessWidget {
                                 : Center(
                                     child: Icon(
                                       Icons.camera_alt_rounded,
-                                      color: AppColors.primary.withValues(alpha: 0.8),
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.8),
                                       size: 28,
                                     ),
                                   ),
                       ),
-                      if (selectedLocalFile != null || (currentProfileAvatar != null && !avatarOptions.contains(currentProfileAvatar)))
+                      if (selectedLocalFile != null ||
+                          (currentProfileAvatar != null &&
+                              !avatarOptions.contains(currentProfileAvatar)))
                         Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -572,7 +604,8 @@ class _AvatarPickerSection extends StatelessWidget {
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.primary, width: 3),
+                              border: Border.all(
+                                  color: AppColors.primary, width: 3),
                             ),
                             child: const Icon(
                               Icons.check_circle_rounded,
@@ -589,7 +622,8 @@ class _AvatarPickerSection extends StatelessWidget {
 
             // Dicebear avatars
             final url = avatarOptions[index - 1];
-            final isSelected = url == selectedAvatarUrl && selectedLocalFile == null;
+            final isSelected =
+                url == selectedAvatarUrl && selectedLocalFile == null;
 
             return GestureDetector(
               onTap: () => onDicebearSelected(url),
@@ -630,7 +664,8 @@ class _AvatarPickerSection extends StatelessWidget {
                         ),
                         errorWidget: (_, __, ___) => Container(
                           color: AppColors.primary.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person, color: AppColors.primary, size: 24),
+                          child: const Icon(Icons.person,
+                              color: AppColors.primary, size: 24),
                         ),
                       ),
                     ),

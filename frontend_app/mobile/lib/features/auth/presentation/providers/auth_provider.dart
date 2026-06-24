@@ -22,7 +22,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> checkAuth() async {
     final hasToken = await _repository.hasToken();
-    state = hasToken ? const AuthStateAuthenticated() : const AuthStateUnauthenticated();
+    state = hasToken
+        ? const AuthStateAuthenticated()
+        : const AuthStateUnauthenticated();
   }
 
   Future<void> login({required String email, required String password}) async {
@@ -89,16 +91,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
     // Try extracting from AppException format
     if (msg.contains('AppException:')) {
-      return msg
-          .replaceAll('AppException: ', '')
-          .split('(code:')
-          .first
-          .trim();
+      return msg.replaceAll('AppException: ', '').split('(code:').first.trim();
     }
     return 'An error occurred. Please try again 😅';
   }
 }
 
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider =
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(ref.watch(authRepositoryProvider));
 });

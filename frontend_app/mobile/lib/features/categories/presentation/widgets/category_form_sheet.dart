@@ -45,9 +45,12 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.initialCategory?['name']);
-    _emojiController = TextEditingController(text: widget.initialCategory?['emojiIcon'] ?? '💰');
-    _selectedColor = _colorFromHex(widget.initialCategory?['colorCode'] as String?);
+    _nameController =
+        TextEditingController(text: widget.initialCategory?['name']);
+    _emojiController = TextEditingController(
+        text: widget.initialCategory?['emojiIcon'] ?? '💰');
+    _selectedColor =
+        _colorFromHex(widget.initialCategory?['colorCode'] as String?);
   }
 
   @override
@@ -180,7 +183,9 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
             ),
           ),
           Text(
-            widget.initialCategory == null ? l10n.newCategory : l10n.editCategory,
+            widget.initialCategory == null
+                ? l10n.newCategory
+                : l10n.editCategory,
             style: AppTypography.textTheme.titleMedium,
             textAlign: TextAlign.center,
           ),
@@ -199,12 +204,15 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
                     color: isDark ? AppColors.cardDark : AppColors.cardLight,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
                     ),
                   ),
                   child: Center(
                     child: Text(
-                      _emojiController.text.isNotEmpty ? _emojiController.text : '💰',
+                      _emojiController.text.isNotEmpty
+                          ? _emojiController.text
+                          : '💰',
                       style: const TextStyle(fontSize: 24),
                     ),
                   ),
@@ -223,7 +231,8 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
                     color: _selectedColor,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
                       width: 2,
                     ),
                   ),
@@ -241,7 +250,9 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
           ),
           const SizedBox(height: 32),
           AppButton(
-            label: widget.initialCategory == null ? l10n.createCategory : l10n.saveChanges,
+            label: widget.initialCategory == null
+                ? l10n.createCategory
+                : l10n.saveChanges,
             onPressed: _isLoading ? null : _submit,
             isLoading: _isLoading,
           ),

@@ -36,7 +36,8 @@ class ProfileRepository {
   }
 
   Future<Map<String, dynamic>> updateAvatar({required String avatarUrl}) async {
-    final response = await _dio.patch('/profiles/avatar', data: {'avatar': avatarUrl});
+    final response =
+        await _dio.patch('/profiles/avatar', data: {'avatar': avatarUrl});
     return response.data as Map<String, dynamic>;
   }
 
@@ -56,7 +57,9 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  Future<void> downloadBackup(String savePath, {List<String> tables = const [], Function(int, int)? onReceiveProgress}) async {
+  Future<void> downloadBackup(String savePath,
+      {List<String> tables = const [],
+      Function(int, int)? onReceiveProgress}) async {
     final query = tables.isNotEmpty ? '?tables=${tables.join(',')}' : '';
     await _dio.download(
       '/backup/export$query',
@@ -65,7 +68,8 @@ class ProfileRepository {
     );
   }
 
-  Future<void> downloadTemplate(String table, String savePath, {Function(int, int)? onReceiveProgress}) async {
+  Future<void> downloadTemplate(String table, String savePath,
+      {Function(int, int)? onReceiveProgress}) async {
     await _dio.download(
       '/backup/template/$table',
       savePath,

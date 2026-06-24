@@ -9,7 +9,8 @@ import '../widgets/category_form_sheet.dart';
 class CategoryListScreen extends ConsumerWidget {
   const CategoryListScreen({super.key});
 
-  void _showCategoryForm(BuildContext context, {Map<String, dynamic>? category}) {
+  void _showCategoryForm(BuildContext context,
+      {Map<String, dynamic>? category}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -63,20 +64,25 @@ class CategoryListScreen extends ConsumerWidget {
           ? const _CategorySkeletonLoader()
           : state.categories.isEmpty
               ? Center(
-                  child: Text(l10n.noCategoriesFound, style: AppTypography.textTheme.bodyMedium),
+                  child: Text(l10n.noCategoriesFound,
+                      style: AppTypography.textTheme.bodyMedium),
                 )
               : ListView.builder(
-                  padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
+                  padding: const EdgeInsets.only(
+                      top: 16, left: 16, right: 16, bottom: 80),
                   itemCount: state.categories.length,
                   itemBuilder: (context, index) {
                     final category = state.categories[index];
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                        color:
+                            isDark ? AppColors.cardDark : AppColors.cardLight,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
                         ),
                       ),
                       child: ListTile(
@@ -84,17 +90,21 @@ class CategoryListScreen extends ConsumerWidget {
                           category['emojiIcon'] ?? '📁',
                           style: const TextStyle(fontSize: 24),
                         ),
-                        title: Text(category['name'], style: AppTypography.textTheme.labelLarge),
+                        title: Text(category['name'],
+                            style: AppTypography.textTheme.labelLarge),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit_outlined, size: 20),
-                              onPressed: () => _showCategoryForm(context, category: category),
+                              onPressed: () => _showCategoryForm(context,
+                                  category: category),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                              onPressed: () => _confirmDelete(context, ref, category['id']),
+                              icon: const Icon(Icons.delete_outline,
+                                  size: 20, color: Colors.red),
+                              onPressed: () =>
+                                  _confirmDelete(context, ref, category['id']),
                             ),
                           ],
                         ),
@@ -110,18 +120,23 @@ class _CategorySkeletonLoader extends StatefulWidget {
   const _CategorySkeletonLoader();
 
   @override
-  State<_CategorySkeletonLoader> createState() => _CategorySkeletonLoaderState();
+  State<_CategorySkeletonLoader> createState() =>
+      _CategorySkeletonLoaderState();
 }
 
-class _CategorySkeletonLoaderState extends State<_CategorySkeletonLoader> with SingleTickerProviderStateMixin {
+class _CategorySkeletonLoaderState extends State<_CategorySkeletonLoader>
+    with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.3, end: 0.85).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 900))
+      ..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 0.85)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -133,7 +148,8 @@ class _CategorySkeletonLoaderState extends State<_CategorySkeletonLoader> with S
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
+    final baseColor =
+        isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0);
 
     return ListView.builder(
       padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
@@ -153,13 +169,33 @@ class _CategorySkeletonLoaderState extends State<_CategorySkeletonLoader> with S
               ),
               child: Row(
                 children: [
-                  Container(width: 24, height: 24, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), shape: BoxShape.circle)),
+                  Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                          color: baseColor.withValues(alpha: 0.5),
+                          shape: BoxShape.circle)),
                   const SizedBox(width: 16),
-                  Container(width: 120, height: 16, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(8))),
+                  Container(
+                      width: 120,
+                      height: 16,
+                      decoration: BoxDecoration(
+                          color: baseColor.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(8))),
                   const Spacer(),
-                  Container(width: 20, height: 20, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), shape: BoxShape.circle)),
+                  Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                          color: baseColor.withValues(alpha: 0.5),
+                          shape: BoxShape.circle)),
                   const SizedBox(width: 16),
-                  Container(width: 20, height: 20, decoration: BoxDecoration(color: baseColor.withValues(alpha: 0.5), shape: BoxShape.circle)),
+                  Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                          color: baseColor.withValues(alpha: 0.5),
+                          shape: BoxShape.circle)),
                 ],
               ),
             ),
