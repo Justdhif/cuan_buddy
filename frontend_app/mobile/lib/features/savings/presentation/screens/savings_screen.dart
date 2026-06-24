@@ -391,6 +391,17 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     final isCompleted = goal['status'] == 'completed' || safePercentage >= 1.0;
     final percentageText = '${(safePercentage * 100).toInt()}%';
 
+    Color progressColor;
+    if (safePercentage >= 1.0) {
+      progressColor = AppColors.success;
+    } else if (safePercentage >= 0.7) {
+      progressColor = AppColors.primary;
+    } else if (safePercentage >= 0.4) {
+      progressColor = const Color(0xFFF59E0B);
+    } else {
+      progressColor = AppColors.danger;
+    }
+
     final goalCurrency =
         goal['currency'] as String? ?? AppConstants.defaultCurrency;
     final goalCurrencySymbol = AppConstants.getCurrencySymbol(goalCurrency);
@@ -631,7 +642,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     widthFactor: safePercentage,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: goalColor,
+                        color: progressColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       alignment: Alignment.center,

@@ -306,6 +306,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get totalBudget => 'Total Budget';
   @override
+  String get budgetSummary => 'Budget Summary';
+  @override
+  String get totalSpent => 'Total Spent';
+  @override
   String get all => 'All';
   @override
   String get onTrack => 'On Track';

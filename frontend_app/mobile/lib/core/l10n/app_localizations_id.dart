@@ -310,6 +310,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get totalBudget => 'Total Anggaran';
   @override
+  String get budgetSummary => 'Ringkasan Anggaran';
+  @override
+  String get totalSpent => 'Total Pengeluaran';
+  @override
   String get all => 'Semua';
   @override
   String get onTrack => 'Sesuai Rencana';

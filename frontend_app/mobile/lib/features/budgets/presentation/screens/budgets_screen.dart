@@ -188,10 +188,21 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       slivers: [
         // Summary Header Card
         SliverToBoxAdapter(
-          child: Container(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  )
+                ],
+              ),
               child: Consumer(
                 builder: (context, ref, child) {
                   final summaryAsync =
@@ -200,378 +211,110 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                     data: (summary) {
                       final totalLimit = summary['totalLimit'] ?? 0.0;
                       final totalSpent = summary['totalSpent'] ?? 0.0;
-                      final remaining = totalLimit - totalSpent;
-
                       final percentage =
                           totalLimit > 0 ? (totalSpent / totalLimit) : 0.0;
                       final safePercentage = percentage.clamp(0.0, 1.0);
 
-                      final remainingFormatted = fmt.format(remaining.abs());
-                      final totalLimitFormatted = fmt.format(totalLimit);
-
-                      final String subtitle;
-                      if (remaining >= 0) {
-                        subtitle = localeCode == 'id'
-                            ? '$remainingFormatted tersisa dari $totalLimitFormatted'
-                            : '$remainingFormatted remaining of $totalLimitFormatted';
-                      } else {
-                        subtitle = localeCode == 'id'
-                            ? '$remainingFormatted terlampaui dari $totalLimitFormatted'
-                            : '$remainingFormatted exceeded of $totalLimitFormatted';
-                      }
-
-                      // Define dynamic colors based on consumption percentage
-                      Color progressBarColor;
+                      Color progressColor;
                       if (percentage >= 1.0) {
-                        progressBarColor = AppColors.danger;
+                        progressColor = AppColors.danger;
                       } else if (percentage >= 0.8) {
-                        progressBarColor = AppColors.warning;
+                        progressColor = AppColors.warning;
                       } else if (percentage >= 0.5) {
-                        progressBarColor = const Color(0xFFF59E0B);
+                        progressColor = const Color(0xFFEAB308);
                       } else {
-                        progressBarColor = AppColors.primary;
+                        progressColor = AppColors.success;
                       }
 
-                      // Monthly period calculations
-                      final now = DateTime.now();
-                      final startDate = DateTime(now.year, now.month, 1);
-                      final endDate = DateTime(now.year, now.month + 1, 0);
-
-                      final today = DateTime(now.year, now.month, now.day);
-                      double todayProgressFraction = 0.0;
-                      if (today.isBefore(startDate)) {
-                        todayProgressFraction = 0.0;
-                      } else if (today.isAfter(endDate)) {
-                        todayProgressFraction = 1.0;
-                      } else {
-                        final totalDays =
-                            endDate.difference(startDate).inDays + 1;
-                        final elapsedDays = today.difference(startDate).inDays;
-                        todayProgressFraction = elapsedDays / totalDays;
-                      }
-
-                      final remainingDays = endDate.isAfter(today)
-                          ? endDate.difference(today).inDays + 1
-                          : 0;
-                      final dailyAllowance = remainingDays > 0 && remaining > 0
-                          ? remaining / remainingDays
-                          : 0.0;
-
-                      final String infoText;
-                      if (remaining >= 0) {
-                        if (remainingDays > 0) {
-                          final allowanceFormatted = fmt.format(dailyAllowance);
-                          infoText = localeCode == 'id'
-                              ? 'Anda bisa membelanjakan $allowanceFormatted/hari untuk $remainingDays hari ke depan'
-                              : 'You can spend $allowanceFormatted/day for $remainingDays more days';
-                        } else {
-                          infoText = localeCode == 'id'
-                              ? 'Periode anggaran telah berakhir'
-                              : 'Budget period has ended';
-                        }
-                      } else {
-                        final limitExceededFormatted =
-                            fmt.format(remaining.abs());
-                        infoText = localeCode == 'id'
-                            ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
-                            : 'Budget exceeded by $limitExceededFormatted';
-                      }
-
-                      return Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: percentage >= 1.0
-                                ? AppColors.danger.withValues(alpha: 0.5)
-                                : (isDark
-                                    ? AppColors.borderDark
-                                    : AppColors.borderLight),
-                            width: percentage >= 1.0 ? 1.5 : 1,
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.budgetSummary,
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Column(
-                          children: [
-                            // Top half: Gradient
-                            Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColors.primary,
-                                    Color.lerp(AppColors.primary, Colors.black,
-                                            0.45) ??
-                                        AppColors.primary
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                          const SizedBox(height: 20),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. Total Spent
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.account_balance_wallet_rounded,
+                                  iconColor: AppColors.danger,
+                                  label: l10n.totalSpent,
+                                  valueWidget: Text(
+                                    fmt.format(totalSpent),
+                                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  isDark: isDark,
                                 ),
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Text(
-                                      '💼',
-                                      style: TextStyle(fontSize: 22),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          l10n.totalBudget,
-                                          style: AppTypography
-                                              .textTheme.titleMedium
-                                              ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          subtitle,
-                                          style: AppTypography
-                                              .textTheme.bodyMedium
-                                              ?.copyWith(
-                                            color: Colors.white
-                                                .withValues(alpha: 0.85),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Bottom half: Solid
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 16),
-                              color: isDark
-                                  ? const Color(0xFF161F28)
-                                  : const Color(0xFFF8F9FA),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
+                              // 2. Progress Total
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.pie_chart_rounded,
+                                  iconColor: const Color(0xFF9b51e0),
+                                  label: l10n.progressTotal,
+                                  valueWidget: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      Container(
-                                        height: 20,
-                                        margin: const EdgeInsets.only(bottom: 6),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          DateFormat('d MMM', localeCode)
-                                              .format(startDate),
-                                          style: AppTypography
-                                              .textTheme.labelSmall
-                                              ?.copyWith(
-                                            color: isDark
-                                                ? AppColors.textSecondaryDark
-                                                : AppColors.textSecondaryLight,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                      Text(
+                                        '${(safePercentage * 100).toInt()}%',
+                                        style: AppTypography.textTheme.titleSmall?.copyWith(
+                                          color: progressColor,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 13,
                                         ),
                                       ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: LayoutBuilder(
-                                          builder: (context, constraints) {
-                                            final maxWidth =
-                                                constraints.maxWidth;
-                                            final todayPosition = maxWidth *
-                                                todayProgressFraction;
-                                            const todayLabelWidth = 50.0;
-
-                                            return SizedBox(
-                                              height: 52,
-                                              child: Stack(
-                                                clipBehavior: Clip.none,
-                                                children: [
-                                                  Positioned(
-                                                    bottom: 6,
-                                                    left: 0,
-                                                    right: 0,
-                                                    child: Container(
-                                                      height: 20,
-                                                      decoration: BoxDecoration(
-                                                        color: isDark
-                                                            ? AppColors
-                                                                .borderDark
-                                                            : const Color(
-                                                                0xFFE2E8F0),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(10),
-                                                      ),
-                                                      child: Stack(
-                                                        children: [
-                                                          FractionallySizedBox(
-                                                            widthFactor:
-                                                                safePercentage,
-                                                            child: Container(
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color:
-                                                                    progressBarColor,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            10),
-                                                              ),
-                                                              alignment:
-                                                                  Alignment
-                                                                      .center,
-                                                              child:
-                                                                  safePercentage >
-                                                                          0.15
-                                                                      ? Text(
-                                                                          '${(safePercentage * 100).toInt()}%',
-                                                                          style:
-                                                                              const TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize:
-                                                                                10,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                          ),
-                                                                        )
-                                                                      : null,
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  if (todayProgressFraction >
-                                                          0.0 &&
-                                                      todayProgressFraction <
-                                                          1.0)
-                                                    Positioned(
-                                                      left: todayPosition -
-                                                          (todayLabelWidth / 2),
-                                                      top: 0,
-                                                      child: SizedBox(
-                                                        width: todayLabelWidth,
-                                                        child: Column(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            Container(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .symmetric(
-                                                                      horizontal:
-                                                                          4,
-                                                                      vertical:
-                                                                          1),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: isDark
-                                                                    ? Colors
-                                                                        .white
-                                                                    : AppColors
-                                                                        .primary,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            6),
-                                                              ),
-                                                              child: Text(
-                                                                localeCode ==
-                                                                        'id'
-                                                                    ? 'Hari ini'
-                                                                    : 'Today',
-                                                                style:
-                                                                    TextStyle(
-                                                                  color: isDark
-                                                                      ? Colors
-                                                                          .black
-                                                                      : Colors
-                                                                          .white,
-                                                                  fontSize: 8,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 2),
-                                                            Container(
-                                                              width: 1.5,
-                                                              height: 34,
-                                                              color: isDark
-                                                                  ? Colors
-                                                                      .white70
-                                                                  : AppColors
-                                                                      .primary,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Container(
-                                        height: 20,
-                                        margin: const EdgeInsets.only(bottom: 6),
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          DateFormat('d MMM', localeCode)
-                                              .format(endDate),
-                                          style: AppTypography
-                                              .textTheme.labelSmall
-                                              ?.copyWith(
-                                            color: isDark
-                                                ? AppColors.textSecondaryDark
-                                                : AppColors.textSecondaryLight,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                      const SizedBox(height: 4),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(4),
+                                        child: LinearProgressIndicator(
+                                          value: safePercentage,
+                                          minHeight: 4,
+                                          backgroundColor: progressColor.withValues(alpha: 0.15),
+                                          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    infoText,
-                                    style: AppTypography.textTheme.bodySmall
-                                        ?.copyWith(
-                                      color: isDark
-                                          ? AppColors.textSecondaryDark
-                                          : AppColors.textSecondaryLight,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
+                                  isDark: isDark,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
+                              // 3. Total Budget
+                              Expanded(
+                                child: _buildSummaryMetric(
+                                  icon: Icons.track_changes_rounded,
+                                  iconColor: AppColors.primary,
+                                  label: l10n.totalBudget,
+                                  valueWidget: Text(
+                                    fmt.format(totalLimit),
+                                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       );
                     },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
+                    loading: () => const Center(child: CircularProgressIndicator()),
                     error: (_, __) => const SizedBox(),
                   );
                 },
@@ -758,9 +501,9 @@ class _BudgetCard extends ConsumerWidget {
     } else if (percentage >= 0.8) {
       progressBarColor = AppColors.warning;
     } else if (percentage >= 0.5) {
-      progressBarColor = const Color(0xFFF59E0B);
+      progressBarColor = const Color(0xFFEAB308);
     } else {
-      progressBarColor = baseColor;
+      progressBarColor = AppColors.success;
     }
 
     final catEmoji = tx['category']?['emojiIcon'] as String? ??
@@ -1031,6 +774,45 @@ class _BudgetCard extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSummaryMetric({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required Widget valueWidget,
+    required bool isDark,
+  }) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: iconColor,
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          label,
+          style: AppTypography.textTheme.labelSmall?.copyWith(
+            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            fontSize: 10,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 6),
+        valueWidget,
+      ],
     );
   }
 }

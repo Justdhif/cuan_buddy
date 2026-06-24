@@ -192,6 +192,8 @@ abstract class AppLocalizations {
   // ─── Budgets ──────────────────────────────────────────────────────────────────
   String get budgets;
   String get totalBudget;
+  String get budgetSummary;
+  String get totalSpent;
   String get all;
   String get onTrack;
   String get warning;
