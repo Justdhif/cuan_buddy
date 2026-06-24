@@ -21,7 +21,7 @@ class BudgetsScreen extends ConsumerStatefulWidget {
 
 class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  String _statusFilter = 'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
+  final String _statusFilter = 'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
   final ScrollController _scrollController = ScrollController();
   @override
   void initState() {
@@ -58,10 +58,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           child: Text(l10n.budgets),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add_rounded),
-            onPressed: () => context.push('/budgets/form'),
-          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert_rounded),
             onSelected: (value) {
@@ -106,6 +102,29 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         onRefresh: () => ref.read(budgetsNotifierProvider.notifier).fetchBudgets(),
         color: AppColors.primary,
         child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
+      ),
+      floatingActionButton: GestureDetector(
+        onTap: () => context.push('/budgets/form'),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
       ),
     );
   }

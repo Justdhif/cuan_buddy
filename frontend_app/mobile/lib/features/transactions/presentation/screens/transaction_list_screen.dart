@@ -12,7 +12,7 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
 import '../providers/transaction_provider.dart';
 import '../../../savings/presentation/widgets/allocate_savings_sheet.dart';
-import '../widgets/ai_voice_button.dart';
+import '../widgets/ai_voice_sheet.dart';
 import '../widgets/transaction_calendar.dart';
 import '../../../profile/presentation/widgets/single_table_import_sheet.dart';
 import '../../../profile/data/services/backup_worker.dart';
@@ -24,17 +24,99 @@ class TransactionListScreen extends ConsumerStatefulWidget {
   ConsumerState<TransactionListScreen> createState() => _TransactionListScreenState();
 }
 
-class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
+class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
+    with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+
+  // Speed-dial FAB state
+  bool _fabOpen = false;
+  late AnimationController _fabController;
+  late Animation<double> _fade1, _fade2, _fade3;
+  late Animation<Offset> _slide1, _slide2, _slide3;
+
   @override
   void initState() {
     super.initState();
+    _fabController = AnimationController(
+      duration: const Duration(milliseconds: 380),
+      vsync: this,
+    );
+    // Staggered intervals: btn1 first (closest to main), btn3 last (topmost)
+    _fade1 = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.55, curve: Curves.easeOut)),
+    );
+    _fade2 = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.2, 0.75, curve: Curves.easeOut)),
+    );
+    _fade3 = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+    );
+    _slide1 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.0, 0.55, curve: Curves.easeOut)),
+    );
+    _slide2 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.2, 0.75, curve: Curves.easeOut)),
+    );
+    _slide3 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
+      CurvedAnimation(parent: _fabController, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+    );
   }
 
   @override
   void dispose() {
+    _fabController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _fabOpen = !_fabOpen;
+      if (_fabOpen) {
+        _fabController.forward();
+      } else {
+        _fabController.reverse();
+      }
+    });
+  }
+
+  Widget _buildSubFab({
+    required IconData icon,
+    required VoidCallback onTap,
+    required Animation<double> fadeAnim,
+    required Animation<Offset> slideAnim,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return FadeTransition(
+      opacity: fadeAnim,
+      child: SlideTransition(
+        position: slideAnim,
+        child: IgnorePointer(
+          ignoring: !_fabOpen,
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isDark ? AppColors.surfaceDark : Colors.white,
+                border: Border.all(color: AppColors.primary, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 22),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   AppLocalizations get l10n => AppLocalizations.of(context);
@@ -196,35 +278,86 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          GestureDetector(
-            onTap: () => showAllocateSavingsSheet(context),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : Colors.white,
-                border: Border.all(color: AppColors.primary, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 3),
+          // ── Staggered sub-buttons (visible only when FAB is open) ──
+          AnimatedSize(
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeInOut,
+            alignment: Alignment.bottomCenter,
+            child: _fabOpen
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Sub 3 – Allocate (top, animates last)
+                      _buildSubFab(
+                        icon: Icons.account_balance_wallet_rounded,
+                        onTap: () {
+                          _toggleFab();
+                          showAllocateSavingsSheet(context);
+                        },
+                        fadeAnim: _fade3,
+                        slideAnim: _slide3,
+                      ),
+                      const SizedBox(height: 12),
+                      // Sub 2 – Mic (middle, animates second)
+                      _buildSubFab(
+                        icon: Icons.mic_rounded,
+                        onTap: () async {
+                          _toggleFab();
+                          final result = await showAiVoiceSheet(context);
+                          if (result == true) {
+                            ref.invalidate(allTransactionsProvider);
+                          }
+                        },
+                        fadeAnim: _fade2,
+                        slideAnim: _slide2,
+                      ),
+                      const SizedBox(height: 12),
+                      // Sub 1 – Add Transaction (bottom, animates first)
+                      _buildSubFab(
+                        icon: Icons.receipt_long_rounded,
+                        onTap: () {
+                          _toggleFab();
+                          context.push('/transactions/form',
+                              extra: {'initialType': 'expense'});
+                        },
+                        fadeAnim: _fade1,
+                        slideAnim: _slide1,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   )
-                ],
+                : const SizedBox.shrink(),
+          ),
+          // ── Main + FAB (rotates 45° → × when open) ──
+          GestureDetector(
+            onTap: _toggleFab,
+            child: AnimatedBuilder(
+              animation: _fabController,
+              builder: (ctx, child) => Transform.rotate(
+                angle: _fabController.value * 0.785398, // 45 degrees
+                child: child,
               ),
-              child: const Icon(
-                Icons.account_balance_wallet_rounded,
-                color: AppColors.primary,
-                size: 24,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.35),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          AiVoiceButton(
-            onTransactionAdded: () {
-              ref.invalidate(allTransactionsProvider);
-            },
           ),
         ],
       ),
