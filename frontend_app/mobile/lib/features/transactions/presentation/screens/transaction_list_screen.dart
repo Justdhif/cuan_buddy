@@ -167,28 +167,12 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               surfaceTintColor: Colors.transparent,
               scrolledUnderElevation: 0,
               titleSpacing: 24,
-              // Collapsed app bar title (shows when scrolled)
-              title: AnimatedOpacity(
-                opacity: _headerCollapsed ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: Hero(
-                  tag: 'tx-title',
-                  flightShuttleBuilder: (_, animation, __, fromContext, toContext) {
-                    return DefaultTextStyle(
-                      style: AppTypography.textTheme.titleLarge!.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      child: AnimatedBuilder(
-                        animation: animation,
-                        builder: (_, __) {
-                          return Opacity(
-                            opacity: animation.value,
-                            child: const Text('Transactions'),
-                          );
-                        },
-                      ),
-                    );
-                  },
+              // Collapsed app bar title (shows when scrolled, after hero title has moved up)
+              title: Builder(builder: (context) {
+                // Only show after hero title has mostly moved out
+                final t = ((_scrollOffset - 85) / 30).clamp(0.0, 1.0);
+                return Opacity(
+                  opacity: t,
                   child: GestureDetector(
                     onTap: () => _scrollController.animateTo(
                       0,
@@ -202,8 +186,8 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                       ),
                     ),
                   ),
-                ),
-              ),
+                );
+              }),
 
               // Expanded hero header
               flexibleSpace: FlexibleSpaceBar(
@@ -385,18 +369,31 @@ class _TransactionHeroHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 8),
-                Hero(
-                  tag: 'tx-title',
-                  child: Text(
-                    l10n.transactions,
-                    style: AppTypography.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
+                // Title moves upward as user scrolls, then fades out
+                Builder(builder: (context) {
+                  final expandedH = 120.0;
+                  // progress 0 → 1 as scroll goes 0 → expandedH
+                  final progress = (_scrollOffset / expandedH).clamp(0.0, 1.0);
+                  // Title travels upward to reach AppBar position
+                  final translateY = -expandedH * progress;
+                  // Fade out between 50%–90% of the scroll
+                  final opacity = 1.0 - ((progress - 0.45) / 0.45).clamp(0.0, 1.0);
+                  return Transform.translate(
+                    offset: Offset(0, translateY),
+                    child: Opacity(
+                      opacity: opacity,
+                      child: Text(
+                        l10n.transactions,
+                        style: AppTypography.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                }),
                 const SizedBox(height: 6),
                 Text(
                   l10n.transactionsSubtitle,
