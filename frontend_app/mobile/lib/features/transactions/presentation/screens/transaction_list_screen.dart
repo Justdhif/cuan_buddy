@@ -339,7 +339,13 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
 
     // t: 0 = title at hero, 1 = title at AppBar
     final t = (_scrollOffset / travelDist).clamp(0.0, 1.0);
-    final currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
+    var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
+
+    // Adjust for overscroll (pull to refresh)
+    // When _scrollOffset is negative, the slivers move down. We must move the floating title down by the same amount.
+    if (_scrollOffset < 0) {
+      currentY -= _scrollOffset; 
+    }
 
     // Font size: headlineMedium -> titleLarge
     final heroSize = AppTypography.textTheme.headlineMedium?.fontSize ?? 28.0;
