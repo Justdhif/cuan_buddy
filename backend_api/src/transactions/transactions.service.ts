@@ -25,7 +25,7 @@ export class TransactionsService {
   async create(userId: string, createTransactionDto: CreateTransactionDto) {
     let finalTitle = createTransactionDto.title;
     if (!finalTitle) {
-      finalTitle = createTransactionDto.note;
+      finalTitle = createTransactionDto.note ?? undefined;
     }
     if (!finalTitle && createTransactionDto.categoryId) {
       const category = await this.db.query.categories.findFirst({
