@@ -79,6 +79,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   @override
+  Future<void> _showThemePicker(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final currentMode = ref.read(themeModeProvider);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => _ThemePickerSheet(
+        currentMode: currentMode,
+        l10n: l10n,
+        onSelect: (mode) {
+          Navigator.pop(ctx);
+          ref.read(themeModeProvider.notifier).setThemeMode(mode);
+        },
+      ),
+    );
+  }
+
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
     final l10n = AppLocalizations.of(context);
@@ -120,6 +140,131 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildGridButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.white : Colors.black87;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppTypography.textTheme.labelLarge?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: AppTypography.textTheme.bodySmall?.copyWith(
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullWidthButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isDanger = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color =
+        isDanger ? AppColors.danger : (isDark ? Colors.white : Colors.black87);
+    final bgColor = isDanger
+        ? AppColors.danger.withValues(alpha: 0.1)
+        : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight);
+    final borderColor = isDanger
+        ? AppColors.danger.withValues(alpha: 0.2)
+        : (isDark ? AppColors.borderDark : AppColors.borderLight);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: borderColor,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.textTheme.titleMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getThemeLabel(ThemeMode mode, AppLocalizations l10n) {
+    switch (mode) {
+      case ThemeMode.system:
+        return l10n.system;
+      case ThemeMode.light:
+        return l10n.light;
+      case ThemeMode.dark:
+        return l10n.dark;
+    }
+  }
+
+  String _getLanguageLabel(WidgetRef ref) {
+    final langCode = ref.read(languageProvider);
+    if (langCode == 'id') return 'Indonesia';
+    return 'English';
+  }
+
   Widget _buildProfileContent(
       BuildContext context, WidgetRef ref, Map<String, dynamic> profile) {
     final l10n = AppLocalizations.of(context);
@@ -127,20 +272,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final avatar = profile['avatar'] as String?;
     final currency = profile['currency'] as String? ?? 'IDR';
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final currentLangCode = ref.watch(languageProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
-    // Backend now stores PNG URL directly.
     final validAvatar = avatar;
-
-    // Find currency symbol
-    final currencyInfo = AppConstants.supportedCurrencies.firstWhere(
-      (c) => c['code'] == currency,
-      orElse: () => {'code': currency, 'name': currency, 'symbol': currency},
-    );
-
-    // Language display name
-    final langDisplayName = currentLangCode == 'id' ? 'Indonesia' : 'English';
-
     final username = profile['username'] as String?;
     final bio = profile['bio'] as String?;
 
@@ -149,314 +283,186 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
       child: Column(
         children: [
-          // ─── Profile Header ───────────────────────────────────────────────
-          Row(
-            children: [
-              Hero(
-                tag: 'avatar',
-                child: CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                  child: validAvatar != null
-                      ? ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: validAvatar,
-                            width: 72,
-                            height: 72,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                const CircularProgressIndicator(strokeWidth: 3),
-                            errorWidget: (context, url, error) => Text(
-                              name[0].toUpperCase(),
-                              style: const TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 28,
+          // Profile Header
+          GestureDetector(
+            onTap: () => context.push('/profile/edit', extra: profile),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Hero(
+                  tag: 'avatar',
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                    child: validAvatar != null
+                        ? ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: validAvatar,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  const CircularProgressIndicator(strokeWidth: 3),
+                              errorWidget: (context, url, error) => Text(
+                                name[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 28,
+                                ),
                               ),
                             ),
+                          )
+                        : Text(
+                            name[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 28,
+                            ),
                           ),
-                        )
-                      : Text(
-                          name[0].toUpperCase(),
-                          style: const TextStyle(
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (username != null && username.isNotEmpty)
+                        Text(
+                          '@$username',
+                          style: AppTypography.textTheme.bodyMedium?.copyWith(
                             color: AppColors.primary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 28,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (username != null && username.isNotEmpty)
                       Text(
-                        '@$username',
-                        style: AppTypography.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
+                        name,
+                        style: AppTypography.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    Text(
-                      name,
-                      style: AppTypography.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           // Bio Section
-          Align(
-            alignment: Alignment.centerLeft,
-            child: (bio != null && bio.isNotEmpty)
-                ? Text(
-                    bio,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+          GestureDetector(
+            onTap: () => context.push('/profile/edit', extra: profile),
+            behavior: HitTestBehavior.opaque,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: (bio != null && bio.isNotEmpty)
+                  ? Text(
+                      bio,
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    )
+                  : Text(
+                      l10n.noBioFallback,
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode
+                            ? AppColors.textSecondaryDark.withValues(alpha: 0.5)
+                            : AppColors.textSecondaryLight.withValues(alpha: 0.5),
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  )
-                : Text(
-                    l10n.noBioFallback,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode
-                          ? AppColors.textSecondaryDark.withValues(alpha: 0.5)
-                          : AppColors.textSecondaryLight.withValues(alpha: 0.5),
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
+            ),
           ),
-          const SizedBox(height: 24),
-          // Action Buttons
-          Row(
+          const SizedBox(height: 32),
+
+          // Grid Layout
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.8,
             children: [
-              Expanded(
-                child: _buildActionButton(
-                  context: context,
-                  icon: Icons.edit_outlined,
-                  label: l10n.editProfile,
-                  onTap: () => context.push('/profile/edit', extra: profile),
-                ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.lock_outline,
+                label: l10n.changePassword,
+                onTap: () => context.push('/change-password'),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildActionButton(
-                  context: context,
-                  icon: Icons.lock_outline,
-                  label: l10n.changePassword,
-                  onTap: () => context.push('/change-password'),
-                ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.palette_outlined,
+                label: l10n.theme,
+                subtitle: _getThemeLabel(themeMode, l10n),
+                onTap: () => _showThemePicker(context),
+              ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.language_outlined,
+                label: l10n.language,
+                subtitle: _getLanguageLabel(ref),
+                onTap: () => _showLanguagePicker(context),
+              ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.attach_money_rounded,
+                label: l10n.currency,
+                subtitle: currency,
+                onTap: () => _showCurrencyPicker(currency),
+              ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.category_outlined,
+                label: l10n.manageCategories,
+                onTap: () => context.push('/manage-categories'),
+              ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.widgets_outlined,
+                label: 'Widgets',
+                onTap: () => context.push('/profile/widgets'),
+              ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.info_outline_rounded,
+                label: l10n.about,
+                onTap: () {}, // No-op or show dialog
+              ),
+              _buildGridButton(
+                context: context,
+                icon: Icons.feedback_outlined,
+                label: l10n.feedback,
+                onTap: () {}, // No-op or show dialog
               ),
             ],
           ),
+
           const SizedBox(height: 12),
-          _buildActionButton(
+
+          _buildFullWidthButton(
+            context: context,
+            icon: Icons.backup_outlined,
+            label: l10n.backupRestore,
+            onTap: () => context.push('/profile/backup'),
+          ),
+
+          const SizedBox(height: 12),
+
+          _buildFullWidthButton(
             context: context,
             icon: Icons.logout_rounded,
             label: l10n.logOut,
             isDanger: true,
-            isHorizontal: true,
             onTap: () => _logout(context, ref),
-          ),
-          const SizedBox(height: 32),
-
-          // ─── Preferences ────────────────────────────────────────────
-          _buildSection(
-            context,
-            title: l10n.preferences,
-            children: [
-              _buildListTile(
-                context,
-                icon: Icons.dark_mode_outlined,
-                title: l10n.darkMode,
-                trailing: Switch(
-                  value: isDarkMode,
-                  onChanged: (v) {
-                    ref.read(themeModeProvider.notifier).setThemeMode(
-                          v ? ThemeMode.dark : ThemeMode.light,
-                        );
-                  },
-                  activeColor: AppColors.primary,
-                ),
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.language_outlined,
-                title: l10n.language,
-                trailing: Text(langDisplayName,
-                    style: TextStyle(
-                      color: isDarkMode
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    )),
-                onTap: () => _showLanguagePicker(context),
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.attach_money_rounded,
-                title: l10n.currency,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${currencyInfo['symbol']} ${currencyInfo['code']}',
-                      style: TextStyle(
-                          color: isDarkMode
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                          fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        size: 14,
-                        color: isDarkMode
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight),
-                  ],
-                ),
-                onTap: () => _showCurrencyPicker(currency),
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.widgets_outlined,
-                title: 'Widget Settings',
-                onTap: () => context.push('/profile/widgets'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // ─── Account ────────────────────────────────────────────────
-          _buildSection(
-            context,
-            title: l10n.account,
-            children: [
-              _buildListTile(
-                context,
-                icon: Icons.category_outlined,
-                title: l10n.manageCategories,
-                onTap: () => context.push('/manage-categories'),
-              ),
-              _buildListTile(
-                context,
-                icon: Icons.backup_outlined,
-                title: l10n.backupRestore,
-                onTap: () => context.push('/profile/backup'),
-              ),
-            ],
           ),
           const SizedBox(height: 32),
         ],
       ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool isDanger = false,
-    bool isHorizontal = false,
-  }) {
-    final color = isDanger ? AppColors.danger : AppColors.primary;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: isHorizontal ? double.infinity : null,
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: isHorizontal
-            ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: color, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: AppTypography.textTheme.labelMedium?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: color, size: 24),
-                  const SizedBox(height: 6),
-                  Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildSection(BuildContext context,
-      {required String title, required List<Widget> children}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title,
-            style: AppTypography.textTheme.titleSmall
-                ?.copyWith(color: AppColors.primary)),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceDark
-                : AppColors.borderLight.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(children: children),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildListTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    Widget? trailing,
-    VoidCallback? onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconColor =
-        isDark ? AppColors.textSecondaryDark : AppColors.textPrimaryLight;
-    final arrowColor =
-        isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
-    return ListTile(
-      leading: Icon(icon, color: iconColor),
-      title: Text(title, style: AppTypography.textTheme.bodyLarge),
-      trailing: trailing ??
-          Icon(Icons.arrow_forward_ios_rounded, size: 16, color: arrowColor),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     );
   }
 
@@ -487,7 +493,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-// ─── Language Picker Sheet ────────────────────────────────────────────────────
+// ─── Theme Picker Sheet ────────────────────────────────────────────────────
 class _LanguagePickerSheet extends StatelessWidget {
   const _LanguagePickerSheet({
     required this.currentCode,
@@ -680,6 +686,115 @@ class _CurrencyPickerSheet extends StatelessWidget {
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// --- Theme Picker Sheet ----------------------------------------------------
+class _ThemePickerSheet extends StatelessWidget {
+  const _ThemePickerSheet({
+    required this.currentMode,
+    required this.l10n,
+    required this.onSelect,
+  });
+
+  final ThemeMode currentMode;
+  final AppLocalizations l10n;
+  final ValueChanged<ThemeMode> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themes = [
+      {
+        'mode': ThemeMode.system,
+        'name': l10n.system,
+        'icon': Icons.brightness_auto_outlined
+      },
+      {
+        'mode': ThemeMode.light,
+        'name': l10n.light,
+        'icon': Icons.light_mode_outlined
+      },
+      {
+        'mode': ThemeMode.dark,
+        'name': l10n.dark,
+        'icon': Icons.dark_mode_outlined
+      },
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              l10n.theme,
+              style: AppTypography.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 20),
+            ...themes.map((theme) {
+              final mode = theme['mode'] as ThemeMode;
+              final isSelected = mode == currentMode;
+              return GestureDetector(
+                onTap: () => onSelect(mode),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : (isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(theme['icon'] as IconData,
+                          size: 28,
+                          color: isSelected ? AppColors.primary : null),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          theme['name'] as String,
+                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? AppColors.primary : null,
+                          ),
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),

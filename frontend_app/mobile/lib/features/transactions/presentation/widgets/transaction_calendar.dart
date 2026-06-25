@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/transaction_provider.dart';
@@ -8,6 +8,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import 'package:marquee/marquee.dart';
 
 class TransactionCalendar extends ConsumerStatefulWidget {
   const TransactionCalendar({super.key});
@@ -210,8 +211,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
         children: [
           _buildHeader(context, filterState, isDark),
           const SizedBox(height: 12),
-          _buildCashflowSummary(context, totalIncome, totalExpense, isDark),
-          const Divider(height: 16),
           _buildLegend(context, filterState, isDark),
           const SizedBox(height: 12),
           _buildDaysOfWeek(isDark),
@@ -230,6 +229,8 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
                   child: Center(child: Text('Failed to load calendar'))),
             ),
           ),
+          const SizedBox(height: 16),
+          _buildCashflowSummary(context, totalIncome, totalExpense, isDark),
         ],
       ),
     );
@@ -541,18 +542,18 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 6,
-              height: 6,
+              width: 8,
+              height: 8,
               decoration: const BoxDecoration(
                   color: AppColors.success, shape: BoxShape.circle),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Text(l10n.incomeType,
                 style: AppTypography.textTheme.labelSmall?.copyWith(
                   color: isDark
                       ? AppColors.textSecondaryDark
                       : AppColors.textSecondaryLight,
-                  fontSize: 10,
+                  fontSize: 12,
                 )),
           ],
         ),
@@ -561,18 +562,18 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 6,
-              height: 6,
+              width: 8,
+              height: 8,
               decoration: const BoxDecoration(
                   color: AppColors.danger, shape: BoxShape.circle),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Text(l10n.expenseType,
                 style: AppTypography.textTheme.labelSmall?.copyWith(
                   color: isDark
                       ? AppColors.textSecondaryDark
                       : AppColors.textSecondaryLight,
-                  fontSize: 10,
+                  fontSize: 12,
                 )),
           ],
         ),
@@ -625,66 +626,147 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
     final fmt = NumberFormat.currency(
         locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
 
-    return Container(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  l10n.expenseType,
-                  style: TextStyle(
-                    color: (isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight)
-                        .withValues(alpha: 0.7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '▼ ${fmt.format(totalExpense)}',
-                  style: const TextStyle(
-                      color: AppColors.danger,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13),
-                ),
-              ],
+    final double netTotal = totalIncome - totalExpense;
+    final Color netColor = netTotal >= 0 ? AppColors.success : AppColors.danger;
+
+    Widget buildSummaryItem({
+      required IconData icon,
+      required Color iconColor,
+      required Color iconBgColor,
+      required String title,
+      required String amount,
+      required Color amountColor,
+    }) {
+      return Expanded(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 16),
             ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: (isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight)
+                          .withValues(alpha: 0.8),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final amountStyle = TextStyle(
+                        color: amountColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      );
+                      
+                      final textPainter = TextPainter(
+                        text: TextSpan(text: amount, style: amountStyle),
+                        maxLines: 1,
+                        textDirection: TextDirection.ltr,
+                      )..layout(minWidth: 0, maxWidth: double.infinity);
+
+                      if (textPainter.size.width > constraints.maxWidth) {
+                        return SizedBox(
+                          height: textPainter.size.height,
+                          width: constraints.maxWidth,
+                          child: Marquee(
+                            text: amount,
+                            style: amountStyle,
+                            scrollAxis: Axis.horizontal,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            blankSpace: 20.0,
+                            velocity: 30.0,
+                            pauseAfterRound: const Duration(seconds: 1),
+                            accelerationDuration: const Duration(milliseconds: 500),
+                            accelerationCurve: Curves.linear,
+                            decelerationDuration: const Duration(milliseconds: 500),
+                            decelerationCurve: Curves.easeOut,
+                          ),
+                        );
+                      } else {
+                        return Text(
+                          amount,
+                          style: amountStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        children: [
+          buildSummaryItem(
+            icon: Icons.arrow_downward_rounded,
+            iconColor: AppColors.success,
+            iconBgColor: AppColors.success.withValues(alpha: 0.1),
+            title: l10n.incomeType,
+            amount: fmt.format(totalIncome),
+            amountColor: isDark ? Colors.white : AppColors.textPrimaryLight,
           ),
           Container(
-            height: 20,
+            height: 24,
             width: 1,
             color: (isDark ? AppColors.borderDark : AppColors.borderLight)
                 .withValues(alpha: 0.5),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
           ),
-          Expanded(
-            child: Column(
-              children: [
-                Text(
-                  l10n.incomeType,
-                  style: TextStyle(
-                    color: (isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight)
-                        .withValues(alpha: 0.7),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '▲ ${fmt.format(totalIncome)}',
-                  style: const TextStyle(
-                      color: AppColors.success,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13),
-                ),
-              ],
-            ),
+          buildSummaryItem(
+            icon: Icons.arrow_upward_rounded,
+            iconColor: AppColors.danger,
+            iconBgColor: AppColors.danger.withValues(alpha: 0.1),
+            title: l10n.expenseType,
+            amount: fmt.format(totalExpense),
+            amountColor: isDark ? Colors.white : AppColors.textPrimaryLight,
+          ),
+          Container(
+            height: 24,
+            width: 1,
+            color: (isDark ? AppColors.borderDark : AppColors.borderLight)
+                .withValues(alpha: 0.5),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          buildSummaryItem(
+            icon: Icons.account_balance_wallet_rounded,
+            iconColor: AppColors.primary,
+            iconBgColor: AppColors.primary.withValues(alpha: 0.1),
+            title: l10n.net,
+            amount: fmt.format(netTotal),
+            amountColor: netColor,
           ),
         ],
       ),

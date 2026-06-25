@@ -392,7 +392,7 @@ class _TransactionHeroHeader extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 12, 8, 0),
+        padding: const EdgeInsets.fromLTRB(24, 12, 16, 0),
         child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -413,7 +413,7 @@ class _TransactionHeroHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 12),
                 Text(
                   l10n.transactionsSubtitle,
                   style: AppTypography.textTheme.bodyMedium?.copyWith(
@@ -428,13 +428,85 @@ class _TransactionHeroHeader extends StatelessWidget {
           ),
           // Right: illustration image from assets
           SizedBox(
-            width: 100,
-            height: 100,
-            child: Image.asset(
-              'assets/images/transaction_hero.png',
-              fit: BoxFit.contain,
+            width: 88,
+            height: 88,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Center main – wallet
+                Positioned(
+                  left: 20,
+                  top: 20,
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 26),
+                  ),
+                ),
+                // Top-right – income arrow up
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.arrow_upward_rounded, color: AppColors.success, size: 16),
+                  ),
+                ),
+                // Bottom-left – expense arrow down
+                Positioned(
+                  left: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.arrow_downward_rounded, color: AppColors.danger, size: 15),
+                  ),
+                ),
+                // Top-left – receipt
+                Positioned(
+                  left: 2,
+                  top: 2,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.receipt_rounded, color: Colors.blue, size: 13),
+                  ),
+                ),
+                // Bottom-right – sync/exchange
+                Positioned(
+                  right: 4,
+                  bottom: 4,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.currency_exchange_rounded, color: Colors.amber, size: 14),
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       ),

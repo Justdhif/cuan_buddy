@@ -8,22 +8,26 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 class BudgetsState {
   final List<dynamic> budgets;
   final bool isLoading;
+  final bool isInitialLoad;
   final String? error;
 
   BudgetsState({
     this.budgets = const [],
     this.isLoading = false,
+    this.isInitialLoad = true,
     this.error,
   });
 
   BudgetsState copyWith({
     List<dynamic>? budgets,
     bool? isLoading,
+    bool? isInitialLoad,
     String? error,
   }) {
     return BudgetsState(
       budgets: budgets ?? this.budgets,
       isLoading: isLoading ?? this.isLoading,
+      isInitialLoad: isInitialLoad ?? this.isInitialLoad,
       error: error,
     );
   }
@@ -43,14 +47,14 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
       final response = await dio.get('/budgets');
       final data = response.data;
       if (data is List) {
-        state = state.copyWith(budgets: data, isLoading: false);
+        state = state.copyWith(budgets: data, isLoading: false, isInitialLoad: false);
       } else if (data is Map && data['data'] is List) {
-        state = state.copyWith(budgets: data['data'], isLoading: false);
+        state = state.copyWith(budgets: data['data'], isLoading: false, isInitialLoad: false);
       } else {
-        state = state.copyWith(budgets: [], isLoading: false);
+        state = state.copyWith(budgets: [], isLoading: false, isInitialLoad: false);
       }
     } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      state = state.copyWith(error: e.toString(), isLoading: false, isInitialLoad: false);
     }
   }
 

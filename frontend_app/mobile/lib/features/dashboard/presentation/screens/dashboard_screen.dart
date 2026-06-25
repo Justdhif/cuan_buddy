@@ -69,6 +69,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final transactionsAsync = ref.watch(recentTransactionsProvider);
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
         (previous, next) {
@@ -180,21 +181,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                     ),
-                    const SliverToBoxAdapter(
+                    SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                        child: AiInsightCard(),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: const AiInsightCard(),
                       ),
                     ),
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                        child: healthAsync.when(
-                          skipLoadingOnReload: true,
-                          data: (data) => _buildHealthWidget(data),
-                          loading: () => const SkeletonCard(height: 80),
-                          error: (_, __) => const SizedBox.shrink(),
-                        ),
+                        child: _buildHealthWidget(healthAsync, isDark),
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -572,15 +568,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildHealthWidget(Map<String, dynamic> data) {
-    final status = data['status'] as String? ?? 'healthy';
-    final message = data['message'] as String?;
-    final healthState = switch (status) {
-      'warning' => FinancialHealthState.sweating,
-      'critical' || 'danger' => FinancialHealthState.panic,
-      _ => FinancialHealthState.happy,
-    };
-    return FinancialHealthWidget(healthState: healthState, message: message);
+  Widget _buildHealthWidget(
+      AsyncValue<Map<String, dynamic>> healthAsync, bool isDark) {
+    return healthAsync.when(
+      skipLoadingOnReload: true,
+      data: (data) {
+        final status = data['status'] as String? ?? 'healthy';
+        final message = data['message'] as String?;
+        final state = switch (status) {
+          'warning' => FinancialHealthState.sweating,
+          'critical' || 'danger' => FinancialHealthState.panic,
+          _ => FinancialHealthState.happy,
+        };
+        return FinancialHealthWidget(healthState: state, message: message);
+      },
+      loading: () => const SkeletonCard(height: 80),
+      error: (_, __) => const SizedBox.shrink(),
+    );
   }
 
   Widget _buildTransactionTile(

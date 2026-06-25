@@ -20,10 +20,14 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
     super.key,
     required this.initialType,
     this.initialTransaction,
+    this.initialSavingsGoalId,
+    this.lockedSavingsGoal = false,
   });
 
   final String initialType; // 'income' or 'expense'
   final Map<String, dynamic>? initialTransaction;
+  final String? initialSavingsGoalId; // pre-select a savings goal
+  final bool lockedSavingsGoal; // cannot be changed when true
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -47,6 +51,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   void initState() {
     super.initState();
     _type = widget.initialType;
+    // Pre-select a locked savings goal if provided
+    if (widget.initialSavingsGoalId != null) {
+      _selectedSavingsGoalId = widget.initialSavingsGoalId;
+    }
     if (widget.initialTransaction != null) {
       final tx = widget.initialTransaction!;
       _type = tx['type'] as String? ?? widget.initialType;
@@ -437,8 +445,80 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 const SizedBox(height: 16),
 
                 // ── Savings Goals ──────────────────────────────────────
-                if (!savingsState.isLoading &&
-                    savingsState.goals.isNotEmpty) ...[
+                if (widget.lockedSavingsGoal && _selectedSavingsGoalId != null) ...[
+                  // Locked goal from savings detail — show read-only chip
+                  Builder(builder: (context) {
+                    final goal = savingsState.goals.cast<Map<String, dynamic>?>().firstWhere(
+                      (g) => g?['id'] == _selectedSavingsGoalId,
+                      orElse: () => null,
+                    );
+                    final goalName = goal?['name'] as String? ?? l10n.savingsGoals;
+                    final goalEmoji = goal?['emojiIcon'] as String? ?? '🎯';
+                    final colorHex = goal?['colorCode'] as String? ?? '#6C63FF';
+                    final goalColor = AppColors.colorFromHex(colorHex, fallback: AppColors.primary);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              l10n.selectSavingsGoal,
+                              style: AppTypography.textTheme.titleSmall,
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.lock_rounded, size: 11, color: AppColors.primary),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    'Locked',
+                                    style: AppTypography.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.primary,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: goalColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: goalColor, width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(goalEmoji, style: const TextStyle(fontSize: 18)),
+                              const SizedBox(width: 8),
+                              Text(
+                                goalName,
+                                style: AppTypography.textTheme.labelMedium?.copyWith(
+                                  color: goalColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.lock_rounded, size: 14, color: goalColor.withValues(alpha: 0.6)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  }),
+                ] else if (!savingsState.isLoading && savingsState.goals.isNotEmpty) ...[
                   Text(
                     l10n.selectSavingsGoal,
                     style: AppTypography.textTheme.titleSmall,
@@ -503,9 +583,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         final goalId = goal['id'] as String?;
                         final goalName = goal['name'] as String? ?? '';
                         final isSelected = _selectedSavingsGoalId == goalId;
-                        // Use a generic emoji for goals if none is saved
-                        final goalEmoji =
-                            '🎨'; // Using emoji from screenshot as default or parse if exists
+                        final goalEmoji = goal['emojiIcon'] as String? ?? '🎯';
 
                         return GestureDetector(
                           onTap: () =>

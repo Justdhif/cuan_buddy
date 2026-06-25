@@ -29,6 +29,8 @@ import '../../features/transactions/presentation/screens/transaction_form_screen
 import '../../features/budgets/presentation/screens/budgets_screen.dart';
 import '../../features/budgets/presentation/screens/budget_form_screen.dart';
 import '../../features/savings/presentation/screens/savings_screen.dart';
+import '../../features/savings/presentation/screens/savings_form_screen.dart';
+import '../../features/savings/presentation/screens/saving_detail_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
@@ -154,11 +156,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           final initialType = extra['initialType'] as String? ?? 'expense';
           final initialTransaction =
               extra['initialTransaction'] as Map<String, dynamic>?;
+          final initialSavingsGoalId = extra['initialSavingsGoalId'] as String?;
+          final lockedSavingsGoal = extra['lockedSavingsGoal'] as bool? ?? false;
           return _buildPage(
             state,
             TransactionFormScreen(
               initialType: initialType,
               initialTransaction: initialTransaction,
+              initialSavingsGoalId: initialSavingsGoalId,
+              lockedSavingsGoal: lockedSavingsGoal,
             ),
           );
         },
@@ -172,6 +178,30 @@ final routerProvider = Provider<GoRouter>((ref) {
             BudgetFormScreen(
               budget: extra?['budget'] as Map<String, dynamic>?,
               initialCategoryId: extra?['initialCategoryId'] as String?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/savings/form',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return _buildPage(
+            state,
+            SavingsFormScreen(
+              goal: extra?['goal'] as Map<String, dynamic>?,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/savings/detail',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return _buildPage(
+            state,
+            SavingDetailScreen(
+              goal: extra['goal'] as Map<String, dynamic>,
             ),
           );
         },

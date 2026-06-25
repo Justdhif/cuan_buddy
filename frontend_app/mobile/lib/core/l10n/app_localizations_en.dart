@@ -177,6 +177,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get totalBalance => 'Total Balance';
   @override
+  String get net => 'Net';
+  @override
   String get income => '📈 Income';
   @override
   String get expense => '📉 Expense';
@@ -306,6 +308,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get budgets => 'Budgets';
   @override
+  String get budgetsSubtitle => 'Control your spending\nand stay on track 🎯';
+  @override
   String get totalBudget => 'Total Budget';
   @override
   String get budgetSummary => 'Budget Summary';
@@ -355,7 +359,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override
-  String get savingsGoals => 'Savings';
+  String get addSavingsGoal => 'Add Savings Goal';
+  @override
+  String get savingsGoals => 'Savings Goals';
+  @override
+  String get savingsSubtitle => 'Achieve your dreams\none step at a time 🚀';
   @override
   String get totalSaved => 'Total Saved';
   @override
@@ -806,4 +814,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportData => 'Export Data';
   @override
   String get importData => 'Import Data';
+
+  // ─── Saving Detail ──────────────────────────────────────────────────────────
+  @override
+  String get transactionHistory => 'Transaction History';
+  @override
+  String get perDay => 'Per Day';
+
+  @override
+  String get theme => 'Theme';
+  @override
+  String get system => 'System';
+  @override
+  String get light => 'Light';
+  @override
+  String get dark => 'Dark';
+  @override
+  String get about => 'About';
+  @override
+  String get feedback => 'Feedback';
 }

@@ -109,6 +109,7 @@ abstract class AppLocalizations {
   String get hello;
   String get aiAdvisor;
   String get totalBalance;
+  String get net;
   String get income;
   String get expense;
   String get recentActivities;
@@ -192,6 +193,7 @@ abstract class AppLocalizations {
 
   // ─── Budgets ──────────────────────────────────────────────────────────────────
   String get budgets;
+  String get budgetsSubtitle;
   String get totalBudget;
   String get budgetSummary;
   String get totalSpent;
@@ -217,7 +219,9 @@ abstract class AppLocalizations {
   String get rollover;
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
+  String get addSavingsGoal;
   String get savingsGoals;
+  String get savingsSubtitle;
   String get totalSaved;
   String get savingSummary;
   String get totalTarget;
@@ -430,8 +434,19 @@ abstract class AppLocalizations {
   String get changePasswordInfo;
 
   // ─── Export & Import ──────────────────────────────────────────────────────────
+  // ─── Saving Detail ──────────────────────────────────────────────────────────
+  String get transactionHistory;
+  String get perDay;
+
   String get exportData;
   String get importData;
+
+  String get theme;
+  String get system;
+  String get light;
+  String get dark;
+  String get about;
+  String get feedback;
 }
 
 // ─── InheritedWidget Scope ────────────────────────────────────────────────────

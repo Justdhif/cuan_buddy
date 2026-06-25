@@ -1,3 +1,4 @@
+import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -22,9 +23,13 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   final String _statusFilter =
       'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
   final ScrollController _scrollController = ScrollController();
+  double _scrollOffset = 0.0;
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(() {
+      setState(() => _scrollOffset = _scrollController.offset);
+    });
   }
 
   @override
@@ -43,49 +48,80 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 24,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: GestureDetector(
-          onTap: () {
-            _scrollController.animateTo(
-              0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut,
-            );
-          },
-          child: Text(l10n.budgets),
-        ),
-
-      ),
-      body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(budgetsNotifierProvider.notifier).fetchBudgets(),
-        color: AppColors.primary,
-        child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
-      ),
-      floatingActionButton: GestureDetector(
-        onTap: () => context.push('/budgets/form'),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: () =>
+                ref.read(budgetsNotifierProvider.notifier).fetchBudgets(),
             color: AppColors.primary,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 8,
-                spreadRadius: 2,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
           ),
-          child: const Icon(
-            Icons.add_rounded,
-            color: Colors.white,
-            size: 32,
+          // ── Pinned AppBar Background (appears on scroll) ─────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Builder(builder: (context) {
+              final t = (_scrollOffset / 60).clamp(0.0, 1.0);
+              return Opacity(
+                opacity: t,
+                child: Container(
+                  height: MediaQuery.of(context).padding.top + kToolbarHeight,
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                ),
+              );
+            }),
+          ),
+          // ── Floating animated title (moves from hero to AppBar) ──────────────
+          _buildFloatingTitle(context, l10n, isDark),
+        ],
+      ),
+    );
+  }
+
+  /// Floating title that physically moves from hero position to AppBar as user scrolls.
+  Widget _buildFloatingTitle(
+    BuildContext context,
+    AppLocalizations l10n,
+    bool isDark,
+  ) {
+    final statusBarH = MediaQuery.of(context).padding.top;
+    const appBarH = kToolbarHeight;
+    // Hero title Y: statusBar + 12 padding + 8 SizedBox + ~14 half-text
+    final heroTitleY = statusBarH + 12.0 + 8.0 + 14.0;
+    // AppBar title Y: vertically centered in AppBar
+    final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
+    final travelDist = heroTitleY - appBarTitleY;
+
+    // t: 0 = title at hero, 1 = title at AppBar
+    final t = (_scrollOffset / travelDist.abs()).clamp(0.0, 1.0);
+    var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
+
+    // Adjust for overscroll (pull to refresh)
+    if (_scrollOffset < 0) {
+      currentY -= _scrollOffset; 
+    }
+
+    final heroSize = AppTypography.textTheme.headlineMedium?.fontSize ?? 28.0;
+    final appBarSize = AppTypography.textTheme.titleLarge?.fontSize ?? 22.0;
+    final currentSize = lerpDouble(heroSize, appBarSize, t)!;
+
+    return Positioned(
+      top: currentY,
+      left: 24.0,
+      right: 120.0,
+      child: IgnorePointer(
+        child: Text(
+          l10n.budgets,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: currentSize,
+            fontWeight: FontWeight.bold,
+            fontFamily: AppTypography.textTheme.headlineMedium?.fontFamily,
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
           ),
         ),
       ),
@@ -94,13 +130,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
   Widget _buildBody(BuildContext context, WidgetRef ref, BudgetsState state,
       bool isDark, String currencySymbol) {
-    if (state.isLoading && state.budgets.isEmpty) {
-      return const SkeletonList();
-    }
-    if (state.error != null && state.budgets.isEmpty) {
-      return AppErrorState(message: state.error!);
-    }
-
     final fmt = NumberFormat.currency(
       locale: 'en_US',
       symbol: currencySymbol,
@@ -141,6 +170,10 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
+        // ── Hero content — scrolls naturally with the page ─────────────
+        SliverToBoxAdapter(
+          child: _BudgetHeroHeader(isDark: isDark),
+        ),
         // Summary Header Card
         SliverToBoxAdapter(
           child: Padding(
@@ -269,7 +302,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                         ],
                       );
                     },
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () => SummaryCardSkeleton(isDark: isDark),
                     error: (_, __) => const SizedBox(),
                   );
                 },
@@ -279,7 +312,24 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         ),
 
         // Budgets List
-        if (state.budgets.isEmpty)
+        if (state.isInitialLoad)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => const SkeletonCard(height: 160),
+                childCount: 3,
+              ),
+            ),
+          )
+        else if (state.error != null && state.budgets.isEmpty)
+          SliverToBoxAdapter(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: viewportHeight),
+              child: AppErrorState(message: state.error!),
+            ),
+          )
+        else if (state.budgets.isEmpty)
           SliverToBoxAdapter(
             child: ConstrainedBox(
               constraints: BoxConstraints(minHeight: viewportHeight),
@@ -313,13 +363,21 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
+                  if (index == filteredBudgets.length) {
+                    return _buildAddCard(
+                      context, 
+                      onTap: () => context.push('/budgets/form'),
+                      title: l10n.setBudget,
+                      isDark: isDark,
+                    );
+                  }
                   return _BudgetCard(
                     budget: filteredBudgets[index],
                     isDark: isDark,
                     currencySymbol: currencySymbol,
                   );
                 },
-                childCount: filteredBudgets.length,
+                childCount: filteredBudgets.length + 1,
               ),
             ),
           ),
@@ -367,6 +425,50 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
         const SizedBox(height: 6),
         valueWidget,
       ],
+    );
+  }
+
+  Widget _buildAddCard(BuildContext context, {required VoidCallback onTap, required String title, required bool isDark}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            style: BorderStyle.solid,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: AppTypography.textTheme.titleMedium?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -767,6 +869,135 @@ class _BudgetCard extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Hero Header Widget ────────────────────────────────────────────────────────
+class _BudgetHeroHeader extends StatelessWidget {
+  const _BudgetHeroHeader({required this.isDark});
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 12, 20, 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Opacity(
+                    opacity: 0,
+                    child: Text(
+                      l10n.budgets,
+                      style: AppTypography.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.budgetsSubtitle,
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              width: 88,
+              height: 88,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Center main – pie chart
+                  Positioned(
+                    left: 20,
+                    top: 20,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.purple.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(Icons.pie_chart_rounded, color: Colors.purple, size: 26),
+                    ),
+                  ),
+                  // Top-right – bar chart
+                  Positioned(
+                    right: 4,
+                    top: 4,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.bar_chart_rounded, color: Colors.blue, size: 16),
+                    ),
+                  ),
+                  // Bottom-left – trending up
+                  Positioned(
+                    left: 0,
+                    bottom: 0,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.trending_up_rounded, color: Colors.green, size: 15),
+                    ),
+                  ),
+                  // Top-left – receipt
+                  Positioned(
+                    left: 2,
+                    top: 2,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.receipt_long_rounded, color: Colors.orange, size: 13),
+                    ),
+                  ),
+                  // Bottom-right – target/track
+                  Positioned(
+                    right: 4,
+                    bottom: 4,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.track_changes_rounded, color: Colors.red, size: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

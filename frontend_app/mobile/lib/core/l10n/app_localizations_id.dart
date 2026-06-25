@@ -179,6 +179,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get totalBalance => 'Total Saldo';
   @override
+  String get net => 'Net';
+  @override
   String get income => '📈 Pemasukan';
   @override
   String get expense => '📉 Pengeluaran';
@@ -310,6 +312,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get budgets => 'Anggaran';
   @override
+  String get budgetsSubtitle => 'Kendalikan pengeluaranmu\ndan tetap di jalur 🎯';
+  @override
   String get totalBudget => 'Total Anggaran';
   @override
   String get budgetSummary => 'Ringkasan Anggaran';
@@ -359,7 +363,11 @@ class AppLocalizationsId extends AppLocalizations {
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override
-  String get savingsGoals => 'Tabungan';
+  String get addSavingsGoal => 'Tambah Tujuan';
+  @override
+  String get savingsGoals => 'Tujuan Tabungan';
+  @override
+  String get savingsSubtitle => 'Wujudkan impianmu\nselangkah demi selangkah 🚀';
   @override
   String get totalSaved => 'Total Saldo';
   @override
@@ -809,4 +817,23 @@ class AppLocalizationsId extends AppLocalizations {
   String get exportData => 'Ekspor Data';
   @override
   String get importData => 'Impor Data';
+
+  // ─── Saving Detail ──────────────────────────────────────────────────────────
+  @override
+  String get transactionHistory => 'Riwayat Transaksi';
+  @override
+  String get perDay => 'Per Hari';
+
+  @override
+  String get theme => 'Tema';
+  @override
+  String get system => 'Sistem';
+  @override
+  String get light => 'Terang';
+  @override
+  String get dark => 'Gelap';
+  @override
+  String get about => 'Tentang';
+  @override
+  String get feedback => 'Masukan';
 }

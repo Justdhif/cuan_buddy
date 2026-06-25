@@ -7,22 +7,26 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 class SavingsState {
   final List<dynamic> goals;
   final bool isLoading;
+  final bool isInitialLoad;
   final String? error;
 
   SavingsState({
     this.goals = const [],
     this.isLoading = false,
+    this.isInitialLoad = true,
     this.error,
   });
 
   SavingsState copyWith({
     List<dynamic>? goals,
     bool? isLoading,
+    bool? isInitialLoad,
     String? error,
   }) {
     return SavingsState(
       goals: goals ?? this.goals,
       isLoading: isLoading ?? this.isLoading,
+      isInitialLoad: isInitialLoad ?? this.isInitialLoad,
       error: error,
     );
   }
@@ -42,14 +46,14 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
       final response = await dio.get('/goals');
       final data = response.data;
       if (data is List) {
-        state = state.copyWith(goals: data, isLoading: false);
+        state = state.copyWith(goals: data, isLoading: false, isInitialLoad: false);
       } else if (data is Map && data['data'] is List) {
-        state = state.copyWith(goals: data['data'], isLoading: false);
+        state = state.copyWith(goals: data['data'], isLoading: false, isInitialLoad: false);
       } else {
-        state = state.copyWith(goals: [], isLoading: false);
+        state = state.copyWith(goals: [], isLoading: false, isInitialLoad: false);
       }
     } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false);
+      state = state.copyWith(error: e.toString(), isLoading: false, isInitialLoad: false);
     }
   }
 
