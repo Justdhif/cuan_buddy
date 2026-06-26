@@ -130,8 +130,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return l10n.fullNameRequired;
+                        }
                         if (value.trim().length < 2) return l10n.nameTooShort;
                         return null;
                       },
@@ -145,8 +146,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return l10n.emailRequired;
+                        }
                         if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
                             .hasMatch(value)) {
                           return l10n.invalidEmail;
@@ -164,8 +166,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       textInputAction: TextInputAction.next,
                       onChanged: (value) => setState(() => _password = value),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return l10n.passwordRequired;
+                        }
                         if (value.length < 8) return l10n.passwordMin8;
                         return null;
                       },
@@ -185,10 +188,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _register(),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return l10n.confirmPasswordRequired;
-                        if (value != _passwordController.text)
+                        }
+                        if (value != _passwordController.text) {
                           return l10n.passwordsDoNotMatch;
+                        }
                         return null;
                       },
                     ),

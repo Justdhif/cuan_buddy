@@ -111,8 +111,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 hint: l10n.oldPasswordHint,
                 isPassword: true,
                 validator: (val) {
-                  if (val == null || val.isEmpty)
+                  if (val == null || val.isEmpty) {
                     return l10n.oldPasswordRequired;
+                  }
                   return null;
                 },
               ),
@@ -155,10 +156,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                 hint: l10n.confirmNewPasswordHint,
                 isPassword: true,
                 validator: (val) {
-                  if (val == null || val.isEmpty)
+                  if (val == null || val.isEmpty) {
                     return l10n.confirmPasswordRequired;
-                  if (val != _newPasswordController.text)
+                  }
+                  if (val != _newPasswordController.text) {
                     return l10n.passwordsDoNotMatch;
+                  }
                   return null;
                 },
               ),

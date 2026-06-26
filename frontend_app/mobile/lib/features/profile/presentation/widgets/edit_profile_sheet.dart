@@ -158,8 +158,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   label: 'Full Name',
                   hint: 'Enter your full name',
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty)
+                    if (value == null || value.trim().isEmpty) {
                       return 'Full name is required';
+                    }
                     return null;
                   },
                 ),

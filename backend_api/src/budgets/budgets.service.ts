@@ -30,7 +30,9 @@ export class BudgetsService {
     const [newBudget] = await this.db.insert(budgets).values({
       userId,
       ...createBudgetDto,
-      limitAmount: createBudgetDto.limitAmount.toString()
+      limitAmount: createBudgetDto.limitAmount.toString(),
+      periodCount: createBudgetDto.periodCount ?? 1,
+      startDay: createBudgetDto.startDay ?? 1,
     }).returning();
 
     // Fire-and-forget: do not await so response is returned immediately
@@ -52,25 +54,51 @@ export class BudgetsService {
     const { monthYear, page = 1, limit = 10 } = query;
     const offset = (Number(page) - 1) * Number(limit);
 
-    if (monthYear) {
-      await this._generateRecurringBudgets(userId, monthYear);
-    }
-
     const conditions = [eq(budgets.userId, userId)];
-    if (monthYear) conditions.push(eq(budgets.monthYear, monthYear));
+
+    // If monthYear filter is provided, find budgets that cover this month.
+    // A budget starting at monthYear and spanning periodCount months covers
+    // any queried month within that range.
+    if (monthYear) {
+      // We fetch all budgets for user then filter in JS so we can use periodCount
+      // This is simpler than complex SQL date arithmetic on text month fields
+    }
 
     const data = await this.db.query.budgets.findMany({
       where: and(...conditions),
       with: { category: true },
-      limit: Number(limit),
-      offset: offset,
+      limit: 200, // fetch all, filter in JS
+      offset: 0,
     });
 
-    const formattedData = await Promise.all(data.map(async (b) => {
-      const [year, month] = b.monthYear.split('-');
-      const startDate = new Date(Number(year), Number(month) - 1, 1);
-      const endDate = new Date(Number(year), Number(month), 0, 23, 59, 59, 999);
-      
+    // Filter budgets that cover the requested monthYear (if provided)
+    const filteredData = monthYear
+      ? data.filter((b) => {
+          const startMY = b.monthYear; // YYYY-MM
+          const pCount = b.periodCount ?? 1;
+          const [sY, sM] = startMY.split('-').map(Number);
+          const [qY, qM] = monthYear.split('-').map(Number);
+          const startTotal = sY * 12 + (sM - 1);
+          const queryTotal = qY * 12 + (qM - 1);
+          return queryTotal >= startTotal && queryTotal < startTotal + pCount;
+        })
+      : data;
+
+    const paginatedSlice = filteredData.slice(offset, offset + Number(limit));
+
+    const formattedData = await Promise.all(paginatedSlice.map(async (b) => {
+      const startDay = b.startDay ?? 1;
+      const periodCount = b.periodCount ?? 1;
+
+      // Compute actual start and end dates based on startDay and periodCount
+      const [sYear, sMonth] = b.monthYear.split('-').map(Number);
+      const periodStartDate = new Date(sYear, sMonth - 1, startDay);
+
+      // End date: startDay of (startMonth + periodCount), minus 1 day
+      const endMonthDate = new Date(sYear, sMonth - 1 + periodCount, startDay);
+      endMonthDate.setDate(endMonthDate.getDate() - 1);
+      endMonthDate.setHours(23, 59, 59, 999);
+
       const spentData = await this.db
         .select({ total: sql<number>`SUM(amount::numeric)` })
         .from(transactions)
@@ -79,28 +107,39 @@ export class BudgetsService {
             eq(transactions.userId, userId),
             eq(transactions.categoryId, b.categoryId),
             eq(transactions.type, 'expense'),
-            gte(transactions.date, startDate),
-            lte(transactions.date, endDate)
+            gte(transactions.date, periodStartDate),
+            lte(transactions.date, endMonthDate)
           )
         );
-        
+
       const spentAmount = Number(spentData[0]?.total || 0);
+
+      // Also compute income in the same period for the summary pill
+      const incomeData = await this.db
+        .select({ total: sql<number>`SUM(amount::numeric)` })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.userId, userId),
+            eq(transactions.type, 'income'),
+            gte(transactions.date, periodStartDate),
+            lte(transactions.date, endMonthDate)
+          )
+        );
+
+      const incomeAmount = Number(incomeData[0]?.total || 0);
 
       return {
         ...b,
         limitAmountFormatted: formatCurrency(b.limitAmount),
-        spentAmount: spentAmount,
+        spentAmount,
+        incomeAmount,
+        periodStartDate: periodStartDate.toISOString(),
+        periodEndDate: endMonthDate.toISOString(),
       };
     }));
 
-    // Dynamic count query
-    const countQuery = this.db
-      .select({ count: sql`count(*)` })
-      .from(budgets)
-      .where(and(...conditions));
-
-    const countData = await countQuery;
-    const totalCount = Number(countData[0].count);
+    const totalCount = filteredData.length;
 
     return formatPaginatedResponse(formattedData, totalCount, Number(page), Number(limit));
   }
@@ -137,67 +176,5 @@ export class BudgetsService {
 
     if (!deleted) throw new NotFoundException('Budget not found');
     return { message: 'Budget removed successfully' };
-  }
-  async _generateRecurringBudgets(userId: string, currentMonthYear: string) {
-    const [year, month] = currentMonthYear.split('-').map(Number);
-    // month is 1-indexed. Month - 2 gives previous month (since 0-indexed in JS)
-    const prevDate = new Date(year, month - 2, 1);
-    const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
-    const prevYear = prevDate.getFullYear();
-    const prevMonthYear = `${prevYear}-${prevMonth}`;
-
-    const prevBudgets = await this.db.query.budgets.findMany({
-      where: and(
-        eq(budgets.userId, userId),
-        eq(budgets.monthYear, prevMonthYear),
-        eq(budgets.isRecurring, true)
-      )
-    });
-
-    if (prevBudgets.length === 0) return;
-
-    const currBudgets = await this.db.query.budgets.findMany({
-      where: and(
-        eq(budgets.userId, userId),
-        eq(budgets.monthYear, currentMonthYear)
-      )
-    });
-    const currCategoryIds = new Set(currBudgets.map(b => b.categoryId));
-
-    for (const pb of prevBudgets) {
-      if (!currCategoryIds.has(pb.categoryId)) {
-        let rolloverAmount = 0;
-        if (pb.rollover) {
-          const startDate = new Date(prevYear, prevDate.getMonth(), 1);
-          const endDate = new Date(prevYear, prevDate.getMonth() + 1, 0, 23, 59, 59, 999);
-          const spentData = await this.db
-            .select({ total: sql<number>`SUM(amount::numeric)` })
-            .from(transactions)
-            .where(
-              and(
-                eq(transactions.userId, userId),
-                eq(transactions.categoryId, pb.categoryId),
-                eq(transactions.type, 'expense'),
-                gte(transactions.date, startDate),
-                lte(transactions.date, endDate)
-              )
-            );
-          const spent = Number(spentData[0]?.total || 0);
-          const totalPrevLimit = Number(pb.limitAmount) + Number(pb.rolloverAmount);
-          rolloverAmount = Math.max(0, totalPrevLimit - spent);
-        }
-
-        await this.db.insert(budgets).values({
-          userId,
-          categoryId: pb.categoryId,
-          limitAmount: pb.limitAmount.toString(),
-          isRecurring: true,
-          rollover: pb.rollover,
-          rolloverAmount: rolloverAmount.toString(),
-          currency: pb.currency,
-          monthYear: currentMonthYear
-        });
-      }
-    }
   }
 }

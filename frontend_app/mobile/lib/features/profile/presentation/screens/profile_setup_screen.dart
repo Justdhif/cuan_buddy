@@ -129,8 +129,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       prefixIcon:
                           const Icon(Icons.person_outline_rounded, size: 20),
                       validator: (v) {
-                        if (v == null || v.isEmpty)
+                        if (v == null || v.isEmpty) {
                           return l10n.fullNameRequired;
+                        }
                         if (v.trim().length < 2) return l10n.nameTooShortSetup;
                         return null;
                       },

@@ -39,7 +39,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).substring(2, 8).toUpperCase()}';
+    return '#${color.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
   }
 
   @override

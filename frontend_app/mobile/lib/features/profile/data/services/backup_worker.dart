@@ -1,4 +1,4 @@
-import '../../presentation/providers/profile_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'dart:io';
@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../core/services/notification_service.dart';
 import '../repositories/profile_repository.dart';
+import '../../presentation/providers/profile_provider.dart';
 
 class BackupWorker {
   BackupWorker(this.ref, this.repository);
@@ -31,7 +32,7 @@ class BackupWorker {
         await runBackupProcess(isAuto: true);
       }
     } catch (e) {
-      print('Auto backup error: $e');
+      debugPrint('Auto backup error: $e');
     } finally {
       _isProcessing = false;
     }
@@ -123,7 +124,7 @@ class BackupWorker {
       );
 
       if (!isAuto) {
-        await Share.shareXFiles([XFile(savePath)], text: 'CuanBuddy Backup');
+        await SharePlus.instance.share(ShareParams(files: [XFile(savePath)], text: 'CuanBuddy Backup'));
       }
     } catch (e) {
       await notificationService.flutterLocalNotificationsPlugin.cancel(id: 99);

@@ -1,6 +1,6 @@
 import '../../../../core/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -245,10 +245,12 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
-                    if (value == null || value.isEmpty)
+                    if (value == null || value.isEmpty) {
                       return l10n.amountRequired;
-                    if (double.tryParse(value.replaceAll(',', '')) == null)
+                    }
+                    if (double.tryParse(value.replaceAll(',', '')) == null) {
                       return l10n.invalidAmount;
+                    }
                     return null;
                   },
                 ),

@@ -1049,7 +1049,6 @@ class _SavingTransactionTile extends ConsumerWidget {
         (isIncome ? '💰' : '💸');
     final catName = category is Map ? category['name'] as String? : null;
     final title = tx['title'] as String? ?? tx['note'] as String? ?? catName ?? l10n.transaction;
-    final note = tx['note'] as String?;
 
     final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
     final catColor = category is Map

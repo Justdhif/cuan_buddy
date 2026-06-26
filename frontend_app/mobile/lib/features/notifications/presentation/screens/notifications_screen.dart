@@ -231,16 +231,17 @@ class _NotificationTile extends ConsumerWidget {
               : 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: ${formatWithConversion(predicted)}';
         }
       } catch (_) {
-        if (title == 'BUDGET_CREATED')
+        if (title == 'BUDGET_CREATED') {
           title = isId ? 'Anggaran Baru Dibuat' : 'New Budget Created';
-        else if (title == 'BUDGET_EXCEEDED')
+        } else if (title == 'BUDGET_EXCEEDED') {
           title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
-        else if (title == 'BUDGET_WARNING')
+        } else if (title == 'BUDGET_WARNING') {
           title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
-        else if (title == 'BUDGET_PREDICTION_WARNING')
+        } else if (title == 'BUDGET_PREDICTION_WARNING') {
           title = isId
               ? 'Peringatan Prediksi Anggaran'
               : 'Budget Prediction Warning';
+        }
       }
     }
 

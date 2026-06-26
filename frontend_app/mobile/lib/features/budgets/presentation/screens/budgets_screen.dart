@@ -20,22 +20,70 @@ class BudgetsScreen extends ConsumerStatefulWidget {
 
 class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  final String _statusFilter =
-      'All'; // 'All', 'On Track', 'Warning', 'Exceeded'
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _monthScrollController = ScrollController();
   double _scrollOffset = 0.0;
+
+  // Generate months: Jan last year → Dec next year (36 months)
+  late final List<DateTime> _months;
+  late int _selectedMonthIndex;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(() {
       setState(() => _scrollOffset = _scrollController.offset);
     });
+
+    final now = DateTime.now();
+    final startMonth = DateTime(now.year - 1, 1);
+    _months = List.generate(36, (i) => DateTime(startMonth.year, startMonth.month + i));
+
+    // Find current month index
+    _selectedMonthIndex = _months.indexWhere(
+      (m) => m.year == now.year && m.month == now.month,
+    );
+    if (_selectedMonthIndex < 0) _selectedMonthIndex = 12; // fallback
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToSelectedMonth(animate: false);
+    });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _monthScrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToSelectedMonth({bool animate = true}) {
+    // Each month tab is approximately 72px wide
+    const itemWidth = 72.0;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final offset = (_selectedMonthIndex * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+    final clampedOffset = offset.clamp(0.0, _monthScrollController.position.maxScrollExtent);
+    if (animate) {
+      _monthScrollController.animateTo(
+        clampedOffset,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _monthScrollController.jumpTo(clampedOffset);
+    }
+  }
+
+  String get _selectedMonthYear {
+    final m = _months[_selectedMonthIndex];
+    return '${m.year}-${m.month.toString().padLeft(2, '0')}';
+  }
+
+  void _onMonthTap(int index) {
+    setState(() => _selectedMonthIndex = index);
+    _scrollToSelectedMonth();
+    final my = '${_months[index].year}-${_months[index].month.toString().padLeft(2, '0')}';
+    ref.read(budgetsNotifierProvider.notifier).selectMonth(my);
   }
 
   @override
@@ -87,19 +135,15 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   ) {
     final statusBarH = MediaQuery.of(context).padding.top;
     const appBarH = kToolbarHeight;
-    // Hero title Y: statusBar + 12 padding + 8 SizedBox + ~14 half-text
     final heroTitleY = statusBarH + 12.0 + 8.0 + 14.0;
-    // AppBar title Y: vertically centered in AppBar
     final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
     final travelDist = heroTitleY - appBarTitleY;
 
-    // t: 0 = title at hero, 1 = title at AppBar
     final t = (_scrollOffset / travelDist.abs()).clamp(0.0, 1.0);
     var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
 
-    // Adjust for overscroll (pull to refresh)
     if (_scrollOffset < 0) {
-      currentY -= _scrollOffset; 
+      currentY -= _scrollOffset;
     }
 
     final heroSize = AppTypography.textTheme.headlineMedium?.fontSize ?? 28.0;
@@ -136,29 +180,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       decimalDigits: 0,
     );
 
-    // Filter logic
-    final filteredBudgets = state.budgets.where((b) {
-      if (_statusFilter == 'All') return true;
-      final rawL = b['limitAmount'];
-      final rawR = b['rolloverAmount'];
-      final limit = rawL is num
-          ? rawL.toDouble()
-          : double.tryParse(rawL?.toString() ?? '0') ?? 0;
-      final rollover = rawR is num
-          ? rawR.toDouble()
-          : double.tryParse(rawR?.toString() ?? '0') ?? 0;
-      final totalLimit = limit + rollover;
-      final rawS = b['spentAmount'];
-      final spent = rawS is num
-          ? rawS.toDouble()
-          : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-      final p = totalLimit > 0 ? spent / totalLimit : 0.0;
-
-      if (_statusFilter == 'Exceeded') return p >= 1.0;
-      if (_statusFilter == 'Warning') return p > 0.7 && p < 1.0;
-      if (_statusFilter == 'On Track') return p <= 0.7;
-      return true;
-    }).toList();
+    final filteredBudgets = state.budgets;
 
     final viewportHeight = MediaQuery.of(context).size.height -
         kToolbarHeight -
@@ -170,148 +192,17 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
-        // ── Hero content — scrolls naturally with the page ─────────────
+        // ── Hero content ───────────────────────────────────────────────
         SliverToBoxAdapter(
           child: _BudgetHeroHeader(isDark: isDark),
         ),
-        // Summary Header Card
+
+        // ── Month Scroller ─────────────────────────────────────────────
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.05),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  )
-                ],
-              ),
-              child: Consumer(
-                builder: (context, ref, child) {
-                  final summaryAsync =
-                      ref.watch(convertedBudgetsSummaryProvider('All'));
-                  return summaryAsync.when(
-                    data: (summary) {
-                      final totalLimit = summary['totalLimit'] ?? 0.0;
-                      final totalSpent = summary['totalSpent'] ?? 0.0;
-                      final percentage =
-                          totalLimit > 0 ? (totalSpent / totalLimit) : 0.0;
-                      final safePercentage = percentage.clamp(0.0, 1.0);
-
-                      Color progressColor;
-                      if (percentage >= 1.0) {
-                        progressColor = AppColors.danger;
-                      } else if (percentage >= 0.8) {
-                        progressColor = AppColors.warning;
-                      } else if (percentage >= 0.5) {
-                        progressColor = const Color(0xFFEAB308);
-                      } else {
-                        progressColor = AppColors.success;
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.budgetSummary,
-                            style: AppTypography.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 1. Total Spent
-                              Expanded(
-                                child: _buildSummaryMetric(
-                                  icon: Icons.account_balance_wallet_rounded,
-                                  iconColor: AppColors.danger,
-                                  label: l10n.totalSpent,
-                                  valueWidget: Text(
-                                    fmt.format(totalSpent),
-                                    style: AppTypography.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  isDark: isDark,
-                                ),
-                              ),
-                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 2. Progress Total
-                              Expanded(
-                                child: _buildSummaryMetric(
-                                  icon: Icons.pie_chart_rounded,
-                                  iconColor: const Color(0xFF9b51e0),
-                                  label: l10n.progressTotal,
-                                  valueWidget: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        '${(safePercentage * 100).toInt()}%',
-                                        style: AppTypography.textTheme.titleSmall?.copyWith(
-                                          color: progressColor,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: LinearProgressIndicator(
-                                          value: safePercentage,
-                                          minHeight: 4,
-                                          backgroundColor: progressColor.withValues(alpha: 0.15),
-                                          valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  isDark: isDark,
-                                ),
-                              ),
-                              Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 3. Total Budget
-                              Expanded(
-                                child: _buildSummaryMetric(
-                                  icon: Icons.track_changes_rounded,
-                                  iconColor: AppColors.primary,
-                                  label: l10n.totalBudget,
-                                  valueWidget: Text(
-                                    fmt.format(totalLimit),
-                                    style: AppTypography.textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  isDark: isDark,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                    loading: () => SummaryCardSkeleton(isDark: isDark),
-                    error: (_, __) => const SizedBox(),
-                  );
-                },
-              ),
-            ),
-          ),
+          child: _buildMonthScroller(isDark, fmt),
         ),
 
-        // Budgets List
+        // ── Budget List ────────────────────────────────────────────────
         if (state.isInitialLoad)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -346,14 +237,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               constraints: BoxConstraints(minHeight: viewportHeight),
               child: AppEmptyState(
                 emoji: '🔍',
-                title: l10n.noBudgetsFilter(switch (_statusFilter) {
-                  'All' => l10n.all,
-                  'On Track' => l10n.onTrack,
-                  'Warning' => l10n.warning,
-                  'Exceeded' => l10n.exceeded,
-                  _ => _statusFilter,
-                }),
-                subtitle: l10n.tryChangingFilter,
+                title: 'Tidak ada budget',
+                subtitle: 'Belum ada budget untuk bulan ini.',
               ),
             ),
           )
@@ -365,7 +250,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                 (context, index) {
                   if (index == filteredBudgets.length) {
                     return _buildAddCard(
-                      context, 
+                      context,
                       onTap: () => context.push('/budgets/form'),
                       title: l10n.setBudget,
                       isDark: isDark,
@@ -389,53 +274,200 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     );
   }
 
-  Widget _buildSummaryMetric({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required Widget valueWidget,
-    required bool isDark,
-  }) {
+  // ── Month Scroller + Summary Pill ───────────────────────────────────────
+  Widget _buildMonthScroller(bool isDark, NumberFormat fmt) {
+    final localeCode = Localizations.localeOf(context).languageCode;
+
     return Column(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(
-            icon,
-            color: iconColor,
-            size: 24,
+        // Month tab row
+        SizedBox(
+          height: 52,
+          child: ListView.builder(
+            controller: _monthScrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            itemCount: _months.length,
+            itemBuilder: (context, index) {
+              final month = _months[index];
+              final isSelected = index == _selectedMonthIndex;
+              final now = DateTime.now();
+              final isToday = month.year == now.year && month.month == now.month;
+              final monthName = DateFormat('MMM', localeCode).format(month);
+
+              return GestureDetector(
+                onTap: () => _onMonthTap(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 72,
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Month label
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          fontFamily: AppTypography.textTheme.bodyMedium?.fontFamily,
+                          fontSize: isSelected ? 15 : 13,
+                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w400,
+                          color: isSelected
+                              ? (isDark ? Colors.white : Colors.black)
+                              : (isDark
+                                  ? Colors.white.withValues(alpha: 0.4)
+                                  : Colors.black.withValues(alpha: 0.35)),
+                        ),
+                        child: Text(
+                          isToday && !isSelected ? monthName : monthName,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Active indicator
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        height: 3,
+                        width: isSelected ? 24 : 0,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white : Colors.black,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          label,
-          style: AppTypography.textTheme.labelSmall?.copyWith(
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            fontSize: 10,
+
+        const SizedBox(height: 10),
+
+        // Summary Pill Card (▼ spent | ▲ income | = balance)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Consumer(
+            builder: (context, ref, _) {
+              final summaryAsync =
+                  ref.watch(monthlyBudgetSummaryProvider(_selectedMonthYear));
+              return summaryAsync.when(
+                loading: () => _buildSummaryPillSkeleton(isDark),
+                error: (_, __) => const SizedBox(),
+                data: (summary) {
+                  final spent = summary['totalSpent'] ?? 0.0;
+                  final income = summary['totalIncome'] ?? 0.0;
+                  final balance = income - spent;
+                  return _buildSummaryPill(
+                    isDark: isDark,
+                    spent: spent,
+                    income: income,
+                    balance: balance,
+                    fmt: fmt,
+                  );
+                },
+              );
+            },
           ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 6),
-        valueWidget,
+
+        const SizedBox(height: 8),
       ],
     );
   }
 
-  Widget _buildAddCard(BuildContext context, {required VoidCallback onTap, required String title, required bool isDark}) {
+  Widget _buildSummaryPill({
+    required bool isDark,
+    required double spent,
+    required double income,
+    required double balance,
+    required NumberFormat fmt,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C2333) : const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Spent
+          _PillItem(
+            prefix: '▼',
+            prefixColor: const Color(0xFFEF4444),
+            value: fmt.format(spent),
+            isDark: isDark,
+          ),
+          // Divider
+          Container(
+            width: 1,
+            height: 20,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
+          // Income
+          _PillItem(
+            prefix: '▲',
+            prefixColor: const Color(0xFF22C55E),
+            value: fmt.format(income),
+            isDark: isDark,
+          ),
+          // Divider
+          Container(
+            width: 1,
+            height: 20,
+            color: Colors.white.withValues(alpha: 0.15),
+          ),
+          // Balance
+          _PillItem(
+            prefix: '=',
+            prefixColor: Colors.white.withValues(alpha: 0.7),
+            value: fmt.format(balance.abs()),
+            isDark: isDark,
+            valueColor: balance < 0
+                ? const Color(0xFFEF4444)
+                : Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryPillSkeleton(bool isDark) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C2333) : const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(3, (i) => Container(
+          width: 80,
+          height: 14,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(7),
+          ),
+        )),
+      ),
+    );
+  }
+
+  Widget _buildAddCard(BuildContext context,
+      {required VoidCallback onTap,
+      required String title,
+      required bool isDark}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        padding:
+            const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+          color: isDark
+              ? AppColors.surfaceDark.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.3),
@@ -473,6 +505,51 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 }
 
+// ── Pill Item ──────────────────────────────────────────────────────────────────
+class _PillItem extends StatelessWidget {
+  const _PillItem({
+    required this.prefix,
+    required this.prefixColor,
+    required this.value,
+    required this.isDark,
+    this.valueColor,
+  });
+
+  final String prefix;
+  final Color prefixColor;
+  final String value;
+  final bool isDark;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          prefix,
+          style: TextStyle(
+            color: prefixColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor ?? Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            fontFamily: AppTypography.textTheme.bodyMedium?.fontFamily,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Budget Card ────────────────────────────────────────────────────────────────
 class _BudgetCard extends ConsumerWidget {
   const _BudgetCard(
       {required this.budget,
@@ -499,19 +576,16 @@ class _BudgetCard extends ConsumerWidget {
     final spentAmount = rawS is num
         ? rawS.toDouble()
         : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-    final rawR = tx['rolloverAmount'];
-    final rolloverAmount = rawR is num
-        ? rawR.toDouble()
-        : double.tryParse(rawR?.toString() ?? '0') ?? 0;
-    final totalLimitAmount = limitAmount + rolloverAmount;
 
     final categoryName = tx['category']?['name'] as String? ??
         tx['categoryName'] as String? ??
         l10n.budget;
     final monthYear = tx['monthYear'] as String? ?? '';
+    final periodCount = (tx['periodCount'] as num?)?.toInt() ?? 1;
+    final startDay = (tx['startDay'] as num?)?.toInt() ?? 1;
 
     final percentage =
-        totalLimitAmount > 0 ? (spentAmount / totalLimitAmount) : 0.0;
+        limitAmount > 0 ? (spentAmount / limitAmount) : 0.0;
     final safePercentage = percentage.clamp(0.0, 1.0);
 
     final txCurrency =
@@ -530,18 +604,24 @@ class _BudgetCard extends ConsumerWidget {
       decimalDigits: 0,
     );
 
-    // Parse monthYear (YYYY-MM) to find startDate and endDate
-    final parts = monthYear.split('-');
-    DateTime startDate = DateTime.now();
-    DateTime endDate = DateTime.now();
-    if (parts.length >= 2) {
-      final year = int.tryParse(parts[0]) ?? DateTime.now().year;
-      final month = int.tryParse(parts[1]) ?? DateTime.now().month;
-      startDate = DateTime(year, month, 1);
-      endDate = DateTime(year, month + 1, 0); // last day of month
+    // Parse period start/end dates
+    DateTime startDate;
+    DateTime endDate;
+    if (tx['periodStartDate'] != null) {
+      startDate = DateTime.parse(tx['periodStartDate']);
+      endDate = DateTime.parse(tx['periodEndDate']);
     } else {
-      startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
-      endDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
+      final parts = monthYear.split('-');
+      if (parts.length >= 2) {
+        final year = int.tryParse(parts[0]) ?? DateTime.now().year;
+        final month = int.tryParse(parts[1]) ?? DateTime.now().month;
+        startDate = DateTime(year, month, startDay);
+        endDate = DateTime(year, month + periodCount, startDay)
+            .subtract(const Duration(days: 1));
+      } else {
+        startDate = DateTime(DateTime.now().year, DateTime.now().month, 1);
+        endDate = DateTime(DateTime.now().year, DateTime.now().month + 1, 0);
+      }
     }
 
     final today =
@@ -559,7 +639,7 @@ class _BudgetCard extends ConsumerWidget {
 
     final remainingDays =
         endDate.isAfter(today) ? endDate.difference(today).inDays + 1 : 0;
-    final remaining = totalLimitAmount - spentAmount;
+    final remaining = limitAmount - spentAmount;
     final dailyAllowance =
         remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
 
@@ -567,8 +647,8 @@ class _BudgetCard extends ConsumerWidget {
         ? fmt.format(remaining.abs())
         : fmtOriginal.format(remaining.abs());
     final totalLimitFormatted = txCurrency == currencyCode
-        ? fmt.format(totalLimitAmount)
-        : fmtOriginal.format(totalLimitAmount);
+        ? fmt.format(limitAmount)
+        : fmtOriginal.format(limitAmount);
 
     final String subtitle;
     if (remaining >= 0) {
@@ -590,7 +670,6 @@ class _BudgetCard extends ConsumerWidget {
     final bottomGradientColor =
         Color.lerp(baseColor, Colors.black, 0.45) ?? baseColor;
 
-    // Define dynamic colors based on consumption percentage
     Color progressBarColor;
     if (percentage >= 1.0) {
       progressBarColor = AppColors.danger;
@@ -608,15 +687,20 @@ class _BudgetCard extends ConsumerWidget {
         tx['emojiIcon'] as String? ??
         '📦';
 
+    // Period badge label
+    final periodLabel = periodCount > 1
+        ? '$periodCount bulan (tgl $startDay)'
+        : 'tgl $startDay';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: spentAmount > totalLimitAmount
+          color: spentAmount > limitAmount
               ? AppColors.danger.withValues(alpha: 0.5)
               : (isDark ? AppColors.borderDark : AppColors.borderLight),
-          width: spentAmount > totalLimitAmount ? 1.5 : 1,
+          width: spentAmount > limitAmount ? 1.5 : 1,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -655,13 +739,36 @@ class _BudgetCard extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          categoryName,
-                          style: AppTypography.textTheme.titleMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                categoryName,
+                                style: AppTypography.textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            // Period badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                periodLabel,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -681,8 +788,10 @@ class _BudgetCard extends ConsumerWidget {
 
           // ─── Bottom Section: Solid ────────────────────────────────────
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            color: isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            color:
+                isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -718,7 +827,7 @@ class _BudgetCard extends ConsumerWidget {
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                // Progress Bar Background & Active Fill
+                                // Progress Bar
                                 Positioned(
                                   bottom: 6,
                                   left: 0,
@@ -729,7 +838,8 @@ class _BudgetCard extends ConsumerWidget {
                                       color: isDark
                                           ? AppColors.borderDark
                                           : const Color(0xFFE2E8F0),
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius:
+                                          BorderRadius.circular(10),
                                     ),
                                     child: Stack(
                                       children: [
@@ -760,11 +870,12 @@ class _BudgetCard extends ConsumerWidget {
                                   ),
                                 ),
 
-                                // Proportional "Hari ini" Indicator
+                                // Today indicator
                                 if (todayProgressFraction > 0.0 &&
                                     todayProgressFraction < 1.0)
                                   Positioned(
-                                    left: todayPosition - (todayLabelWidth / 2),
+                                    left: todayPosition -
+                                        (todayLabelWidth / 2),
                                     top: 0,
                                     child: SizedBox(
                                       width: todayLabelWidth,
@@ -772,8 +883,10 @@ class _BudgetCard extends ConsumerWidget {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 4, vertical: 1),
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 4,
+                                                    vertical: 1),
                                             decoration: BoxDecoration(
                                               color: isDark
                                                   ? Colors.white
@@ -837,7 +950,8 @@ class _BudgetCard extends ConsumerWidget {
                     final String infoText;
                     if (remaining >= 0) {
                       if (remainingDays > 0) {
-                        final allowanceFormatted = fmt.format(dailyAllowance);
+                        final allowanceFormatted =
+                            fmt.format(dailyAllowance);
                         infoText = localeCode == 'id'
                             ? 'Anda bisa membelanjakan $allowanceFormatted/hari untuk $remainingDays hari ke depan'
                             : 'You can spend $allowanceFormatted/day for $remainingDays more days';
@@ -934,7 +1048,8 @@ class _BudgetHeroHeader extends StatelessWidget {
                         color: Colors.purple.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.pie_chart_rounded, color: Colors.purple, size: 26),
+                      child: const Icon(Icons.pie_chart_rounded,
+                          color: Colors.purple, size: 26),
                     ),
                   ),
                   // Top-right – bar chart
@@ -948,7 +1063,8 @@ class _BudgetHeroHeader extends StatelessWidget {
                         color: Colors.blue.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.bar_chart_rounded, color: Colors.blue, size: 16),
+                      child: const Icon(Icons.bar_chart_rounded,
+                          color: Colors.blue, size: 16),
                     ),
                   ),
                   // Bottom-left – trending up
@@ -962,7 +1078,8 @@ class _BudgetHeroHeader extends StatelessWidget {
                         color: Colors.green.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.trending_up_rounded, color: Colors.green, size: 15),
+                      child: const Icon(Icons.trending_up_rounded,
+                          color: Colors.green, size: 15),
                     ),
                   ),
                   // Top-left – receipt
@@ -976,7 +1093,8 @@ class _BudgetHeroHeader extends StatelessWidget {
                         color: Colors.orange.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.receipt_long_rounded, color: Colors.orange, size: 13),
+                      child: const Icon(Icons.receipt_long_rounded,
+                          color: Colors.orange, size: 13),
                     ),
                   ),
                   // Bottom-right – target/track
@@ -990,7 +1108,8 @@ class _BudgetHeroHeader extends StatelessWidget {
                         color: Colors.red.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.track_changes_rounded, color: Colors.red, size: 14),
+                      child: const Icon(Icons.track_changes_rounded,
+                          color: Colors.red, size: 14),
                     ),
                   ),
                 ],

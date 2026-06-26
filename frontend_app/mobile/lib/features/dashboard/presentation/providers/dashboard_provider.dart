@@ -22,9 +22,11 @@ final analyticsSummaryProvider =
       await dio.get('/transactions', queryParameters: {'limit': 10000});
   final txData = txRes.data;
   List txList = [];
-  if (txData is List)
+  if (txData is List) {
     txList = txData;
-  else if (txData is Map && txData['data'] is List) txList = txData['data'];
+  } else if (txData is Map && txData['data'] is List) {
+    txList = txData['data'];
+  }
 
   double totalIncome = 0;
   double totalExpense = 0;

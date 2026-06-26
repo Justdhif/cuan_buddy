@@ -22,6 +22,13 @@ import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
 import '../../features/profile/presentation/screens/widget_settings_screen.dart';
 import '../../features/profile/presentation/screens/theme_language_screen.dart';
+import '../../features/profile/presentation/screens/account_screen.dart';
+import '../../features/profile/presentation/screens/change_phone_screen.dart';
+import '../../features/profile/presentation/screens/edit_name_screen.dart';
+import '../../features/profile/presentation/screens/edit_bio_screen.dart';
+import '../../features/profile/presentation/screens/edit_username_screen.dart';
+import '../../features/profile/presentation/screens/edit_birthdate_screen.dart';
+import '../../features/profile/presentation/screens/edit_gender_screen.dart';
 
 // Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -139,6 +146,51 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile/theme-language',
         pageBuilder: (context, state) =>
             _buildPage(state, const ThemeLanguageScreen()),
+      ),
+      GoRoute(
+        path: '/profile/account',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const AccountScreen()),
+      ),
+      GoRoute(
+        path: '/profile/change-phone',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ChangePhoneScreen()),
+      ),
+      GoRoute(
+        path: '/profile/edit-name',
+        pageBuilder: (context, state) {
+          final initialName = state.extra as String? ?? '';
+          return _buildPage(state, EditNameScreen(initialName: initialName));
+        },
+      ),
+      GoRoute(
+        path: '/profile/edit-username',
+        pageBuilder: (context, state) {
+          final initialUsername = state.extra as String? ?? '';
+          return _buildPage(state, EditUsernameScreen(initialUsername: initialUsername));
+        },
+      ),
+      GoRoute(
+        path: '/profile/edit-bio',
+        pageBuilder: (context, state) {
+          final initialBio = state.extra as String? ?? '';
+          return _buildPage(state, EditBioScreen(initialBio: initialBio));
+        },
+      ),
+      GoRoute(
+        path: '/profile/edit-birthdate',
+        pageBuilder: (context, state) {
+          final initialBirthdate = state.extra as String? ?? '';
+          return _buildPage(state, EditBirthdateScreen(initialBirthdate: initialBirthdate));
+        },
+      ),
+      GoRoute(
+        path: '/profile/edit-gender',
+        pageBuilder: (context, state) {
+          final initialGender = state.extra as String?;
+          return _buildPage(state, EditGenderScreen(initialGender: initialGender));
+        },
       ),
       GoRoute(
         path: '/change-password',

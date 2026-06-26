@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, uuid, integer, decimal, pgEnum, unique } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, uuid, integer, decimal, pgEnum } from 'drizzle-orm/pg-core';
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense']);
 
@@ -61,11 +61,10 @@ export const budgets = pgTable('budgets', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
   limitAmount: decimal('limit_amount', { precision: 19, scale: 2 }).notNull(),
-  isRecurring: boolean('is_recurring').default(false).notNull(),
-  rollover: boolean('rollover').default(false).notNull(),
-  rolloverAmount: decimal('rollover_amount', { precision: 19, scale: 2 }).default('0').notNull(),
+  periodCount: integer('period_count').default(1).notNull(), // how many months this budget spans
+  startDay: integer('start_day').default(1).notNull(),       // which day of month the period starts
   currency: text('currency').default('IDR').notNull(),
-  monthYear: text('month_year').notNull(), // format YYYY-MM
+  monthYear: text('month_year').notNull(), // format YYYY-MM (start month)
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

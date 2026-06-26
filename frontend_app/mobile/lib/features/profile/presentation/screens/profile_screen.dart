@@ -291,11 +291,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSettingsTile(
             context: context,
             icon: Icons.key_outlined,
-            title: l10n.changePassword,
+            title: l10n.languageCode == 'id' ? 'Akun' : 'Account',
             subtitle: l10n.languageCode == 'id'
-                ? 'Ubah kata sandi akun Anda'
-                : 'Change your account password',
-            onTap: () => context.push('/change-password'),
+                ? 'Notifikasi keamanan, ganti nomor'
+                : 'Security notification, change number',
+            onTap: () => context.push('/profile/account'),
           ),
           _buildSettingsTile(
             context: context,

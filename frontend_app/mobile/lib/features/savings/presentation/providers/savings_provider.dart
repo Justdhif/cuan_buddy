@@ -158,8 +158,9 @@ final savingsNotifierProvider =
 final convertedSavingsSummaryProvider = FutureProvider.autoDispose
     .family<Map<String, double>, String>((ref, filter) async {
   final savingsState = ref.watch(savingsNotifierProvider);
-  if (savingsState.goals.isEmpty)
+  if (savingsState.goals.isEmpty) {
     return {'totalTarget': 0.0, 'totalSaved': 0.0};
+  }
 
   final currencyService = ref.watch(currencyServiceProvider);
   final profile = ref.watch(profileProvider);

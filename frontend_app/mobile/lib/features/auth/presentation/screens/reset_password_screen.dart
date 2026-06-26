@@ -115,8 +115,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         prefixIcon:
                             const Icon(Icons.lock_outline_rounded, size: 20),
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return l10n.passwordRequired;
+                          }
                           if (v.length < 8) return l10n.passwordMin8;
                           return null;
                         },
@@ -130,10 +131,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         prefixIcon:
                             const Icon(Icons.lock_outline_rounded, size: 20),
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return l10n.passwordRequired;
-                          if (v != _newPasswordController.text)
+                          }
+                          if (v != _newPasswordController.text) {
                             return 'Passwords do not match';
+                          }
                           return null;
                         },
                       ),

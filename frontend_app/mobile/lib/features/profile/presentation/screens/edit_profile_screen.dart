@@ -1,19 +1,17 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:dio/dio.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
 import '../providers/profile_provider.dart';
 
 const List<String> _avatarSeeds = [
@@ -39,65 +37,20 @@ class EditProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
-    with SingleTickerProviderStateMixin {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  late TextEditingController _usernameController;
-  late TextEditingController _phoneController;
-  late TextEditingController _bioController;
-  DateTime? _selectedDate;
-  String? _selectedGender;
-  bool _isSaving = false;
+  bool _isSavingAvatar = false;
 
   // Avatar
-  late String? _selectedAvatarUrl;
+  String? _selectedAvatarUrl;
   File? _selectedLocalFile;
   late List<String> _avatarOptions;
-
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(
-        text: widget.profile['fullName'] as String? ?? '');
-    _usernameController = TextEditingController(
-        text: widget.profile['username'] as String? ?? '');
-    _phoneController = TextEditingController(
-        text: widget.profile['phoneNumber'] as String? ??
-            widget.profile['phone'] as String? ??
-            '');
-    _bioController =
-        TextEditingController(text: widget.profile['bio'] as String? ?? '');
-    _selectedGender = widget.profile['gender'] as String?;
-
-    final birthDateStr = widget.profile['birthDate'] as String?;
-    if (birthDateStr != null) {
-      _selectedDate = DateTime.tryParse(birthDateStr);
-    }
-
     _selectedAvatarUrl = widget.profile['avatar'] as String?;
     _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
-
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _animController.forward();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _usernameController.dispose();
-    _phoneController.dispose();
-    _bioController.dispose();
-    _animController.dispose();
-    super.dispose();
   }
 
   Future<void> _pickAvatarAndCrop() async {
@@ -138,62 +91,34 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
     }
   }
 
-  Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
+  Future<void> _saveAvatarOnly() async {
+    setState(() => _isSavingAvatar = true);
+    final l10n = AppLocalizations.of(context);
 
     try {
       String? finalAvatarUrl = _selectedAvatarUrl;
 
-      // If user picked a local file, upload it now
+      // If user picked a local file, upload it
       if (_selectedLocalFile != null) {
         final dio = ref.read(dioClientProvider).dio;
-
-        // Read file bytes and validate size (max ~3MB to stay under Vercel 4.5MB limit)
         final Uint8List rawBytes = await _selectedLocalFile!.readAsBytes();
-
-        // Determine file extension for filename
         final ext = _selectedLocalFile!.path.split('.').last.toLowerCase();
         final filename = 'avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
 
         final formData = FormData.fromMap({
-          'file': MultipartFile.fromBytes(
-            rawBytes,
-            filename: filename,
-          ),
+          'file': MultipartFile.fromBytes(rawBytes, filename: filename),
         });
 
         final response = await dio.post(
           '/profiles/avatar/upload',
           data: formData,
-          options: Options(
-            headers: {'Content-Type': 'multipart/form-data'},
-          ),
+          options: Options(headers: {'Content-Type': 'multipart/form-data'}),
         );
         finalAvatarUrl = response.data['avatar'] as String;
       }
 
-      // Update profile fields
-      await ref.read(profileRepositoryProvider).updateProfile(
-            fullName: _nameController.text.trim(),
-            username: _usernameController.text.trim().isNotEmpty
-                ? _usernameController.text.trim()
-                : null,
-            phoneNumber: _phoneController.text.trim().isNotEmpty
-                ? _phoneController.text.trim()
-                : null,
-            birthDate: _selectedDate?.toUtc().toIso8601String(),
-            gender: _selectedGender,
-            bio: _bioController.text.trim().isNotEmpty
-                ? _bioController.text.trim()
-                : null,
-          );
-
-      // If user picked a dicebear avatar, update it (if it's local file, upload endpoint already updated DB)
       final currentAvatar = widget.profile['avatar'] as String?;
-      if (finalAvatarUrl != null &&
-          finalAvatarUrl != currentAvatar &&
-          _selectedLocalFile == null) {
+      if (finalAvatarUrl != null && finalAvatarUrl != currentAvatar) {
         await ref
             .read(profileRepositoryProvider)
             .updateAvatar(avatarUrl: finalAvatarUrl);
@@ -202,494 +127,418 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen>
       ref.invalidate(profileProvider);
 
       if (mounted) {
-        Navigator.pop(context);
         AppSnackbar.show(
           context,
           title: l10n.success,
-          message: l10n.profileUpdatedSuccess,
+          message: l10n.languageCode == 'id'
+              ? 'Foto profil berhasil diperbarui!'
+              : 'Profile photo updated successfully!',
           type: SnackbarType.success,
         );
       }
     } catch (e) {
-      setState(() => _isSaving = false);
       if (mounted) {
-        AppSnackbar.show(context,
-            title: l10n.error,
-            message: '${l10n.failedToUpdateProfile}: $e',
-            type: SnackbarType.error);
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Failed to update avatar: $e',
+          type: SnackbarType.error,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSavingAvatar = false;
+        });
       }
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.editProfile),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+  void _showAvatarEditSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ─── Avatar Picker ─────────────────────────────────────────
-                _AvatarPickerSection(
-                  avatarOptions: _avatarOptions,
-                  selectedAvatarUrl: _selectedAvatarUrl,
-                  selectedLocalFile: _selectedLocalFile,
-                  onDicebearSelected: (url) => setState(() {
-                    _selectedAvatarUrl = url;
-                    _selectedLocalFile = null;
-                  }),
-                  onUploadTap: _pickAvatarAndCrop,
-                  isDark: isDark,
-                  currentProfileAvatar: widget.profile['avatar'] as String?,
-                ),
-                const SizedBox(height: 32),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setModalState) {
+            final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
+            bool isSavingInSheet = false;
 
-                // ─── Full Name ─────────────────────────────────────────────
-                Text(
-                  l10n.personalInfo,
-                  style: AppTypography.textTheme.titleSmall
-                      ?.copyWith(color: AppColors.primary),
-                ),
-                const SizedBox(height: 12),
-                AppTextField(
-                  controller: _nameController,
-                  label: l10n.fullName,
-                  hint: l10n.fullNameHint,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return l10n.fullNameRequired;
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // ─── Username ─────────────────────────────────────────────
-                AppTextField(
-                  controller: _usernameController,
-                  label: l10n.usernameField,
-                  hint: l10n.usernameHint,
-                ),
-                const SizedBox(height: 16),
-
-                // ─── Phone Number ──────────────────────────────────────────
-                AppTextField(
-                  controller: _phoneController,
-                  label: l10n.phoneNumberOptional,
-                  hint: l10n.phoneHint,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 16),
-
-                // ─── Date of Birth ─────────────────────────────────────────
-                InkWell(
-                  onTap: () async {
-                    final pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate ??
-                          DateTime.now()
-                              .subtract(const Duration(days: 365 * 20)),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (pickedDate != null && pickedDate != _selectedDate) {
-                      setState(() => _selectedDate = pickedDate);
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: l10n.dateOfBirthOptional,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight,
-                          width: 1,
-                        ),
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _selectedDate != null
-                              ? DateFormat('dd MMM yyyy').format(_selectedDate!)
-                              : l10n.selectDateHint,
-                          style: AppTypography.textTheme.bodyLarge?.copyWith(
-                            color: _selectedDate == null
-                                ? (isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight)
-                                : null,
-                          ),
-                        ),
-                        const Icon(Icons.calendar_today_rounded, size: 20),
-                      ],
+                    Text(
+                      l10n.languageCode == 'id' ? 'Foto Profil' : 'Profile Photo',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // ─── Gender ────────────────────────────────────────────────
-                Text(l10n.genderField,
-                    style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildGenderToggle(
-                        'male', l10n.genderMale, Icons.male_rounded, isDark),
-                    const SizedBox(width: 8),
-                    _buildGenderToggle('female', l10n.genderFemale,
-                        Icons.female_rounded, isDark),
-                    const SizedBox(width: 8),
-                    _buildGenderToggle('other', l10n.genderOther,
-                        Icons.transgender_rounded, isDark),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // ─── Bio ───────────────────────────────────────────────────
-                AppTextField(
-                  controller: _bioController,
-                  label: l10n.bioField,
-                  hint: l10n.bioHint,
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 40),
-
-                // ─── Save Button ───────────────────────────────────────────
-                AppButton(
-                  label: l10n.saveChanges,
-                  onPressed: _save,
-                  isLoading: _isSaving,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGenderToggle(
-      String value, String label, IconData icon, bool isDark) {
-    final isSelected = _selectedGender == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedGender = value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primary
-                : (isDark ? AppColors.surfaceDark : Colors.white),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: isSelected ? Colors.white : AppColors.primary),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppTypography.textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? Colors.white
-                      : (isDark ? Colors.white : AppColors.textPrimaryLight),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Avatar Picker Section ────────────────────────────────────────────────────
-class _AvatarPickerSection extends StatelessWidget {
-  const _AvatarPickerSection({
-    required this.avatarOptions,
-    required this.selectedAvatarUrl,
-    required this.selectedLocalFile,
-    required this.onDicebearSelected,
-    required this.onUploadTap,
-    required this.isDark,
-    required this.currentProfileAvatar,
-  });
-
-  final List<String> avatarOptions;
-  final String? selectedAvatarUrl;
-  final File? selectedLocalFile;
-  final ValueChanged<String> onDicebearSelected;
-  final VoidCallback onUploadTap;
-  final bool isDark;
-  final String? currentProfileAvatar;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-
-    // We display 1 preview + 1 upload circle + 9 dicebears = 10 items total
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ─── Big Preview ───────────────────────────────────────────────────
-        Center(
-          child: Hero(
-            tag: 'avatar',
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.1),
-                border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.5),
-                  width: 2,
-                ),
-              ),
-              child: ClipOval(
-                child: selectedLocalFile != null
-                    ? Image.file(
-                        selectedLocalFile!,
+                    const SizedBox(height: 24),
+                    Center(
+                      child: Container(
                         width: 120,
                         height: 120,
-                        fit: BoxFit.cover,
-                      )
-                    : (selectedAvatarUrl != null &&
-                            selectedAvatarUrl!.isNotEmpty)
-                        ? CachedNetworkImage(
-                            imageUrl: selectedAvatarUrl!,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            errorWidget: (_, __, ___) => const Icon(
-                              Icons.person,
-                              size: 60,
-                              color: AppColors.primary,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: AppColors.primary,
-                          ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 32),
-
-        Text(
-          l10n.chooseAvatar,
-          style: AppTypography.textTheme.titleSmall
-              ?.copyWith(color: AppColors.primary),
-        ),
-        const SizedBox(height: 16),
-
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 5,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1,
-          ),
-          itemCount: 1 + avatarOptions.length,
-          itemBuilder: (context, index) {
-            // First item is the "Upload" circle
-            if (index == 0) {
-              final isSelected = selectedLocalFile != null ||
-                  (selectedAvatarUrl != null &&
-                      !avatarOptions.contains(selectedAvatarUrl));
-
-              return GestureDetector(
-                onTap: onUploadTap,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppColors.primary.withValues(alpha: 0.5),
-                      width: isSelected ? 3 : 2,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              spreadRadius: 1,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Stack(
-                    children: [
-                      ClipOval(
-                        child: selectedLocalFile != null
-                            ? Image.file(
-                                selectedLocalFile!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                              )
-                            : (currentProfileAvatar != null &&
-                                    !avatarOptions
-                                        .contains(currentProfileAvatar))
-                                ? CachedNetworkImage(
-                                    imageUrl: currentProfileAvatar!,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Center(
-                                    child: Icon(
-                                      Icons.camera_alt_rounded,
-                                      color: AppColors.primary
-                                          .withValues(alpha: 0.8),
-                                      size: 28,
-                                    ),
-                                  ),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          border: Border.all(color: AppColors.primary, width: 2),
+                        ),
+                        child: ClipOval(
+                          child: _selectedLocalFile != null
+                              ? Image.file(_selectedLocalFile!, fit: BoxFit.cover)
+                              : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
+                                  ? CachedNetworkImage(
+                                      imageUrl: _selectedAvatarUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => const Center(
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                      errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
+                                    )
+                                  : const Icon(Icons.person, size: 60),
+                        ),
                       ),
-                      if (selectedLocalFile != null ||
-                          (currentProfileAvatar != null &&
-                              !avatarOptions.contains(currentProfileAvatar)))
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black.withValues(alpha: 0.3),
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.camera_alt_rounded,
-                                color: Colors.white,
-                                size: 24,
+                    ),
+                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        l10n.chooseAvatar,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 60,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _avatarOptions.length,
+                        itemBuilder: (context, index) {
+                          final url = _avatarOptions[index];
+                          final isSelected = url == _selectedAvatarUrl && _selectedLocalFile == null;
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                _selectedAvatarUrl = url;
+                                _selectedLocalFile = null;
+                              });
+                              setState(() {
+                                _selectedAvatarUrl = url;
+                                _selectedLocalFile = null;
+                              });
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : Colors.transparent,
+                                  width: 3,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: url,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => const SizedBox(
+                                    width: 50,
+                                    height: 50,
+                                    child: CircularProgressIndicator(strokeWidth: 1.5),
+                                  ),
+                                ),
                               ),
                             ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isSavingInSheet
+                            ? null
+                            : () async {
+                                Navigator.pop(sheetContext);
+                                await _pickAvatarAndCrop();
+                                if (mounted) _showAvatarEditSheet();
+                              },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                      if (isSelected)
-                        Positioned.fill(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: AppColors.primary, width: 3),
-                            ),
-                            child: const Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.primary,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            // Dicebear avatars
-            final url = avatarOptions[index - 1];
-            final isSelected =
-                url == selectedAvatarUrl && selectedLocalFile == null;
-
-            return GestureDetector(
-              onTap: () => onDicebearSelected(url),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                    width: 3,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.35),
-                            blurRadius: 12,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Stack(
-                  children: [
-                    ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: url,
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
-                          color: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.borderLight.withValues(alpha: 0.4),
-                          child: const Center(
-                            child: CircularProgressIndicator(strokeWidth: 1.5),
-                          ),
-                        ),
-                        errorWidget: (_, __, ___) => Container(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          child: const Icon(Icons.person,
-                              color: AppColors.primary, size: 24),
+                        icon: const Icon(Icons.upload_file_outlined, color: AppColors.primary),
+                        label: Text(
+                          l10n.languageCode == 'id' ? 'Unggah Foto Baru' : 'Upload New Photo',
+                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
-                    if (isSelected)
-                      Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                          ),
-                          child: const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.primary,
-                            size: 24,
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isSavingInSheet
+                            ? null
+                            : () async {
+                                setModalState(() => isSavingInSheet = true);
+                                await _saveAvatarOnly();
+                                if (mounted) Navigator.pop(sheetContext);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
+                        child: isSavingInSheet
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Text(
+                                l10n.languageCode == 'id' ? 'Simpan' : 'Save',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
                       ),
+                    ),
                   ],
                 ),
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  Widget _buildInfoTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isDark ? Colors.white60 : Colors.black54,
+              size: 24,
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.white30 : Colors.black26,
+            ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(profileProvider);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          l10n.languageCode == 'id' ? 'Profil' : 'Profile',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        elevation: 0,
+      ),
+      body: profileAsync.when(
+        data: (profile) {
+          final fullName = profile['fullName'] as String? ?? '';
+          final username = profile['username'] as String? ?? '';
+          final bio = profile['bio'] as String? ?? '';
+          final rawBirthdate = profile['birthDate'] as String? ?? profile['birthdate'] as String? ?? '';
+          final gender = profile['gender'] as String?;
+
+          // Format birthdate display
+          String birthdateDisplay = '';
+          if (rawBirthdate.isNotEmpty) {
+            try {
+              final date = DateTime.parse(rawBirthdate);
+              final months = l10n.languageCode == 'id'
+                  ? ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+                  : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              birthdateDisplay = '${date.day} ${months[date.month - 1]} ${date.year}';
+            } catch (_) {
+              birthdateDisplay = rawBirthdate;
+            }
+          }
+
+          // Gender display label
+          String genderDisplay = '';
+          if (gender == 'male') {
+            genderDisplay = l10n.languageCode == 'id' ? 'Laki-laki' : 'Male';
+          } else if (gender == 'female') {
+            genderDisplay = l10n.languageCode == 'id' ? 'Perempuan' : 'Female';
+          }
+
+          final fallback = l10n.languageCode == 'id' ? 'Belum diatur' : 'Not set';
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Column(
+              children: [
+                // 1. Big Avatar with Edit Button underneath
+                Center(
+                  child: Column(
+                    children: [
+                      GestureDetector(
+                        onTap: _showAvatarEditSheet,
+                        child: Hero(
+                          tag: 'avatar',
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                            child: ClipOval(
+                              child: _selectedLocalFile != null
+                                  ? Image.file(
+                                      _selectedLocalFile!,
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
+                                      ? CachedNetworkImage(
+                                          imageUrl: _selectedAvatarUrl!,
+                                          width: 120,
+                                          height: 120,
+                                          fit: BoxFit.cover,
+                                          placeholder: (_, __) => const Center(
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                          errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
+                                        )
+                                      : const Icon(Icons.person, size: 60),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: _showAvatarEditSheet,
+                        child: Text(
+                          l10n.languageCode == 'id' ? 'Edit Foto' : 'Edit Photo',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Divider(height: 1, thickness: 0.5),
+
+                // 2. Info Fields List
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.person_outline_rounded,
+                  title: l10n.languageCode == 'id' ? 'Nama Lengkap' : 'Full Name',
+                  subtitle: fullName.isNotEmpty ? fullName : fallback,
+                  onTap: () => context.push('/profile/edit-name', extra: fullName),
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.alternate_email_rounded,
+                  title: 'Username',
+                  subtitle: username.isNotEmpty ? '@$username' : fallback,
+                  onTap: () => context.push('/profile/edit-username', extra: username),
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.info_outline_rounded,
+                  title: l10n.languageCode == 'id' ? 'Bio' : 'Bio',
+                  subtitle: bio.isNotEmpty ? bio : fallback,
+                  onTap: () => context.push('/profile/edit-bio', extra: bio),
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.cake_outlined,
+                  title: l10n.languageCode == 'id' ? 'Tanggal Lahir' : 'Birthdate',
+                  subtitle: birthdateDisplay.isNotEmpty ? birthdateDisplay : fallback,
+                  onTap: () => context.push('/profile/edit-birthdate', extra: rawBirthdate),
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.wc_outlined,
+                  title: l10n.languageCode == 'id' ? 'Jenis Kelamin' : 'Gender',
+                  subtitle: genderDisplay.isNotEmpty ? genderDisplay : fallback,
+                  onTap: () => context.push('/profile/edit-gender', extra: gender),
+                ),
+              ],
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text('Error loading profile: $err')),
+      ),
     );
   }
 }

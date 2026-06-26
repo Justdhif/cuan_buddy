@@ -30,8 +30,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   String? _selectedCategoryId;
   DateTime _selectedDate = DateTime.now();
   String _selectedCurrency = AppConstants.defaultCurrency;
-  bool _isRecurring = false;
-  bool _rollover = false;
+  int _periodCount = 1;
+  int _startDay = 1;
   bool _isSaving = false;
 
   @override
@@ -46,8 +46,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       _selectedCategoryId = widget.budget!['categoryId']?.toString();
       _selectedCurrency =
           widget.budget!['currency'] ?? AppConstants.defaultCurrency;
-      _isRecurring = widget.budget!['isRecurring'] ?? false;
-      _rollover = widget.budget!['rollover'] ?? false;
+      _periodCount = (widget.budget!['periodCount'] as num?)?.toInt() ?? 1;
+      _startDay = (widget.budget!['startDay'] as num?)?.toInt() ?? 1;
 
       if (widget.budget!['monthYear'] != null) {
         final parts = widget.budget!['monthYear'].toString().split('-');
@@ -88,9 +88,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         'categoryId': _selectedCategoryId!,
         'limitAmount': double.parse(_amountController.text.replaceAll(',', '')),
         'currency': _selectedCurrency,
-        'isRecurring': _isRecurring,
-        'rollover': _rollover,
         'monthYear': monthYearStr,
+        'periodCount': _periodCount,
+        'startDay': _startDay,
       };
       if (widget.budget == null) {
         await dio.post('/budgets', data: payload);
@@ -148,7 +148,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
             .read(budgetsNotifierProvider.notifier)
             .deleteBudget(widget.budget!['id']);
         if (mounted) {
-          context.pop(); // Pop form screen
+          context.pop();
           AppSnackbar.show(context,
               title: l10n.success,
               message: 'Budget deleted successfully',
@@ -235,8 +235,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null)
+                          if (val != null) {
                             setState(() => _selectedCurrency = val);
+                          }
                         },
                       ),
                     ),
@@ -250,10 +251,13 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         validator: (value) {
-                          if (value == null || value.isEmpty)
+                          if (value == null || value.isEmpty) {
                             return l10n.amountRequired;
+                          }
                           if (double.tryParse(value.replaceAll(',', '')) ==
-                              null) return l10n.invalidAmount;
+                              null) {
+                            return l10n.invalidAmount;
+                          }
                           return null;
                         },
                       ),
@@ -354,22 +358,23 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // ── Month Picker ───────────────────────────────────────────
+                // ── Start Month Picker ─────────────────────────────────────
+                Text('Bulan Mulai', style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 8),
                 InkWell(
                   onTap: () async {
-                    final pickedDate = await showDatePicker(
+                    final picked = await showDatePicker(
                       context: context,
                       initialDate: _selectedDate,
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2101),
                     );
-                    if (pickedDate != null && pickedDate != _selectedDate) {
-                      setState(() => _selectedDate = pickedDate);
+                    if (picked != null && picked != _selectedDate) {
+                      setState(() => _selectedDate = picked);
                     }
                   },
                   child: InputDecorator(
                     decoration: InputDecoration(
-                      labelText: l10n.month,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide(
@@ -394,36 +399,34 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // ── Recurring & Rollover Toggles ───────────────────────────
-                SwitchListTile(
-                  title: Text(l10n.recurringBudget,
-                      style: AppTypography.textTheme.bodyMedium),
-                  value: _isRecurring,
-                  activeColor: AppColors.primary,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (val) {
-                    setState(() {
-                      _isRecurring = val;
-                      if (!val) _rollover = false;
-                    });
-                  },
+                // ── Start Day ─────────────────────────────────────────────
+                Text('Mulai Tanggal', style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'Periode dimulai pada tanggal berapa setiap bulannya',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
                 ),
-                SwitchListTile(
-                  title: Text(l10n.rolloverRemaining,
-                      style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        color: _isRecurring
-                            ? null
-                            : (isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight),
-                      )),
-                  value: _rollover,
-                  activeColor: AppColors.primary,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: _isRecurring
-                      ? (val) => setState(() => _rollover = val)
-                      : null,
+                const SizedBox(height: 10),
+                _buildDayPicker(isDark),
+                const SizedBox(height: 24),
+
+                // ── Period Count ──────────────────────────────────────────
+                Text('Jumlah Periode (Bulan)', style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'Berapa bulan budget ini berlaku',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
                 ),
+                const SizedBox(height: 10),
+                _buildPeriodStepper(isDark),
                 const SizedBox(height: 40),
 
                 // ── Save Button ────────────────────────────────────────────
@@ -442,6 +445,187 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     );
   }
 
+  // ── Start Day Picker (grid of 1–28) ──────────────────────────────────────
+  Widget _buildDayPicker(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List.generate(28, (i) {
+              final day = i + 1;
+              final isSelected = _startDay == day;
+              return GestureDetector(
+                onTap: () => setState(() => _startDay = day),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary
+                        : (isDark
+                            ? const Color(0xFF2D3748)
+                            : Colors.white),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    '$day',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                size: 14,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Tanggal dipilih: $_startDay (maks. 28 untuk konsistensi)',
+                  style: AppTypography.textTheme.labelSmall?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Period Count Stepper ─────────────────────────────────────────────────
+  Widget _buildPeriodStepper(bool isDark) {
+    final endMonth = DateTime(
+      _selectedDate.year,
+      _selectedDate.month + _periodCount - 1,
+    );
+    final endMonthStr = DateFormat('MMMM yyyy').format(endMonth);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Decrease
+              _StepperButton(
+                icon: Icons.remove_rounded,
+                onTap: _periodCount > 1
+                    ? () => setState(() => _periodCount--)
+                    : null,
+                isDark: isDark,
+              ),
+              // Value display
+              Column(
+                children: [
+                  Text(
+                    '$_periodCount',
+                    style: AppTypography.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    _periodCount == 1 ? 'bulan' : 'bulan',
+                    style: AppTypography.textTheme.labelSmall?.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+              // Increase
+              _StepperButton(
+                icon: Icons.add_rounded,
+                onTap: () => setState(() => _periodCount++),
+                isDark: isDark,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.date_range_rounded,
+                    size: 14, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  '${DateFormat('MMM yyyy').format(_selectedDate)}  →  $endMonthStr',
+                  style: AppTypography.textTheme.labelMedium?.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Skeleton loader for the category chips row
   Widget _buildCategorySkeletonLoader(bool isDark) {
     return SizedBox(
@@ -452,6 +636,51 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         itemCount: 5,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
+      ),
+    );
+  }
+}
+
+// ─── Stepper Button ───────────────────────────────────────────────────────────
+class _StepperButton extends StatelessWidget {
+  const _StepperButton({
+    required this.icon,
+    required this.onTap,
+    required this.isDark,
+  });
+  final IconData icon;
+  final VoidCallback? onTap;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: enabled
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : (isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: enabled
+                ? AppColors.primary.withValues(alpha: 0.3)
+                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: enabled
+              ? AppColors.primary
+              : (isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight),
+          size: 22,
+        ),
       ),
     );
   }

@@ -319,8 +319,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null)
+                          if (val != null) {
                             setState(() => _selectedCurrency = val);
+                          }
                         },
                       ),
                     ),
@@ -334,10 +335,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         validator: (value) {
-                          if (value == null || value.isEmpty)
+                          if (value == null || value.isEmpty) {
                             return l10n.amountRequired;
+                          }
                           if (double.tryParse(value.replaceAll(',', '')) ==
-                              null) return l10n.invalidAmount;
+                              null) {
+                            return l10n.invalidAmount;
+                          }
                           return null;
                         },
                       ),

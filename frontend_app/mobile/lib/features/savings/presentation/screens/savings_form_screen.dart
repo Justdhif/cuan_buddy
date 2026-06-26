@@ -305,8 +305,9 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                         label: l10n.goalName,
                         hint: l10n.goalNameHint,
                         validator: (value) {
-                          if (value == null || value.isEmpty)
+                          if (value == null || value.isEmpty) {
                             return l10n.nameRequired;
+                          }
                           return null;
                         },
                       ),
@@ -344,8 +345,9 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                           );
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null)
+                          if (val != null) {
                             setState(() => _selectedCurrency = val);
+                          }
                         },
                       ),
                     ),
@@ -359,10 +361,12 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         validator: (value) {
-                          if (value == null || value.isEmpty)
+                          if (value == null || value.isEmpty) {
                             return l10n.amountRequired;
-                          if (double.tryParse(value) == null)
+                          }
+                          if (double.tryParse(value) == null) {
                             return l10n.invalidAmount;
+                          }
                           return null;
                         },
                       ),
