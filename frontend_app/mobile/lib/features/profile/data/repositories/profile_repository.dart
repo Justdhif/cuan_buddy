@@ -13,6 +13,10 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
+  Future<void> submitFeedback(String message) async {
+    await _dio.post('/feedback', data: {'message': message});
+  }
+
   Future<Map<String, dynamic>> updateProfile({
     String? fullName,
     String? username,

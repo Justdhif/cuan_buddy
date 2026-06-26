@@ -833,4 +833,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get about => 'About';
   @override
   String get feedback => 'Feedback';
+  @override
+  String get feedbackMessageHint => 'Write your feedback or suggestions here...';
+  @override
+  String get feedbackSentSuccess => 'Feedback sent successfully! Thank you for your support.';
+  @override
+  String get feedbackEmptyError => 'Feedback message cannot be empty';
+  @override
+  String get feedbackInstruction => 'Help us improve CuanBuddy by sending your suggestions or bug reports.';
+  @override
+  String get sendFeedback => 'Send Feedback';
 }

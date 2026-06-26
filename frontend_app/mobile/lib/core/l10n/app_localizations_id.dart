@@ -836,4 +836,14 @@ class AppLocalizationsId extends AppLocalizations {
   String get about => 'Tentang';
   @override
   String get feedback => 'Masukan';
+  @override
+  String get feedbackMessageHint => 'Tulis saran atau masukan Anda di sini...';
+  @override
+  String get feedbackSentSuccess => 'Saran berhasil dikirim! Terima kasih atas masukan Anda.';
+  @override
+  String get feedbackEmptyError => 'Masukan tidak boleh kosong';
+  @override
+  String get feedbackInstruction => 'Bantu kami meningkatkan CuanBuddy dengan mengirimkan saran atau laporan masalah Anda.';
+  @override
+  String get sendFeedback => 'Kirim Masukan';
 }

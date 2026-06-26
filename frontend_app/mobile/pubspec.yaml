@@ -58,6 +58,7 @@ dependencies:
   record: ^6.2.1
   flutter_colorpicker: ^1.1.0
   pinput: ^6.0.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -75,7 +76,6 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/
     - assets/animations/
     - assets/icon/
 

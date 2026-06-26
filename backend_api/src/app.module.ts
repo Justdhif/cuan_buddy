@@ -17,6 +17,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AiModule } from './ai/ai.module';
 import { BackupModule } from './backup/backup.module';
 import { EmailModule } from './email/email.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { EmailModule } from './email/email.module';
     AiModule,
     BackupModule,
     EmailModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [

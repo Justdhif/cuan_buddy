@@ -105,3 +105,11 @@ export const backupSettings = pgTable('backup_settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const feedbacks = pgTable('feedbacks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+

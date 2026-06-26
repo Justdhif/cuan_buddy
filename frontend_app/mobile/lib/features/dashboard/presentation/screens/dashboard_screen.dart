@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -19,8 +17,6 @@ import '../providers/dashboard_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/currency_service.dart';
 import '../../../../core/services/widget_service.dart';
-import '../../../../core/providers/widget_preferences_provider.dart';
-import '../../../savings/presentation/providers/savings_provider.dart';
 import '../widgets/ai_insight_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -90,36 +86,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     });
 
-    ref.listen<SavingsState>(savingsNotifierProvider, (previous, next) {
-      final selectedGoalId = ref.read(selectedSavingsWidgetIdProvider);
-      if (selectedGoalId != null) {
-        try {
-          final goal = next.goals.firstWhere((g) => g['id'] == selectedGoalId);
-          final rawT = goal['targetAmount'];
-          final rawS = goal['savedAmount'];
-          final target = rawT is num
-              ? rawT.toDouble()
-              : double.tryParse(rawT?.toString() ?? '0') ?? 0;
-          final saved = rawS is num
-              ? rawS.toDouble()
-              : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-          final currency = profileAsync.valueOrNull?['currency'] as String? ??
-              AppConstants.defaultCurrency;
-          final emoji = goal['icon'] as String? ?? '🎯';
-          final name = goal['name'] as String? ?? 'Savings Goal';
-
-          WidgetService.updateSavingsWidgetData(
-            emoji: emoji,
-            name: name,
-            savedAmount: saved,
-            targetAmount: target,
-            currency: currency,
-          );
-        } catch (e) {
-          // Goal not found or error parsing
-        }
-      }
-    });
 
     return Scaffold(
       body: GestureDetector(
@@ -396,72 +362,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               GestureDetector(
                 onTap: () => context.push('/home/profile'),
-                child: profileAsync.when(
-                  data: (profile) {
-                    final avatarUrl = profile['avatar'] as String?;
-                    final isDark =
-                        Theme.of(context).brightness == Brightness.dark;
-                    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-                      return Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(shape: BoxShape.circle),
-                        child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: avatarUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Shimmer.fromColors(
-                              baseColor: isDark
-                                  ? Colors.grey[800]!
-                                  : Colors.grey[300]!,
-                              highlightColor: isDark
-                                  ? Colors.grey[700]!
-                                  : Colors.grey[100]!,
-                              child: Container(color: Colors.white),
-                            ),
-                            errorWidget: (_, __, ___) => Icon(
-                              Icons.person_outline_rounded,
-                              color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                    return Icon(
-                      Icons.person_outline_rounded,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    );
-                  },
-                  loading: () {
-                    final isDark =
-                        Theme.of(context).brightness == Brightness.dark;
-                    return Shimmer.fromColors(
-                      baseColor: isDark
-                          ? const Color(0xFF2D3748)
-                          : const Color(0xFFE2E8F0),
-                      highlightColor: isDark
-                          ? const Color(0xFF4A5568)
-                          : const Color(0xFFF7FAFC),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    );
-                  },
-                  error: (_, __) => Icon(
-                    Icons.person_outline_rounded,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  size: 28,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ),
               const SizedBox(width: 8),

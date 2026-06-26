@@ -447,9 +447,12 @@ abstract class AppLocalizations {
   String get dark;
   String get about;
   String get feedback;
+  String get feedbackMessageHint;
+  String get feedbackSentSuccess;
+  String get feedbackEmptyError;
+  String get feedbackInstruction;
+  String get sendFeedback;
 }
-
-// ─── InheritedWidget Scope ────────────────────────────────────────────────────
 class AppLocalizationsScope extends InheritedWidget {
   const AppLocalizationsScope({
     super.key,

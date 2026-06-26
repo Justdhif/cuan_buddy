@@ -3,6 +3,8 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../../core/services/currency_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/widget_preferences_provider.dart';
+import '../../../../core/services/widget_service.dart';
 
 class SavingsState {
   final List<dynamic> goals;
@@ -39,6 +41,37 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
 
   final Ref ref;
 
+  void _updateWidgetIfSelected() {
+    try {
+      final selectedGoalId = ref.read(selectedSavingsWidgetIdProvider);
+      if (selectedGoalId != null) {
+        final goal = state.goals.firstWhere((g) => g['id'] == selectedGoalId);
+        final rawT = goal['targetAmount'];
+        final rawS = goal['savedAmount'];
+        final target = rawT is num
+            ? rawT.toDouble()
+            : double.tryParse(rawT?.toString() ?? '0') ?? 0;
+        final saved = rawS is num
+            ? rawS.toDouble()
+            : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+        final profile = ref.read(profileProvider).valueOrNull;
+        final currency = profile?['currency'] as String? ?? AppConstants.defaultCurrency;
+        final emoji = goal['icon'] as String? ?? '🎯';
+        final name = goal['name'] as String? ?? 'Savings Goal';
+
+        WidgetService.updateSavingsWidgetData(
+          emoji: emoji,
+          name: name,
+          savedAmount: saved,
+          targetAmount: target,
+          currency: currency,
+        );
+      }
+    } catch (e) {
+      // Goal not found or error parsing
+    }
+  }
+
   Future<void> fetchGoals() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -52,6 +85,7 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
       } else {
         state = state.copyWith(goals: [], isLoading: false, isInitialLoad: false);
       }
+      _updateWidgetIfSelected();
     } catch (e) {
       state = state.copyWith(error: e.toString(), isLoading: false, isInitialLoad: false);
     }

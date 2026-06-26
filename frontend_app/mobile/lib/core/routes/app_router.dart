@@ -21,6 +21,7 @@ import '../../features/profile/presentation/screens/backup_settings_screen.dart'
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
 import '../../features/profile/presentation/screens/widget_settings_screen.dart';
+import '../../features/profile/presentation/screens/theme_language_screen.dart';
 
 // Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -133,6 +134,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile/widgets',
         pageBuilder: (context, state) =>
             _buildPage(state, const WidgetSettingsScreen()),
+      ),
+      GoRoute(
+        path: '/profile/theme-language',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ThemeLanguageScreen()),
       ),
       GoRoute(
         path: '/change-password',
