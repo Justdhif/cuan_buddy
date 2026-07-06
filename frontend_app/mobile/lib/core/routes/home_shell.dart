@@ -77,8 +77,6 @@ class _CuanBuddyNavBar extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Widget build method
-
     return StyleProvider(
       style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
       child: ConvexAppBar(

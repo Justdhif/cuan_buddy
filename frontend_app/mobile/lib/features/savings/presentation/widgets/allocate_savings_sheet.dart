@@ -180,7 +180,7 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
 
           // Goal Selection
           DropdownButtonFormField<String>(
-            value: _selectedGoalId,
+            initialValue: _selectedGoalId,
             decoration: InputDecoration(
               labelText: l10n.selectSavingsGoal,
               border: OutlineInputBorder(
@@ -209,7 +209,7 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
               Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedCurrency,
+                  initialValue: _selectedCurrency,
                   isExpanded: true,
                   icon: const Icon(Icons.arrow_drop_down_rounded),
                   decoration: InputDecoration(

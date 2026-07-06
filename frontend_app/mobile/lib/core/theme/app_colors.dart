@@ -4,9 +4,9 @@ class AppColors {
   AppColors._();
 
   // ─── Brand Colors ────────────────────────────────────────────────────────────
-  static const Color primary = Color(0xFFA78BFA);
-  static const Color primaryLight = Color(0xFFC4B5FD);
-  static const Color primaryDark = Color(0xFF7C3AED);
+  static const Color primary = Color(0xFF60A5FA);
+  static const Color primaryLight = Color(0xFF93C5FD);
+  static const Color primaryDark = Color(0xFF2563EB);
 
   static const Color secondary = Color(0xFF6EE7B7);
   static const Color secondaryLight = Color(0xFFA7F3D0);
@@ -40,9 +40,9 @@ class AppColors {
   static const Color dividerLight = Color(0xFFF3F4F6);
 
   // ─── Dark Mode ───────────────────────────────────────────────────────────────
-  static const Color backgroundDark = Color(0xFF0F172A);
-  static const Color surfaceDark = Color(0xFF1E293B);
-  static const Color cardDark = Color(0xFF1E293B);
+  static const Color backgroundDark = Color(0xFF000000);
+  static const Color surfaceDark = Color(0xFF121212);
+  static const Color cardDark = Color(0xFF121212);
   static const Color textPrimaryDark = Color(0xFFF8FAFC);
   static const Color textSecondaryDark = Color(0xFF94A3B8);
   static const Color textHintDark = Color(0xFF64748B);
@@ -53,13 +53,13 @@ class AppColors {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFA78BFA), Color(0xFF8B5CF6)],
+    colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
   );
 
   static const LinearGradient balanceGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF7C3AED), Color(0xFFA78BFA), Color(0xFF6EE7B7)],
+    colors: [Color(0xFF2563EB), Color(0xFF60A5FA), Color(0xFF6EE7B7)],
   );
 
   static const LinearGradient incomeGradient = LinearGradient(
@@ -76,7 +76,7 @@ class AppColors {
 
   // ─── Chart Pastel Colors ─────────────────────────────────────────────────────
   static const List<Color> chartColors = [
-    Color(0xFFA78BFA),
+    Color(0xFF60A5FA),
     Color(0xFF6EE7B7),
     Color(0xFFFDBA74),
     Color(0xFFFB7185),

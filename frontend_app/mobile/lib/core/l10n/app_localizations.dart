@@ -247,6 +247,8 @@ abstract class AppLocalizations {
   String get targetDateOptional;
   String get goalNameHint;
   String get selectDate;
+  String get selectYear;
+  String get selectMonth;
   String get nameRequired;
   String get saveGoal;
   String get goalSavedSuccess;

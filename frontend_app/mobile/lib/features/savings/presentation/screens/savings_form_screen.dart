@@ -323,7 +323,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCurrency,
+                        initialValue: _selectedCurrency,
                         isExpanded: true,
                         icon: const Icon(Icons.arrow_drop_down_rounded),
                         decoration: InputDecoration(

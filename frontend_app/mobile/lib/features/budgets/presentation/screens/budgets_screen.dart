@@ -24,9 +24,12 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   final ScrollController _monthScrollController = ScrollController();
   double _scrollOffset = 0.0;
 
-  // Generate months: Jan last year → Dec next year (36 months)
-  late final List<DateTime> _months;
+  int _selectedYear = DateTime.now().year;
   late int _selectedMonthIndex;
+
+  List<DateTime> get _months {
+    return List.generate(12, (i) => DateTime(_selectedYear, i + 1));
+  }
 
   @override
   void initState() {
@@ -36,14 +39,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     });
 
     final now = DateTime.now();
-    final startMonth = DateTime(now.year - 1, 1);
-    _months = List.generate(36, (i) => DateTime(startMonth.year, startMonth.month + i));
-
-    // Find current month index
-    _selectedMonthIndex = _months.indexWhere(
-      (m) => m.year == now.year && m.month == now.month,
-    );
-    if (_selectedMonthIndex < 0) _selectedMonthIndex = 12; // fallback
+    _selectedYear = now.year;
+    _selectedMonthIndex = now.month - 1; // 0-based for Jan-Dec
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedMonth(animate: false);
@@ -58,10 +55,15 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   void _scrollToSelectedMonth({bool animate = true}) {
-    // Each month tab is approximately 72px wide
-    const itemWidth = 72.0;
+    // Each month tab is 90px wide, with 8px padding on each side
+    const itemWidth = 90.0;
+    const horizontalPadding = 8.0;
     final screenWidth = MediaQuery.of(context).size.width;
-    final offset = (_selectedMonthIndex * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+    final offset = horizontalPadding + (_selectedMonthIndex * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+    
+    // Safety check in case scroll controller isn't attached yet
+    if (!_monthScrollController.hasClients) return;
+    
     final clampedOffset = offset.clamp(0.0, _monthScrollController.position.maxScrollExtent);
     if (animate) {
       _monthScrollController.animateTo(
@@ -75,15 +77,137 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   String get _selectedMonthYear {
-    final m = _months[_selectedMonthIndex];
-    return '${m.year}-${m.month.toString().padLeft(2, '0')}';
+    return '$_selectedYear-${(_selectedMonthIndex + 1).toString().padLeft(2, '0')}';
   }
 
   void _onMonthTap(int index) {
     setState(() => _selectedMonthIndex = index);
     _scrollToSelectedMonth();
-    final my = '${_months[index].year}-${_months[index].month.toString().padLeft(2, '0')}';
-    ref.read(budgetsNotifierProvider.notifier).selectMonth(my);
+    _updateProviderMonth();
+  }
+
+  void _updateProviderMonth() {
+    ref.read(budgetsNotifierProvider.notifier).selectMonth(_selectedMonthYear);
+  }
+
+  void _goToToday() {
+    final now = DateTime.now();
+    setState(() {
+      _selectedYear = now.year;
+      _selectedMonthIndex = now.month - 1;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_monthScrollController.hasClients) {
+        _scrollToSelectedMonth(animate: true);
+      }
+    });
+    _updateProviderMonth();
+  }
+
+  Future<void> _pickYear() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentYear = DateTime.now().year;
+    final years = List.generate(15, (i) => currentYear - 5 + i);
+
+    // Pre-scroll to selected year
+    final initialScrollIndex = years.indexOf(_selectedYear).clamp(0, years.length - 1);
+    final scrollController = ScrollController(
+      initialScrollOffset: initialScrollIndex * 56.0,
+    );
+
+    final int? year = await showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.selectYear,
+                    style: AppTypography.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Year list
+            SizedBox(
+              height: 300,
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: years.length,
+                itemExtent: 56,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemBuilder: (context, index) {
+                  final y = years[index];
+                  final isSelected = y == _selectedYear;
+                  return InkWell(
+                    onTap: () => Navigator.pop(ctx, y),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: isSelected ? AppColors.primaryGradient : null,
+                        color: isSelected ? null : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                        border: isSelected
+                            ? null
+                            : Border.all(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                              ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$y',
+                        style: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+          ],
+        ),
+      ),
+    );
+
+    scrollController.dispose();
+
+    if (year != null && year != _selectedYear) {
+      setState(() => _selectedYear = year);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToSelectedMonth(animate: false);
+      });
+      _updateProviderMonth();
+    }
   }
 
   @override
@@ -274,12 +398,73 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     );
   }
 
-  // ── Month Scroller + Summary Pill ───────────────────────────────────────
+  // ── Month Scroller ──────────────────────────────────────────────────────
   Widget _buildMonthScroller(bool isDark, NumberFormat fmt) {
     final localeCode = Localizations.localeOf(context).languageCode;
+    final months = _months;
+    final now = DateTime.now();
+    final isTodaySelected = _selectedYear == now.year && _selectedMonthIndex == now.month - 1;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 12),
+        // Year selector & Today button
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: _pickYear,
+                child: Row(
+                  children: [
+                    Text(
+                      '$_selectedYear',
+                      style: AppTypography.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded, 
+                      size: 24,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: isTodaySelected ? null : _goToToday,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                    border: Border.all(
+                      color: isTodaySelected 
+                          ? (isDark ? AppColors.borderDark.withValues(alpha: 0.3) : AppColors.borderLight.withValues(alpha: 0.4))
+                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    localeCode == 'id' ? 'Hari Ini' : 'Today',
+                    style: AppTypography.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isTodaySelected
+                          ? (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight).withValues(alpha: 0.4)
+                          : (isDark ? Colors.white : AppColors.textPrimaryLight),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
         // Month tab row
         SizedBox(
           height: 52,
@@ -287,19 +472,17 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             controller: _monthScrollController,
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            itemCount: _months.length,
+            itemCount: months.length,
             itemBuilder: (context, index) {
-              final month = _months[index];
+              final month = months[index];
               final isSelected = index == _selectedMonthIndex;
-              final now = DateTime.now();
-              final isToday = month.year == now.year && month.month == now.month;
-              final monthName = DateFormat('MMM', localeCode).format(month);
+              final monthName = DateFormat('MMMM', localeCode).format(month);
 
               return GestureDetector(
                 onTap: () => _onMonthTap(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  width: 72,
+                  width: 90,
                   alignment: Alignment.center,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -318,7 +501,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                                   : Colors.black.withValues(alpha: 0.35)),
                         ),
                         child: Text(
-                          isToday && !isSelected ? monthName : monthName,
+                          monthName,
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -341,116 +524,8 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           ),
         ),
 
-        const SizedBox(height: 10),
-
-        // Summary Pill Card (▼ spent | ▲ income | = balance)
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Consumer(
-            builder: (context, ref, _) {
-              final summaryAsync =
-                  ref.watch(monthlyBudgetSummaryProvider(_selectedMonthYear));
-              return summaryAsync.when(
-                loading: () => _buildSummaryPillSkeleton(isDark),
-                error: (_, __) => const SizedBox(),
-                data: (summary) {
-                  final spent = summary['totalSpent'] ?? 0.0;
-                  final income = summary['totalIncome'] ?? 0.0;
-                  final balance = income - spent;
-                  return _buildSummaryPill(
-                    isDark: isDark,
-                    spent: spent,
-                    income: income,
-                    balance: balance,
-                    fmt: fmt,
-                  );
-                },
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
       ],
-    );
-  }
-
-  Widget _buildSummaryPill({
-    required bool isDark,
-    required double spent,
-    required double income,
-    required double balance,
-    required NumberFormat fmt,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C2333) : const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Spent
-          _PillItem(
-            prefix: '▼',
-            prefixColor: const Color(0xFFEF4444),
-            value: fmt.format(spent),
-            isDark: isDark,
-          ),
-          // Divider
-          Container(
-            width: 1,
-            height: 20,
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
-          // Income
-          _PillItem(
-            prefix: '▲',
-            prefixColor: const Color(0xFF22C55E),
-            value: fmt.format(income),
-            isDark: isDark,
-          ),
-          // Divider
-          Container(
-            width: 1,
-            height: 20,
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
-          // Balance
-          _PillItem(
-            prefix: '=',
-            prefixColor: Colors.white.withValues(alpha: 0.7),
-            value: fmt.format(balance.abs()),
-            isDark: isDark,
-            valueColor: balance < 0
-                ? const Color(0xFFEF4444)
-                : Colors.white,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryPillSkeleton(bool isDark) {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C2333) : const Color(0xFF1A1A2E),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(3, (i) => Container(
-          width: 80,
-          height: 14,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(7),
-          ),
-        )),
-      ),
     );
   }
 
@@ -505,49 +580,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 }
 
-// ── Pill Item ──────────────────────────────────────────────────────────────────
-class _PillItem extends StatelessWidget {
-  const _PillItem({
-    required this.prefix,
-    required this.prefixColor,
-    required this.value,
-    required this.isDark,
-    this.valueColor,
-  });
 
-  final String prefix;
-  final Color prefixColor;
-  final String value;
-  final bool isDark;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          prefix,
-          style: TextStyle(
-            color: prefixColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            fontFamily: AppTypography.textTheme.bodyMedium?.fontFamily,
-          ),
-        ),
-      ],
-    );
-  }
-}
 
 // ── Budget Card ────────────────────────────────────────────────────────────────
 class _BudgetCard extends ConsumerWidget {

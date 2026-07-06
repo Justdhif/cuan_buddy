@@ -420,6 +420,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get selectDate => 'Pilih tanggal';
   @override
+  String get selectYear => 'Pilih Tahun';
+  @override
+  String get selectMonth => 'Pilih Bulan';
+  @override
   String get nameRequired => 'Nama wajib diisi';
   @override
   String get saveGoal => 'Simpan Tabungan';

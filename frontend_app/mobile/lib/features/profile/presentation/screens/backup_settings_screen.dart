@@ -331,7 +331,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
           Switch(
             value: enabled,
             onChanged: (v) => setState(() => _backupEnabled = v),
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
           ),
         ],
       ),

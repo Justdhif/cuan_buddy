@@ -416,6 +416,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get selectDate => 'Select a date';
   @override
+  String get selectYear => 'Select Year';
+  @override
+  String get selectMonth => 'Select Month';
+  @override
   String get nameRequired => 'Name is required';
   @override
   String get saveGoal => 'Save Goal';
