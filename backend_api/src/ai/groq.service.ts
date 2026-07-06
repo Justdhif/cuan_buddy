@@ -56,4 +56,37 @@ export class GroqService {
       }
     }
   }
+
+  /**
+   * Process an image using Groq Vision Model
+   */
+  async processImage(
+    imageBuffer: Buffer,
+    mimeType: string,
+    prompt: string,
+  ): Promise<string> {
+    const base64Image = imageBuffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64Image}`;
+
+    const response = await this.client.chat.completions.create({
+      model: 'llama-3.2-90b-vision-preview',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: {
+                url: dataUrl,
+              },
+            },
+          ],
+        },
+      ],
+      temperature: 0.2, // Lower temperature for more deterministic data extraction
+      max_tokens: 1024,
+    });
+    return response.choices[0]?.message?.content ?? '';
+  }
 }

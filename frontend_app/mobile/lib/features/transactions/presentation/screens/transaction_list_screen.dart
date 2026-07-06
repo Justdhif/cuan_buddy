@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../widgets/ai_voice_sheet.dart';
+import '../widgets/ai_scan_sheet.dart';
 import '../widgets/transaction_calendar.dart';
 import '../../../shared/widgets/transaction_card.dart';
 
@@ -31,8 +32,8 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   // Speed-dial FAB state
   bool _fabOpen = false;
   late AnimationController _fabController;
-  late Animation<double> _fade1, _fade2;
-  late Animation<Offset> _slide1, _slide2;
+  late Animation<double> _fade1, _fade2, _fade3;
+  late Animation<Offset> _slide1, _slide2, _slide3;
 
   @override
   void initState() {
@@ -41,28 +42,39 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
       duration: const Duration(milliseconds: 380),
       vsync: this,
     );
-    // Staggered intervals: btn1 first (closest to main), btn2 last (topmost)
+    // Staggered intervals: btn1 first (closest to main), btn2 middle, btn3 last (topmost)
     _fade1 = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
           parent: _fabController,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+          curve: const Interval(0.0, 0.4, curve: Curves.easeOut)),
     );
     _fade2 = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
           parent: _fabController,
-          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+          curve: const Interval(0.2, 0.7, curve: Curves.easeOut)),
+    );
+    _fade3 = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+          parent: _fabController,
+          curve: const Interval(0.5, 1.0, curve: Curves.easeOut)),
     );
     _slide1 =
         Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
       CurvedAnimation(
           parent: _fabController,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+          curve: const Interval(0.0, 0.4, curve: Curves.easeOut)),
     );
     _slide2 =
         Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
       CurvedAnimation(
           parent: _fabController,
-          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+          curve: const Interval(0.2, 0.7, curve: Curves.easeOut)),
+    );
+    _slide3 =
+        Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
+      CurvedAnimation(
+          parent: _fabController,
+          curve: const Interval(0.5, 1.0, curve: Curves.easeOut)),
     );
 
     _scrollController.addListener(() {
@@ -264,7 +276,21 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Sub 2 – Mic (top, animates second)
+              // Sub 3 - Scan Receipt (topmost, animates third)
+              _buildSubFab(
+                icon: Icons.document_scanner_rounded,
+                onTap: () async {
+                  _toggleFab();
+                  final result = await showAiScanSheet(context);
+                  if (result == true) {
+                    ref.invalidate(allTransactionsProvider);
+                  }
+                },
+                fadeAnim: _fade3,
+                slideAnim: _slide3,
+              ),
+              const SizedBox(height: 12),
+              // Sub 2 – Mic (middle, animates second)
               _buildSubFab(
                 icon: Icons.mic_rounded,
                 onTap: () async {

@@ -398,5 +398,68 @@ Do not add any explanations or markdown formatting.`;
         categoryId,
       },
     };
+  // ─────────────────────────────────────────────
+  // 7. RECEIPT SCAN TRANSACTION PROCESSING
+  // ─────────────────────────────────────────────
+  async processReceiptTransaction(userId: string, imageBuffer: Buffer, mimeType: string): Promise<any> {
+    // 1. Fetch categories for precise matching
+    const cats = await this.db
+      .select({ id: categories.id, name: categories.name })
+      .from(categories);
+
+    // Fetch user profile to get their default currency
+    const [profile] = await this.db
+      .select({ currency: userProfiles.currency })
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, userId));
+    const defaultCurrency = profile?.currency ?? 'IDR';
+
+    const categoryList = cats.map((c: any) => c.name).join(', ');
+
+    const prompt = `You are an AI that extracts transaction details from a receipt image.
+Extract the following information:
+1. amount: The total amount paid (as a pure number, no currency symbols). Look for "Total", "Amount Due", or the largest number at the bottom.
+2. currency: The currency on the receipt (e.g. "USD", "IDR", "Rp"). If no currency is visible, use the user's default currency: "${defaultCurrency}".
+3. category: The best matching category from this list based on the items purchased or the merchant: [${categoryList}]. If none matches perfectly, pick the closest or "Uncategorized".
+4. type: Receipts are generally "expense", unless it's a refund or deposit slip, then "income".
+5. title: A short title for the transaction, usually the merchant or store name (e.g. "Indomaret", "Starbucks").
+6. note: Any additional description based on the items on the receipt (e.g. "Groceries", "Coffee"), otherwise an empty string.
+
+Reply ONLY with valid JSON:
+{
+  "amount": 25000,
+  "currency": "IDR",
+  "category": "Food & Drink",
+  "type": "expense",
+  "title": "Makan siang",
+  "note": "di warteg"
+}
+Do not add any explanations or markdown formatting.`;
+
+    const raw = await this.groqService.processImage(imageBuffer, mimeType, prompt);
+
+    let parsed: any;
+    try {
+      const jsonMatch = raw.match(/\{.*?\}/s);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('Failed to parse AI response');
+      }
+    } catch {
+      throw new Error('Gagal mengekstrak data dari struk.');
+    }
+
+    // Find category ID
+    const catMatch = cats.find((c: any) => c.name.toLowerCase() === parsed.category?.toLowerCase());
+    const categoryId = catMatch ? catMatch.id : null;
+
+    return {
+      transcription: `Scanned receipt from ${parsed.title || 'store'}`,
+      extracted: {
+        ...parsed,
+        categoryId,
+      },
+    };
   }
 }

@@ -97,6 +97,29 @@ class AiNotifier extends StateNotifier<AiState> {
       return null;
     }
   }
+
+  Future<Map<String, dynamic>?> processReceiptTransaction(String filePath) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(filePath,
+            filename: filePath.split('/').last),
+      });
+
+      final response = await dio.post('/ai/scan-receipt', data: formData);
+      state = state.copyWith(isLoading: false);
+
+      // Return the parsed data
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString(),
+        isLoading: false,
+      );
+      return null;
+    }
+  }
 }
 
 final aiNotifierProvider = StateNotifierProvider<AiNotifier, AiState>((ref) {
@@ -116,3 +139,4 @@ final aiBudgetRecommendationProvider = FutureProvider<String>((ref) async {
   return response.data['recommendation'] as String? ??
       'No recommendations available.';
 });
+

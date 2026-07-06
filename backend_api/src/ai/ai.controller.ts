@@ -86,4 +86,25 @@ export class AiController {
       file.originalname,
     );
   }
+
+  @Post('scan-receipt')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiOperation({
+    summary: '📄 Scan Receipt',
+    description: 'Kirim foto struk, AI akan mengekstrak detail transaksi otomatis.',
+  })
+  @ApiResponse({ status: 201, description: 'Struk berhasil diekstrak' })
+  async scanReceipt(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new Error('File gambar tidak ditemukan');
+    }
+    return this.aiService.processReceiptTransaction(
+      req.user.userId,
+      file.buffer,
+      file.mimetype,
+    );
+  }
 }
