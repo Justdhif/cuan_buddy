@@ -398,6 +398,8 @@ Do not add any explanations or markdown formatting.`;
         categoryId,
       },
     };
+  }
+
   // ─────────────────────────────────────────────
   // 7. RECEIPT SCAN TRANSACTION PROCESSING
   // ─────────────────────────────────────────────
