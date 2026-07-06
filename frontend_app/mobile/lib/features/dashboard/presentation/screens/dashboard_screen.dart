@@ -163,14 +163,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ),
                     // ── Budgets Section ───────────────────────────────────────
-                    if (!budgetsState.isLoading && budgetsState.budgets.isNotEmpty) ...[
+                    if (budgetsState.isInitialLoad)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20),
+                          child: SkeletonCard(height: 220),
+                        ),
+                      )
+                    else
                       SliverToBoxAdapter(
                         child: SizedBox(
-                          height: 220,
+                          height: 235,
                           child: PageView.builder(
                             controller: PageController(viewportFraction: 0.9),
-                            itemCount: budgetsState.budgets.length,
+                            itemCount: budgetsState.budgets.isEmpty ? 1 : budgetsState.budgets.length + 1,
                             itemBuilder: (context, index) {
+                              if (index == budgetsState.budgets.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                  child: _buildAddBudgetCard(context, isDark),
+                                );
+                              }
                               final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
                               final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
                               return Padding(
@@ -185,7 +198,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                         ),
                       ),
-                    ],
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
@@ -247,14 +259,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20),
                           child: SkeletonCard(height: 220),
-                        ),
-                      )
-                    else if (analyticsState.monthlyTrend.isEmpty)
-                      SliverToBoxAdapter(
-                        child: AppEmptyState(
-                          emoji: '📈',
-                          title: l10n.noTrendData,
-                          subtitle: l10n.startRecordingToSeeTrend,
                         ),
                       )
                     else
@@ -387,6 +391,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildAddBudgetCard(BuildContext context, bool isDark) {
+    return GestureDetector(
+      onTap: () => context.push('/budgets/form'),
+      child: Container(
+        height: 180,
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            style: BorderStyle.solid,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              l10n.setBudget,
+              style: AppTypography.textTheme.titleMedium?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBalanceCard(Map<String, dynamic> data,
       AsyncValue<Map<String, dynamic>> profileAsync) {
     final balance = (data['balance'] as num? ?? 0).toDouble();
@@ -495,9 +544,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final fmt = NumberFormat.currency(
         locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
 
-    final data = monthlyTrend.length > 6
-        ? monthlyTrend.sublist(monthlyTrend.length - 6)
-        : monthlyTrend;
+    List<dynamic> data = [];
+    if (monthlyTrend.isEmpty) {
+      final now = DateTime.now();
+      for (int i = 5; i >= 0; i--) {
+        final d = DateTime(now.year, now.month - i);
+        data.add({
+          'month': '${d.year}-${d.month.toString().padLeft(2, '0')}',
+          'income': 0,
+          'expense': 0
+        });
+      }
+    } else {
+      data = monthlyTrend.length > 6
+          ? monthlyTrend.sublist(monthlyTrend.length - 6)
+          : monthlyTrend;
+    }
 
     double maxVal = 0;
     for (final row in data) {
@@ -508,29 +570,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
     final yMax = maxVal == 0 ? 100.0 : maxVal * 1.25;
 
-    final barGroups = data.asMap().entries.map((entry) {
-      final i = entry.key;
-      final row = entry.value as Map<String, dynamic>;
-      final income = (row['income'] as num?)?.toDouble() ?? 0;
-      final expense = (row['expense'] as num?)?.toDouble() ?? 0;
-      return BarChartGroupData(
-        x: i,
-        barsSpace: 4,
-        barRods: [
-          BarChartRodData(
-            toY: income,
-            color: AppColors.success,
-            width: 10,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-          BarChartRodData(
-            toY: expense,
-            color: AppColors.danger,
-            width: 10,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-          ),
-        ],
-      );
+    final incomeSpots = data.asMap().entries.map((entry) {
+      final val = (entry.value['income'] as num?)?.toDouble() ?? 0;
+      return FlSpot(entry.key.toDouble(), val);
+    }).toList();
+
+    final expenseSpots = data.asMap().entries.map((entry) {
+      final val = (entry.value['expense'] as num?)?.toDouble() ?? 0;
+      return FlSpot(entry.key.toDouble(), val);
     }).toList();
 
     String shortMonth(String ym) {
@@ -562,54 +609,80 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 20),
           SizedBox(
             height: 200,
-            child: BarChart(
-              BarChartData(
+            child: LineChart(
+              LineChartData(
                 maxY: yMax,
                 minY: 0,
-                barGroups: barGroups,
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: incomeSpots,
+                    isCurved: true,
+                    color: AppColors.success,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppColors.success.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  LineChartBarData(
+                    spots: expenseSpots,
+                    isCurved: true,
+                    color: AppColors.danger,
+                    barWidth: 3,
+                    isStrokeCapRound: true,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppColors.danger.withValues(alpha: 0.1),
+                    ),
+                  ),
+                ],
                 gridData: FlGridData(
                   show: true,
-                  drawVerticalLine: false,
+                  drawVerticalLine: true,
                   horizontalInterval: yMax / 4,
+                  verticalInterval: 1,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color:
-                        isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    strokeWidth: 1,
+                    dashArray: [4, 4],
+                  ),
+                  getDrawingVerticalLine: (_) => FlLine(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
                 ),
                 borderData: FlBorderData(show: false),
-                barTouchData: BarTouchData(
+                lineTouchData: LineTouchData(
                   enabled: true,
-                  touchTooltipData: BarTouchTooltipData(
+                  touchTooltipData: LineTouchTooltipData(
                     getTooltipColor: (_) =>
                         isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final row = data[group.x] as Map<String, dynamic>;
-                      final label =
-                          rodIndex == 0 ? l10n.incomeType : l10n.expenseType;
-                      final val = rodIndex == 0
-                          ? (row['income'] as num?)?.toDouble() ?? 0
-                          : (row['expense'] as num?)?.toDouble() ?? 0;
-                      return BarTooltipItem(
-                        '$label\n${fmt.format(val)}',
-                        TextStyle(
-                          color: rodIndex == 0
-                              ? AppColors.success
-                              : AppColors.danger,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      );
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        final val = spot.y;
+                        final isIncome = spot.barIndex == 0;
+                        final label = isIncome ? l10n.incomeType : l10n.expenseType;
+                        final color = isIncome ? AppColors.success : AppColors.danger;
+                        return LineTooltipItem(
+                          '$label\n${fmt.format(val)}',
+                          TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        );
+                      }).toList();
                     },
                   ),
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -628,9 +701,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           label,
                           style: TextStyle(
                             fontSize: 10,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                           ),
                         );
                       },
@@ -640,14 +711,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 28,
+                      interval: 1,
                       getTitlesWidget: (value, meta) {
                         final idx = value.toInt();
                         if (idx < 0 || idx >= data.length) {
                           return const SizedBox.shrink();
                         }
-                        final month = (data[idx]
-                                as Map<String, dynamic>)['month'] as String? ??
-                            '';
+                        final month = (data[idx] as Map<String, dynamic>)['month'] as String? ?? '';
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
@@ -655,9 +725,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                             ),
                           ),
                         );

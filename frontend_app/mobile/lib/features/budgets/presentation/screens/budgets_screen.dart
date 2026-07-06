@@ -329,28 +329,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               child: AppErrorState(message: state.error!),
             ),
           )
-        else if (state.budgets.isEmpty)
-          SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewportHeight),
-              child: AppEmptyState(
-                emoji: '📊',
-                title: l10n.noBudgetsSet,
-                subtitle: l10n.noBudgetsSetSubtitle,
-              ),
-            ),
-          )
-        else if (filteredBudgets.isEmpty)
-          SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewportHeight),
-              child: AppEmptyState(
-                emoji: '🔍',
-                title: 'Tidak ada budget',
-                subtitle: 'Belum ada budget untuk bulan ini.',
-              ),
-            ),
-          )
         else ...[
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -521,6 +499,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        height: 180,
         margin: const EdgeInsets.only(bottom: 16),
         padding:
             const EdgeInsets.symmetric(vertical: 24, horizontal: 20),

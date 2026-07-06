@@ -296,17 +296,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
               child: AppErrorState(message: state.error!),
             ),
           )
-        else if (state.goals.isEmpty)
-          SliverToBoxAdapter(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: viewportHeight),
-              child: AppEmptyState(
-                emoji: '🎯',
-                title: l10n.noSavingsGoals,
-                subtitle: l10n.noSavingsGoalsSubtitle,
-              ),
-            ),
-          )
         else ...[
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -379,6 +368,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        height: 160,
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(
