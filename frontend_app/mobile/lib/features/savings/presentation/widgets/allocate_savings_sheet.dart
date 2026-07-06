@@ -11,14 +11,14 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/savings_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 void showAllocateSavingsSheet(BuildContext context) {
-  showModalBottomSheet(
+  AppBottomSheet.show(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => const _AllocateSavingsSheet(),
   );
 }
@@ -144,11 +144,7 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final savingsState = ref.watch(savingsNotifierProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         left: 24,
@@ -159,17 +155,6 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
           Text(
             l10n.allocateToSavings,
             style: AppTypography.textTheme.headlineMedium?.copyWith(

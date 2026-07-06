@@ -10,10 +10,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../../core/services/currency_service.dart';
 import '../providers/transaction_provider.dart';
 import '../widgets/ai_voice_sheet.dart';
 import '../widgets/transaction_calendar.dart';
+import '../../../shared/widgets/transaction_card.dart';
 
 class TransactionListScreen extends ConsumerStatefulWidget {
   const TransactionListScreen({super.key});
@@ -221,7 +221,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                             );
                           }
                           final item = transactions[index];
-                          return _TransactionTile(transaction: item);
+                          return TransactionCard(transaction: item);
                         },
                         childCount: transactions.length + 1,
                       ),
@@ -637,173 +637,6 @@ class _FilterRow extends ConsumerWidget {
   }
 }
 
-class _TransactionTile extends ConsumerWidget {
-  const _TransactionTile({required this.transaction});
-  final dynamic transaction;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final tx = transaction as Map<String, dynamic>;
-    final isIncome = tx['type'] == 'income';
-    final amountRaw = tx['amount'];
-    final amount = amountRaw is num
-        ? amountRaw.toDouble()
-        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-
-    final txCurrency =
-        tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencyCode =
-        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
-            AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
-    final fmt = NumberFormat.currency(
-        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
-    final fmtOriginal = NumberFormat.currency(
-        locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
-    final dynamic category = tx['category'];
-    final dynamic savingsGoal = tx['savingsGoal'];
-    final emoji = (category is Map
-            ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
-            : null) ??
-        (isIncome ? '💰' : '💸');
-
-    final catName = category is Map ? category['name'] as String? : null;
-    final title = tx['title'] as String? ??
-        tx['note'] as String? ??
-        catName ??
-        l10n.transaction;
-
-    final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
-    final catColor = category is Map
-        ? AppColors.colorFromHex(category['colorCode'] as String?,
-            fallback: defaultTypeColor)
-        : defaultTypeColor;
-
-    return InkWell(
-      onTap: () {
-        context.push(
-          '/transactions/form',
-          extra: {
-            'initialType': tx['type'] as String? ?? 'expense',
-            'initialTransaction': tx,
-          },
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: catColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.textSecondaryLight
-                              .withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          catName ?? l10n.transaction,
-                          style: AppTypography.textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondaryLight,
-                          ),
-                        ),
-                      ),
-                      if (savingsGoal != null && savingsGoal is Map)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '🎨 ${savingsGoal['name']}',
-                            style: AppTypography.textTheme.labelSmall?.copyWith(
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${isIncome ? "▲" : "▼"} ${txCurrency == currencyCode ? fmt.format(amount) : fmtOriginal.format(amount)}',
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: isIncome ? AppColors.success : AppColors.danger,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (txCurrency != currencyCode)
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final convertedAsync =
-                          ref.watch(convertedAmountProvider(ConversionParams(
-                        amount: amount,
-                        from: txCurrency,
-                        to: currencyCode,
-                      )));
-                      return convertedAsync.when(
-                        data: (converted) => Text(
-                          '≈ ${isIncome ? '+' : '-'}${fmt.format(converted)}',
-                          style: TextStyle(
-                            color: AppColors.textSecondaryLight,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
-                        loading: () => const SizedBox(
-                            width: 20,
-                            height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2)),
-                        error: (_, __) => const SizedBox(),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _BottomCashflowSummary extends ConsumerWidget {
   const _BottomCashflowSummary({

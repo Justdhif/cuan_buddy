@@ -7,6 +7,7 @@ import '../providers/transaction_provider.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import 'package:marquee/marquee.dart';
 
@@ -26,28 +27,12 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
     final l10n = AppLocalizations.of(context);
     final String title = l10n.selectMonth;
 
-    final int? pickedMonth = await showModalBottomSheet<int>(
+    final int? pickedMonth = await AppBottomSheet.show<int>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
+      builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             // Title
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
@@ -122,7 +107,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
           ],
         ),
-      ),
     );
 
     if (pickedMonth != null) {
@@ -135,7 +119,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
   /// Opens a year-only scroll picker as a bottom sheet.
   Future<void> _showYearPicker(
       BuildContext context, TransactionFilterState state, bool isDark) async {
-    final localeCode = ref.read(languageProvider);
     final l10n = AppLocalizations.of(context);
     final String title = l10n.selectYear;
     final int currentYear = DateTime.now().year;
@@ -147,28 +130,12 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
       initialScrollOffset: initialIndex * 56.0,
     );
 
-    final int? pickedYear = await showModalBottomSheet<int>(
+    final int? pickedYear = await AppBottomSheet.show<int>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
+      builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             // Title
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
@@ -228,7 +195,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
             SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
           ],
         ),
-      ),
     );
 
     yearScrollCtrl.dispose();

@@ -11,13 +11,13 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/savings_provider.dart';
 
 void showTopUpSheet(BuildContext context, Map<String, dynamic> goal) {
-  showModalBottomSheet(
+  AppBottomSheet.show(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (context) => _TopUpSheet(goal: goal),
   );
 }
@@ -145,32 +145,17 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = widget.goal['name'] as String? ?? l10n.unnamedGoal;
 
-    return Container(
+    return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         left: 24,
         right: 24,
         top: 12,
       ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

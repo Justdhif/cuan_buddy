@@ -12,6 +12,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
 
 const List<String> _avatarSeeds = [
@@ -39,7 +40,6 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  bool _isSavingAvatar = false;
 
   // Avatar
   String? _selectedAvatarUrl;
@@ -92,7 +92,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _saveAvatarOnly() async {
-    setState(() => _isSavingAvatar = true);
     final l10n = AppLocalizations.of(context);
 
     try {
@@ -145,28 +144,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           type: SnackbarType.error,
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSavingAvatar = false;
-        });
-      }
     }
   }
 
   void _showAvatarEditSheet() {
-    showModalBottomSheet<void>(
+    bool isSavingInSheet = false;
+    AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setModalState) {
-            final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-            bool isSavingInSheet = false;
 
             return SafeArea(
               child: Padding(
@@ -174,15 +162,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 24),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
                     Text(
                       l10n.languageCode == 'id' ? 'Foto Profil' : 'Profile Photo',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -302,7 +281,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                             : () async {
                                 setModalState(() => isSavingInSheet = true);
                                 await _saveAvatarOnly();
-                                if (mounted) Navigator.pop(sheetContext);
+                                if (sheetContext.mounted) {
+                                  Navigator.pop(sheetContext);
+                                }
                               },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,

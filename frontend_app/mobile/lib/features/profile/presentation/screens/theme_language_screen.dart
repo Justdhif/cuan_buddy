@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class ThemeLanguageScreen extends ConsumerStatefulWidget {
   const ThemeLanguageScreen({super.key});
@@ -34,12 +35,9 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
   Future<void> _showThemePicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final currentMode = ref.read(themeModeProvider);
-    await showModalBottomSheet<void>(
+    await AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) => _ThemePickerSheet(
         currentMode: currentMode,
         l10n: l10n,
@@ -54,12 +52,9 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
   Future<void> _showLanguagePicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
     final currentCode = ref.read(languageProvider);
-    await showModalBottomSheet<void>(
+    await AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) => _LanguagePickerSheet(
         currentCode: currentCode,
         l10n: l10n,
@@ -203,15 +198,6 @@ class _ThemePickerSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             Text(
               l10n.theme,
               style: AppTypography.textTheme.titleLarge
@@ -304,15 +290,6 @@ class _LanguagePickerSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             Text(
               l10n.selectLanguage,
               style: AppTypography.textTheme.titleLarge

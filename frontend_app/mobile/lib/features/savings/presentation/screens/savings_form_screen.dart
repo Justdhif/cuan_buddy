@@ -12,6 +12,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/savings_provider.dart';
 
 class SavingsFormScreen extends ConsumerStatefulWidget {
@@ -80,7 +81,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
   }
 
   void _showEmojiPicker() {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
       builder: (context) {
         return SizedBox(

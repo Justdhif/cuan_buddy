@@ -13,6 +13,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import 'package:intl/intl.dart';
 
 enum AiVoiceState { idle, recording, processing, review }
@@ -424,8 +425,6 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -436,17 +435,6 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
           if (_state == AiVoiceState.idle || _state == AiVoiceState.recording)
             _buildRecordingUI(),
           if (_state == AiVoiceState.processing) _buildProcessingUI(),
@@ -458,13 +446,9 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
 }
 
 Future<bool?> showAiVoiceSheet(BuildContext context) {
-  return showModalBottomSheet<bool>(
+  return AppBottomSheet.show<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-    ),
     builder: (context) => const AiVoiceSheet(),
   );
 }

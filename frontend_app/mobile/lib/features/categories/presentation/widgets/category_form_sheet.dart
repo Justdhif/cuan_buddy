@@ -8,6 +8,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/category_provider.dart';
 
 class CategoryFormSheet extends ConsumerStatefulWidget {
@@ -114,7 +115,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   }
 
   void _showEmojiPicker() {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
       builder: (context) {
         return SizedBox(
@@ -156,32 +157,17 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return Padding(
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
         top: 12,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
           Text(
             widget.initialCategory == null
                 ? l10n.newCategory

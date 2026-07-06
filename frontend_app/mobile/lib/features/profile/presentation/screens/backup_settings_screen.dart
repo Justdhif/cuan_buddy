@@ -8,6 +8,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../data/services/backup_worker.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
 
 class BackupSettingsScreen extends ConsumerStatefulWidget {
@@ -26,10 +27,9 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
   String _interval = '7d';
 
   void _showRestoreSheet() {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => _RestoreSheet(onRestore: () {
         Navigator.pop(context);
         ref.read(backupWorkerProvider).runRestoreProcess();
@@ -415,41 +415,17 @@ class _RestoreSheet extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return Padding(
       padding: EdgeInsets.only(
         left: 24,
         right: 24,
         top: 12,
         bottom: MediaQuery.of(context).padding.bottom + 24,
       ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.12),
-            blurRadius: 32,
-            offset: const Offset(0, -8),
-          ),
-        ],
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Drag handle ────────────────────────────────────────────
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-
           // ── Icon ───────────────────────────────────────────────────
           Container(
             alignment: Alignment.center,

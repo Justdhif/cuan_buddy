@@ -5,16 +5,16 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../providers/category_provider.dart';
 import '../widgets/category_form_sheet.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class CategoryListScreen extends ConsumerWidget {
   const CategoryListScreen({super.key});
 
   void _showCategoryForm(BuildContext context,
       {Map<String, dynamic>? category}) {
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (context) => CategoryFormSheet(initialCategory: category),
     );
   }

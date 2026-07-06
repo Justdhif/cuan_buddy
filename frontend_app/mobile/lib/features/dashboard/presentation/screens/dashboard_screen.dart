@@ -15,9 +15,11 @@ import '../../../analytics/presentation/providers/analytics_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
-import '../../../../core/services/currency_service.dart';
 import '../../../../core/services/widget_service.dart';
 import '../widgets/ai_insight_card.dart';
+import '../../../shared/widgets/transaction_card.dart';
+import '../../../budgets/presentation/providers/budgets_provider.dart';
+import '../../../shared/widgets/budget_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -65,6 +67,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final transactionsAsync = ref.watch(recentTransactionsProvider);
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
+    final budgetsState = ref.watch(budgetsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
@@ -159,6 +162,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         child: _buildHealthWidget(healthAsync, isDark),
                       ),
                     ),
+                    // ── Budgets Section ───────────────────────────────────────
+                    if (!budgetsState.isLoading && budgetsState.budgets.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 220,
+                          child: PageView.builder(
+                            controller: PageController(viewportFraction: 0.9),
+                            itemCount: budgetsState.budgets.length,
+                            itemBuilder: (context, index) {
+                              final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+                              final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                child: BudgetCard(
+                                  budget: budgetsState.budgets[index],
+                                  isDark: isDark,
+                                  currencySymbol: currencySymbol,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
@@ -189,8 +216,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         }
                         return SliverList(
                           delegate: SliverChildBuilderDelegate(
-                            (ctx, i) => _buildTransactionTile(
-                                transactions[i], profileAsync),
+                            (ctx, i) => TransactionCard(transaction: transactions[i]),
+
                             childCount: transactions.length,
                           ),
                         );
@@ -204,47 +231,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                    // ── Analytics: Spending by Category ─────────────────────
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(l10n.spendingByCategory,
-                                style: AppTypography.textTheme.titleMedium),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (analyticsState.isLoading &&
-                        analyticsState.spendingByCategory.isEmpty)
-                      const SliverToBoxAdapter(
-                          child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: SkeletonList(itemCount: 3),
-                      ))
-                    else if (analyticsState.spendingByCategory.isEmpty)
-                      SliverToBoxAdapter(
-                        child: AppEmptyState(
-                          emoji: '📊',
-                          title: l10n.noSpendingData,
-                          subtitle: l10n.addExpensesToSeeBreakdown,
-                        ),
-                      )
-                    else
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                              left: 20, right: 20, top: 16),
-                          child: _buildSpendingChart(
-                            context,
-                            analyticsState.spendingByCategory,
-                            profileAsync,
-                          ),
-                        ),
-                      ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
 
                     // ── Analytics: Monthly Trend ─────────────────────────────
                     SliverToBoxAdapter(
@@ -493,273 +480,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildTransactionTile(
-      dynamic transaction, AsyncValue<Map<String, dynamic>> profileAsync) {
-    final l10n = AppLocalizations.of(context);
-    final tx = transaction as Map<String, dynamic>;
-    final isIncome = tx['type'] == 'income';
-    final amountRaw = tx['amount'];
-    final amount = amountRaw is num
-        ? amountRaw.toDouble()
-        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
 
-    final txCurrency =
-        tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
-        AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
-    final fmt = NumberFormat.currency(
-        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
-    final fmtOriginal = NumberFormat.currency(
-        locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
-    final dynamic category = tx['category'];
-    final emoji = (category is Map
-            ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
-            : null) ??
-        (isIncome ? '💰' : '💸');
 
-    final catName = category is Map ? category['name'] as String? : null;
-    final title = tx['title'] as String? ??
-        tx['note'] as String? ??
-        catName ??
-        l10n.transaction;
-
-    final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
-    final catColor = category is Map
-        ? AppColors.colorFromHex(category['colorCode'] as String?,
-            fallback: defaultTypeColor)
-        : defaultTypeColor;
-
-    return InkWell(
-      onTap: () {
-        context.push(
-          '/transactions/form',
-          extra: {
-            'initialType': tx['type'] as String? ?? 'expense',
-            'initialTransaction': tx,
-          },
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: catColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color:
-                          AppColors.textSecondaryLight.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      catName ?? l10n.transaction,
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${isIncome ? '▲' : '▼'} ${txCurrency == currencyCode ? fmt.format(amount) : fmtOriginal.format(amount)}',
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: isIncome ? AppColors.success : AppColors.danger,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (txCurrency != currencyCode)
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final convertedAsync =
-                          ref.watch(convertedAmountProvider(ConversionParams(
-                        amount: amount,
-                        from: txCurrency,
-                        to: currencyCode,
-                      )));
-                      return convertedAsync.when(
-                        data: (converted) => Text(
-                          '≈ ${isIncome ? '+' : '-'}${fmt.format(converted)}',
-                          style: TextStyle(
-                            color: AppColors.textSecondaryLight,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
-                        loading: () => const SizedBox(
-                            width: 20,
-                            height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2)),
-                        error: (_, __) => const SizedBox(),
-                      );
-                    },
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSpendingChart(
-    BuildContext context,
-    List<dynamic> categories,
-    AsyncValue<Map<String, dynamic>> profileAsync,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
-        AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final fmt = NumberFormat.currency(
-        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
-
-    final total = categories.fold<double>(
-        0, (sum, c) => sum + ((c['amount'] as num?)?.toDouble() ?? 0));
-
-    // Build pie sections
-    final sections = categories.asMap().entries.map((entry) {
-      final i = entry.key;
-      final cat = entry.value as Map<String, dynamic>;
-      final amount = (cat['amount'] as num?)?.toDouble() ?? 0;
-      final pct = total > 0 ? (amount / total * 100) : 0;
-      final color = AppColors.chartColors[i % AppColors.chartColors.length];
-      return PieChartSectionData(
-        color: color,
-        value: amount,
-        title: pct >= 8 ? '${pct.toStringAsFixed(0)}%' : '',
-        radius: 70,
-        titleStyle: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
-      );
-    }).toList();
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Pie chart
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: PieChart(
-              PieChartData(
-                sections: sections,
-                centerSpaceRadius: 48,
-                sectionsSpace: 3,
-                pieTouchData: PieTouchData(enabled: false),
-              ),
-            ),
-          ),
-          // Center hole label
-          const SizedBox(height: 20),
-          // Legend
-          ...categories.asMap().entries.map((entry) {
-            final i = entry.key;
-            final cat = entry.value as Map<String, dynamic>;
-            final name = cat['category'] as String? ?? l10n.other;
-            final emoji =
-                cat['emojiIcon'] as String? ?? cat['emoji'] as String? ?? '📦';
-            final amount = (cat['amount'] as num?)?.toDouble() ?? 0;
-            final pct = total > 0 ? (amount / total * 100) : 0;
-            final color =
-                AppColors.chartColors[i % AppColors.chartColors.length];
-
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(emoji, style: const TextStyle(fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: AppTypography.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimaryLight,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${pct.toStringAsFixed(1)}%',
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    fmt.format(amount),
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.danger,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
 
   Widget _buildMonthlyTrendChart(
     BuildContext context,

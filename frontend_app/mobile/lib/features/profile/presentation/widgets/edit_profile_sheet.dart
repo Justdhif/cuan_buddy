@@ -7,6 +7,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
 
 class EditProfileSheet extends ConsumerStatefulWidget {
@@ -121,17 +122,6 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -291,14 +281,9 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
 }
 
 void showEditProfileSheet(BuildContext context, Map<String, dynamic> profile) {
-  showModalBottomSheet(
+  AppBottomSheet.show(
     context: context,
     isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-    ),
     builder: (_) => EditProfileSheet(profile: profile),
   );
 }

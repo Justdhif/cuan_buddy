@@ -7,6 +7,7 @@ import '../../../../core/providers/widget_preferences_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../../../../core/services/widget_service.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 class WidgetSettingsScreen extends ConsumerWidget {
@@ -170,15 +171,9 @@ class WidgetSettingsScreen extends ConsumerWidget {
   void _showSavingsSelectionSheet(BuildContext context, WidgetRef ref,
       SavingsState savingsState, String? currentId) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) {
         return SizedBox(
           height: MediaQuery.of(context).size.height * 0.6,
@@ -186,15 +181,6 @@ class WidgetSettingsScreen extends ConsumerWidget {
             child: Column(
               children: [
                 const SizedBox(height: 12),
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color:
-                        isDark ? AppColors.borderDark : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
                 const SizedBox(height: 24),
                 Text(
                   'Select Savings Goal',

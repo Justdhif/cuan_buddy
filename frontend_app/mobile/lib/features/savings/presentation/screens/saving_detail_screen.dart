@@ -14,6 +14,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
+import '../../../shared/widgets/transaction_card.dart';
 
 // ── Provider: transactions filtered by savingsGoalId ─────────────────────────
 final savingsGoalTransactionsProvider =
@@ -794,11 +795,10 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                           final tx = dayTxs[i] as Map<String, dynamic>;
                           return Column(
                             children: [
-                              _SavingTransactionTile(
+                              TransactionCard(
                                 transaction: tx,
-                                goalColor: _goalColor,
-                                currencyCode: currencyCode,
-                                currencySymbol: currencySymbol,
+                                showTime: true,
+                                hideSavingsGoal: true,
                               ),
                               if (i < dayTxs.length - 1)
                                 Divider(
@@ -1011,142 +1011,6 @@ class _InfoCard extends StatelessWidget {
 }
 
 // ── Transaction Tile ─────────────────────────────────────────────────────────
-class _SavingTransactionTile extends ConsumerWidget {
-  const _SavingTransactionTile({
-    required this.transaction,
-    required this.goalColor,
-    required this.currencyCode,
-    required this.currencySymbol,
-  });
-
-  final Map<String, dynamic> transaction;
-  final Color goalColor;
-  final String currencyCode;
-  final String currencySymbol;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final tx = transaction;
-    final isIncome = tx['type'] == 'income';
-
-    final amountRaw = tx['amount'];
-    final amount = amountRaw is num
-        ? amountRaw.toDouble()
-        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-
-    final txCurrency = tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
-    final fmt = NumberFormat.currency(locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
-    final fmtOriginal = NumberFormat.currency(locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
-    final useFmt = txCurrency == currencyCode;
-
-    final dynamic category = tx['category'];
-    final emoji = (category is Map
-            ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
-            : null) ??
-        (isIncome ? '💰' : '💸');
-    final catName = category is Map ? category['name'] as String? : null;
-    final title = tx['title'] as String? ?? tx['note'] as String? ?? catName ?? l10n.transaction;
-
-    final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
-    final catColor = category is Map
-        ? AppColors.colorFromHex(category['colorCode'] as String?, fallback: defaultTypeColor)
-        : defaultTypeColor;
-
-    return InkWell(
-      onTap: () {
-        context.push('/transactions/form', extra: {
-          'initialType': tx['type'] as String? ?? 'expense',
-          'initialTransaction': tx,
-        });
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-        child: Row(
-          children: [
-            // Category icon
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: catColor,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Title and category
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.textSecondaryLight.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      catName ?? l10n.transaction,
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Amount
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${isIncome ? '▲' : '▼'} ${useFmt ? fmt.format(amount) : fmtOriginal.format(amount)}',
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: isIncome ? AppColors.success : AppColors.danger,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (tx['date'] != null)
-                  Text(
-                    _formatTime(tx['date'] as String),
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                      fontSize: 10,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatTime(String dateStr) {
-    try {
-      final date = DateTime.parse(dateStr).toLocal();
-      return DateFormat('HH:mm').format(date);
-    } catch (_) {
-      return '';
-    }
-  }
-}
 
 // ── Arc Progress Painter ─────────────────────────────────────────────────────
 class _ArcProgressPainter extends CustomPainter {

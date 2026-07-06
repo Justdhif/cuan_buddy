@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/constants/app_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -29,12 +30,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _showCurrencyPicker(String currentCurrency) async {
     final l10n = AppLocalizations.of(context);
-    await showModalBottomSheet<void>(
+    await AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) => _CurrencyPickerSheet(
         currentCode: currentCurrency,
         l10n: l10n,
@@ -426,12 +424,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     }
 
-    await showModalBottomSheet<void>(
+    await AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) => _AboutAppSheet(
         isDark: isDark,
         l10n: l10n,
@@ -441,12 +436,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> _showFeedbackSheet(BuildContext context) async {
-    await showModalBottomSheet<void>(
+    await AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -477,14 +469,6 @@ class _AboutAppSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             const SizedBox(height: 24),
             Container(
               width: 72,
@@ -654,17 +638,6 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Align(
-                alignment: Alignment.center,
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
               Text(
                 l10n.feedback,
@@ -774,14 +747,6 @@ class _CurrencyPickerSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
             const SizedBox(height: 24),
             Text(
               l10n.currency,
