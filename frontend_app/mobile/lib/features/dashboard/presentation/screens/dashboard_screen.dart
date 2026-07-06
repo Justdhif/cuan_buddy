@@ -144,7 +144,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                         child: summaryAsync.when(
                           skipLoadingOnReload: true,
-                          data: (data) => _buildBalanceCard(data, profileAsync),
+                          data: (data) => _buildBalanceCard(data, profileAsync, healthAsync),
                           loading: () => const SkeletonCard(height: 220),
                           error: (_, __) => const SkeletonCard(height: 220),
                         ),
@@ -154,12 +154,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                         child: const AiInsightCard(),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                        child: _buildHealthWidget(healthAsync, isDark),
                       ),
                     ),
                     // ── Budgets Section ───────────────────────────────────────
@@ -172,29 +166,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       )
                     else
                       SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 235,
-                          child: PageView.builder(
-                            controller: PageController(viewportFraction: 0.9),
-                            itemCount: budgetsState.budgets.isEmpty ? 1 : budgetsState.budgets.length + 1,
-                            itemBuilder: (context, index) {
-                              if (index == budgetsState.budgets.length) {
-                                return Padding(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: SizedBox(
+                            height: 235,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: budgetsState.budgets.isEmpty ? 1 : budgetsState.budgets.length + 1,
+                              padding: const EdgeInsets.symmetric(horizontal: 14), // To account for the 6px item margin
+                              itemBuilder: (context, index) {
+                                final cardWidth = MediaQuery.of(context).size.width - 40;
+                                
+                                if (index == budgetsState.budgets.length) {
+                                  return Container(
+                                    width: cardWidth,
+                                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
+                                    child: _buildAddBudgetCard(context, isDark),
+                                  );
+                                }
+                                final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+                                final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+                                return Container(
+                                  width: cardWidth,
                                   padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                  child: _buildAddBudgetCard(context, isDark),
+                                  child: BudgetCard(
+                                    budget: budgetsState.budgets[index],
+                                    isDark: isDark,
+                                    currencySymbol: currencySymbol,
+                                  ),
                                 );
-                              }
-                              final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-                              final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                child: BudgetCard(
-                                  budget: budgetsState.budgets[index],
-                                  isDark: isDark,
-                                  currencySymbol: currencySymbol,
-                                ),
-                              );
-                            },
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -436,8 +439,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildBalanceCard(Map<String, dynamic> data,
-      AsyncValue<Map<String, dynamic>> profileAsync) {
+  Widget _buildBalanceCard(
+    Map<String, dynamic> data,
+    AsyncValue<Map<String, dynamic>> profileAsync,
+    AsyncValue<Map<String, dynamic>> healthAsync,
+  ) {
     final balance = (data['balance'] as num? ?? 0).toDouble();
     final income = (data['totalIncome'] as num? ?? 0).toDouble();
     final expense = (data['totalExpense'] as num? ?? 0).toDouble();
@@ -451,23 +457,114 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.totalBalance,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.totalBalance,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    fmt.format(balance),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                ],
+              ),
+              healthAsync.when(
+                skipLoadingOnReload: true,
+                data: (healthData) {
+                  final status = healthData['status'] as String? ?? 'healthy';
+                  final score = healthData['score'] as int? ?? 100;
+                  
+                  Color statusColor;
+                  IconData statusIcon;
+                  
+                  switch (status) {
+                    case 'warning':
+                      statusColor = AppColors.warning;
+                      statusIcon = Icons.warning_amber_rounded;
+                      break;
+                    case 'critical':
+                    case 'danger':
+                      statusColor = AppColors.danger;
+                      statusIcon = Icons.error_outline_rounded;
+                      break;
+                    default:
+                      statusColor = AppColors.success;
+                      statusIcon = Icons.health_and_safety_outlined;
+                  }
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusIcon, size: 14, color: statusColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$score/100',
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            fmt.format(balance),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
+          healthAsync.when(
+            skipLoadingOnReload: true,
+            data: (healthData) {
+              final message = healthData['message'] as String?;
+              if (message == null || message.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.insights_rounded, size: 16, color: Colors.white70),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 13,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 20),
           Row(
@@ -510,24 +607,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildHealthWidget(
-      AsyncValue<Map<String, dynamic>> healthAsync, bool isDark) {
-    return healthAsync.when(
-      skipLoadingOnReload: true,
-      data: (data) {
-        final status = data['status'] as String? ?? 'healthy';
-        final message = data['message'] as String?;
-        final state = switch (status) {
-          'warning' => FinancialHealthState.sweating,
-          'critical' || 'danger' => FinancialHealthState.panic,
-          _ => FinancialHealthState.happy,
-        };
-        return FinancialHealthWidget(healthState: state, message: message);
-      },
-      loading: () => const SkeletonCard(height: 80),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
 
 
 

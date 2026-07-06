@@ -111,15 +111,11 @@ class BudgetCard extends ConsumerWidget {
         ? fmt.format(limitAmount)
         : fmtOriginal.format(limitAmount);
 
-    final String subtitle;
+    final String actionText;
     if (remaining >= 0) {
-      subtitle = localeCode == 'id'
-          ? '$remainingFormatted tersisa dari $totalLimitFormatted'
-          : '$remainingFormatted remaining of $totalLimitFormatted';
+      actionText = l10n.remainingOf;
     } else {
-      subtitle = localeCode == 'id'
-          ? '$remainingFormatted terlampaui dari $totalLimitFormatted'
-          : '$remainingFormatted exceeded of $totalLimitFormatted';
+      actionText = l10n.exceededOf;
     }
 
     // Color theme from database
@@ -150,8 +146,8 @@ class BudgetCard extends ConsumerWidget {
 
     // Period badge label
     final periodLabel = periodCount > 1
-        ? '$periodCount bulan (tgl $startDay)'
-        : 'tgl $startDay';
+        ? l10n.periodMonths(periodCount, startDay)
+        : l10n.periodDate(startDay);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -232,11 +228,34 @@ class BudgetCard extends ConsumerWidget {
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          subtitle,
-                          style: AppTypography.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontWeight: FontWeight.w500,
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: remainingFormatted,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              TextSpan(
+                                text: actionText,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              TextSpan(
+                                text: totalLimitFormatted,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -356,9 +375,7 @@ class BudgetCard extends ConsumerWidget {
                                                   BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              localeCode == 'id'
-                                                  ? 'Hari ini'
-                                                  : 'Today',
+                                              l10n.today,
                                               style: TextStyle(
                                                 color: isDark
                                                     ? Colors.black
@@ -413,20 +430,14 @@ class BudgetCard extends ConsumerWidget {
                       if (remainingDays > 0) {
                         final allowanceFormatted =
                             fmt.format(dailyAllowance);
-                        infoText = localeCode == 'id'
-                            ? 'Anda bisa membelanjakan $allowanceFormatted/hari untuk $remainingDays hari ke depan'
-                            : 'You can spend $allowanceFormatted/day for $remainingDays more days';
+                        infoText = l10n.dailyAllowance(allowanceFormatted, remainingDays);
                       } else {
-                        infoText = localeCode == 'id'
-                            ? 'Periode anggaran telah berakhir'
-                            : 'Budget period has ended';
+                        infoText = l10n.budgetPeriodEnded;
                       }
                     } else {
                       final limitExceededFormatted =
                           fmt.format(remaining.abs());
-                      infoText = localeCode == 'id'
-                          ? 'Anggaran telah terlampaui sebesar $limitExceededFormatted'
-                          : 'Budget exceeded by $limitExceededFormatted';
+                      infoText = l10n.budgetExceededBy(limitExceededFormatted);
                     }
 
                     return Text(

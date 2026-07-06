@@ -359,7 +359,21 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get rolloverRemaining => 'Sisa Bulan Lalu';
   @override
-  String get rollover => 'Sisa Lanjut';
+  String get rollover => 'Sisa Bulan Lalu';
+  @override
+  String get remainingOf => ' tersisa dari ';
+  @override
+  String get exceededOf => ' terlampaui dari ';
+  @override
+  String periodMonths(int count, int date) => '$count bulan (tgl $date)';
+  @override
+  String periodDate(int date) => 'tgl $date';
+  @override
+  String dailyAllowance(String amount, int days) => 'Kamu bisa pakai $amount/hari untuk $days hari lagi';
+  @override
+  String get budgetPeriodEnded => 'Periode anggaran telah berakhir';
+  @override
+  String budgetExceededBy(String amount) => 'Anggaran telah terlampaui sebesar $amount';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override

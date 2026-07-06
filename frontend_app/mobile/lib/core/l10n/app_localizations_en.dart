@@ -353,9 +353,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recurring => 'Recurring';
   @override
-  String get rolloverRemaining => 'Rollover / Remaining';
+  String get rolloverRemaining => 'Rollover Remaining';
   @override
   String get rollover => 'Rollover';
+  @override
+  String get remainingOf => ' remaining of ';
+  @override
+  String get exceededOf => ' exceeded of ';
+  @override
+  String periodMonths(int count, int date) => '$count months (starts on $date)';
+  @override
+  String periodDate(int date) => 'starts on $date';
+  @override
+  String dailyAllowance(String amount, int days) => 'You can spend $amount/day for $days more days';
+  @override
+  String get budgetPeriodEnded => 'Budget period has ended';
+  @override
+  String budgetExceededBy(String amount) => 'Budget exceeded by $amount';
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   @override

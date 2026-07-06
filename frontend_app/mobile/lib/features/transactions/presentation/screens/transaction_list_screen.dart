@@ -200,26 +200,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                 ),
               )
             else if (transactionsAsync.hasValue) ...[
-              Builder(
-                builder: (context) {
+              Consumer(
+                builder: (context, ref, child) {
                   final transactions = transactionsAsync.value!;
-                  double totalIncome = 0;
-                  double totalExpense = 0;
-
-                  for (var tx in transactions) {
-                    final isIncome = tx['type'] == 'income';
-                    final amountRaw = tx['amount'];
-                    final amount = amountRaw is num
-                        ? amountRaw.toDouble()
-                        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-                    if (isIncome) {
-                      totalIncome += amount;
-                    } else {
-                      totalExpense += amount;
-                    }
-                  }
-
-                  final balance = totalIncome - totalExpense;
+                  final balanceAsync = ref.watch(transactionListBalanceProvider);
 
                   return SliverPadding(
                     padding: const EdgeInsets.only(top: 0, bottom: 16),
@@ -227,9 +211,18 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           if (index == transactions.length) {
-                            return _BottomCashflowSummary(
-                              balance: balance,
-                              transactionsCount: transactions.length,
+                            return balanceAsync.when(
+                              data: (balance) => _BottomCashflowSummary(
+                                balance: balance,
+                                transactionsCount: transactions.length,
+                              ),
+                              loading: () => const SizedBox(
+                                height: 80,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                              error: (_, __) => const SizedBox(),
                             );
                           }
                           final item = transactions[index];

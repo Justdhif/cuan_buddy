@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
-
+import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/services/currency_service.dart';
 class TransactionFilterState {
   final DateTime currentMonth;
   final DateTime selectedDate;
@@ -145,6 +146,10 @@ final monthlySummaryProvider =
     FutureProvider.autoDispose<Map<String, double>>((ref) async {
   final filter = ref.watch(transactionFilterProvider);
   final dio = ref.watch(dioClientProvider).dio;
+  final currencyCode =
+      ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
+          'IDR';
+  final currencyService = ref.watch(currencyServiceProvider);
 
   final startOfMonth =
       DateTime(filter.currentMonth.year, filter.currentMonth.month, 1);
@@ -178,10 +183,16 @@ final monthlySummaryProvider =
     final amount = amountRaw is num
         ? amountRaw.toDouble()
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+    final txCurrency = tx['currency'] as String? ?? 'IDR';
+    double converted = amount;
+    if (txCurrency != currencyCode) {
+      converted = await currencyService.convert(amount, txCurrency, currencyCode);
+    }
+
     if (isIncome) {
-      totalIncome += amount;
+      totalIncome += converted;
     } else {
-      totalExpense += amount;
+      totalExpense += converted;
     }
   }
 
@@ -189,4 +200,36 @@ final monthlySummaryProvider =
     'totalIncome': totalIncome,
     'totalExpense': totalExpense,
   };
+});
+
+final transactionListBalanceProvider = FutureProvider.autoDispose<double>((ref) async {
+  final transactions = await ref.watch(allTransactionsProvider.future);
+  final currencyCode =
+      ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? 'IDR';
+  final currencyService = ref.watch(currencyServiceProvider);
+
+  double totalIncome = 0;
+  double totalExpense = 0;
+
+  for (var tx in transactions) {
+    final isIncome = tx['type'] == 'income';
+    final amountRaw = tx['amount'];
+    final amount = amountRaw is num
+        ? amountRaw.toDouble()
+        : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
+
+    final txCurrency = tx['currency'] as String? ?? 'IDR';
+    double converted = amount;
+    if (txCurrency != currencyCode) {
+      converted = await currencyService.convert(amount, txCurrency, currencyCode);
+    }
+
+    if (isIncome) {
+      totalIncome += converted;
+    } else {
+      totalExpense += converted;
+    }
+  }
+
+  return totalIncome - totalExpense;
 });

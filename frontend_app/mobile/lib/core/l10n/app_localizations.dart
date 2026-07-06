@@ -217,6 +217,13 @@ abstract class AppLocalizations {
   String get recurring;
   String get rolloverRemaining;
   String get rollover;
+  String get remainingOf;
+  String get exceededOf;
+  String periodMonths(int count, int date);
+  String periodDate(int date);
+  String dailyAllowance(String amount, int days);
+  String get budgetPeriodEnded;
+  String budgetExceededBy(String amount);
 
   // ─── Savings ──────────────────────────────────────────────────────────────────
   String get addSavingsGoal;
