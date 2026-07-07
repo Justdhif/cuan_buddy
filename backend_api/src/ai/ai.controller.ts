@@ -1,3 +1,4 @@
+import 'multer';
 import {
   Controller,
   Post,
@@ -7,6 +8,7 @@ import {
   Request,
   UseInterceptors,
   UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -78,7 +80,7 @@ export class AiController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new Error('File audio tidak ditemukan');
+      throw new BadRequestException('File audio tidak ditemukan');
     }
     return this.aiService.processVoiceTransaction(
       req.user.userId,
@@ -99,7 +101,7 @@ export class AiController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
-      throw new Error('File gambar tidak ditemukan');
+      throw new BadRequestException('File gambar tidak ditemukan');
     }
     return this.aiService.processReceiptTransaction(
       req.user.userId,
