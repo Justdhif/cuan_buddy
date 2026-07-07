@@ -299,6 +299,22 @@ abstract class AppLocalizations {
   String get customColor;
   String get hexColor;
 
+  // ─── Wallets ──────────────────────────────────────────────────────────────────
+  String get manageWallets;
+  String get addWallet;
+  String get editWallet;
+  String get walletName;
+  String get walletType;
+  String get initialBalance;
+  String get isBaseCurrency;
+  String get walletSaved;
+  String get deleteWallet;
+  String get deleteWalletConfirm;
+  String get walletTypeCash;
+  String get walletTypeBank;
+  String get walletTypeEWallet;
+  String get walletTypeCrypto;
+
   // ─── Notifications ────────────────────────────────────────────────────────────
   String get notifications;
   String get markAllRead;

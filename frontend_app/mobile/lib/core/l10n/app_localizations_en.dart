@@ -519,6 +519,36 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hexColor => 'HEX Color';
 
+  // ─── Wallets ──────────────────────────────────────────────────────────────────
+  @override
+  String get manageWallets => 'Manage Wallets';
+  @override
+  String get addWallet => 'Add Wallet';
+  @override
+  String get editWallet => 'Edit Wallet';
+  @override
+  String get walletName => 'Wallet Name';
+  @override
+  String get walletType => 'Wallet Type';
+  @override
+  String get initialBalance => 'Initial Balance';
+  @override
+  String get isBaseCurrency => 'Is Base Currency?';
+  @override
+  String get walletSaved => 'Wallet saved successfully';
+  @override
+  String get deleteWallet => 'Delete Wallet?';
+  @override
+  String get deleteWalletConfirm => 'Are you sure you want to delete this wallet?';
+  @override
+  String get walletTypeCash => 'Cash';
+  @override
+  String get walletTypeBank => 'Bank Account';
+  @override
+  String get walletTypeEWallet => 'E-Wallet';
+  @override
+  String get walletTypeCrypto => 'Crypto';
+
   // ─── Notifications ────────────────────────────────────────────────────────────
   @override
   String get notifications => 'Notifications';

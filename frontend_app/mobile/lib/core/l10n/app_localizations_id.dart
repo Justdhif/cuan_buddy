@@ -519,9 +519,39 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get anErrorOccurred => 'Terjadi kesalahan';
   @override
-  String get customColor => 'Warna Khusus';
+  String get customColor => 'Warna Kustom';
   @override
   String get hexColor => 'Kode HEX';
+
+  // ─── Wallets ──────────────────────────────────────────────────────────────────
+  @override
+  String get manageWallets => 'Kelola Dompet';
+  @override
+  String get addWallet => 'Tambah Dompet';
+  @override
+  String get editWallet => 'Edit Dompet';
+  @override
+  String get walletName => 'Nama Dompet';
+  @override
+  String get walletType => 'Tipe Dompet';
+  @override
+  String get initialBalance => 'Saldo Awal';
+  @override
+  String get isBaseCurrency => 'Jadikan Mata Uang Utama?';
+  @override
+  String get walletSaved => 'Dompet berhasil disimpan';
+  @override
+  String get deleteWallet => 'Hapus Dompet?';
+  @override
+  String get deleteWalletConfirm => 'Apakah Anda yakin ingin menghapus dompet ini?';
+  @override
+  String get walletTypeCash => 'Tunai';
+  @override
+  String get walletTypeBank => 'Rekening Bank';
+  @override
+  String get walletTypeEWallet => 'E-Wallet';
+  @override
+  String get walletTypeCrypto => 'Kripto';
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   @override

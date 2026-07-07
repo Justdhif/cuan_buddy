@@ -7,6 +7,8 @@ export const CreateWalletSchema = z.object({
   currency: z.string().min(2).max(10).default('IDR'),
   isBaseCurrency: z.boolean().default(false).optional(),
   balance: z.number().default(0),
+  emojiIcon: z.string().optional().default('💼'),
+  colorCode: z.string().optional().default('#6C63FF'),
 });
 
 export const UpdateWalletSchema = CreateWalletSchema.partial();

@@ -45,6 +45,8 @@ export const wallets = pgTable('wallets', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
+  emojiIcon: text('emoji_icon').default('💼'),
+  colorCode: text('color_code').default('#6C63FF'),
   type: walletTypeEnum('type').default('cash').notNull(),
   currency: text('currency').default('IDR').notNull(),
   isBaseCurrency: boolean('is_base_currency').default(false).notNull(),
