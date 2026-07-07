@@ -15,7 +15,7 @@ import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/savings_provider.dart';
-import '../../wallets/providers/wallet_provider.dart';
+import '../../../wallets/providers/wallet_provider.dart';
 
 class SavingsFormScreen extends ConsumerStatefulWidget {
   const SavingsFormScreen({super.key, this.goal});

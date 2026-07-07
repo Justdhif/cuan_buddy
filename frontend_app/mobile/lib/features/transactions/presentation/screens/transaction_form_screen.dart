@@ -21,7 +21,7 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
-import '../../wallets/providers/wallet_provider.dart';
+import '../../../wallets/providers/wallet_provider.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({

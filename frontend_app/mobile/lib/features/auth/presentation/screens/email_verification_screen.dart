@@ -71,11 +71,11 @@ class _EmailVerificationScreenState
         
         // Attempt to auto-login
         if (widget.password != null && widget.password!.isNotEmpty) {
-          final loginResult = await ref.read(authNotifierProvider.notifier).login(
+          await ref.read(authNotifierProvider.notifier).login(
             email: widget.email!,
             password: widget.password!,
           );
-          if (loginResult == null) { // null means success
+          if (ref.read(authNotifierProvider) is AuthStateAuthenticated) {
             AppSnackbar.show(
               context,
               title: l10n.success,
@@ -277,9 +277,12 @@ class _EmailVerificationScreenState
                     ref.read(authNotifierProvider.notifier).login(
                       email: widget.email!,
                       password: widget.password!,
-                    ).then((err) {
-                      if (err == null && mounted) context.go('/profile-setup');
-                      else if (mounted) context.go('/login');
+                    ).then((_) {
+                      if (ref.read(authNotifierProvider) is AuthStateAuthenticated && mounted) {
+                        context.go('/profile-setup');
+                      } else if (mounted) {
+                        context.go('/login');
+                      }
                     });
                   } else {
                     context.go('/login');

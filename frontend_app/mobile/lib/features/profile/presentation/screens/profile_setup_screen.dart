@@ -41,6 +41,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             phoneNumber: _phoneController.text.trim().isNotEmpty
                 ? _phoneController.text.trim()
                 : null,
+          );
       await ref.read(preferencesServiceProvider).setProfileComplete(true);
       if (!mounted) return;
       context.go('/wallet-setup');

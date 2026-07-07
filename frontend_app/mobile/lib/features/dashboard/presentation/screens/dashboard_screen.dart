@@ -14,7 +14,7 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../analytics/presentation/providers/analytics_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../providers/dashboard_provider.dart';
-import '../../wallets/providers/wallet_provider.dart';
+import '../../../wallets/providers/wallet_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/widget_service.dart';
 import '../widgets/ai_insight_card.dart';

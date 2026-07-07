@@ -13,7 +13,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../providers/budgets_provider.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
-import '../../wallets/providers/wallet_provider.dart';
+import '../../../wallets/providers/wallet_provider.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
   const BudgetFormScreen({super.key, this.budget, this.initialCategoryId});

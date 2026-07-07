@@ -5,7 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/utils/app_snackbar.dart';
-import '../providers/wallet_provider.dart';
+import '../../providers/wallet_provider.dart';
 
 class ManageWalletsScreen extends ConsumerStatefulWidget {
   const ManageWalletsScreen({super.key, this.isOnboarding = false});
@@ -118,7 +118,7 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                     Expanded(
                       child: AppButton(
                         label: 'Delete',
-                        type: AppButtonType.outline,
+                        type: AppButtonType.outlined,
                         onPressed: () async {
                           final err = await ref.read(walletsProvider.notifier).deleteWallet(wallet['id']);
                           if (mounted) {
