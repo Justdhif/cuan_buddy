@@ -901,7 +901,7 @@ class TransactionFormHeader extends StatelessWidget {
         children: [
           // Category Hitbox (Left Side)
           Material(
-            color: typeColor.withOpacity(0.1),
+            color: typeColor.withOpacity(0.15),
             child: InkWell(
               onTap: onCategoryTap,
               child: Container(
