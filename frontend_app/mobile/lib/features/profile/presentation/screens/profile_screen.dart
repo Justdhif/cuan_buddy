@@ -85,7 +85,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             );
           },
           child: Text(
-            l10n.languageCode == 'id' ? 'Profil' : 'Profile',
+            l10n.profileTitle,
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
@@ -289,19 +289,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSettingsTile(
             context: context,
             icon: Icons.key_outlined,
-            title: l10n.languageCode == 'id' ? 'Akun' : 'Account',
-            subtitle: l10n.languageCode == 'id'
-                ? 'Notifikasi keamanan, ganti nomor'
-                : 'Security notification, change number',
+            title: l10n.accountMenu,
+            subtitle: l10n.accountMenuDesc,
             onTap: () => context.push('/profile/account'),
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.palette_outlined,
-            title: l10n.languageCode == 'id' ? 'Tampilan' : 'Appearance',
-            subtitle: l10n.languageCode == 'id'
-                ? 'Tema, bahasa aplikasi'
-                : 'Theme, app language',
+            title: l10n.appearanceMenu,
+            subtitle: l10n.appearanceMenuDesc,
             onTap: () => context.push('/profile/theme-language'),
           ),
           _buildSettingsTile(
@@ -315,54 +311,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             context: context,
             icon: Icons.category_outlined,
             title: l10n.manageCategories,
-            subtitle: l10n.languageCode == 'id'
-                ? 'Kelola kategori transaksi'
-                : 'Manage transaction categories',
+            subtitle: l10n.manageCategoriesDesc,
             onTap: () => context.push('/manage-categories'),
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.widgets_outlined,
             title: 'Widgets',
-            subtitle: l10n.languageCode == 'id'
-                ? 'Atur widget layar depan'
-                : 'Configure home screen widgets',
+            subtitle: l10n.widgetsDesc,
             onTap: () => context.push('/profile/widgets'),
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.backup_outlined,
             title: l10n.backupRestore,
-            subtitle: l10n.languageCode == 'id'
-                ? 'Cadangkan dan pulihkan data Anda'
-                : 'Backup and restore your data',
+            subtitle: l10n.backupRestoreDesc,
             onTap: () => context.push('/profile/backup'),
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.info_outline_rounded,
             title: l10n.about,
-            subtitle: l10n.languageCode == 'id'
-                ? 'Informasi tentang aplikasi'
-                : 'Information about the app',
+            subtitle: l10n.aboutDesc,
             onTap: () => _showAboutAppSheet(context),
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.feedback_outlined,
             title: l10n.feedback,
-            subtitle: l10n.languageCode == 'id'
-                ? 'Kirim saran atau laporkan masalah'
-                : 'Send suggestions or report bugs',
+            subtitle: l10n.feedbackDesc,
             onTap: () => _showFeedbackSheet(context),
           ),
           _buildSettingsTile(
             context: context,
             icon: Icons.logout_rounded,
             title: l10n.logOut,
-            subtitle: l10n.languageCode == 'id'
-                ? 'Keluar dari akun Anda saat ini'
-                : 'Log out of your current account',
+            subtitle: l10n.logOutDesc,
             isDanger: true,
             onTap: () => _logout(context, ref),
           ),
@@ -500,9 +484,7 @@ class _AboutAppSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              l10n.languageCode == 'id'
-                  ? 'CuanBuddy adalah asisten finansial pintar Anda untuk mencatat transaksi, mengelola anggaran, dan memantau kesehatan finansial dengan bantuan teknologi AI.'
-                  : 'CuanBuddy is your smart financial assistant to track transactions, manage budgets, and monitor financial health with AI support.',
+              l10n.aboutAppDesc,
               textAlign: TextAlign.center,
               style: AppTypography.textTheme.bodyMedium?.copyWith(
                 color: isDark ? Colors.white70 : Colors.black54,
@@ -511,7 +493,7 @@ class _AboutAppSheet extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              l10n.languageCode == 'id' ? 'Hubungi kami di:' : 'Connect with us:',
+              l10n.connectWithUs,
               style: AppTypography.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,

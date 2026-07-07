@@ -613,8 +613,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
         final targetDate = DateTime.parse(targetDateStr).toLocal();
         final now = DateTime.now();
         final diffDays = targetDate.difference(now).inDays;
-        final isId = Localizations.localeOf(context).languageCode == 'id';
-        final perDayStr = isId ? '/hari' : '/day';
+        final perDayStr = l10n.perDayShort;
         if (diffDays > 0) {
           final dailyAmount = remaining / diffDays;
           dailySaveText = '${fmt.format(dailyAmount)}$perDayStr';

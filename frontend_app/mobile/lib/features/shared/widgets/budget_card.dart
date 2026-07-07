@@ -7,7 +7,8 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../profile/presentation/providers/profile_provider.dart';
-
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 class BudgetCard extends ConsumerWidget {
   const BudgetCard({
     super.key,
@@ -27,6 +28,7 @@ class BudgetCard extends ConsumerWidget {
         ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
             AppConstants.defaultCurrency;
     final localeCode = Localizations.localeOf(context).languageCode;
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
     final tx = budget as Map<String, dynamic>;
     final rawL = tx['limitAmount'];
@@ -150,6 +152,7 @@ class BudgetCard extends ConsumerWidget {
         : l10n.periodDate(startDay);
 
     return Container(
+      height: 204,
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
@@ -182,9 +185,13 @@ class BudgetCard extends ConsumerWidget {
                     width: 48,
                     height: 48,
                     alignment: Alignment.center,
-                    decoration: BoxDecoration(
+                    decoration: ShapeDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
-                      shape: BoxShape.circle,
+                      shape: iconShape == CategoryIconShape.circle
+                          ? const CircleBorder()
+                          : iconShape == CategoryIconShape.squircle
+                              ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(24))
+                              : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     child: Text(
                       catEmoji,
@@ -267,13 +274,15 @@ class BudgetCard extends ConsumerWidget {
           ),
 
           // ─── Bottom Section: Solid ────────────────────────────────────
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            color:
-                isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              color:
+                  isDark ? const Color(0xFF161F28) : const Color(0xFFF8F9FA),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Progress Bar & Dates Row
                 Row(
@@ -454,6 +463,7 @@ class BudgetCard extends ConsumerWidget {
               ],
             ),
           ),
+        ),
         ],
       ),
     );

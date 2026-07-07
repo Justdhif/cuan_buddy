@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -30,9 +30,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: l10n.languageCode == 'id'
-            ? 'Pilih jenis kelamin terlebih dahulu'
-            : 'Please select a gender',
+        message: l10n.pleaseSelectGender,
         type: SnackbarType.error,
       );
       return;
@@ -48,9 +46,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
         AppSnackbar.show(
           context,
           title: l10n.success,
-          message: l10n.languageCode == 'id'
-              ? 'Jenis kelamin berhasil diperbarui'
-              : 'Gender updated successfully',
+          message: l10n.genderUpdatedSuccess,
           type: SnackbarType.success,
         );
         Navigator.pop(context);
@@ -60,9 +56,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
         AppSnackbar.show(
           context,
           title: l10n.error,
-          message: l10n.languageCode == 'id'
-              ? 'Gagal memperbarui jenis kelamin: $e'
-              : 'Failed to update gender: $e',
+          message: l10n.failedToUpdateGender(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -155,7 +149,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Jenis Kelamin' : 'Gender',
+          l10n.genderField,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -174,9 +168,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.languageCode == 'id'
-                    ? 'Pilih jenis kelamin Anda'
-                    : 'Select your gender',
+                l10n.selectYourGender,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -185,22 +177,20 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
               const SizedBox(height: 24),
               _buildGenderOption(
                 value: 'male',
-                label: l10n.languageCode == 'id' ? 'Laki-laki' : 'Male',
+                label: l10n.genderMale,
                 icon: Icons.male_rounded,
                 isDark: isDark,
               ),
               const SizedBox(height: 12),
               _buildGenderOption(
                 value: 'female',
-                label: l10n.languageCode == 'id' ? 'Perempuan' : 'Female',
+                label: l10n.genderFemale,
                 icon: Icons.female_rounded,
                 isDark: isDark,
               ),
               const SizedBox(height: 24),
               Text(
-                l10n.languageCode == 'id'
-                    ? 'Informasi jenis kelamin bersifat pribadi dan tidak ditampilkan kepada pengguna lain.'
-                    : 'Gender information is private and will not be shown to other users.',
+                l10n.genderPrivacyInfo,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -230,7 +220,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
                           ),
                         )
                       : Text(
-                          l10n.languageCode == 'id' ? 'Simpan' : 'Save',
+                          l10n.saveButton,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

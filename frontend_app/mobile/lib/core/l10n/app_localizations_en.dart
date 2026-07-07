@@ -578,8 +578,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get totalCashflow => 'Total cashflow';
   @override
-  String nTransactions(int count) =>
-      '$count transaction${count == 1 ? '' : 's'}';
+  @override
+  String nTransactions(int count) => '$count Transactions';
   @override
   String get today => 'Today';
   @override
@@ -600,7 +600,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get selectLanguage => 'Select Language';
 
-  // ─── Change Password ──────────────────────────────────────────────────────────
+  // ─── Change Password & Phone ──────────────────────────────────────────────────
   @override
   String get changePassword => 'Change Password';
   @override
@@ -613,6 +613,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirmNewPasswordHint => 'Repeat your new password';
   @override
   String get oldPasswordRequired => 'Old password is required';
+
+  @override
+  String get otpSentTitle => 'OTP Sent';
+  @override
+  String otpSentMessage(String phone) => 'OTP verification code has been sent to WhatsApp number $phone';
+  @override
+  String get otpSuccessTitle => 'Success';
+  @override
+  String get otpSuccessMessage => 'Your phone number has been updated successfully!';
+  @override
+  String get otpFailedTitle => 'Failed';
+  @override
+  String get otpInvalidCodeTitle => 'Invalid Code';
+  @override
+  String get otpInvalidCodeMessage => 'The OTP code entered is incorrect. Use code "123456" for testing.';
+  @override
+  String get changePhoneNumberTitle => 'Change Phone Number';
+  @override
+  String get changePhoneNumberSubtitle => 'Enter your latest WhatsApp phone number. We will send an OTP verification code to this number.';
+  @override
+  String get whatsappPhoneNumber => 'WhatsApp Phone Number';
+  @override
+  String get phoneNumberRequired => 'Phone number is required';
+  @override
+  String get invalidPhoneNumberFormat => 'Invalid phone number format';
+  @override
+  String get sendOtpCode => 'Send OTP Code';
+  @override
+  String get enterOtpTitle => 'Enter 6 Digit WhatsApp OTP Code:';
+  @override
+  String get useDemoCode => 'Use demo code: "123456"';
+  @override
+  String get verifyAndSave => 'Verify & Save';
+  @override
+  String get changePhoneNumberLink => 'Change phone number';
 
   // ─── Edit Profile ─────────────────────────────────────────────────────────────
   @override
@@ -635,6 +670,146 @@ class AppLocalizationsEn extends AppLocalizations {
   String get failedToUpdateProfile => 'Failed to update profile';
   @override
   String get savingLabel => 'Saving...';
+  @override
+  String get pleaseSelectBirthdate => 'Please select a birthdate';
+  @override
+  String get birthdateUpdatedSuccess => 'Birthdate updated successfully';
+  @override
+  String failedToUpdateBirthdate(String error) => 'Failed to update birthdate: $error';
+  @override
+  String get birthdateTitle => 'Birthdate';
+  @override
+  String get dateOfBirth => 'Date of Birth';
+  @override
+  String get selectBirthdate => 'Select birthdate';
+  @override
+  String get birthdatePrivacyInfo => 'Your birthdate is private and will not be shown to other users.';
+  @override
+  String get saveButton => 'Save';
+  
+  @override
+  String get pleaseSelectGender => 'Please select a gender';
+  @override
+  String get genderUpdatedSuccess => 'Gender updated successfully';
+  @override
+  String failedToUpdateGender(String error) => 'Failed to update gender: $error';
+  @override
+  String get selectYourGender => 'Select your gender';
+  @override
+  String get genderPrivacyInfo => 'Gender information is private and will not be shown to other users.';
+  @override
+  String get genderField => 'Gender';
+  @override
+  String get genderMale => 'Male';
+  @override
+  String get genderFemale => 'Female';
+  
+  @override
+  String get nameCannotBeEmpty => 'Name cannot be empty';
+  @override
+  String get nameUpdatedSuccess => 'Name updated successfully';
+  @override
+  String failedToUpdateName(String error) => 'Failed to update name: $error';
+  @override
+  String get yourFullName => 'Your Full Name';
+  @override
+  String get editNamePrivacyInfo => 'Enter your full name. This name will be displayed on your profile.';
+  
+  @override
+  String get usernameCannotBeEmpty => 'Username cannot be empty';
+  @override
+  String get usernameInvalidFormat => 'Username can only contain letters, numbers, and underscores';
+  @override
+  String get usernameUpdatedSuccess => 'Username updated successfully';
+  @override
+  String failedToUpdateUsername(String error) => 'Failed to update username: $error';
+  @override
+  String get usernameField => 'Username';
+  @override
+  String get yourUsername => 'Your Username';
+  @override
+  String get editUsernamePrivacyInfo => 'Username can only contain letters (a-z, A-Z), numbers (0-9), and underscores (_).';
+  
+  @override
+  String get bioUpdatedSuccess => 'Bio updated successfully';
+  @override
+  String failedToUpdateBio(String error) => 'Failed to update bio: $error';
+  @override
+  String get aboutTitle => 'About';
+  @override
+  String get aboutYou => 'About You';
+  @override
+  String get editBioPrivacyInfo => 'Write a status or a short description about yourself so other users can see it.';
+  
+  @override
+  String get linkUpdatedSuccess => 'Instagram link updated successfully';
+  @override
+  String failedToUpdateLink(String error) => 'Failed to update link: $error';
+  @override
+  String get linkTitle => 'Link';
+  @override
+  String get yourInstagramLink => 'Your Instagram Link';
+  @override
+  String get editLinkPrivacyInfo => 'Link your Instagram or social media account so friends can connect directly from your CuanBuddy profile.';
+  
+  @override
+  String get profilePhotoUpdatedSuccess => 'Profile photo updated successfully!';
+  @override
+  String failedToUpdateAvatar(String error) => 'Failed to update avatar: $error';
+  @override
+  String get profilePhoto => 'Profile Photo';
+  @override
+  String get uploadNewPhoto => 'Upload New Photo';
+  @override
+  String get profileTitle => 'Profile';
+  @override
+  String get notSet => 'Not set';
+  @override
+  String get editPhoto => 'Edit Photo';
+  @override
+  String get bioField => 'Bio';
+  
+  @override
+  String get accountMenu => 'Account';
+  @override
+  String get changePasswordDesc => 'Change your account password';
+  @override
+  String get changePhoneNumberDesc => 'Update your WhatsApp phone number';
+  
+  @override
+  List<String> get months => [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  @override
+  List<String> get shortMonths => [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  @override
+  List<String> get shortDays => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  @override
+  String get accountMenuDesc => 'Security notification, change number';
+  @override
+  String get appearanceMenu => 'Appearance';
+  @override
+  String get appearanceMenuDesc => 'Theme, app language';
+  @override
+  String get manageCategoriesDesc => 'Manage transaction categories';
+  @override
+  String get widgetsDesc => 'Configure home screen widgets';
+  @override
+  String get backupRestoreDesc => 'Backup and restore your data';
+  @override
+  String get aboutDesc => 'Information about the app';
+  @override
+  String get feedbackDesc => 'Send suggestions or report bugs';
+  @override
+  String get logOutDesc => 'Log out of your current account';
+  @override
+  String get aboutAppDesc => 'CuanBuddy is your smart financial assistant to track transactions, manage budgets, and monitor financial health with AI support.';
+  @override
+  String get connectWithUs => 'Connect with us:';
 
   // ─── Backup & Restore ─────────────────────────────────────────────────────────
   @override
@@ -796,19 +971,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   // ─── Extra Fields ─────────────────────────────────────────────────────────────
   @override
-  String get usernameField => 'Username';
-  @override
   String get usernameHint => 'Enter your username';
   @override
-  String get genderField => 'Gender';
-  @override
-  String get genderMale => 'Male';
-  @override
-  String get genderFemale => 'Female';
-  @override
   String get genderOther => 'Other';
-  @override
-  String get bioField => 'Bio';
   @override
   String get bioHint => 'Tell us about yourself...';
   @override
@@ -838,6 +1003,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get transactionHistory => 'Transaction History';
   @override
   String get perDay => 'Per Day';
+  @override
+  String get perDayShort => '/day';
+  
+  // ─── Notifications ────────────────────────────────────────────────────────
+  @override
+  String get newTransactionRecorded => 'New Transaction Recorded';
+  @override
+  String transactionRecordedSuccess(String typeStr, String amountStr) => 'You have successfully recorded a $typeStr of $amountStr.';
+  @override
+  String get newBudgetCreated => 'New Budget Created';
+  @override
+  String budgetSetTo(String monthYear, String limitStr) => 'Budget for $monthYear has been set to $limitStr.';
+  @override
+  String get budgetExceededNotification => 'Budget Exceeded';
+  @override
+  String budgetExceededWarning(String monthYear, String categoryName, String limitStr, String spentStr) => 'You have exceeded your $monthYear budget for $categoryName! Limit: $limitStr, Spent: $spentStr';
+  @override
+  String get budgetWarningNotification => 'Budget Warning';
+  @override
+  String budgetWarningDetail(int ratio, String monthYear, String categoryName) => 'Watch out! You have spent $ratio% of your $monthYear budget for $categoryName.';
+  @override
+  String get budgetPredictionWarning => 'Budget Prediction Warning';
+  @override
+  String budgetPredictionWarningDetail(String monthYear, String categoryName, String predictedStr) => 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: $predictedStr';
+  @override
+  String get incomeNotification => 'income';
+  @override
+  String get expenseNotification => 'expense';
+
+  // ─── Exceptions & Network Errors ──────────────────────────────────────────
+  @override
+  String get errInvalidData => 'Invalid data. Please check again 😊';
+  @override
+  String get errAuthFailed => 'Oops, incorrect email or password 😅';
+  @override
+  String get errUnverifiedAccount => 'Account not verified. Check your email 📧';
+  @override
+  String get errNoAccess => 'You do not have access here 🚫';
+  @override
+  String get errDataNotFound => 'Data not found 🔍';
+  @override
+  String get errDataExists => 'Data already exists ⚠️';
+  @override
+  String get errInvalidFormat => 'Incorrect data format. Please check again 😊';
+  @override
+  String get errTooManyRequests => 'Too many attempts. Please wait a moment ⏳';
+  @override
+  String get errServerBusy => 'Oops, the server is busy. Please try again later 🙏';
+  @override
+  String get errGeneric => 'An error occurred. Please try again later 😅';
+  @override
+  String get errNoInternet => 'Internet connection issue. Please check your connection 📶';
+  @override
+  String get errTimeout => 'Slow connection. Please try again later ⏳';
 
   @override
   String get theme => 'Theme';

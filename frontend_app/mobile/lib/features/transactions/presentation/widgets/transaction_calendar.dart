@@ -329,10 +329,8 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
   }
 
   Widget _buildDaysOfWeek(bool isDark) {
-    final localeCode = ref.watch(languageProvider);
-    final days = localeCode == 'id'
-        ? ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
-        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    final l10n = AppLocalizations.of(context);
+    final days = l10n.shortDays;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: days.map((day) {

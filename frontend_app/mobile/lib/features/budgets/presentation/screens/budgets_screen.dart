@@ -412,7 +412,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    localeCode == 'id' ? 'Hari Ini' : 'Today',
+                    l10n.today,
                     style: AppTypography.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isTodaySelected

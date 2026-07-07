@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class ThemeLanguageScreen extends ConsumerStatefulWidget {
@@ -31,6 +33,8 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
     if (langCode == 'id') return 'Indonesia';
     return 'English';
   }
+
+  String _getShapeLabel(CategoryIconShape shape) => shape.displayName;
 
   Future<void> _showThemePicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
@@ -66,16 +70,34 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
     );
   }
 
+  Future<void> _showShapePicker(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final currentShape = ref.read(categoryIconShapeProvider);
+    await AppBottomSheet.show<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _ShapePickerSheet(
+        currentShape: currentShape,
+        l10n: l10n,
+        onSelect: (shape) async {
+          Navigator.pop(ctx);
+          await ref.read(categoryIconShapeProvider.notifier).setShape(shape);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeProvider);
+    final shapeMode = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Tampilan' : 'Appearance',
+          l10n.appearanceMenu,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -103,6 +125,13 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
             title: l10n.language,
             subtitle: _getLanguageLabel(ref),
             onTap: () => _showLanguagePicker(context),
+          ),
+          _buildListTile(
+            context: context,
+            icon: Icons.category_outlined,
+            title: 'Category Icon Shape',
+            subtitle: _getShapeLabel(shapeMode),
+            onTap: () => _showShapePicker(context),
           ),
         ],
       ),
@@ -344,6 +373,106 @@ class _LanguagePickerSheet extends StatelessWidget {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Shape Picker Sheet ──────────────────────────────────────────────────
+class _ShapePickerSheet extends StatelessWidget {
+  const _ShapePickerSheet({
+    required this.currentShape,
+    required this.l10n,
+    required this.onSelect,
+  });
+
+  final CategoryIconShape currentShape;
+  final AppLocalizations l10n;
+  final ValueChanged<CategoryIconShape> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shapes = [
+      {
+        'shape': CategoryIconShape.circle,
+        'name': CategoryIconShape.circle.displayName,
+        'icon': Icons.circle_outlined
+      },
+      {
+        'shape': CategoryIconShape.square,
+        'name': CategoryIconShape.square.displayName,
+        'icon': Icons.crop_square_outlined
+      },
+      {
+        'shape': CategoryIconShape.squircle,
+        'name': CategoryIconShape.squircle.displayName,
+        'icon': Icons.check_box_outline_blank
+      },
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Icon Shape',
+              style: AppTypography.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 20),
+            ...shapes.map((s) {
+              final shape = s['shape'] as CategoryIconShape;
+              final isSelected = shape == currentShape;
+              return GestureDetector(
+                onTap: () => onSelect(shape),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : (isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(s['icon'] as IconData,
+                          size: 28,
+                          color: isSelected ? AppColors.primary : null),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          s['name'] as String,
+                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: isSelected ? AppColors.primary : null,
+                          ),
                         ),
                       ),
                       if (isSelected)

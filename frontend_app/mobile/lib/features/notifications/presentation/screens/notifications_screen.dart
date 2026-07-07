@@ -8,7 +8,6 @@ import '../providers/notifications_provider.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/providers/language_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
 
@@ -116,8 +115,7 @@ class _NotificationTile extends ConsumerWidget {
     final createdAt = notif['createdAtFormatted'] as String? ?? '';
 
     if (title == 'TRANSACTION_RECORDED') {
-      final isId = ref.watch(languageProvider) == 'id';
-      title = isId ? 'Transaksi Baru Tercatat' : 'New Transaction Recorded';
+      title = l10n.newTransactionRecorded;
       try {
         final payload = jsonDecode(message);
         final type = payload['type'];
@@ -126,15 +124,13 @@ class _NotificationTile extends ConsumerWidget {
             : double.parse(payload['amount'].toString());
         final currency = payload['currency'] as String;
         final typeStr = type == 'income'
-            ? (isId ? 'pemasukan' : 'income')
-            : (isId ? 'pengeluaran' : 'expense');
+            ? l10n.incomeNotification
+            : l10n.expenseNotification;
         final txCurrencySymbol = AppConstants.getCurrencySymbol(currency);
         final fmt = NumberFormat.currency(
             locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
         final amountStr = fmt.format(amount);
-        message = isId
-            ? 'Anda telah berhasil mencatat $typeStr sebesar $amountStr.'
-            : 'You have successfully recorded a $typeStr of $amountStr.';
+        message = l10n.transactionRecordedSuccess(typeStr, amountStr);
 
         final defaultCurrency =
             ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
@@ -158,7 +154,6 @@ class _NotificationTile extends ConsumerWidget {
         title == 'BUDGET_WARNING' ||
         title == 'BUDGET_PREDICTION_WARNING' ||
         title == 'BUDGET_CREATED') {
-      final isId = ref.watch(languageProvider) == 'id';
 
       try {
         final payload = jsonDecode(message);
@@ -193,54 +188,42 @@ class _NotificationTile extends ConsumerWidget {
         }
 
         if (title == 'BUDGET_CREATED') {
-          title = isId ? 'Anggaran Baru Dibuat' : 'New Budget Created';
+          title = l10n.newBudgetCreated;
           final limit = payload['limitAmount'] is num
               ? (payload['limitAmount'] as num).toDouble()
               : double.parse(payload['limitAmount'].toString());
-          message = isId
-              ? 'Anggaran untuk bulan $monthYear telah diatur sebesar ${formatWithConversion(limit)}.'
-              : 'Budget for $monthYear has been set to ${formatWithConversion(limit)}.';
+          message = l10n.budgetSetTo(monthYear, formatWithConversion(limit));
         } else if (title == 'BUDGET_EXCEEDED') {
-          title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
+          title = l10n.budgetExceededNotification;
           final limit = payload['limitAmount'] is num
               ? (payload['limitAmount'] as num).toDouble()
               : double.parse(payload['limitAmount'].toString());
           final spent = payload['totalSpent'] is num
               ? (payload['totalSpent'] as num).toDouble()
               : double.parse(payload['totalSpent'].toString());
-          message = isId
-              ? 'Anda telah melampaui batas anggaran $monthYear untuk $categoryName! Batas: ${formatWithConversion(limit)}, Terpakai: ${formatWithConversion(spent)}'
-              : 'You have exceeded your $monthYear budget for $categoryName! Limit: ${formatWithConversion(limit)}, Spent: ${formatWithConversion(spent)}';
+          message = l10n.budgetExceededWarning(monthYear, categoryName ?? 'kategori', formatWithConversion(limit), formatWithConversion(spent));
         } else if (title == 'BUDGET_WARNING') {
-          title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
+          title = l10n.budgetWarningNotification;
           final ratio = payload['ratio'] is num
               ? (payload['ratio'] as num).toDouble()
               : double.parse(payload['ratio'].toString());
-          message = isId
-              ? 'Hati-hati! Anda telah menggunakan ${(ratio * 100).round()}% dari anggaran $monthYear untuk $categoryName.'
-              : 'Watch out! You have spent ${(ratio * 100).round()}% of your $monthYear budget for $categoryName.';
+          message = l10n.budgetWarningDetail((ratio * 100).round(), monthYear, categoryName ?? 'kategori');
         } else if (title == 'BUDGET_PREDICTION_WARNING') {
-          title = isId
-              ? 'Peringatan Prediksi Anggaran'
-              : 'Budget Prediction Warning';
+          title = l10n.budgetPredictionWarning;
           final predicted = payload['predicted'] is num
               ? (payload['predicted'] as num).toDouble()
               : double.parse(payload['predicted'].toString());
-          message = isId
-              ? 'Berdasarkan pengeluaran Anda, Anda diprediksi akan melampaui anggaran $monthYear untuk $categoryName. Estimasi pengeluaran: ${formatWithConversion(predicted)}'
-              : 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: ${formatWithConversion(predicted)}';
+          message = l10n.budgetPredictionWarningDetail(monthYear, categoryName ?? 'kategori', formatWithConversion(predicted));
         }
       } catch (_) {
         if (title == 'BUDGET_CREATED') {
-          title = isId ? 'Anggaran Baru Dibuat' : 'New Budget Created';
+          title = l10n.newBudgetCreated;
         } else if (title == 'BUDGET_EXCEEDED') {
-          title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
+          title = l10n.budgetExceededNotification;
         } else if (title == 'BUDGET_WARNING') {
-          title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
+          title = l10n.budgetWarningNotification;
         } else if (title == 'BUDGET_PREDICTION_WARNING') {
-          title = isId
-              ? 'Peringatan Prediksi Anggaran'
-              : 'Budget Prediction Warning';
+          title = l10n.budgetPredictionWarning;
         }
       }
     }

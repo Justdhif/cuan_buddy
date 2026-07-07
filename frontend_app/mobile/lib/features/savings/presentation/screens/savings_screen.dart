@@ -487,8 +487,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
         final now = DateTime.now();
         final diffDays = targetDate.difference(now).inDays;
         
-        final isId = Localizations.localeOf(context).languageCode == 'id';
-        final perDayStr = isId ? '/hari' : '/day';
+        final perDayStr = l10n.perDayShort;
 
         if (diffDays > 0) {
           final dailyAmount = (targetAmount - currentAmount) / diffDays;

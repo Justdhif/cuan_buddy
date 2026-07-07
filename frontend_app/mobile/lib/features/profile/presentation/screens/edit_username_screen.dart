@@ -37,9 +37,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: l10n.languageCode == 'id'
-            ? 'Username tidak boleh kosong'
-            : 'Username cannot be empty',
+        message: l10n.usernameCannotBeEmpty,
         type: SnackbarType.error,
       );
       return;
@@ -51,9 +49,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: l10n.languageCode == 'id'
-            ? 'Username hanya boleh mengandung huruf, angka, dan underscore'
-            : 'Username can only contain letters, numbers, and underscores',
+        message: l10n.usernameInvalidFormat,
         type: SnackbarType.error,
       );
       return;
@@ -69,9 +65,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
         AppSnackbar.show(
           context,
           title: l10n.success,
-          message: l10n.languageCode == 'id'
-              ? 'Username berhasil diperbarui'
-              : 'Username updated successfully',
+          message: l10n.usernameUpdatedSuccess,
           type: SnackbarType.success,
         );
         Navigator.pop(context);
@@ -81,9 +75,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
         AppSnackbar.show(
           context,
           title: l10n.error,
-          message: l10n.languageCode == 'id'
-              ? 'Gagal memperbarui username: $e'
-              : 'Failed to update username: $e',
+          message: l10n.failedToUpdateUsername(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -101,7 +93,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Username' : 'Username',
+          l10n.usernameField,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -130,7 +122,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
                       fontSize: 16,
                     ),
                     decoration: InputDecoration(
-                      labelText: l10n.languageCode == 'id' ? 'Username Anda' : 'Your Username',
+                      labelText: l10n.yourUsername,
                       labelStyle: const TextStyle(color: AppColors.primary),
                       prefixText: '@',
                       prefixStyle: const TextStyle(
@@ -167,9 +159,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                l10n.languageCode == 'id'
-                    ? 'Username hanya boleh mengandung huruf (a-z, A-Z), angka (0-9), dan underscore (_).'
-                    : 'Username can only contain letters (a-z, A-Z), numbers (0-9), and underscores (_).',
+                l10n.editUsernamePrivacyInfo,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -199,7 +189,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
                           ),
                         )
                       : Text(
-                          l10n.languageCode == 'id' ? 'Simpan' : 'Save',
+                          l10n.saveButton,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

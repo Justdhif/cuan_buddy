@@ -9,6 +9,9 @@ import '../../../../core/providers/language_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
 
+import '../../../../core/l10n/app_localizations_en.dart';
+import '../../../../core/l10n/app_localizations_id.dart';
+
 class NotificationsState {
   final List<dynamic> notifications;
   final bool isLoading;
@@ -65,7 +68,8 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               newNotif['body'] as String? ??
               'You have a new notification';
 
-          final isId = ref.read(languageProvider) == 'id';
+          final langCode = ref.read(languageProvider);
+          final l10n = langCode == 'id' ? AppLocalizationsId() : AppLocalizationsEn();
           final defaultCurrency =
               ref.read(profileProvider).valueOrNull?['currency'] as String? ??
                   AppConstants.defaultCurrency;
@@ -98,8 +102,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
           }
 
           if (title == 'TRANSACTION_RECORDED') {
-            title =
-                isId ? 'Transaksi Baru Tercatat' : 'New Transaction Recorded';
+            title = l10n.newTransactionRecorded;
             try {
               final payload = jsonDecode(message);
               final type = payload['type'];
@@ -109,15 +112,13 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               final currency = payload['currency'] as String;
 
               final typeStr = type == 'income'
-                  ? (isId ? 'pemasukan' : 'income')
-                  : (isId ? 'pengeluaran' : 'expense');
+                  ? l10n.incomeNotification
+                  : l10n.expenseNotification;
               final amountStr = await formatWithConversion(amount, currency);
-              message = isId
-                  ? 'Anda telah berhasil mencatat $typeStr sebesar $amountStr.'
-                  : 'You have successfully recorded a $typeStr of $amountStr.';
+              message = l10n.transactionRecordedSuccess(typeStr, amountStr);
             } catch (_) {}
           } else if (title == 'BUDGET_CREATED') {
-            title = isId ? 'Anggaran Baru Dibuat' : 'New Budget Created';
+            title = l10n.newBudgetCreated;
             try {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
@@ -127,12 +128,10 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               final currency = payload['currency'] as String;
 
               final limitStr = await formatWithConversion(limit, currency);
-              message = isId
-                  ? 'Anggaran untuk bulan $monthYear telah diatur sebesar $limitStr.'
-                  : 'Budget for $monthYear has been set to $limitStr.';
+              message = l10n.budgetSetTo(monthYear, limitStr);
             } catch (_) {}
           } else if (title == 'BUDGET_EXCEEDED') {
-            title = isId ? 'Batas Anggaran Terlampaui' : 'Budget Exceeded';
+            title = l10n.budgetExceededNotification;
             try {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
@@ -147,12 +146,10 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
               final limitStr = await formatWithConversion(limit, currency);
               final spentStr = await formatWithConversion(spent, currency);
-              message = isId
-                  ? 'Anda telah melampaui batas anggaran $monthYear untuk $categoryName! Batas: $limitStr, Terpakai: $spentStr'
-                  : 'You have exceeded your $monthYear budget for $categoryName! Limit: $limitStr, Spent: $spentStr';
+              message = l10n.budgetExceededWarning(monthYear, categoryName, limitStr, spentStr);
             } catch (_) {}
           } else if (title == 'BUDGET_WARNING') {
-            title = isId ? 'Peringatan Anggaran' : 'Budget Warning';
+            title = l10n.budgetWarningNotification;
             try {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
@@ -160,14 +157,10 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               final ratio = payload['ratio'] is num
                   ? (payload['ratio'] as num).toDouble()
                   : double.parse(payload['ratio'].toString());
-              message = isId
-                  ? 'Hati-hati! Anda telah menggunakan ${(ratio * 100).round()}% dari anggaran $monthYear untuk $categoryName.'
-                  : 'Watch out! You have spent ${(ratio * 100).round()}% of your $monthYear budget for $categoryName.';
+              message = l10n.budgetWarningDetail((ratio * 100).round(), monthYear, categoryName);
             } catch (_) {}
           } else if (title == 'BUDGET_PREDICTION_WARNING') {
-            title = isId
-                ? 'Peringatan Prediksi Anggaran'
-                : 'Budget Prediction Warning';
+            title = l10n.budgetPredictionWarning;
             try {
               final payload = jsonDecode(message);
               final monthYear = payload['monthYear'];
@@ -179,9 +172,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
               final predictedStr =
                   await formatWithConversion(predicted, currency);
-              message = isId
-                  ? 'Berdasarkan pengeluaran Anda, Anda diprediksi akan melampaui anggaran $monthYear untuk $categoryName. Estimasi pengeluaran: $predictedStr'
-                  : 'Based on your spending, you are projected to exceed your $monthYear budget for $categoryName. Estimated spend: $predictedStr';
+              message = l10n.budgetPredictionWarningDetail(monthYear, categoryName, predictedStr);
             } catch (_) {}
           }
 

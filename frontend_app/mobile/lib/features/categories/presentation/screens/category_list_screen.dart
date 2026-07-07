@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../providers/category_provider.dart';
 import '../widgets/category_form_sheet.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
@@ -48,6 +50,7 @@ class CategoryListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(categoryNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -86,9 +89,23 @@ class CategoryListScreen extends ConsumerWidget {
                         ),
                       ),
                       child: ListTile(
-                        leading: Text(
-                          category['emojiIcon'] ?? '📁',
-                          style: const TextStyle(fontSize: 24),
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: ShapeDecoration(
+                            color: AppColors.colorFromHex(category['colorCode'] as String?, fallback: AppColors.primary),
+                            shape: iconShape == CategoryIconShape.circle
+                                ? const CircleBorder()
+                                : iconShape == CategoryIconShape.squircle
+                                    ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(20))
+                                    : RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              category['emojiIcon'] ?? '📁',
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                          ),
                         ),
                         title: Text(category['name'],
                             style: AppTypography.textTheme.labelLarge),

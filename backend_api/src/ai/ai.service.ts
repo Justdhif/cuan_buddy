@@ -387,9 +387,28 @@ Do not add any explanations or markdown formatting.`;
       throw new Error('Gagal mengekstrak data dari suara.');
     }
 
-    // Find category ID
-    const catMatch = cats.find((c: any) => c.name.toLowerCase() === parsed.category?.toLowerCase());
-    const categoryId = catMatch ? catMatch.id : null;
+    // Find category ID (similar/exact match)
+    const normalizedParsedName = parsed.category?.trim().toLowerCase();
+    const catMatch = cats.find((c: any) => 
+      c.name.trim().toLowerCase() === normalizedParsedName ||
+      c.name.trim().toLowerCase().includes(normalizedParsedName) ||
+      (normalizedParsedName && normalizedParsedName.includes(c.name.trim().toLowerCase()))
+    );
+    
+    let categoryId = catMatch ? catMatch.id : null;
+
+    if (!categoryId && parsed.category && parsed.category.toLowerCase() !== 'uncategorized') {
+      const [newCat] = await this.db
+        .insert(categories)
+        .values({
+          userId,
+          name: parsed.category,
+          emojiIcon: parsed.type === 'income' ? '💰' : '💸',
+          colorCode: '#6C63FF',
+        })
+        .returning({ id: categories.id });
+      categoryId = newCat.id;
+    }
 
     return {
       transcription: text,
@@ -452,9 +471,28 @@ Do not add any explanations or markdown formatting.`;
       throw new Error('Gagal mengekstrak data dari struk.');
     }
 
-    // Find category ID
-    const catMatch = cats.find((c: any) => c.name.toLowerCase() === parsed.category?.toLowerCase());
-    const categoryId = catMatch ? catMatch.id : null;
+    // Find category ID (similar/exact match)
+    const normalizedParsedName = parsed.category?.trim().toLowerCase();
+    const catMatch = cats.find((c: any) => 
+      c.name.trim().toLowerCase() === normalizedParsedName ||
+      c.name.trim().toLowerCase().includes(normalizedParsedName) ||
+      (normalizedParsedName && normalizedParsedName.includes(c.name.trim().toLowerCase()))
+    );
+    
+    let categoryId = catMatch ? catMatch.id : null;
+
+    if (!categoryId && parsed.category && parsed.category.toLowerCase() !== 'uncategorized') {
+      const [newCat] = await this.db
+        .insert(categories)
+        .values({
+          userId,
+          name: parsed.category,
+          emojiIcon: parsed.type === 'income' ? '💰' : '💸',
+          colorCode: '#6C63FF',
+        })
+        .returning({ id: categories.id });
+      categoryId = newCat.id;
+    }
 
     return {
       transcription: `Scanned receipt from ${parsed.title || 'store'}`,

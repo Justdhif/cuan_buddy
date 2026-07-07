@@ -36,9 +36,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: l10n.languageCode == 'id'
-            ? 'Nama tidak boleh kosong'
-            : 'Name cannot be empty',
+        message: l10n.nameCannotBeEmpty,
         type: SnackbarType.error,
       );
       return;
@@ -54,9 +52,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
         AppSnackbar.show(
           context,
           title: l10n.success,
-          message: l10n.languageCode == 'id'
-              ? 'Nama berhasil diperbarui'
-              : 'Name updated successfully',
+          message: l10n.nameUpdatedSuccess,
           type: SnackbarType.success,
         );
         Navigator.pop(context);
@@ -66,9 +62,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
         AppSnackbar.show(
           context,
           title: l10n.error,
-          message: l10n.languageCode == 'id'
-              ? 'Gagal memperbarui nama: $e'
-              : 'Failed to update name: $e',
+          message: l10n.failedToUpdateName(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -86,7 +80,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Nama Lengkap' : 'Full Name',
+          l10n.fullName,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -113,7 +107,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
                       fontSize: 16,
                     ),
                     decoration: InputDecoration(
-                      labelText: l10n.languageCode == 'id' ? 'Nama Lengkap Anda' : 'Your Full Name',
+                      labelText: l10n.yourFullName,
                       labelStyle: const TextStyle(color: AppColors.primary),
                       counterText: '', // We build custom counter below
                       focusedBorder: const UnderlineInputBorder(
@@ -148,9 +142,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                l10n.languageCode == 'id'
-                    ? 'Masukkan nama lengkap Anda. Nama ini akan ditampilkan di profil Anda.'
-                    : 'Enter your full name. This name will be displayed on your profile.',
+                l10n.editNamePrivacyInfo,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -177,7 +169,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
                       : Text(
-                          l10n.languageCode == 'id' ? 'Simpan' : 'Save',
+                          l10n.saveButton,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),

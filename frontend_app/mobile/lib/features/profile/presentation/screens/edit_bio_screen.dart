@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../providers/profile_provider.dart';
@@ -37,20 +38,22 @@ class _EditBioScreenState extends ConsumerState<EditBioScreen> {
       ref.invalidate(profileProvider);
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         AppSnackbar.show(
           context,
-          title: 'Success',
-          message: 'Bio updated successfully',
+          title: l10n.success,
+          message: l10n.bioUpdatedSuccess,
           type: SnackbarType.success,
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         AppSnackbar.show(
           context,
-          title: 'Error',
-          message: 'Failed to update bio: $e',
+          title: l10n.error,
+          message: l10n.failedToUpdateBio(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -61,12 +64,13 @@ class _EditBioScreenState extends ConsumerState<EditBioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Tentang', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(l10n.aboutTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -89,7 +93,7 @@ class _EditBioScreenState extends ConsumerState<EditBioScreen> {
                   fontSize: 16,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Tentang Anda',
+                  labelText: l10n.aboutYou,
                   labelStyle: const TextStyle(color: AppColors.primary),
                   counterText: '',
                   focusedBorder: const UnderlineInputBorder(
@@ -118,7 +122,7 @@ class _EditBioScreenState extends ConsumerState<EditBioScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Tuliskan status atau deskripsi singkat tentang Anda agar pengguna lain dapat melihatnya.',
+                l10n.editBioPrivacyInfo,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -144,8 +148,8 @@ class _EditBioScreenState extends ConsumerState<EditBioScreen> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text(
-                          'Simpan',
+                      : Text(
+                          l10n.saveButton,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),

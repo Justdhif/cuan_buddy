@@ -129,9 +129,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         AppSnackbar.show(
           context,
           title: l10n.success,
-          message: l10n.languageCode == 'id'
-              ? 'Foto profil berhasil diperbarui!'
-              : 'Profile photo updated successfully!',
+          message: l10n.profilePhotoUpdatedSuccess,
           type: SnackbarType.success,
         );
       }
@@ -140,7 +138,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         AppSnackbar.show(
           context,
           title: l10n.error,
-          message: 'Failed to update avatar: $e',
+          message: l10n.failedToUpdateAvatar(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -163,7 +161,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      l10n.languageCode == 'id' ? 'Foto Profil' : 'Profile Photo',
+                      l10n.profilePhoto,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 24),
@@ -267,7 +265,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                         icon: const Icon(Icons.upload_file_outlined, color: AppColors.primary),
                         label: Text(
-                          l10n.languageCode == 'id' ? 'Unggah Foto Baru' : 'Upload New Photo',
+                          l10n.uploadNewPhoto,
                           style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -300,7 +298,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                               )
                             : Text(
-                                l10n.languageCode == 'id' ? 'Simpan' : 'Save',
+                                l10n.saveButton,
                                 style: const TextStyle(fontWeight: FontWeight.bold),
                               ),
                       ),
@@ -376,7 +374,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Profil' : 'Profile',
+          l10n.profileTitle,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -401,10 +399,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           if (rawBirthdate.isNotEmpty) {
             try {
               final date = DateTime.parse(rawBirthdate);
-              final months = l10n.languageCode == 'id'
-                  ? ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
-                  : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-              birthdateDisplay = '${date.day} ${months[date.month - 1]} ${date.year}';
+              birthdateDisplay = '${date.day} ${l10n.shortMonths[date.month - 1]} ${date.year}';
             } catch (_) {
               birthdateDisplay = rawBirthdate;
             }
@@ -413,12 +408,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           // Gender display label
           String genderDisplay = '';
           if (gender == 'male') {
-            genderDisplay = l10n.languageCode == 'id' ? 'Laki-laki' : 'Male';
+            genderDisplay = l10n.genderMale;
           } else if (gender == 'female') {
-            genderDisplay = l10n.languageCode == 'id' ? 'Perempuan' : 'Female';
+            genderDisplay = l10n.genderFemale;
           }
 
-          final fallback = l10n.languageCode == 'id' ? 'Belum diatur' : 'Not set';
+          final fallback = l10n.notSet;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -463,7 +458,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       TextButton(
                         onPressed: _showAvatarEditSheet,
                         child: Text(
-                          l10n.languageCode == 'id' ? 'Edit Foto' : 'Edit Photo',
+                          l10n.editPhoto,
                           style: const TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -481,7 +476,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 _buildInfoTile(
                   context: context,
                   icon: Icons.person_outline_rounded,
-                  title: l10n.languageCode == 'id' ? 'Nama Lengkap' : 'Full Name',
+                  title: l10n.fullName,
                   subtitle: fullName.isNotEmpty ? fullName : fallback,
                   onTap: () => context.push('/profile/edit-name', extra: fullName),
                 ),
@@ -495,21 +490,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 _buildInfoTile(
                   context: context,
                   icon: Icons.info_outline_rounded,
-                  title: l10n.languageCode == 'id' ? 'Bio' : 'Bio',
+                  title: l10n.bioField,
                   subtitle: bio.isNotEmpty ? bio : fallback,
                   onTap: () => context.push('/profile/edit-bio', extra: bio),
                 ),
                 _buildInfoTile(
                   context: context,
                   icon: Icons.cake_outlined,
-                  title: l10n.languageCode == 'id' ? 'Tanggal Lahir' : 'Birthdate',
+                  title: l10n.dateOfBirth,
                   subtitle: birthdateDisplay.isNotEmpty ? birthdateDisplay : fallback,
                   onTap: () => context.push('/profile/edit-birthdate', extra: rawBirthdate),
                 ),
                 _buildInfoTile(
                   context: context,
                   icon: Icons.wc_outlined,
-                  title: l10n.languageCode == 'id' ? 'Jenis Kelamin' : 'Gender',
+                  title: l10n.genderField,
                   subtitle: genderDisplay.isNotEmpty ? genderDisplay : fallback,
                   onTap: () => context.push('/profile/edit-gender', extra: gender),
                 ),

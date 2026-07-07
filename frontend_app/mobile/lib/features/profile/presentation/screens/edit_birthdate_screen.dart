@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -62,9 +62,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: l10n.languageCode == 'id'
-            ? 'Pilih tanggal lahir terlebih dahulu'
-            : 'Please select a birthdate',
+        message: l10n.pleaseSelectBirthdate,
         type: SnackbarType.error,
       );
       return;
@@ -83,9 +81,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
         AppSnackbar.show(
           context,
           title: l10n.success,
-          message: l10n.languageCode == 'id'
-              ? 'Tanggal lahir berhasil diperbarui'
-              : 'Birthdate updated successfully',
+          message: l10n.birthdateUpdatedSuccess,
           type: SnackbarType.success,
         );
         Navigator.pop(context);
@@ -95,9 +91,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
         AppSnackbar.show(
           context,
           title: l10n.error,
-          message: l10n.languageCode == 'id'
-              ? 'Gagal memperbarui tanggal lahir: $e'
-              : 'Failed to update birthdate: $e',
+          message: l10n.failedToUpdateBirthdate(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -106,17 +100,8 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
     }
   }
 
-  String _formatDate(DateTime date, String lang) {
-    final months = lang == 'id'
-        ? [
-            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-          ]
-        : [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December',
-          ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  String _formatDate(DateTime date, AppLocalizations l10n) {
+    return '${date.day} ${l10n.months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -130,7 +115,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Tanggal Lahir' : 'Birthdate',
+          l10n.birthdateTitle,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
@@ -149,7 +134,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.languageCode == 'id' ? 'Tanggal Lahir' : 'Date of Birth',
+                l10n.dateOfBirth,
                 style: TextStyle(
                   fontSize: 14,
                   color: AppColors.primary,
@@ -173,10 +158,8 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
                       Expanded(
                         child: Text(
                           _selectedDate != null
-                              ? _formatDate(_selectedDate!, l10n.languageCode)
-                              : (l10n.languageCode == 'id'
-                                  ? 'Pilih tanggal lahir'
-                                  : 'Select birthdate'),
+                              ? _formatDate(_selectedDate!, l10n)
+                              : l10n.selectBirthdate,
                           style: TextStyle(
                             fontSize: 16,
                             color: _selectedDate != null
@@ -196,9 +179,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                l10n.languageCode == 'id'
-                    ? 'Tanggal lahir Anda bersifat pribadi dan tidak ditampilkan kepada pengguna lain.'
-                    : 'Your birthdate is private and will not be shown to other users.',
+                l10n.birthdatePrivacyInfo,
                 style: TextStyle(
                   fontSize: 14,
                   color: labelColor,
@@ -228,7 +209,7 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
                           ),
                         )
                       : Text(
-                          l10n.languageCode == 'id' ? 'Simpan' : 'Save',
+                          l10n.saveButton,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,

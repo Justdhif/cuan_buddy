@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
-
+import '../theme/category_icon_shape.dart';
 class PreferencesService {
   PreferencesService(this._prefs);
 
@@ -27,6 +27,29 @@ class PreferencesService {
       ThemeMode.system => 'system',
     };
     await _prefs.setString(AppConstants.themeModeKey, value);
+  }
+
+  // ─── Icon Shape ───────────────────────────────────────────────────────────────
+  CategoryIconShape get categoryIconShape {
+    final value = _prefs.getString(AppConstants.categoryIconShapeKey);
+    switch (value) {
+      case 'square':
+        return CategoryIconShape.square;
+      case 'squircle':
+        return CategoryIconShape.squircle;
+      case 'circle':
+      default:
+        return CategoryIconShape.circle;
+    }
+  }
+
+  Future<void> setCategoryIconShape(CategoryIconShape shape) async {
+    final value = switch (shape) {
+      CategoryIconShape.circle => 'circle',
+      CategoryIconShape.square => 'square',
+      CategoryIconShape.squircle => 'squircle',
+    };
+    await _prefs.setString(AppConstants.categoryIconShapeKey, value);
   }
 
   // ─── Currency ────────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../providers/profile_provider.dart';
@@ -42,20 +43,22 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
       ref.invalidate(profileProvider);
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         AppSnackbar.show(
           context,
-          title: 'Success',
-          message: 'Instagram link updated successfully',
+          title: l10n.success,
+          message: l10n.linkUpdatedSuccess,
           type: SnackbarType.success,
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         AppSnackbar.show(
           context,
-          title: 'Error',
-          message: 'Failed to update link: $e',
+          title: l10n.error,
+          message: l10n.failedToUpdateLink(e.toString()),
           type: SnackbarType.error,
         );
       }
@@ -66,12 +69,13 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Tautan', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(l10n.linkTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -92,7 +96,7 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
                   fontSize: 16,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Tautan Instagram Anda',
+                  labelText: l10n.yourInstagramLink,
                   labelStyle: const TextStyle(color: Colors.green),
                   focusedBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Colors.green, width: 2),
@@ -105,7 +109,7 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Tautkan akun Instagram atau sosial media Anda agar teman dapat terhubung langsung dari profil CuanBuddy.',
+                l10n.editLinkPrivacyInfo,
                 style: TextStyle(
                   fontSize: 14,
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
@@ -131,8 +135,8 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text(
-                          'Simpan',
+                      : Text(
+                          l10n.saveButton,
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                 ),

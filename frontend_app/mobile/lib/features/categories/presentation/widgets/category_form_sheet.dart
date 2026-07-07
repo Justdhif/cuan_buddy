@@ -9,6 +9,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../providers/category_provider.dart';
 
 class CategoryFormSheet extends ConsumerStatefulWidget {
@@ -29,10 +31,19 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   late final TextEditingController _emojiController;
   bool _isLoading = false;
 
+  final List<Color> _presetColors = [
+    const Color(0xFF66BB6A),
+    const Color(0xFF26A69A),
+    const Color(0xFF26C6DA),
+    const Color(0xFF42A5F5),
+    const Color(0xFF3949AB),
+    const Color(0xFF7E57C2),
+  ];
+
   late Color _selectedColor;
 
   Color _colorFromHex(String? hexString) {
-    if (hexString == null || hexString.isEmpty) return AppColors.primary;
+    if (hexString == null || hexString.isEmpty) return _presetColors.first;
     final buffer = StringBuffer();
     if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
     buffer.write(hexString.replaceFirst('#', ''));
@@ -156,6 +167,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -177,6 +189,7 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
           ),
           const SizedBox(height: 24),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
                 onTap: () {
@@ -184,42 +197,22 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
                   _showEmojiPicker();
                 },
                 child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
+                  width: 64,
+                  height: 64,
+                  decoration: ShapeDecoration(
+                    color: _selectedColor,
+                    shape: iconShape == CategoryIconShape.circle
+                        ? const CircleBorder()
+                        : iconShape == CategoryIconShape.squircle
+                            ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(32))
+                            : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Center(
                     child: Text(
                       _emojiController.text.isNotEmpty
                           ? _emojiController.text
                           : '💰',
-                      style: const TextStyle(fontSize: 24),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).unfocus();
-                  _showColorPicker();
-                },
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: _selectedColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                      width: 2,
+                      style: const TextStyle(fontSize: 32),
                     ),
                   ),
                 ),
@@ -233,6 +226,63 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 24),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    FocusScope.of(context).unfocus();
+                    _showColorPicker();
+                  },
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    margin: const EdgeInsets.only(right: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFB3B9D6),
+                      shape: BoxShape.circle,
+                      border: !_presetColors.contains(_selectedColor)
+                          ? Border.all(
+                              color: isDark ? Colors.white : AppColors.primary,
+                              width: 3,
+                            )
+                          : null,
+                    ),
+                    child: const Icon(
+                      Icons.palette_outlined,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                ..._presetColors.map((color) {
+                  final isSelected = _selectedColor == color;
+                  return GestureDetector(
+                    onTap: () {
+                      FocusScope.of(context).unfocus();
+                      setState(() => _selectedColor = color);
+                    },
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        border: isSelected
+                            ? Border.all(
+                                color: isDark ? Colors.white : AppColors.primary,
+                                width: 3,
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
           ),
           const SizedBox(height: 32),
           AppButton(

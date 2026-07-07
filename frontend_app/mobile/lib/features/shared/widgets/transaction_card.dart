@@ -8,7 +8,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
-
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 class TransactionCard extends ConsumerWidget {
   const TransactionCard({
     super.key,
@@ -63,6 +64,8 @@ class TransactionCard extends ConsumerWidget {
         ? AppColors.colorFromHex(category['colorCode'] as String?,
             fallback: defaultTypeColor)
         : defaultTypeColor;
+    
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
     return InkWell(
       onTap: onTap ??
@@ -82,9 +85,13 @@ class TransactionCard extends ConsumerWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
+              decoration: ShapeDecoration(
                 color: catColor,
-                shape: BoxShape.circle,
+                shape: iconShape == CategoryIconShape.circle
+                    ? const CircleBorder()
+                    : iconShape == CategoryIconShape.squircle
+                        ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(24))
+                        : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               child: Center(
                 child: Text(emoji, style: const TextStyle(fontSize: 24)),

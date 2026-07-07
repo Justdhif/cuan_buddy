@@ -15,7 +15,7 @@ class AccountScreen extends ConsumerWidget {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          l10n.languageCode == 'id' ? 'Akun' : 'Account',
+          l10n.accountMenu,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -34,18 +34,14 @@ class AccountScreen extends ConsumerWidget {
             context: context,
             icon: Icons.key_outlined,
             title: l10n.changePassword,
-            subtitle: l10n.languageCode == 'id'
-                ? 'Ubah kata sandi akun Anda'
-                : 'Change your account password',
+            subtitle: l10n.changePasswordDesc,
             onTap: () => context.push('/change-password'),
           ),
           _buildListTile(
             context: context,
             icon: Icons.phone_android_outlined,
-            title: l10n.languageCode == 'id' ? 'Ganti Nomor Telepon' : 'Change Phone Number',
-            subtitle: l10n.languageCode == 'id'
-                ? 'Perbarui nomor telepon WhatsApp Anda'
-                : 'Update your WhatsApp phone number',
+            title: l10n.changePhoneNumberTitle,
+            subtitle: l10n.changePhoneNumberDesc,
             onTap: () => context.push('/profile/change-phone'),
           ),
         ],

@@ -603,7 +603,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get selectLanguage => 'Pilih Bahasa';
 
-  // ─── Change Password ──────────────────────────────────────────────────────────
+  // ─── Change Password & Phone ──────────────────────────────────────────────────
   @override
   String get changePassword => 'Ganti Password';
   @override
@@ -616,6 +616,41 @@ class AppLocalizationsId extends AppLocalizations {
   String get confirmNewPasswordHint => 'Ulangi password baru Anda';
   @override
   String get oldPasswordRequired => 'Password lama wajib diisi';
+
+  @override
+  String get otpSentTitle => 'OTP Terkirim';
+  @override
+  String otpSentMessage(String phone) => 'Kode OTP verifikasi telah dikirimkan ke WhatsApp nomor $phone';
+  @override
+  String get otpSuccessTitle => 'Sukses';
+  @override
+  String get otpSuccessMessage => 'Nomor telepon Anda berhasil diperbarui!';
+  @override
+  String get otpFailedTitle => 'Gagal';
+  @override
+  String get otpInvalidCodeTitle => 'Kode Salah';
+  @override
+  String get otpInvalidCodeMessage => 'Kode OTP yang Anda masukkan salah. Gunakan kode "123456" untuk uji coba.';
+  @override
+  String get changePhoneNumberTitle => 'Ubah Nomor Telepon';
+  @override
+  String get changePhoneNumberSubtitle => 'Masukkan nomor telepon WhatsApp terbaru Anda. Kami akan mengirimkan kode verifikasi OTP ke nomor ini.';
+  @override
+  String get whatsappPhoneNumber => 'Nomor Telepon WhatsApp';
+  @override
+  String get phoneNumberRequired => 'Nomor telepon wajib diisi';
+  @override
+  String get invalidPhoneNumberFormat => 'Format nomor telepon tidak valid';
+  @override
+  String get sendOtpCode => 'Kirim Kode OTP';
+  @override
+  String get enterOtpTitle => 'Masukkan 6 Digit Kode OTP WhatsApp:';
+  @override
+  String get useDemoCode => 'Gunakan kode demo: "123456"';
+  @override
+  String get verifyAndSave => 'Verifikasi & Simpan';
+  @override
+  String get changePhoneNumberLink => 'Ganti nomor telepon';
 
   // ─── Edit Profile ─────────────────────────────────────────────────────────────
   @override
@@ -638,6 +673,146 @@ class AppLocalizationsId extends AppLocalizations {
   String get failedToUpdateProfile => 'Gagal memperbarui profil';
   @override
   String get savingLabel => 'Menyimpan...';
+  @override
+  String get pleaseSelectBirthdate => 'Pilih tanggal lahir terlebih dahulu';
+  @override
+  String get birthdateUpdatedSuccess => 'Tanggal lahir berhasil diperbarui';
+  @override
+  String failedToUpdateBirthdate(String error) => 'Gagal memperbarui tanggal lahir: $error';
+  @override
+  String get birthdateTitle => 'Tanggal Lahir';
+  @override
+  String get dateOfBirth => 'Tanggal Lahir';
+  @override
+  String get selectBirthdate => 'Pilih tanggal lahir';
+  @override
+  String get birthdatePrivacyInfo => 'Tanggal lahir Anda bersifat pribadi dan tidak ditampilkan kepada pengguna lain.';
+  @override
+  String get saveButton => 'Simpan';
+  
+  @override
+  String get pleaseSelectGender => 'Pilih jenis kelamin terlebih dahulu';
+  @override
+  String get genderUpdatedSuccess => 'Jenis kelamin berhasil diperbarui';
+  @override
+  String failedToUpdateGender(String error) => 'Gagal memperbarui jenis kelamin: $error';
+  @override
+  String get selectYourGender => 'Pilih jenis kelamin Anda';
+  @override
+  String get genderPrivacyInfo => 'Informasi jenis kelamin bersifat pribadi dan tidak ditampilkan kepada pengguna lain.';
+  @override
+  String get genderField => 'Jenis Kelamin';
+  @override
+  String get genderMale => 'Laki-laki';
+  @override
+  String get genderFemale => 'Perempuan';
+  
+  @override
+  String get nameCannotBeEmpty => 'Nama tidak boleh kosong';
+  @override
+  String get nameUpdatedSuccess => 'Nama berhasil diperbarui';
+  @override
+  String failedToUpdateName(String error) => 'Gagal memperbarui nama: $error';
+  @override
+  String get yourFullName => 'Nama Lengkap Anda';
+  @override
+  String get editNamePrivacyInfo => 'Masukkan nama lengkap Anda. Nama ini akan ditampilkan di profil Anda.';
+  
+  @override
+  String get usernameCannotBeEmpty => 'Username tidak boleh kosong';
+  @override
+  String get usernameInvalidFormat => 'Username hanya boleh mengandung huruf, angka, dan underscore';
+  @override
+  String get usernameUpdatedSuccess => 'Username berhasil diperbarui';
+  @override
+  String failedToUpdateUsername(String error) => 'Gagal memperbarui username: $error';
+  @override
+  String get usernameField => 'Username';
+  @override
+  String get yourUsername => 'Username Anda';
+  @override
+  String get editUsernamePrivacyInfo => 'Username hanya boleh mengandung huruf (a-z, A-Z), angka (0-9), dan underscore (_).';
+  
+  @override
+  String get bioUpdatedSuccess => 'Bio berhasil diperbarui';
+  @override
+  String failedToUpdateBio(String error) => 'Gagal memperbarui bio: $error';
+  @override
+  String get aboutTitle => 'Tentang';
+  @override
+  String get aboutYou => 'Tentang Anda';
+  @override
+  String get editBioPrivacyInfo => 'Tuliskan status atau deskripsi singkat tentang Anda agar pengguna lain dapat melihatnya.';
+  
+  @override
+  String get linkUpdatedSuccess => 'Tautan Instagram berhasil diperbarui';
+  @override
+  String failedToUpdateLink(String error) => 'Gagal memperbarui tautan: $error';
+  @override
+  String get linkTitle => 'Tautan';
+  @override
+  String get yourInstagramLink => 'Tautan Instagram Anda';
+  @override
+  String get editLinkPrivacyInfo => 'Tautkan akun Instagram atau sosial media Anda agar teman dapat terhubung langsung dari profil CuanBuddy.';
+  
+  @override
+  String get profilePhotoUpdatedSuccess => 'Foto profil berhasil diperbarui!';
+  @override
+  String failedToUpdateAvatar(String error) => 'Gagal memperbarui foto profil: $error';
+  @override
+  String get profilePhoto => 'Foto Profil';
+  @override
+  String get uploadNewPhoto => 'Unggah Foto Baru';
+  @override
+  String get profileTitle => 'Profil';
+  @override
+  String get notSet => 'Belum diatur';
+  @override
+  String get editPhoto => 'Edit Foto';
+  @override
+  String get bioField => 'Bio';
+  
+  @override
+  String get accountMenu => 'Akun';
+  @override
+  String get changePasswordDesc => 'Ubah kata sandi akun Anda';
+  @override
+  String get changePhoneNumberDesc => 'Perbarui nomor telepon WhatsApp Anda';
+  
+  @override
+  List<String> get months => [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+  @override
+  List<String> get shortMonths => [
+    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+  ];
+  @override
+  List<String> get shortDays => ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  @override
+  String get accountMenuDesc => 'Notifikasi keamanan, ganti nomor';
+  @override
+  String get appearanceMenu => 'Tampilan';
+  @override
+  String get appearanceMenuDesc => 'Tema, bahasa aplikasi';
+  @override
+  String get manageCategoriesDesc => 'Kelola kategori transaksi';
+  @override
+  String get widgetsDesc => 'Atur widget layar depan';
+  @override
+  String get backupRestoreDesc => 'Cadangkan dan pulihkan data Anda';
+  @override
+  String get aboutDesc => 'Informasi tentang aplikasi';
+  @override
+  String get feedbackDesc => 'Kirim saran atau laporkan masalah';
+  @override
+  String get logOutDesc => 'Keluar dari akun Anda saat ini';
+  @override
+  String get aboutAppDesc => 'CuanBuddy adalah asisten finansial pintar Anda untuk mencatat transaksi, mengelola anggaran, dan memantau kesehatan finansial dengan bantuan teknologi AI.';
+  @override
+  String get connectWithUs => 'Hubungi kami di:';
 
   // ─── Backup & Restore ─────────────────────────────────────────────────────────
   @override
@@ -799,19 +974,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   // ─── Extra Fields ─────────────────────────────────────────────────────────────
   @override
-  String get usernameField => 'Username';
-  @override
   String get usernameHint => 'Masukkan username Anda';
   @override
-  String get genderField => 'Jenis Kelamin';
-  @override
-  String get genderMale => 'Laki-laki';
-  @override
-  String get genderFemale => 'Perempuan';
-  @override
   String get genderOther => 'Lainnya';
-  @override
-  String get bioField => 'Bio';
   @override
   String get bioHint => 'Ceritakan tentang diri Anda...';
   @override
@@ -841,6 +1006,60 @@ class AppLocalizationsId extends AppLocalizations {
   String get transactionHistory => 'Riwayat Transaksi';
   @override
   String get perDay => 'Per Hari';
+  @override
+  String get perDayShort => '/hari';
+  
+  // ─── Notifications ────────────────────────────────────────────────────────
+  @override
+  String get newTransactionRecorded => 'Transaksi Baru Tercatat';
+  @override
+  String transactionRecordedSuccess(String typeStr, String amountStr) => 'Anda telah berhasil mencatat $typeStr sebesar $amountStr.';
+  @override
+  String get newBudgetCreated => 'Anggaran Baru Dibuat';
+  @override
+  String budgetSetTo(String monthYear, String limitStr) => 'Anggaran untuk bulan $monthYear telah diatur sebesar $limitStr.';
+  @override
+  String get budgetExceededNotification => 'Batas Anggaran Terlampaui';
+  @override
+  String budgetExceededWarning(String monthYear, String categoryName, String limitStr, String spentStr) => 'Anda telah melampaui batas anggaran $monthYear untuk $categoryName! Batas: $limitStr, Terpakai: $spentStr';
+  @override
+  String get budgetWarningNotification => 'Peringatan Anggaran';
+  @override
+  String budgetWarningDetail(int ratio, String monthYear, String categoryName) => 'Hati-hati! Anda telah menggunakan $ratio% dari anggaran $monthYear untuk $categoryName.';
+  @override
+  String get budgetPredictionWarning => 'Peringatan Prediksi Anggaran';
+  @override
+  String budgetPredictionWarningDetail(String monthYear, String categoryName, String predictedStr) => 'Berdasarkan pengeluaran Anda, Anda diprediksi akan melampaui anggaran $monthYear untuk $categoryName. Estimasi pengeluaran: $predictedStr';
+  @override
+  String get incomeNotification => 'pemasukan';
+  @override
+  String get expenseNotification => 'pengeluaran';
+
+  // ─── Exceptions & Network Errors ──────────────────────────────────────────
+  @override
+  String get errInvalidData => 'Data tidak valid. Silakan periksa kembali 😊';
+  @override
+  String get errAuthFailed => 'Oops, email atau password salah 😅';
+  @override
+  String get errUnverifiedAccount => 'Akun belum diverifikasi. Periksa email Anda 📧';
+  @override
+  String get errNoAccess => 'Anda tidak memiliki akses di sini 🚫';
+  @override
+  String get errDataNotFound => 'Data tidak ditemukan 🔍';
+  @override
+  String get errDataExists => 'Data sudah ada ⚠️';
+  @override
+  String get errInvalidFormat => 'Format data salah. Silakan periksa kembali 😊';
+  @override
+  String get errTooManyRequests => 'Terlalu banyak percobaan. Silakan tunggu sebentar ⏳';
+  @override
+  String get errServerBusy => 'Oops, server sedang sibuk. Silakan coba lagi nanti 🙏';
+  @override
+  String get errGeneric => 'Terjadi kesalahan. Silakan coba lagi nanti 😅';
+  @override
+  String get errNoInternet => 'Masalah koneksi internet. Silakan periksa koneksi Anda 📶';
+  @override
+  String get errTimeout => 'Koneksi lambat. Silakan coba lagi nanti ⏳';
 
   @override
   String get theme => 'Tema';

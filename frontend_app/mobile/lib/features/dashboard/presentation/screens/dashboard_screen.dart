@@ -32,11 +32,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
 
   late ScrollController _scrollController;
+  late PageController _budgetPageController;
+  int _currentBudgetPage = 0;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _budgetPageController = PageController(viewportFraction: 0.93);
     // Initialise Socket.IO connection once profile loads, then warm-up
     // the notifications provider so its socket listener is registered
     // immediately after the connection is established.
@@ -57,6 +60,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _budgetPageController.dispose();
     super.dispose();
   }
 
@@ -169,31 +173,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(top: 16),
                           child: SizedBox(
-                            height: 235,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
+                            height: 240,
+                            child: PageView.builder(
+                              controller: _budgetPageController,
+                              onPageChanged: (index) {
+                                setState(() {
+                                  _currentBudgetPage = index;
+                                });
+                              },
                               physics: const BouncingScrollPhysics(),
                               itemCount: budgetsState.budgets.isEmpty ? 1 : budgetsState.budgets.length + 1,
-                              padding: const EdgeInsets.symmetric(horizontal: 14), // To account for the 6px item margin
                               itemBuilder: (context, index) {
-                                final cardWidth = MediaQuery.of(context).size.width - 40;
-                                
+                                Widget card;
                                 if (index == budgetsState.budgets.length) {
-                                  return Container(
-                                    width: cardWidth,
-                                    padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                    child: _buildAddBudgetCard(context, isDark),
-                                  );
-                                }
-                                final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-                                final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-                                return Container(
-                                  width: cardWidth,
-                                  padding: const EdgeInsets.symmetric(horizontal: 6.0),
-                                  child: BudgetCard(
+                                  card = _buildAddBudgetCard(context, isDark);
+                                } else {
+                                  final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+                                  final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+                                  card = BudgetCard(
                                     budget: budgetsState.budgets[index],
                                     isDark: isDark,
                                     currencySymbol: currencySymbol,
+                                  );
+                                }
+                                return Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                                    child: card,
                                   ),
                                 );
                               },
@@ -398,7 +405,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return GestureDetector(
       onTap: () => context.push('/budgets/form'),
       child: Container(
-        height: 180,
+        height: 204,
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
         decoration: BoxDecoration(

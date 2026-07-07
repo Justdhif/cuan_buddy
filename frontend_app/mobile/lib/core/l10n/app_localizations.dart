@@ -337,13 +337,31 @@ abstract class AppLocalizations {
   String get failed;
   String get selectLanguage;
 
-  // ─── Change Password ──────────────────────────────────────────────────────────
+  // ─── Change Password & Phone ──────────────────────────────────────────────────
   String get changePassword;
   String get oldPassword;
   String get oldPasswordHint;
   String get newPasswordHint;
   String get confirmNewPasswordHint;
   String get oldPasswordRequired;
+  
+  String get otpSentTitle;
+  String otpSentMessage(String phone);
+  String get otpSuccessTitle;
+  String get otpSuccessMessage;
+  String get otpFailedTitle;
+  String get otpInvalidCodeTitle;
+  String get otpInvalidCodeMessage;
+  String get changePhoneNumberTitle;
+  String get changePhoneNumberSubtitle;
+  String get whatsappPhoneNumber;
+  String get phoneNumberRequired;
+  String get invalidPhoneNumberFormat;
+  String get sendOtpCode;
+  String get enterOtpTitle;
+  String get useDemoCode;
+  String get verifyAndSave;
+  String get changePhoneNumberLink;
 
   // ─── Edit Profile ─────────────────────────────────────────────────────────────
   String get chooseAvatar;
@@ -356,6 +374,79 @@ abstract class AppLocalizations {
   String get profileUpdatedSuccess;
   String get failedToUpdateProfile;
   String get savingLabel;
+  String get pleaseSelectBirthdate;
+  String get birthdateUpdatedSuccess;
+  String failedToUpdateBirthdate(String error);
+  String get birthdateTitle;
+  String get dateOfBirth;
+  String get selectBirthdate;
+  String get birthdatePrivacyInfo;
+  String get saveButton;
+  
+  String get pleaseSelectGender;
+  String get genderUpdatedSuccess;
+  String failedToUpdateGender(String error);
+  String get selectYourGender;
+  String get genderPrivacyInfo;
+  String get genderField;
+  String get genderMale;
+  String get genderFemale;
+  
+  String get nameCannotBeEmpty;
+  String get nameUpdatedSuccess;
+  String failedToUpdateName(String error);
+  String get yourFullName;
+  String get editNamePrivacyInfo;
+  
+  String get usernameCannotBeEmpty;
+  String get usernameInvalidFormat;
+  String get usernameUpdatedSuccess;
+  String failedToUpdateUsername(String error);
+  String get usernameField;
+  String get yourUsername;
+  String get editUsernamePrivacyInfo;
+  
+  String get bioUpdatedSuccess;
+  String failedToUpdateBio(String error);
+  String get aboutTitle;
+  String get aboutYou;
+  String get editBioPrivacyInfo;
+  
+  String get linkUpdatedSuccess;
+  String failedToUpdateLink(String error);
+  String get linkTitle;
+  String get yourInstagramLink;
+  String get editLinkPrivacyInfo;
+  
+  String get profilePhotoUpdatedSuccess;
+  String failedToUpdateAvatar(String error);
+  String get profilePhoto;
+  String get uploadNewPhoto;
+  String get profileTitle;
+  String get notSet;
+  String get editPhoto;
+  String get bioField;
+  
+  String get accountMenu;
+  String get changePasswordDesc;
+  String get changePhoneNumberDesc;
+  
+  List<String> get months;
+  List<String> get shortMonths;
+  List<String> get shortDays;
+  String get today;
+  
+  String get accountMenuDesc;
+  String get appearanceMenu;
+  String get appearanceMenuDesc;
+  String get manageCategoriesDesc;
+  String get widgetsDesc;
+  String get backupRestoreDesc;
+  String get aboutDesc;
+  String get feedbackDesc;
+  String get logOutDesc;
+  String get aboutAppDesc;
+  String get connectWithUs;
 
   // ─── Backup & Restore ─────────────────────────────────────────────────────────
   String get backupSettings;
@@ -412,7 +503,6 @@ abstract class AppLocalizations {
   // ─── Transaction Redesign ──────────────────────────────────────────────────
   String get totalCashflow;
   String nTransactions(int count);
-  String get today;
   String get yesterday;
 
   // ─── Onboarding ──────────────────────────────────────────────────────────────
@@ -426,13 +516,8 @@ abstract class AppLocalizations {
   String get next;
 
   // ─── Extra Fields ─────────────────────────────────────────────────────────────
-  String get usernameField;
   String get usernameHint;
-  String get genderField;
-  String get genderMale;
-  String get genderFemale;
   String get genderOther;
-  String get bioField;
   String get bioHint;
   String get noBioFallback;
   String get allocateToSavings;
@@ -446,6 +531,35 @@ abstract class AppLocalizations {
   // ─── Saving Detail ──────────────────────────────────────────────────────────
   String get transactionHistory;
   String get perDay;
+  String get perDayShort;
+
+  // ─── Notifications ────────────────────────────────────────────────────────
+  String get newTransactionRecorded;
+  String transactionRecordedSuccess(String typeStr, String amountStr);
+  String get newBudgetCreated;
+  String budgetSetTo(String monthYear, String limitStr);
+  String get budgetExceededNotification;
+  String budgetExceededWarning(String monthYear, String categoryName, String limitStr, String spentStr);
+  String get budgetWarningNotification;
+  String budgetWarningDetail(int ratio, String monthYear, String categoryName);
+  String get budgetPredictionWarning;
+  String budgetPredictionWarningDetail(String monthYear, String categoryName, String predictedStr);
+  String get incomeNotification;
+  String get expenseNotification;
+
+  // ─── Exceptions & Network Errors ──────────────────────────────────────────
+  String get errInvalidData;
+  String get errAuthFailed;
+  String get errUnverifiedAccount;
+  String get errNoAccess;
+  String get errDataNotFound;
+  String get errDataExists;
+  String get errInvalidFormat;
+  String get errTooManyRequests;
+  String get errServerBusy;
+  String get errGeneric;
+  String get errNoInternet;
+  String get errTimeout;
 
   String get exportData;
   String get importData;

@@ -20,7 +20,7 @@ class AppConstants {
   static const String profileCompleteKey = 'profile_complete';
   static const String backupSetupCompleteKey = 'backup_setup_complete';
   static const String onboardingCompleteKey = 'onboarding_complete';
-
+  static const String categoryIconShapeKey = 'category_icon_shape';
   // ─── Defaults ────────────────────────────────────────────────────────────────
   static const String defaultCurrency = 'IDR';
   static const String defaultCurrencySymbol = 'Rp';
