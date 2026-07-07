@@ -44,6 +44,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/categories/presentation/screens/category_list_screen.dart';
 import '../../features/shared/presentation/screens/shared_screen.dart';
+import '../../features/wallets/presentation/screens/manage_wallets_screen.dart';
 
 CustomTransitionPage _buildPage(GoRouterState state, Widget child) {
   return CustomTransitionPage(
@@ -275,6 +276,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/manage-categories',
         pageBuilder: (context, state) =>
             _buildPage(state, const CategoryListScreen()),
+      ),
+      GoRoute(
+        path: '/manage-wallets',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ManageWalletsScreen()),
       ),
       GoRoute(
         path: '/home/profile',

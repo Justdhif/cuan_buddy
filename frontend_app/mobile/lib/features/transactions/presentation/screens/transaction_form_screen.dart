@@ -21,6 +21,7 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
+import '../../wallets/providers/wallet_provider.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({
@@ -50,6 +51,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   late String _type;
   String? _selectedCategoryId;
   String? _selectedSavingsGoalId;
+  String? _selectedWalletId;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   String _selectedCurrency = AppConstants.defaultCurrency;
@@ -71,6 +73,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       _noteController.text = tx['note'] as String? ?? '';
       _selectedCategoryId = tx['categoryId'] as String?;
       _selectedSavingsGoalId = tx['savingsGoalId'] as String?;
+      _selectedWalletId = tx['walletId'] as String?;
       if (tx['date'] != null) {
         _selectedDate = DateTime.parse(tx['date'] as String).toLocal();
       }
@@ -99,6 +102,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       );
       return;
     }
+    if (_selectedWalletId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a wallet'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isSaving = true);
 
@@ -108,7 +120,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         'title': _titleController.text.trim(),
         'type': _type,
         'amount': double.parse(_amountController.text.replaceAll(',', '')),
-        'currency': _selectedCurrency,
+        'walletId': _selectedWalletId,
+        'exchangeRate': 1.0, // For MVP, assuming 1.0 or implement fetching later
         'categoryId': _selectedCategoryId,
         'savingsGoalId': _selectedSavingsGoalId,
         'date': _selectedDate.toUtc().toIso8601String(),
@@ -224,7 +237,31 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final budgetsState = ref.watch(budgetsNotifierProvider);
     final iconShape = ref.watch(categoryIconShapeProvider);
     final profileState = ref.watch(profileProvider);
-    final currencyCode = profileState.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final walletsState = ref.watch(walletsProvider);
+
+    // Auto-select first wallet if none selected
+    if (widget.initialTransaction == null && _selectedWalletId == null && walletsState is AsyncData && walletsState.value != null && walletsState.value!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+         if (mounted) setState(() => _selectedWalletId = walletsState.value!.first['id']);
+      });
+    }
+
+    // Auto-update currency based on wallet
+    String? currentWalletCurrency;
+    if (_selectedWalletId != null && walletsState is AsyncData && walletsState.value != null) {
+       try {
+         final wallet = walletsState.value!.firstWhere((w) => w['id'] == _selectedWalletId);
+         currentWalletCurrency = wallet['currency'];
+       } catch (e) {}
+    }
+    
+    if (currentWalletCurrency != null && currentWalletCurrency != _selectedCurrency) {
+       WidgetsBinding.instance.addPostFrameCallback((_) {
+         if (mounted) setState(() => _selectedCurrency = currentWalletCurrency!);
+       });
+    }
+
+    final currencyCode = _selectedCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
 
     return Scaffold(
@@ -539,6 +576,46 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 24),
+
+                      // ── Wallet Selector ──────────────────────────────────────
+                      Text(
+                        'Select Wallet',
+                        style: AppTypography.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      walletsState.when(
+                        data: (wallets) {
+                          if (wallets.isEmpty) {
+                            return const Text('No wallets found. Please create one.');
+                          }
+                          return DropdownButtonFormField<String>(
+                            value: _selectedWalletId,
+                            dropdownColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            items: wallets.map((w) {
+                              return DropdownMenuItem<String>(
+                                value: w['id'] as String,
+                                child: Text('${w['name']} (${w['currency']})'),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) setState(() => _selectedWalletId = val);
+                            },
+                          );
+                        },
+                        loading: () => const CircularProgressIndicator(),
+                        error: (_, __) => const Text('Failed to load wallets'),
                       ),
                       const SizedBox(height: 24),
 

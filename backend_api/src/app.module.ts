@@ -15,6 +15,7 @@ import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AiModule } from './ai/ai.module';
+import { WalletsModule } from './wallets/wallets.module';
 import { BackupModule } from './backup/backup.module';
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
@@ -35,6 +36,7 @@ import { FeedbackModule } from './feedback/feedback.module';
     NotificationsModule,
     AnalyticsModule,
     AiModule,
+    WalletsModule,
     BackupModule,
     EmailModule,
     FeedbackModule,

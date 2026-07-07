@@ -316,6 +316,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           _buildSettingsTile(
             context: context,
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Manage Wallets',
+            subtitle: 'Manage your payment methods and wallets',
+            onTap: () => context.push('/manage-wallets'),
+          ),
+          _buildSettingsTile(
+            context: context,
             icon: Icons.widgets_outlined,
             title: 'Widgets',
             subtitle: l10n.widgetsDesc,

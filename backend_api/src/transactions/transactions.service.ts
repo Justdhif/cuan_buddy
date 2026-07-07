@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, and, or, gte, lte, desc, ilike, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, budgets, categories, savingsGoals } from '../database/schema';
+import { transactions, budgets, categories, savingsGoals, wallets } from '../database/schema';
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -39,6 +39,9 @@ export class TransactionsService {
       finalTitle = createTransactionDto.type === 'income' ? 'Income' : 'Expense';
     }
 
+    const exchangeRate = createTransactionDto.exchangeRate ?? 1;
+    const baseAmount = createTransactionDto.amount * exchangeRate;
+
     const [newTransaction] = await this.db
       .insert(transactions)
       .values({
@@ -47,8 +50,13 @@ export class TransactionsService {
         title: finalTitle,
         date: new Date(createTransactionDto.date),
         amount: createTransactionDto.amount.toString(),
+        exchangeRate: exchangeRate.toString(),
+        baseAmount: baseAmount.toString(),
       })
       .returning();
+
+    // Update wallet balance
+    await this.applyWalletEffect(userId, createTransactionDto.walletId, createTransactionDto.type as 'income' | 'expense', createTransactionDto.amount);
 
     if (newTransaction.savingsGoalId) {
       void this.applySavingsGoalEffect(userId, newTransaction.savingsGoalId, newTransaction.type as 'income' | 'expense', Number(newTransaction.amount));
@@ -81,6 +89,21 @@ export class TransactionsService {
     }
 
     return newTransaction;
+  }
+
+  private async applyWalletEffect(userId: string, walletId: string, type: 'income' | 'expense', amount: number, isRevert: boolean = false) {
+    const wallet = await this.db.query.wallets.findFirst({
+      where: and(eq(wallets.id, walletId), eq(wallets.userId, userId))
+    });
+    if (!wallet) return;
+
+    let adjustment = type === 'income' ? amount : -amount;
+    if (isRevert) {
+      adjustment = -adjustment;
+    }
+
+    const newBalance = Number(wallet.balance) + adjustment;
+    await this.db.update(wallets).set({ balance: newBalance.toString(), updatedAt: new Date() }).where(eq(wallets.id, walletId));
   }
 
   private async applySavingsGoalEffect(userId: string, goalId: string | null, type: 'income' | 'expense', amount: number, isRevert: boolean = false) {
@@ -230,6 +253,7 @@ export class TransactionsService {
       with: {
         category: true,
         savingsGoal: true,
+        wallet: true,
       },
     });
 
@@ -257,7 +281,7 @@ export class TransactionsService {
   async findOne(userId: string, id: string) {
     const transaction = await this.db.query.transactions.findFirst({
       where: and(eq(transactions.id, id), eq(transactions.userId, userId)),
-      with: { category: true, savingsGoal: true },
+      with: { category: true, savingsGoal: true, wallet: true },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');
@@ -279,6 +303,13 @@ export class TransactionsService {
       updateData.date = new Date(updateTransactionDto.date);
     if (updateTransactionDto.amount)
       updateData.amount = updateTransactionDto.amount.toString();
+      
+    if (updateTransactionDto.amount !== undefined || updateTransactionDto.exchangeRate !== undefined) {
+      const amt = updateTransactionDto.amount ?? Number(oldTx.amount);
+      const rate = updateTransactionDto.exchangeRate ?? Number(oldTx.exchangeRate);
+      updateData.exchangeRate = rate.toString();
+      updateData.baseAmount = (amt * rate).toString();
+    }
 
     const [updated] = await this.db
       .update(transactions)
@@ -287,6 +318,15 @@ export class TransactionsService {
       .returning();
 
     if (!updated) throw new NotFoundException('Transaction not found');
+
+    // Handle Wallet sync
+    if (oldTx.walletId !== updated.walletId) {
+      await this.applyWalletEffect(userId, oldTx.walletId, oldTx.type as 'income' | 'expense', Number(oldTx.amount), true);
+      await this.applyWalletEffect(userId, updated.walletId, updated.type as 'income' | 'expense', Number(updated.amount), false);
+    } else if (Number(oldTx.amount) !== Number(updated.amount) || oldTx.type !== updated.type) {
+      await this.applyWalletEffect(userId, oldTx.walletId, oldTx.type as 'income' | 'expense', Number(oldTx.amount), true);
+      await this.applyWalletEffect(userId, updated.walletId, updated.type as 'income' | 'expense', Number(updated.amount), false);
+    }
 
     // Handle savings goal sync
     // 1. Revert old
@@ -308,6 +348,8 @@ export class TransactionsService {
       .returning();
 
     if (!deleted) throw new NotFoundException('Transaction not found');
+    
+    await this.applyWalletEffect(userId, deleted.walletId, deleted.type as 'income' | 'expense', Number(deleted.amount), true);
 
     if (deleted.savingsGoalId) {
       await this.applySavingsGoalEffect(userId, deleted.savingsGoalId, deleted.type as 'income' | 'expense', Number(deleted.amount), true);
