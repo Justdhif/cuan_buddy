@@ -384,6 +384,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             categoryColor: categoryColor,
                             type: _type,
                             isDark: isDark,
+                            iconShape: iconShape,
                             onCategoryTap: () => _showCategoryPickerSheet(context, isDark, categoriesAsync),
                             onAmountTap: () => _showAmountCalculatorSheet(),
                           );
@@ -626,6 +627,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 final walletId = wallet['id'] as String;
                                 final walletName = wallet['name'] as String;
                                 final walletCurrency = wallet['currency'] as String;
+                                final walletEmoji = wallet['emojiIcon'] as String? ?? '💼';
+                                final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
+                                final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
                                 final isSelected = _selectedWalletId == walletId;
 
                                 return GestureDetector(
@@ -635,9 +639,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     height: 36,
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                      color: isSelected ? walletColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                       border: Border.all(
-                                        color: isSelected ? AppColors.primary : Colors.transparent,
+                                        color: isSelected ? walletColor : Colors.transparent,
                                         width: 1.5,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -646,13 +650,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.account_balance_wallet_rounded, size: 14, color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87)),
+                                        Text(walletEmoji, style: const TextStyle(fontSize: 14)),
                                         const SizedBox(width: 6),
                                         Text(
                                           '$walletName ($walletCurrency)',
                                           style: AppTypography.textTheme.labelMedium?.copyWith(
                                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                            color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                            color: isSelected ? (isDark ? Colors.white : walletColor) : (isDark ? Colors.white70 : Colors.black87),
                                           ),
                                         ),
                                       ],
@@ -810,6 +814,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 final goalId = goal['id'] as String;
                                 final goalName = goal['name'] as String? ?? '';
                                 final goalEmoji = goal['emojiIcon'] as String? ?? '🎯';
+                                final goalColorHex = goal['colorCode'] as String? ?? '#6C63FF';
+                                final goalColor = AppColors.colorFromHex(goalColorHex, fallback: AppColors.primary);
 
                                 final isSelected = _selectedSavingsGoalId == goalId;
 
@@ -820,9 +826,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     height: 36,
                                     padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                      color: isSelected ? goalColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                       border: Border.all(
-                                        color: isSelected ? AppColors.primary : Colors.transparent,
+                                        color: isSelected ? goalColor : Colors.transparent,
                                         width: 1.5,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -837,7 +843,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                           goalName,
                                           style: AppTypography.textTheme.labelMedium?.copyWith(
                                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                            color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                            color: isSelected ? (isDark ? Colors.white : goalColor) : (isDark ? Colors.white70 : Colors.black87),
                                           ),
                                         ),
                                       ],
@@ -987,32 +993,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Pilih Kategori',
-                    style: AppTypography.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : const Color(0xFFF1F3F5),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.category_rounded,
-                      size: 20,
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.only(top: 12, bottom: 24),
+              child: Text(
+                'Pilih Kategori',
+                style: AppTypography.textTheme.titleMedium,
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 16),
             Expanded(
               child: categoriesAsync.when(
                 data: (categories) {
@@ -1181,6 +1168,7 @@ class TransactionFormHeader extends StatelessWidget {
     this.categoryColor,
     required this.type,
     required this.isDark,
+    required this.iconShape,
     required this.onCategoryTap,
     required this.onAmountTap,
   });
@@ -1191,6 +1179,7 @@ class TransactionFormHeader extends StatelessWidget {
   final Color? categoryColor;
   final String type;
   final bool isDark;
+  final CategoryIconShape iconShape;
   final VoidCallback onCategoryTap;
   final VoidCallback onAmountTap;
 
@@ -1212,16 +1201,21 @@ class TransactionFormHeader extends StatelessWidget {
                 child: Container(
                   width: 64,
                   height: 64,
-                  decoration: BoxDecoration(
+                  decoration: ShapeDecoration(
                     color: categoryEmoji == null 
                         ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
                         : (categoryColor ?? typeColor).withOpacity(0.2),
-                    shape: BoxShape.rectangle,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor),
-                      width: 2,
-                    ),
+                    shape: iconShape == CategoryIconShape.circle
+                        ? CircleBorder(side: BorderSide(color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor), width: 2))
+                        : iconShape == CategoryIconShape.squircle
+                            ? ContinuousRectangleBorder(
+                                borderRadius: BorderRadius.circular(32),
+                                side: BorderSide(color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor), width: 2),
+                              )
+                            : RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor), width: 2),
+                              ),
                   ),
                   child: Center(
                     child: categoryEmoji == null

@@ -56,6 +56,7 @@ class TransactionCard extends ConsumerWidget {
         locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
     final dynamic category = tx['category'];
     final dynamic savingsGoal = tx['savingsGoal'];
+    final dynamic wallet = tx['wallet'];
     final emoji = (category is Map
             ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
             : null) ??
@@ -72,6 +73,13 @@ class TransactionCard extends ConsumerWidget {
         ? AppColors.colorFromHex(category['colorCode'] as String?,
             fallback: defaultCatColor)
         : defaultCatColor;
+        
+    final walletName = wallet is Map ? wallet['name'] as String? : null;
+    final walletEmoji = wallet is Map ? wallet['emojiIcon'] as String? ?? '💼' : '💼';
+    final walletColor = wallet is Map ? AppColors.colorFromHex(wallet['colorCode'] as String?, fallback: AppColors.primary) : AppColors.primary;
+    
+    final savingsEmoji = savingsGoal is Map ? savingsGoal['emojiIcon'] as String? ?? '🎯' : '🎯';
+    final savingsColor = savingsGoal is Map ? AppColors.colorFromHex(savingsGoal['colorCode'] as String?, fallback: AppColors.success) : AppColors.success;
     
     final iconShape = ref.watch(categoryIconShapeProvider);
 
@@ -144,18 +152,33 @@ class TransactionCard extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      if (walletName != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: walletColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$walletEmoji $walletName',
+                            style: AppTypography.textTheme.labelSmall?.copyWith(
+                              color: walletColor,
+                            ),
+                          ),
+                        ),
                       if (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.1),
+                            color: savingsColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '🎨 ${savingsGoal['name']}',
+                            '$savingsEmoji ${savingsGoal['name']}',
                             style: AppTypography.textTheme.labelSmall?.copyWith(
-                              color: AppColors.success,
+                              color: savingsColor,
                             ),
                           ),
                         ),

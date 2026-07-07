@@ -77,6 +77,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Auto-select wallet matching base currency if none is selected
+    if (selectedWalletId == null && walletsState is AsyncData && profileAsync is AsyncData) {
+      final wallets = walletsState.valueOrNull;
+      final profile = profileAsync.valueOrNull;
+      if (wallets != null && wallets.isNotEmpty && profile != null) {
+        final baseCurrency = profile['currency'] as String?;
+        if (baseCurrency != null) {
+          final defaultWallet = wallets.firstWhere(
+            (w) => w['currency'] == baseCurrency,
+            orElse: () => wallets.first,
+          );
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ref.read(dashboardSelectedWalletProvider.notifier).state = defaultWallet['id'];
+              ref.invalidate(analyticsSummaryProvider);
+              ref.invalidate(recentTransactionsProvider);
+            }
+          });
+        }
+      }
+    }
+
     ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
         (previous, next) {
       if (next.hasValue && next.value != null) {
@@ -153,52 +175,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           data: (wallets) {
                             if (wallets.isEmpty) return const SizedBox.shrink();
                             return SizedBox(
-                              height: 48,
+                              height: 36,
                               child: ListView.separated(
                                 padding: EdgeInsets.zero,
                                 scrollDirection: Axis.horizontal,
                                 clipBehavior: Clip.none,
                                 physics: const BouncingScrollPhysics(),
-                                itemCount: wallets.length + 1,
-                                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                itemCount: wallets.length,
+                                separatorBuilder: (context, index) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
-                                  if (index == 0) {
-                                    // "All Wallets" option
-                                    final isSelected = selectedWalletId == null;
-                                    return GestureDetector(
-                                      onTap: () {
-                                        ref.read(dashboardSelectedWalletProvider.notifier).state = null;
-                                        ref.invalidate(analyticsSummaryProvider);
-                                        ref.invalidate(recentTransactionsProvider);
-                                      },
-                                      child: AnimatedContainer(
-                                        duration: const Duration(milliseconds: 200),
-                                        height: 48,
-                                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                          border: Border.all(
-                                            color: isSelected ? AppColors.primary : Colors.transparent,
-                                            width: 1.5,
-                                          ),
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Center(
-                                          child: Text(
-                                            'All Wallets',
-                                            style: AppTypography.textTheme.bodyMedium?.copyWith(
-                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }
-
-                                  final wallet = wallets[index - 1];
+                                  final wallet = wallets[index];
                                   final walletId = wallet['id'] as String;
                                   final walletName = wallet['name'] as String;
+                                  final walletCurrency = wallet['currency'] as String;
+                                  final walletEmoji = wallet['emojiIcon'] as String? ?? '💼';
+                                  final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
+                                  final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
                                   final isSelected = selectedWalletId == walletId;
 
                                   return GestureDetector(
@@ -209,12 +201,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     },
                                     child: AnimatedContainer(
                                       duration: const Duration(milliseconds: 200),
-                                      height: 48,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      height: 36,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
                                       decoration: BoxDecoration(
-                                        color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                        color: isSelected ? walletColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                         border: Border.all(
-                                          color: isSelected ? AppColors.primary : Colors.transparent,
+                                          color: isSelected ? walletColor : Colors.transparent,
                                           width: 1.5,
                                         ),
                                         borderRadius: BorderRadius.circular(12),
@@ -223,13 +215,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         mainAxisSize: MainAxisSize.min,
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
-                                          Icon(Icons.account_balance_wallet_rounded, size: 16, color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87)),
-                                          const SizedBox(width: 8),
+                                          Text(walletEmoji, style: const TextStyle(fontSize: 14)),
+                                          const SizedBox(width: 6),
                                           Text(
-                                            walletName,
-                                            style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                            '$walletName ($walletCurrency)',
+                                            style: AppTypography.textTheme.labelMedium?.copyWith(
                                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                              color: isSelected ? (isDark ? Colors.white : walletColor) : (isDark ? Colors.white70 : Colors.black87),
                                             ),
                                           ),
                                         ],
