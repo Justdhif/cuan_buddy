@@ -588,30 +588,84 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       walletsState.when(
                         data: (wallets) {
                           if (wallets.isEmpty) {
-                            return const Text('No wallets found. Please create one.');
+                            return Row(
+                              children: [
+                                const Expanded(child: Text('No wallets found. Please create one.')),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  onPressed: () => context.push('/manage-wallets'),
+                                ),
+                              ],
+                            );
                           }
-                          return DropdownButtonFormField<String>(
-                            value: _selectedWalletId,
-                            dropdownColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          return SizedBox(
+                            height: 48,
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.none,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: wallets.length + 1,
+                              separatorBuilder: (context, index) => const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                if (index == wallets.length) {
+                                  // Last item: Button plus
+                                  return GestureDetector(
+                                    onTap: () => context.push('/manage-wallets'),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 48,
+                                      height: 48,
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(Icons.add, size: 20),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                
+                                final wallet = wallets[index];
+                                final walletId = wallet['id'] as String;
+                                final walletName = wallet['name'] as String;
+                                final walletCurrency = wallet['currency'] as String;
+                                final isSelected = _selectedWalletId == walletId;
+
+                                return GestureDetector(
+                                  onTap: () => setState(() => _selectedWalletId = walletId),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                      border: Border.all(
+                                        color: isSelected ? AppColors.primary : Colors.transparent,
+                                        width: 1.5,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.account_balance_wallet_rounded, size: 16, color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '$walletName ($walletCurrency)',
+                                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                            color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                            items: wallets.map((w) {
-                              return DropdownMenuItem<String>(
-                                value: w['id'] as String,
-                                child: Text('${w['name']} (${w['currency']})'),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) setState(() => _selectedWalletId = val);
-                            },
                           );
                         },
                         loading: () => const CircularProgressIndicator(),
