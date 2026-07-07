@@ -14,6 +14,7 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../analytics/presentation/providers/analytics_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../../wallets/providers/wallet_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/widget_service.dart';
 import '../widgets/ai_insight_card.dart';
@@ -72,6 +73,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
     final budgetsState = ref.watch(budgetsNotifierProvider);
+    final walletsState = ref.watch(walletsProvider);
+    final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
@@ -141,6 +144,105 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           return _buildHeader(
                               context, ref, profileAsync, shrinkOffset);
                         },
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                        child: walletsState.when(
+                          data: (wallets) {
+                            if (wallets.isEmpty) return const SizedBox.shrink();
+                            return SizedBox(
+                              height: 48,
+                              child: ListView.separated(
+                                padding: EdgeInsets.zero,
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: wallets.length + 1,
+                                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                                itemBuilder: (context, index) {
+                                  if (index == 0) {
+                                    // "All Wallets" option
+                                    final isSelected = selectedWalletId == null;
+                                    return GestureDetector(
+                                      onTap: () {
+                                        ref.read(dashboardSelectedWalletProvider.notifier).state = null;
+                                        ref.invalidate(analyticsSummaryProvider);
+                                        ref.invalidate(recentTransactionsProvider);
+                                      },
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        height: 48,
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                          border: Border.all(
+                                            color: isSelected ? AppColors.primary : Colors.transparent,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'All Wallets',
+                                            style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final wallet = wallets[index - 1];
+                                  final walletId = wallet['id'] as String;
+                                  final walletName = wallet['name'] as String;
+                                  final isSelected = selectedWalletId == walletId;
+
+                                  return GestureDetector(
+                                    onTap: () {
+                                      ref.read(dashboardSelectedWalletProvider.notifier).state = walletId;
+                                      ref.invalidate(analyticsSummaryProvider);
+                                      ref.invalidate(recentTransactionsProvider);
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      height: 48,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                        border: Border.all(
+                                          color: isSelected ? AppColors.primary : Colors.transparent,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.account_balance_wallet_rounded, size: 16, color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87)),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            walletName,
+                                            style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                     SliverToBoxAdapter(

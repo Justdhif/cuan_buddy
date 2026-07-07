@@ -3,6 +3,8 @@ import '../../../../core/providers/core_providers.dart';
 
 import '../../../../core/services/currency_service.dart';
 
+final dashboardSelectedWalletProvider = StateProvider<String?>((ref) => null);
+
 final analyticsSummaryProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
@@ -18,8 +20,11 @@ final analyticsSummaryProvider =
   } catch (_) {}
 
   // Fetch all transactions to calculate the accurate converted summary
-  final txRes =
-      await dio.get('/transactions', queryParameters: {'limit': 10000});
+  Map<String, dynamic> queryParams = {'limit': 10000};
+  final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
+  if (selectedWalletId != null) queryParams['walletId'] = selectedWalletId;
+
+  final txRes = await dio.get('/transactions', queryParameters: queryParams);
   final txData = txRes.data;
   List txList = [];
   if (txData is List) {
@@ -60,8 +65,12 @@ final financialHealthProvider =
 
 final recentTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
-  final response =
-      await dio.get('/transactions', queryParameters: {'limit': 5});
+  
+  Map<String, dynamic> queryParams = {'limit': 5};
+  final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
+  if (selectedWalletId != null) queryParams['walletId'] = selectedWalletId;
+
+  final response = await dio.get('/transactions', queryParameters: queryParams);
   final data = response.data;
   if (data is List) return data;
   if (data is Map && data['data'] is List) return data['data'] as List;
