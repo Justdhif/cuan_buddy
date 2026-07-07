@@ -25,7 +25,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _bioController;
-  late TextEditingController _currencyController;
+
   String? _selectedGender;
   DateTime? _selectedDate;
   bool _isSaving = false;
@@ -40,8 +40,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
         text: widget.profile['phoneNumber'] ?? widget.profile['phone'] ?? '');
     _emailController = TextEditingController(text: widget.profile['email']);
     _bioController = TextEditingController(text: widget.profile['bio']);
-    _currencyController =
-        TextEditingController(text: widget.profile['currency'] ?? 'IDR');
+
     _selectedGender = widget.profile['gender'];
     final birthDateStr = widget.profile['birthDate'] as String?;
     if (birthDateStr != null) {
@@ -56,7 +55,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
     _phoneController.dispose();
     _emailController.dispose();
     _bioController.dispose();
-    _currencyController.dispose();
+
     super.dispose();
   }
 
@@ -73,9 +72,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
             phoneNumber: _phoneController.text.trim().isNotEmpty
                 ? _phoneController.text.trim()
                 : null,
-            currency: _currencyController.text.trim().isNotEmpty
-                ? _currencyController.text.trim().toUpperCase()
-                : null,
+
             birthDate: _selectedDate?.toUtc().toIso8601String(),
             gender: _selectedGender,
             bio: _bioController.text.trim().isNotEmpty
@@ -260,12 +257,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16),
-                AppTextField(
-                  controller: _currencyController,
-                  label: 'Currency',
-                  hint: 'IDR, USD, etc.',
-                ),
-                const SizedBox(height: 32),
+
                 AppButton(
                   label: _isSaving ? 'Saving...' : 'Save Changes',
                   onPressed: _isSaving ? null : _save,

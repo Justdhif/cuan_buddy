@@ -27,7 +27,6 @@ export const userProfiles = pgTable('user_profiles', {
   birthDate: timestamp('birth_date'),
   gender: text('gender'),
   bio: text('bio'),
-  baseCurrency: text('base_currency').default('IDR'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -48,6 +47,7 @@ export const wallets = pgTable('wallets', {
   name: text('name').notNull(),
   type: walletTypeEnum('type').default('cash').notNull(),
   currency: text('currency').default('IDR').notNull(),
+  isBaseCurrency: boolean('is_base_currency').default(false).notNull(),
   balance: decimal('balance', { precision: 19, scale: 2 }).default('0').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

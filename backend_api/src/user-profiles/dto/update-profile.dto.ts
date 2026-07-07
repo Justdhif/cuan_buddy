@@ -7,8 +7,7 @@ export const UpdateProfileSchema = z.object({
   phoneNumber: z.string().optional(),
   birthDate: z.string().datetime().optional(),
   gender: z.string().optional(),
-  bio: z.string().max(500).optional(),
-  currency: z.string().length(3).optional(),
+  bio: z.string().max(250).optional(),
 });
 
 export const UpdateAvatarSchema = z.object({

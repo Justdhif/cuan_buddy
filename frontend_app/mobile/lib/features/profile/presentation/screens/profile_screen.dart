@@ -28,32 +28,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     super.dispose();
   }
 
-  Future<void> _showCurrencyPicker(String currentCurrency) async {
-    final l10n = AppLocalizations.of(context);
-    await AppBottomSheet.show<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (ctx) => _CurrencyPickerSheet(
-        currentCode: currentCurrency,
-        l10n: l10n,
-        onSelect: (code) async {
-          Navigator.pop(ctx);
-          try {
-            await ref
-                .read(profileRepositoryProvider)
-                .updateProfile(currency: code);
-            ref.invalidate(profileProvider);
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Failed to update currency: $e')),
-              );
-            }
-          }
-        },
-      ),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +144,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l10n = AppLocalizations.of(context);
     final name = profile['fullName'] as String? ?? l10n.you;
     final avatar = profile['avatar'] as String?;
-    final currency = profile['currency'] as String? ?? 'IDR';
+
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final validAvatar = avatar;
@@ -300,13 +275,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             subtitle: l10n.appearanceMenuDesc,
             onTap: () => context.push('/profile/theme-language'),
           ),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.attach_money_rounded,
-            title: l10n.currency,
-            subtitle: currency,
-            onTap: () => _showCurrencyPicker(currency),
-          ),
+
           _buildSettingsTile(
             context: context,
             icon: Icons.category_outlined,
@@ -715,80 +684,4 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
   }
 }
 
-// ─── Currency Picker Sheet ────────────────────────────────────────────────────
-class _CurrencyPickerSheet extends StatelessWidget {
-  const _CurrencyPickerSheet({
-    required this.currentCode,
-    required this.l10n,
-    required this.onSelect,
-  });
 
-  final String currentCode;
-  final AppLocalizations l10n;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 24),
-            Text(
-              l10n.currency,
-              style: AppTypography.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Flexible(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.5,
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: AppConstants.supportedCurrencies.length,
-                  separatorBuilder: (context, index) => Divider(
-                    color:
-                        isDark ? AppColors.borderDark : AppColors.borderLight,
-                    height: 1,
-                  ),
-                  itemBuilder: (context, index) {
-                    final curr = AppConstants.supportedCurrencies[index];
-                    final isSelected = curr['code'] == currentCode;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.surfaceDark
-                              : AppColors.backgroundLight,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(curr['symbol']!),
-                      ),
-                      title: Text(curr['name']!,
-                          style: AppTypography.textTheme.bodyLarge),
-                      subtitle: Text(curr['code']!,
-                          style: AppTypography.textTheme.bodySmall),
-                      trailing: isSelected
-                          ? const Icon(Icons.check_circle_rounded,
-                              color: AppColors.primary)
-                          : null,
-                      onTap: () => onSelect(curr['code']!),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

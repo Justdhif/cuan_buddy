@@ -23,14 +23,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _isLoading = false;
-  String _selectedCurrency = 'IDR';
 
-  final List<Map<String, String>> _currencies = [
-    {'code': 'IDR', 'name': 'Indonesian Rupiah (IDR)', 'symbol': 'Rp'},
-    {'code': 'USD', 'name': 'US Dollar (USD)', 'symbol': '\$'},
-    {'code': 'EUR', 'name': 'Euro (EUR)', 'symbol': '€'},
-    {'code': 'SGD', 'name': 'Singapore Dollar (SGD)', 'symbol': 'S\$'},
-  ];
 
   @override
   void dispose() {
@@ -48,14 +41,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             phoneNumber: _phoneController.text.trim().isNotEmpty
                 ? _phoneController.text.trim()
                 : null,
-            currency: _selectedCurrency,
-          );
       await ref.read(preferencesServiceProvider).setProfileComplete(true);
-      await ref
-          .read(preferencesServiceProvider)
-          .setCurrencyCode(_selectedCurrency);
       if (!mounted) return;
-      context.go('/backup-settings');
+      context.go('/wallet-setup');
     } catch (e) {
       if (!mounted) return;
       AppSnackbar.show(context,
@@ -70,7 +58,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Future<void> _skip() async {
     await ref.read(preferencesServiceProvider).setProfileComplete(true);
     if (!mounted) return;
-    context.go('/backup-settings');
+    context.go('/wallet-setup');
   }
 
   @override
@@ -145,34 +133,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       prefixIcon: const Icon(Icons.phone_outlined, size: 20),
                     ),
                     const SizedBox(height: 16),
-                    Text(l10n.currency,
-                        style: AppTypography.textTheme.labelMedium),
-                    const SizedBox(height: 8),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.surfaceDark
-                            : const Color(0xFFF8F7FF),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.borderLight),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedCurrency,
-                          isExpanded: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          borderRadius: BorderRadius.circular(16),
-                          items: _currencies.map((c) {
-                            return DropdownMenuItem<String>(
-                              value: c['code'],
-                              child: Text('${c['symbol']} ${c['name']}'),
-                            );
-                          }).toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedCurrency = v ?? 'IDR'),
-                        ),
-                      ),
-                    ),
+
                     const SizedBox(height: 40),
                     AppButton(
                       label: l10n.continueButton,

@@ -1,19 +1,28 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { userProfiles } from '../database/schema';
+import { userProfiles, wallets } from '../database/schema';
 import { UpdateProfileDto, UpdateAvatarDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class UserProfilesService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
 
+  private async getBaseCurrency(userId: string): Promise<string> {
+    const baseWallet = await this.db.query.wallets.findFirst({
+      where: and(eq(wallets.userId, userId), eq(wallets.isBaseCurrency, true)),
+    });
+    return baseWallet?.currency || 'IDR';
+  }
+
   async getProfile(userId: string) {
     const profile = await this.db.query.userProfiles.findFirst({
       where: eq(userProfiles.userId, userId),
     });
     if (!profile) throw new NotFoundException('Profile not found');
-    return profile;
+    
+    const currency = await this.getBaseCurrency(userId);
+    return { ...profile, currency };
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
@@ -27,7 +36,8 @@ export class UserProfilesService {
       .where(eq(userProfiles.userId, userId))
       .returning();
       
-    return updated;
+    const currency = await this.getBaseCurrency(userId);
+    return { ...updated, currency };
   }
 
   async updateAvatar(userId: string, updateAvatarDto: UpdateAvatarDto) {
@@ -36,6 +46,7 @@ export class UserProfilesService {
       .where(eq(userProfiles.userId, userId))
       .returning();
       
-    return updated;
+    const currency = await this.getBaseCurrency(userId);
+    return { ...updated, currency };
   }
 }

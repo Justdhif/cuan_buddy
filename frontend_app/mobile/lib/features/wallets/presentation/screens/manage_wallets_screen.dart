@@ -8,7 +8,8 @@ import '../../../../core/utils/app_snackbar.dart';
 import '../providers/wallet_provider.dart';
 
 class ManageWalletsScreen extends ConsumerStatefulWidget {
-  const ManageWalletsScreen({super.key});
+  const ManageWalletsScreen({super.key, this.isOnboarding = false});
+  final bool isOnboarding;
 
   @override
   ConsumerState<ManageWalletsScreen> createState() => _ManageWalletsScreenState();
@@ -21,6 +22,7 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
     final typeController = TextEditingController(text: wallet?['type'] ?? 'cash');
     final currencyController = TextEditingController(text: wallet?['currency'] ?? 'IDR');
     final balanceController = TextEditingController(text: wallet?['balance']?.toString() ?? '0');
+    final isBaseCurrency = ValueNotifier<bool>(wallet?['isBaseCurrency'] == true);
 
     showModalBottomSheet(
       context: context,
@@ -96,6 +98,19 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                   labelStyle: TextStyle(color: Colors.white60),
                 ),
               ),
+              const SizedBox(height: 12),
+              ValueListenableBuilder<bool>(
+                valueListenable: isBaseCurrency,
+                builder: (context, val, child) {
+                  return SwitchListTile(
+                    title: const Text('Jadikan sebagai Mata Uang Utama (Base Currency)', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    value: val,
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (newVal) => isBaseCurrency.value = newVal,
+                  );
+                },
+              ),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -127,6 +142,7 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                           'name': nameController.text,
                           'type': typeController.text,
                           'currency': currencyController.text,
+                          'isBaseCurrency': isBaseCurrency.value,
                           'balance': double.tryParse(balanceController.text) ?? 0,
                         };
                         String? err;
@@ -165,7 +181,8 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Manage Wallets'),
+        automaticallyImplyLeading: !widget.isOnboarding,
+        title: Text(widget.isOnboarding ? 'Setup Wallets' : 'Manage Wallets'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
@@ -173,6 +190,17 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
           )
         ],
       ),
+      bottomNavigationBar: widget.isOnboarding 
+          ? SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: AppButton(
+                  label: 'Continue',
+                  onPressed: () => context.go('/backup-settings'),
+                ),
+              ),
+            )
+          : null,
       body: walletsState.when(
         data: (wallets) {
           if (wallets.isEmpty) {
@@ -188,7 +216,23 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                 margin: const EdgeInsets.only(bottom: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: ListTile(
-                  title: Text(wallet['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  title: Row(
+                    children: [
+                      Text(wallet['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      if (wallet['isBaseCurrency'] == true) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.amber),
+                          ),
+                          child: const Text('Utama', style: TextStyle(color: Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ],
+                  ),
                   subtitle: Text('${wallet['type']} • ${wallet['currency']}', style: const TextStyle(color: Colors.white54)),
                   trailing: Text(
                     '${wallet['currency']} ${wallet['balance']}',

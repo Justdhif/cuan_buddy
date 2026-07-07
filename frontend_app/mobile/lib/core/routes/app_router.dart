@@ -115,9 +115,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             _buildPage(state, const ProfileSetupScreen()),
         redirect: (context, state) {
-          if (prefsService.profileComplete) return '/backup-settings';
+          if (prefsService.profileComplete) return '/wallet-setup';
           return null;
         },
+      ),
+      GoRoute(
+        path: '/wallet-setup',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ManageWalletsScreen(isOnboarding: true)),
       ),
       GoRoute(
         path: '/backup-settings',

@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { eq, and, gte, sql, desc } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, categories, savingsGoals, userProfiles } from '../database/schema';
+import { transactions, categories, savingsGoals, wallets } from '../database/schema';
 import { GroqService } from './groq.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { formatCurrency } from '../common/utils/formatter.util';
@@ -339,12 +339,12 @@ ${spendingData}`;
       .select({ id: categories.id, name: categories.name })
       .from(categories);
 
-    // Fetch user profile to get their default currency
-    const [profile] = await this.db
-      .select({ currency: userProfiles.baseCurrency })
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, userId));
-    const defaultCurrency = profile?.currency ?? 'IDR';
+    // Fetch default currency from wallets
+    const [baseWallet] = await this.db
+      .select({ currency: wallets.currency })
+      .from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.isBaseCurrency, true)));
+    const defaultCurrency = baseWallet?.currency ?? 'IDR';
 
     const categoryList = cats.map((c: any) => c.name).join(', ');
 
@@ -428,12 +428,12 @@ Do not add any explanations or markdown formatting.`;
       .select({ id: categories.id, name: categories.name })
       .from(categories);
 
-    // Fetch user profile to get their default currency
-    const [profile] = await this.db
-      .select({ currency: userProfiles.baseCurrency })
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, userId));
-    const defaultCurrency = profile?.currency ?? 'IDR';
+    // Fetch default currency from wallets
+    const [baseWallet] = await this.db
+      .select({ currency: wallets.currency })
+      .from(wallets)
+      .where(and(eq(wallets.userId, userId), eq(wallets.isBaseCurrency, true)));
+    const defaultCurrency = baseWallet?.currency ?? 'IDR';
 
     const categoryList = cats.map((c: any) => c.name).join(', ');
 

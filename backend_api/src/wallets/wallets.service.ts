@@ -11,6 +11,12 @@ export class WalletsService {
   ) {}
 
   async create(userId: string, createWalletDto: CreateWalletDto) {
+    if (createWalletDto.isBaseCurrency) {
+      await this.db.update(wallets)
+        .set({ isBaseCurrency: false })
+        .where(eq(wallets.userId, userId));
+    }
+
     const [newWallet] = await this.db
       .insert(wallets)
       .values({
@@ -18,6 +24,7 @@ export class WalletsService {
         name: createWalletDto.name,
         type: createWalletDto.type,
         currency: createWalletDto.currency,
+        isBaseCurrency: createWalletDto.isBaseCurrency || false,
         balance: createWalletDto.balance.toString(),
       })
       .returning();
@@ -45,6 +52,12 @@ export class WalletsService {
   }
 
   async update(userId: string, id: string, updateWalletDto: UpdateWalletDto) {
+    if (updateWalletDto.isBaseCurrency) {
+      await this.db.update(wallets)
+        .set({ isBaseCurrency: false })
+        .where(eq(wallets.userId, userId));
+    }
+
     const updateData: any = { ...updateWalletDto, updatedAt: new Date() };
     if (updateWalletDto.balance !== undefined) {
       updateData.balance = updateWalletDto.balance.toString();

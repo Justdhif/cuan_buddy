@@ -74,6 +74,7 @@ export class AuthService {
         name: 'Cash',
         type: 'cash',
         currency: 'IDR',
+        isBaseCurrency: true,
         balance: '0',
       });
 
