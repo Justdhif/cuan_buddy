@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/widgets/color_picker_sheet.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../providers/wallet_provider.dart';
 
 class WalletFormSheet extends ConsumerStatefulWidget {
@@ -29,10 +30,10 @@ class WalletFormSheet extends ConsumerStatefulWidget {
 class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   late final TextEditingController _nameController;
-  late final TextEditingController _currencyController;
   late final TextEditingController _balanceController;
   late final TextEditingController _emojiController;
   late String _typeValue;
+  late String _currencyValue;
   late bool _isBaseCurrency;
   bool _isLoading = false;
 
@@ -63,10 +64,10 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialWallet?['name']);
-    _currencyController = TextEditingController(text: widget.initialWallet?['currency'] ?? 'IDR');
     _balanceController = TextEditingController(text: widget.initialWallet?['balance']?.toString() ?? '0');
     _emojiController = TextEditingController(text: widget.initialWallet?['emojiIcon'] ?? '💼');
     _typeValue = widget.initialWallet?['type'] ?? 'cash';
+    _currencyValue = widget.initialWallet?['currency'] ?? AppConstants.defaultCurrency;
     _isBaseCurrency = widget.initialWallet?['isBaseCurrency'] == true;
     _selectedColor = _colorFromHex(widget.initialWallet?['colorCode'] as String?);
   }
@@ -74,7 +75,6 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
   @override
   void dispose() {
     _nameController.dispose();
-    _currencyController.dispose();
     _balanceController.dispose();
     _emojiController.dispose();
     super.dispose();
@@ -82,7 +82,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
 
   Future<void> _submit() async {
     final name = _nameController.text.trim();
-    final currency = _currencyController.text.trim().toUpperCase();
+    final currency = _currencyValue;
     final balanceText = _balanceController.text.trim();
     final emoji = _emojiController.text.trim();
     final colorCode = _colorToHex(_selectedColor);
@@ -331,21 +331,50 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
           ),
           const SizedBox(height: 16),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _currencyValue,
+                  dropdownColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: 'Currency',
+                    labelStyle: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.primary),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                  items: AppConstants.supportedCurrencies.map((c) {
+                    return DropdownMenuItem(
+                      value: c['code'],
+                      child: Text('${c['code']} - ${c['symbol']}'),
+                    );
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _currencyValue = val);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
               Expanded(
                 child: AppTextField(
                   label: l10n.initialBalance,
                   hint: '0',
                   controller: _balanceController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: AppTextField(
-                  label: 'Currency',
-                  hint: 'IDR',
-                  controller: _currencyController,
                 ),
               ),
             ],

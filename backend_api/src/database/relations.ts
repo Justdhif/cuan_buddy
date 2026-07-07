@@ -24,6 +24,8 @@ export const walletsRelations = relations(wallets, ({ one, many }) => ({
     references: [users.id],
   }),
   transactions: many(transactions),
+  budgets: many(budgets),
+  savingsGoals: many(savingsGoals),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
@@ -66,6 +68,10 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
     fields: [budgets.categoryId],
     references: [categories.id],
   }),
+  wallet: one(wallets, {
+    fields: [budgets.walletId],
+    references: [wallets.id],
+  }),
 }));
 
 export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => ({
@@ -74,6 +80,10 @@ export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => 
     references: [users.id],
   }),
   transactions: many(transactions),
+  wallet: one(wallets, {
+    fields: [savingsGoals.walletId],
+    references: [wallets.id],
+  }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({

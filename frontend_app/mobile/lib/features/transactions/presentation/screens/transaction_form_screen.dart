@@ -580,11 +580,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       const SizedBox(height: 24),
 
                       // ── Wallet Selector ──────────────────────────────────────
-                      Text(
-                        'Select Wallet',
-                        style: AppTypography.textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
                       walletsState.when(
                         data: (wallets) {
                           if (wallets.isEmpty) {
@@ -599,14 +594,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             );
                           }
                           return SizedBox(
-                            height: 48,
+                            height: 36,
                             child: ListView.separated(
                               padding: EdgeInsets.zero,
                               scrollDirection: Axis.horizontal,
                               clipBehavior: Clip.none,
                               physics: const BouncingScrollPhysics(),
                               itemCount: wallets.length + 1,
-                              separatorBuilder: (context, index) => const SizedBox(width: 12),
+                              separatorBuilder: (context, index) => const SizedBox(width: 8),
                               itemBuilder: (context, index) {
                                 if (index == wallets.length) {
                                   // Last item: Button plus
@@ -614,14 +609,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     onTap: () => context.push('/manage-wallets'),
                                     child: AnimatedContainer(
                                       duration: const Duration(milliseconds: 200),
-                                      width: 48,
-                                      height: 48,
+                                      width: 36,
+                                      height: 36,
                                       decoration: BoxDecoration(
                                         color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: const Center(
-                                        child: Icon(Icons.add, size: 20),
+                                        child: Icon(Icons.add, size: 16),
                                       ),
                                     ),
                                   );
@@ -637,8 +632,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   onTap: () => setState(() => _selectedWalletId = walletId),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
-                                    height: 48,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    height: 36,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
                                       color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                       border: Border.all(
@@ -651,11 +646,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.account_balance_wallet_rounded, size: 16, color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87)),
-                                        const SizedBox(width: 8),
+                                        Icon(Icons.account_balance_wallet_rounded, size: 14, color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87)),
+                                        const SizedBox(width: 6),
                                         Text(
                                           '$walletName ($walletCurrency)',
-                                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                          style: AppTypography.textTheme.labelMedium?.copyWith(
                                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                             color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                           ),
@@ -671,7 +666,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         loading: () => const CircularProgressIndicator(),
                         error: (_, __) => const Text('Failed to load wallets'),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
 
                       // ── Savings Goals ──────────────────────────────────────
                       if (widget.lockedSavingsGoal && _selectedSavingsGoalId != null) ...[
@@ -750,14 +745,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         const SizedBox(height: 24),
                       ] else ...[
                         SizedBox(
-                          height: 48,
+                          height: 36,
                           child: ListView.separated(
                             padding: EdgeInsets.zero,
                             scrollDirection: Axis.horizontal,
                             clipBehavior: Clip.none,
                             physics: const BouncingScrollPhysics(),
                             itemCount: 2 + (savingsState.isLoading ? 3 : savingsState.goals.length),
-                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            separatorBuilder: (context, index) => const SizedBox(width: 8),
                             itemBuilder: (context, index) {
                               if (index == 0) {
                                 // 1. No saving goals
@@ -766,8 +761,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   onTap: () => setState(() => _selectedSavingsGoalId = null),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
-                                    height: 48,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    height: 36,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
                                       color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                       border: Border.all(
@@ -779,7 +774,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     child: Center(
                                       child: Text(
                                         l10n.noSavingsGoals,
-                                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                        style: AppTypography.textTheme.labelMedium?.copyWith(
                                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                           color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                         ),
@@ -793,14 +788,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   onTap: () => context.push('/savings/form'),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
-                                    width: 48,
-                                    height: 48,
+                                    width: 36,
+                                    height: 36,
                                     decoration: BoxDecoration(
                                       color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: const Center(
-                                      child: Icon(Icons.add, size: 20),
+                                      child: Icon(Icons.add, size: 16),
                                     ),
                                   ),
                                 );
@@ -822,8 +817,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   onTap: () => setState(() => _selectedSavingsGoalId = goalId),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
-                                    height: 48,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    height: 36,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
                                       color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                       border: Border.all(
@@ -836,11 +831,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       mainAxisSize: MainAxisSize.min,
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Text(goalEmoji, style: const TextStyle(fontSize: 16)),
-                                        const SizedBox(width: 8),
+                                        Text(goalEmoji, style: const TextStyle(fontSize: 14)),
+                                        const SizedBox(width: 6),
                                         Text(
                                           goalName,
-                                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                          style: AppTypography.textTheme.labelMedium?.copyWith(
                                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                             color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                           ),
