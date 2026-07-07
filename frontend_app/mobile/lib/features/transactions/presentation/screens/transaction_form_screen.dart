@@ -911,7 +911,7 @@ class TransactionFormHeader extends StatelessWidget {
         children: [
           // Category Hitbox (Left Side)
           Material(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            color: typeColor.withOpacity(0.1),
             child: InkWell(
               onTap: onCategoryTap,
               child: Container(
@@ -943,7 +943,7 @@ class TransactionFormHeader extends StatelessWidget {
           // Amount Hitbox (Right Side)
           Expanded(
             child: Material(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              color: typeColor.withOpacity(0.15),
               child: InkWell(
                 onTap: onAmountTap,
                 child: Container(
