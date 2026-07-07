@@ -183,6 +183,7 @@ abstract class AppLocalizations {
   String get amountRequired;
   String get invalidAmount;
   String get pleaseSelectCategory;
+  String get selectCategoryAction;
   String get transactionSaved;
   String get failedToSave;
   String get editTransaction;
@@ -295,6 +296,8 @@ abstract class AppLocalizations {
   String get categorySaved;
   String get pleaseFillAllFields;
   String get anErrorOccurred;
+  String get customColor;
+  String get hexColor;
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   String get notifications;

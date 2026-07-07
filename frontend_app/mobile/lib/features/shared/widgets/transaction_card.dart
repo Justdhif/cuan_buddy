@@ -15,14 +15,22 @@ class TransactionCard extends ConsumerWidget {
     super.key,
     required this.transaction,
     this.onTap,
-    this.showTime = false,
+    this.onIconTap,
+    this.onTitleTap,
+    this.onAmountTap,
+    this.showTime = true,
     this.hideSavingsGoal = false,
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
   });
 
   final dynamic transaction;
   final VoidCallback? onTap;
+  final VoidCallback? onIconTap;
+  final VoidCallback? onTitleTap;
+  final VoidCallback? onAmountTap;
   final bool showTime;
   final bool hideSavingsGoal;
+  final EdgeInsetsGeometry contentPadding;
 
 
   @override
@@ -59,11 +67,11 @@ class TransactionCard extends ConsumerWidget {
         catName ??
         l10n.transaction;
 
-    final defaultTypeColor = isIncome ? AppColors.success : AppColors.danger;
+    final defaultCatColor = AppColors.primary;
     final catColor = category is Map
         ? AppColors.colorFromHex(category['colorCode'] as String?,
-            fallback: defaultTypeColor)
-        : defaultTypeColor;
+            fallback: defaultCatColor)
+        : defaultCatColor;
     
     final iconShape = ref.watch(categoryIconShapeProvider);
 
@@ -79,29 +87,35 @@ class TransactionCard extends ConsumerWidget {
             );
           },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: contentPadding,
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: ShapeDecoration(
-                color: catColor,
-                shape: iconShape == CategoryIconShape.circle
-                    ? const CircleBorder()
-                    : iconShape == CategoryIconShape.squircle
-                        ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(24))
-                        : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Center(
-                child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            GestureDetector(
+              onTap: onIconTap,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: ShapeDecoration(
+                  color: catColor,
+                  shape: iconShape == CategoryIconShape.circle
+                      ? const CircleBorder()
+                      : iconShape == CategoryIconShape.squircle
+                          ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(24))
+                          : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Center(
+                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                ),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+              child: GestureDetector(
+                onTap: onTitleTap,
+                behavior: HitTestBehavior.opaque,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   Text(
                     title,
                     style: AppTypography.textTheme.titleMedium?.copyWith(
@@ -119,14 +133,14 @@ class TransactionCard extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.textSecondaryLight
-                              .withValues(alpha: 0.1),
+                          color: catColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           catName ?? l10n.transaction,
                           style: AppTypography.textTheme.labelSmall?.copyWith(
-                            color: AppColors.textSecondaryLight,
+                            color: catColor,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -149,11 +163,15 @@ class TransactionCard extends ConsumerWidget {
                   ),
                 ],
               ),
+              ),
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
+            GestureDetector(
+              onTap: onAmountTap,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
                 Text(
                   '${isIncome ? "▲" : "▼"} ${txCurrency == currencyCode ? fmt.format(amount) : fmtOriginal.format(amount)}',
                   style: AppTypography.textTheme.titleMedium?.copyWith(
@@ -198,6 +216,7 @@ class TransactionCard extends ConsumerWidget {
                     ),
                   ),
               ],
+            ),
             ),
           ],
         ),

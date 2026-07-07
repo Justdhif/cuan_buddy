@@ -294,6 +294,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get pleaseSelectCategory => 'Silakan pilih kategori';
   @override
+  String get selectCategoryAction => 'Pilih Kategori';
+  @override
   String get transactionSaved => 'Transaksi berhasil disimpan!';
   @override
   String get failedToSave => 'Gagal menyimpan';
@@ -516,6 +518,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get pleaseFillAllFields => 'Harap isi semua kolom';
   @override
   String get anErrorOccurred => 'Terjadi kesalahan';
+  @override
+  String get customColor => 'Warna Khusus';
+  @override
+  String get hexColor => 'Kode HEX';
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   @override

@@ -55,6 +55,11 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           _selectedDate = DateTime(int.parse(parts[0]), int.parse(parts[1]));
         }
       }
+
+      final daysInMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+      if (_startDay > daysInMonth) {
+        _startDay = daysInMonth;
+      }
     } else if (widget.initialCategoryId != null) {
       _selectedCategoryId = widget.initialCategoryId;
     }
@@ -370,7 +375,13 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       lastDate: DateTime(2101),
                     );
                     if (picked != null && picked != _selectedDate) {
-                      setState(() => _selectedDate = picked);
+                      setState(() {
+                        _selectedDate = picked;
+                        final daysInMonth = DateTime(picked.year, picked.month + 1, 0).day;
+                        if (_startDay > daysInMonth) {
+                          _startDay = daysInMonth;
+                        }
+                      });
                     }
                   },
                   child: InputDecorator(
@@ -445,8 +456,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     );
   }
 
-  // ── Start Day Picker (grid of 1–28) ──────────────────────────────────────
+  // ── Start Day Picker ──────────────────────────────────────
   Widget _buildDayPicker(bool isDark) {
+    final daysInMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -462,7 +475,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: List.generate(28, (i) {
+            children: List.generate(daysInMonth, (i) {
               final day = i + 1;
               final isSelected = _startDay == day;
               return GestureDetector(
@@ -525,7 +538,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  'Tanggal dipilih: $_startDay (maks. 28 untuk konsistensi)',
+                  'Tanggal dipilih: $_startDay',
                   style: AppTypography.textTheme.labelSmall?.copyWith(
                     color: isDark
                         ? AppColors.textSecondaryDark

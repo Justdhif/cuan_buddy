@@ -905,22 +905,26 @@ class TransactionFormHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final typeColor = type == 'income' ? AppColors.success : AppColors.danger;
     
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-      child: Column(
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: onCategoryTap,
+          // Category Hitbox (Left Side)
+          Material(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            child: InkWell(
+              onTap: onCategoryTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
                 child: Container(
-                  width: 56,
-                  height: 56,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
                     color: categoryEmoji == null 
-                        ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9))
+                        ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
                         : (categoryColor ?? typeColor).withOpacity(0.2),
-                    shape: BoxShape.circle,
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor),
                       width: 2,
@@ -928,52 +932,58 @@ class TransactionFormHeader extends StatelessWidget {
                   ),
                   child: Center(
                     child: categoryEmoji == null
-                        ? Icon(
-                            Icons.grid_view_rounded,
-                            color: isDark ? Colors.white54 : Colors.black54,
-                          )
-                        : Text(categoryEmoji!, style: const TextStyle(fontSize: 24)),
+                        ? null
+                        : Text(categoryEmoji!, style: const TextStyle(fontSize: 28)),
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: GestureDetector(
-                  onTap: onAmountTap,
+            ),
+          ),
+          
+          // Amount Hitbox (Right Side)
+          Expanded(
+            child: Material(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              child: InkWell(
+                onTap: onAmountTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
+                          Text(
+                            currencyCode,
+                            style: AppTypography.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black,
                             ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
                             child: Text(
-                              currencyCode,
-                              style: AppTypography.textTheme.labelSmall?.copyWith(
+                              amount == 0 ? '0' : NumberFormat('#,###').format(amount),
+                              textAlign: TextAlign.end,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white70 : Colors.black87,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        NumberFormat('#,###').format(amount),
-                        style: AppTypography.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black,
-                        ),
-                      ),
                     ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ],
       ),

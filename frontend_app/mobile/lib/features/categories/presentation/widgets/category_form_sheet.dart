@@ -11,6 +11,7 @@ import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/widgets/color_picker_sheet.dart';
 import '../providers/category_provider.dart';
 
 class CategoryFormSheet extends ConsumerStatefulWidget {
@@ -144,24 +145,14 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     );
   }
 
-  void _showColorPicker() {
-    showDialog(
+  Future<void> _showColorPicker() async {
+    final newColor = await showCustomColorPicker(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Pick Color'),
-          content: SingleChildScrollView(
-            child: BlockPicker(
-              pickerColor: _selectedColor,
-              onColorChanged: (Color color) {
-                setState(() => _selectedColor = color);
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        );
-      },
+      initialColor: _selectedColor,
     );
+    if (newColor != null) {
+      setState(() => _selectedColor = newColor);
+    }
   }
 
   @override

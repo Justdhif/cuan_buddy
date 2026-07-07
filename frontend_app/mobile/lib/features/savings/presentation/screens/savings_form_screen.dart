@@ -11,6 +11,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/savings_provider.dart';
@@ -99,24 +100,14 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
     );
   }
 
-  void _showColorPicker() {
-    showDialog(
+  Future<void> _showColorPicker() async {
+    final newColor = await showCustomColorPicker(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Pick Color'),
-          content: SingleChildScrollView(
-            child: BlockPicker(
-              pickerColor: _selectedColor,
-              onColorChanged: (Color color) {
-                setState(() => _selectedColor = color);
-                Navigator.of(context).pop();
-              },
-            ),
-          ),
-        );
-      },
+      initialColor: _selectedColor,
     );
+    if (newColor != null) {
+      setState(() => _selectedColor = newColor);
+    }
   }
 
   Future<void> _save() async {

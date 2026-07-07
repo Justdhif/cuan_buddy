@@ -290,6 +290,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pleaseSelectCategory => 'Please select a category';
   @override
+  String get selectCategoryAction => 'Select Category';
+  @override
   String get transactionSaved => 'Transaction saved!';
   @override
   String get failedToSave => 'Failed to save';
@@ -512,6 +514,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseFillAllFields => 'Please fill all fields';
   @override
   String get anErrorOccurred => 'An error occurred';
+  @override
+  String get customColor => 'Custom Color';
+  @override
+  String get hexColor => 'HEX Color';
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   @override
