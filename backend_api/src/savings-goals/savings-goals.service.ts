@@ -22,6 +22,7 @@ export class SavingsGoalsService {
     if (createSavingsGoalDto.currentAmount) data.currentAmount = createSavingsGoalDto.currentAmount.toString();
     if (createSavingsGoalDto.targetDate) data.targetDate = new Date(createSavingsGoalDto.targetDate);
     if (createSavingsGoalDto.status) data.status = createSavingsGoalDto.status;
+    if (createSavingsGoalDto.walletId) data.walletId = createSavingsGoalDto.walletId;
 
     try {
       const [newGoal] = await this.db.insert(savingsGoals).values(data).returning();
@@ -45,6 +46,7 @@ export class SavingsGoalsService {
 
     const data = await this.db.query.savingsGoals.findMany({
       where: eq(savingsGoals.userId, userId),
+      with: { wallet: true },
       limit: Number(limit),
       offset: offset,
     });
@@ -69,6 +71,7 @@ export class SavingsGoalsService {
   async findOne(userId: string, id: string) {
     const goal = await this.db.query.savingsGoals.findFirst({
       where: and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)),
+      with: { wallet: true }
     });
 
     if (!goal) {
@@ -88,6 +91,7 @@ export class SavingsGoalsService {
     if (updateSavingsGoalDto.currentAmount) updateData.currentAmount = updateSavingsGoalDto.currentAmount.toString();
     if (updateSavingsGoalDto.targetDate) updateData.targetDate = new Date(updateSavingsGoalDto.targetDate);
     if (updateSavingsGoalDto.status) updateData.status = updateSavingsGoalDto.status;
+    if (updateSavingsGoalDto.walletId !== undefined) updateData.walletId = updateSavingsGoalDto.walletId;
 
     const [updated] = await this.db
       .update(savingsGoals)

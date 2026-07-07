@@ -13,6 +13,7 @@ import '../../../../core/providers/core_providers.dart';
 import '../providers/budgets_provider.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
+import '../../wallets/providers/wallet_provider.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
   const BudgetFormScreen({super.key, this.budget, this.initialCategoryId});
@@ -28,6 +29,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   String? _selectedCategoryId;
+  String? _selectedWalletId;
   DateTime _selectedDate = DateTime.now();
   String _selectedCurrency = AppConstants.defaultCurrency;
   int _periodCount = 1;
@@ -44,6 +46,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           : double.tryParse(rawL?.toString() ?? '0') ?? 0;
       _amountController.text = limitAmount.toStringAsFixed(0);
       _selectedCategoryId = widget.budget!['categoryId']?.toString();
+      _selectedWalletId = widget.budget!['walletId']?.toString();
       _selectedCurrency =
           widget.budget!['currency'] ?? AppConstants.defaultCurrency;
       _periodCount = (widget.budget!['periodCount'] as num?)?.toInt() ?? 1;
@@ -96,6 +99,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         'monthYear': monthYearStr,
         'periodCount': _periodCount,
         'startDay': _startDay,
+        if (_selectedWalletId != null) 'walletId': _selectedWalletId,
       };
       if (widget.budget == null) {
         await dio.post('/budgets', data: payload);
@@ -174,6 +178,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
+    final walletsAsync = ref.watch(walletsProvider);
 
     // Only show expense categories for budgets
     final expenseCategories = categoriesAsync.whenData((all) =>
@@ -350,6 +355,74 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                       fontWeight: isSelected
                                           ? FontWeight.w700
                                           : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // ── Wallet Selector ───────────────────────────────────────
+                Text('Pilih Dompet', style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'Biarkan "Semua Dompet" untuk membuat budget global',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                walletsAsync.when(
+                  loading: () => _buildCategorySkeletonLoader(isDark),
+                  error: (_, __) => const Text('Gagal memuat dompet', style: TextStyle(color: AppColors.danger, fontSize: 12)),
+                  data: (wallets) {
+                    return SizedBox(
+                      height: 52,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.zero,
+                        itemCount: wallets.length + 1,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final isAll = index == 0;
+                          final walletId = isAll ? null : wallets[index - 1]['id'] as String;
+                          final walletName = isAll ? 'Semua Dompet' : wallets[index - 1]['name'] as String;
+                          final isSelected = _selectedWalletId == walletId;
+
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedWalletId = walletId),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeInOut,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isAll ? Icons.account_balance_wallet_rounded : Icons.account_balance_wallet_outlined,
+                                    size: 18,
+                                    color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    walletName,
+                                    style: AppTypography.textTheme.labelMedium?.copyWith(
+                                      color: isSelected ? AppColors.primary : null,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                     ),
                                   ),
                                 ],

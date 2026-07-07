@@ -74,6 +74,7 @@ export const budgets = pgTable('budgets', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
+  walletId: uuid('wallet_id').references(() => wallets.id, { onDelete: 'set null' }),
   limitAmount: decimal('limit_amount', { precision: 19, scale: 2 }).notNull(),
   periodCount: integer('period_count').default(1).notNull(), // how many months this budget spans
   startDay: integer('start_day').default(1).notNull(),       // which day of month the period starts
@@ -85,6 +86,7 @@ export const budgets = pgTable('budgets', {
 export const savingsGoals = pgTable('savings_goals', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  walletId: uuid('wallet_id').references(() => wallets.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
   emojiIcon: text('emoji_icon').default('🎯'),
   colorCode: text('color_code').default('#6C63FF'),

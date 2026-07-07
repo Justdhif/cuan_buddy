@@ -15,6 +15,7 @@ import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/savings_provider.dart';
+import '../../wallets/providers/wallet_provider.dart';
 
 class SavingsFormScreen extends ConsumerStatefulWidget {
   const SavingsFormScreen({super.key, this.goal});
@@ -28,6 +29,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _targetAmountController = TextEditingController();
+  String? _selectedWalletId;
   DateTime? _selectedDate;
   String _selectedCurrency = AppConstants.defaultCurrency;
   String _selectedEmoji = '🎯';
@@ -66,6 +68,8 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
 
       _selectedCurrency =
           widget.goal!['currency'] ?? AppConstants.defaultCurrency;
+          
+      _selectedWalletId = widget.goal!['walletId']?.toString();
 
       final targetDateStr = widget.goal!['targetDate']?.toString();
       if (targetDateStr != null) {
@@ -122,6 +126,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
         'colorCode': _colorToHex(_selectedColor),
         'targetAmount': double.parse(_targetAmountController.text),
         'currency': _selectedCurrency,
+        if (_selectedWalletId != null) 'walletId': _selectedWalletId,
       };
       if (_selectedDate != null) {
         payload['targetDate'] = _selectedDate!.toUtc().toIso8601String();
@@ -215,6 +220,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final walletsAsync = ref.watch(walletsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -416,6 +422,75 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // ── Wallet Selector ───────────────────────────────────────
+                Text('Pilih Dompet', style: AppTypography.textTheme.labelMedium),
+                const SizedBox(height: 4),
+                Text(
+                  'Biarkan "Semua Dompet" untuk membuat tabungan global',
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                walletsAsync.when(
+                  loading: () => const SizedBox(height: 52, child: Center(child: CircularProgressIndicator())),
+                  error: (_, __) => const Text('Gagal memuat dompet', style: TextStyle(color: AppColors.danger, fontSize: 12)),
+                  data: (wallets) {
+                    return SizedBox(
+                      height: 52,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.zero,
+                        itemCount: wallets.length + 1,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final isAll = index == 0;
+                          final walletId = isAll ? null : wallets[index - 1]['id'] as String;
+                          final walletName = isAll ? 'Semua Dompet' : wallets[index - 1]['name'] as String;
+                          final isSelected = _selectedWalletId == walletId;
+
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedWalletId = walletId),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeInOut,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isAll ? Icons.account_balance_wallet_rounded : Icons.account_balance_wallet_outlined,
+                                    size: 18,
+                                    color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    walletName,
+                                    style: AppTypography.textTheme.labelMedium?.copyWith(
+                                      color: isSelected ? AppColors.primary : null,
+                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 40),
               ],
             ),
           ),

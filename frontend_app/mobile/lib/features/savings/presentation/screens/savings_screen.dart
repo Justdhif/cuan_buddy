@@ -573,6 +573,26 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (goal['wallet']?['name'] != null)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: (isDark ? AppColors.surfaceDark : Colors.grey.shade100),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                ),
+                              ),
+                              child: Text(
+                                goal['wallet']['name'] as String,
+                                style: TextStyle(
+                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 4),

@@ -93,6 +93,7 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
 
   Future<void> createGoal({
     required String name,
+    String? walletId,
     required double targetAmount,
     double? currentAmount,
     String? targetDate,
@@ -103,6 +104,7 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
         'name': name,
         'targetAmount': targetAmount,
       };
+      if (walletId != null) data['walletId'] = walletId;
       if (currentAmount != null) data['currentAmount'] = currentAmount;
       if (targetDate != null) data['targetDate'] = targetDate;
 

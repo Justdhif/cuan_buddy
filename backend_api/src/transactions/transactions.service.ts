@@ -59,7 +59,7 @@ export class TransactionsService {
     await this.applyWalletEffect(userId, createTransactionDto.walletId, createTransactionDto.type as 'income' | 'expense', createTransactionDto.amount);
 
     if (newTransaction.savingsGoalId) {
-      void this.applySavingsGoalEffect(userId, newTransaction.savingsGoalId, newTransaction.type as 'income' | 'expense', Number(newTransaction.amount));
+      void this.applySavingsGoalEffect(userId, newTransaction.savingsGoalId, newTransaction.type as 'income' | 'expense', Number(newTransaction.amount), Number(newTransaction.baseAmount));
     }
 
     // Fire-and-forget: notification
@@ -85,7 +85,7 @@ export class TransactionsService {
 
     // Fire-and-forget: check budget thresholds
     if (newTransaction.type === 'expense' && newTransaction.categoryId) {
-      void this.checkBudgetThreshold(userId, newTransaction.categoryId, newTransaction.date);
+      void this.checkBudgetThreshold(userId, newTransaction.categoryId, newTransaction.date, newTransaction.walletId);
     }
 
     return newTransaction;
@@ -106,14 +106,14 @@ export class TransactionsService {
     await this.db.update(wallets).set({ balance: newBalance.toString(), updatedAt: new Date() }).where(eq(wallets.id, walletId));
   }
 
-  private async applySavingsGoalEffect(userId: string, goalId: string | null, type: 'income' | 'expense', amount: number, isRevert: boolean = false) {
+  private async applySavingsGoalEffect(userId: string, goalId: string | null, type: 'income' | 'expense', amount: number, baseAmount: number, isRevert: boolean = false) {
     if (!goalId) return;
     const goal = await this.db.query.savingsGoals.findFirst({
       where: and(eq(savingsGoals.id, goalId), eq(savingsGoals.userId, userId))
     });
     if (!goal) return;
 
-    let adjustment = type === 'income' ? amount : -amount;
+    let adjustment = type === 'income' ? (goal.walletId ? amount : baseAmount) : -(goal.walletId ? amount : baseAmount);
     if (isRevert) {
       adjustment = -adjustment;
     }
@@ -136,86 +136,77 @@ export class TransactionsService {
     await this.db.update(savingsGoals).set(updateData).where(eq(savingsGoals.id, goalId));
   }
 
-  private async checkBudgetThreshold(userId: string, categoryId: string, transactionDate: Date) {
+  private async checkBudgetThreshold(userId: string, categoryId: string, transactionDate: Date, transactionWalletId: string) {
     try {
       const monthYear = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
       
-      const budget = await this.db.query.budgets.findFirst({
+      const applicableBudgets = await this.db.query.budgets.findMany({
         where: and(
           eq(budgets.userId, userId),
           eq(budgets.categoryId, categoryId),
-          eq(budgets.monthYear, monthYear)
+          eq(budgets.monthYear, monthYear),
+          // Match global budgets or budget for this specific wallet
+          sql`${budgets.walletId} IS NULL OR ${budgets.walletId} = ${transactionWalletId}`
         ),
         with: { category: true }
       });
 
-      if (!budget) return;
-
-      const limitAmount = Number(budget.limitAmount);
-      const startDate = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1);
-      const endDate = new Date(transactionDate.getFullYear(), transactionDate.getMonth() + 1, 0, 23, 59, 59, 999);
-      
-      const spentData = await this.db
-        .select({ total: sql<number>`SUM(amount::numeric)` })
-        .from(transactions)
-        .where(
-          and(
-            eq(transactions.userId, userId),
-            eq(transactions.categoryId, categoryId),
-            eq(transactions.type, 'expense'),
-            gte(transactions.date, startDate),
-            lte(transactions.date, endDate)
-          )
-        );
+      for (const budget of applicableBudgets) {
+        const limitAmount = Number(budget.limitAmount);
+        const startDate = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1);
+        const endDate = new Date(transactionDate.getFullYear(), transactionDate.getMonth() + 1, 0, 23, 59, 59, 999);
         
-      const totalSpent = Number(spentData[0]?.total || 0);
-      const ratio = totalSpent / limitAmount;
-      const categoryName = budget.category?.name || 'Category';
+        const amountCol = budget.walletId ? sql<number>`SUM(amount::numeric)` : sql<number>`SUM(base_amount::numeric)`;
+        const spentConds = [
+          eq(transactions.userId, userId),
+          eq(transactions.categoryId, categoryId),
+          eq(transactions.type, 'expense'),
+          gte(transactions.date, startDate),
+          lte(transactions.date, endDate)
+        ];
+        if (budget.walletId) {
+          spentConds.push(eq(transactions.walletId, budget.walletId));
+        }
 
-      if (ratio >= 1.0) {
-        void this.notificationsService.createAndBroadcast(
-          userId,
-          'BUDGET_EXCEEDED',
-          JSON.stringify({
-            monthYear,
-            categoryName,
-            limitAmount,
-            totalSpent,
-            currency: budget.currency
-          }),
-          'budget'
-        );
-      } else if (ratio >= 0.75) {
-        void this.notificationsService.createAndBroadcast(
-          userId,
-          'BUDGET_WARNING',
-          JSON.stringify({
-            monthYear,
-            categoryName,
-            ratio,
-            currency: budget.currency
-          }),
-          'budget'
-        );
-      } else {
-        const currentDay = transactionDate.getDate();
-        const totalDays = endDate.getDate();
-        if (currentDay > 5) { // Only predict if we have at least 5 days of data
-          const dailyAvg = totalSpent / currentDay;
-          const predicted = dailyAvg * totalDays;
-          if (predicted > limitAmount) {
-            void this.notificationsService.createAndBroadcast(
-              userId,
-              'BUDGET_PREDICTION_WARNING',
-              JSON.stringify({
-                monthYear,
-                categoryName,
-                predicted,
-                limitAmount,
-                currency: budget.currency
-              }),
-              'budget'
-            );
+        const spentData = await this.db
+          .select({ total: amountCol })
+          .from(transactions)
+          .where(and(...spentConds));
+          
+        const totalSpent = Number(spentData[0]?.total || 0);
+        const categoryName = budget.category?.name || 'Category';
+
+        if (totalSpent > limitAmount) {
+          void this.notificationsService.createAndBroadcast(
+            userId,
+            'BUDGET_EXCEEDED',
+            JSON.stringify({
+              monthYear,
+              categoryName,
+              totalSpent,
+              limitAmount,
+            }),
+            'budget'
+          );
+        } else {
+          const currentDay = transactionDate.getDate();
+          const totalDays = endDate.getDate();
+          if (currentDay > 5) {
+            const dailyAvg = totalSpent / currentDay;
+            const predicted = dailyAvg * totalDays;
+            if (predicted > limitAmount) {
+              void this.notificationsService.createAndBroadcast(
+                userId,
+                'BUDGET_PREDICTION_WARNING',
+                JSON.stringify({
+                  monthYear,
+                  categoryName,
+                  predicted,
+                  limitAmount,
+                }),
+                'budget'
+              );
+            }
           }
         }
       }
@@ -333,11 +324,11 @@ export class TransactionsService {
     // Handle savings goal sync
     // 1. Revert old
     if (oldTx.savingsGoalId) {
-      await this.applySavingsGoalEffect(userId, oldTx.savingsGoalId, oldTx.type as 'income' | 'expense', Number(oldTx.amount), true);
+      await this.applySavingsGoalEffect(userId, oldTx.savingsGoalId, oldTx.type as 'income' | 'expense', Number(oldTx.amount), Number(oldTx.baseAmount), true);
     }
     // 2. Apply new
     if (updated.savingsGoalId) {
-      await this.applySavingsGoalEffect(userId, updated.savingsGoalId, updated.type as 'income' | 'expense', Number(updated.amount), false);
+      await this.applySavingsGoalEffect(userId, updated.savingsGoalId, updated.type as 'income' | 'expense', Number(updated.amount), Number(updated.baseAmount), false);
     }
 
     return updated;
@@ -354,7 +345,7 @@ export class TransactionsService {
     await this.applyWalletEffect(userId, deleted.walletId, deleted.type as 'income' | 'expense', Number(deleted.amount), true);
 
     if (deleted.savingsGoalId) {
-      await this.applySavingsGoalEffect(userId, deleted.savingsGoalId, deleted.type as 'income' | 'expense', Number(deleted.amount), true);
+      await this.applySavingsGoalEffect(userId, deleted.savingsGoalId, deleted.type as 'income' | 'expense', Number(deleted.amount), Number(deleted.baseAmount), true);
     }
 
     return { message: 'Transaction removed successfully' };

@@ -70,6 +70,7 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
 
   Future<void> createBudget({
     required String categoryId,
+    String? walletId,
     required double limitAmount,
     required String monthYear,
     int periodCount = 1,
@@ -79,6 +80,7 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
       final dio = ref.read(dioClientProvider).dio;
       await dio.post('/budgets', data: {
         'categoryId': categoryId,
+        'walletId': walletId,
         'limitAmount': limitAmount,
         'monthYear': monthYear,
         'periodCount': periodCount,
@@ -94,11 +96,13 @@ class BudgetsNotifier extends StateNotifier<BudgetsState> {
   Future<void> updateBudget({
     required String id,
     required double limitAmount,
+    String? walletId,
   }) async {
     try {
       final dio = ref.read(dioClientProvider).dio;
       await dio.patch('/budgets/$id', data: {
         'limitAmount': limitAmount,
+        'walletId': walletId,
       });
       await fetchBudgets();
     } catch (e) {

@@ -30,6 +30,7 @@ export class BudgetsService {
     const [newBudget] = await this.db.insert(budgets).values({
       userId,
       ...createBudgetDto,
+      walletId: createBudgetDto.walletId || null,
       limitAmount: createBudgetDto.limitAmount.toString(),
       periodCount: createBudgetDto.periodCount ?? 1,
       startDay: createBudgetDto.startDay ?? 1,
@@ -66,7 +67,10 @@ export class BudgetsService {
 
     const data = await this.db.query.budgets.findMany({
       where: and(...conditions),
-      with: { category: true },
+      with: { 
+        category: true,
+        wallet: true 
+      },
       limit: 200, // fetch all, filter in JS
       offset: 0,
     });
@@ -99,33 +103,40 @@ export class BudgetsService {
       endMonthDate.setDate(endMonthDate.getDate() - 1);
       endMonthDate.setHours(23, 59, 59, 999);
 
+      // If budget has walletId, calculate against that wallet using raw amount
+      // If global (no walletId), calculate against all wallets using baseAmount
+      const amountCol = b.walletId ? sql<number>`SUM(amount::numeric)` : sql<number>`SUM(base_amount::numeric)`;
+      const walletCond = b.walletId ? eq(transactions.walletId, b.walletId) : undefined;
+
+      const spentConds = [
+        eq(transactions.userId, userId),
+        eq(transactions.categoryId, b.categoryId),
+        eq(transactions.type, 'expense'),
+        gte(transactions.date, periodStartDate),
+        lte(transactions.date, endMonthDate)
+      ];
+      if (walletCond) spentConds.push(walletCond);
+
       const spentData = await this.db
-        .select({ total: sql<number>`SUM(amount::numeric)` })
+        .select({ total: amountCol })
         .from(transactions)
-        .where(
-          and(
-            eq(transactions.userId, userId),
-            eq(transactions.categoryId, b.categoryId),
-            eq(transactions.type, 'expense'),
-            gte(transactions.date, periodStartDate),
-            lte(transactions.date, endMonthDate)
-          )
-        );
+        .where(and(...spentConds));
 
       const spentAmount = Number(spentData[0]?.total || 0);
 
       // Also compute income in the same period for the summary pill
+      const incomeConds = [
+        eq(transactions.userId, userId),
+        eq(transactions.type, 'income'),
+        gte(transactions.date, periodStartDate),
+        lte(transactions.date, endMonthDate)
+      ];
+      if (walletCond) incomeConds.push(walletCond);
+
       const incomeData = await this.db
-        .select({ total: sql<number>`SUM(amount::numeric)` })
+        .select({ total: amountCol })
         .from(transactions)
-        .where(
-          and(
-            eq(transactions.userId, userId),
-            eq(transactions.type, 'income'),
-            gte(transactions.date, periodStartDate),
-            lte(transactions.date, endMonthDate)
-          )
-        );
+        .where(and(...incomeConds));
 
       const incomeAmount = Number(incomeData[0]?.total || 0);
 
@@ -147,7 +158,7 @@ export class BudgetsService {
   async findOne(userId: string, id: string) {
     const budget = await this.db.query.budgets.findFirst({
       where: and(eq(budgets.id, id), eq(budgets.userId, userId)),
-      with: { category: true }
+      with: { category: true, wallet: true }
     });
 
     if (!budget) throw new NotFoundException('Budget not found');
@@ -158,6 +169,7 @@ export class BudgetsService {
     // Optimized: single query — no separate findOne before update
     const updateData: any = { ...updateBudgetDto, updatedAt: new Date() };
     if (updateBudgetDto.limitAmount) updateData.limitAmount = updateBudgetDto.limitAmount.toString();
+    if (updateBudgetDto.walletId === null) updateData.walletId = null;
 
     const [updated] = await this.db.update(budgets)
       .set(updateData)

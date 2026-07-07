@@ -215,6 +215,25 @@ class BudgetCard extends ConsumerWidget {
                                 ),
                               ),
                             ),
+                            // Wallet badge
+                            if (tx['wallet']?['name'] != null)
+                              Container(
+                                margin: const EdgeInsets.only(right: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  tx['wallet']['name'] as String,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             // Period badge
                             Container(
                               padding: const EdgeInsets.symmetric(
