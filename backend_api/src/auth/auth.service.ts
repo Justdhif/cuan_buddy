@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { users, userProfiles, categories } from '../database/schema';
+import { users, userProfiles, categories, wallets } from '../database/schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -67,6 +67,15 @@ export class AuthService {
       }));
 
       await this.db.insert(categories).values(categoriesToInsert);
+
+      // Create a default wallet for the user
+      await this.db.insert(wallets).values({
+        userId: insertedUser.id,
+        name: 'Cash',
+        type: 'cash',
+        currency: 'IDR',
+        balance: '0',
+      });
 
       const newUser = insertedUser;
 
@@ -189,7 +198,19 @@ export class AuthService {
         throw new BadRequestException('User not found');
       }
 
-      return { message: 'Your account has been successfully verified. Please log in.' };
+      // Automatically generate tokens for auto-login after verification
+      const tokens = this.generateTokens(updatedUser.id, updatedUser.email);
+      
+      // Update lastLoginAt
+      void this.db
+        .update(users)
+        .set({ lastLoginAt: new Date() })
+        .where(eq(users.id, updatedUser.id));
+
+      return { 
+        message: 'Your account has been successfully verified.',
+        ...tokens 
+      };
     } catch (error) {
       throw new BadRequestException('Verification token is invalid or has expired.');
     }

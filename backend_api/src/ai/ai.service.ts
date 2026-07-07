@@ -341,7 +341,7 @@ ${spendingData}`;
 
     // Fetch user profile to get their default currency
     const [profile] = await this.db
-      .select({ currency: userProfiles.currency })
+      .select({ currency: userProfiles.baseCurrency })
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId));
     const defaultCurrency = profile?.currency ?? 'IDR';
@@ -430,7 +430,7 @@ Do not add any explanations or markdown formatting.`;
 
     // Fetch user profile to get their default currency
     const [profile] = await this.db
-      .select({ currency: userProfiles.currency })
+      .select({ currency: userProfiles.baseCurrency })
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId));
     const defaultCurrency = profile?.currency ?? 'IDR';

@@ -416,17 +416,39 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 48),
-
-                // ── Save Button ────────────────────────────────────────
-                AppButton(
-                  label: l10n.saveGoal,
-                  onPressed: _save,
-                  type: AppButtonType.primary,
-                  isLoading: _isSaving,
-                ),
-                const SizedBox(height: 32),
               ],
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: GestureDetector(
+        onTap: _isSaving ? null : _save,
+        child: Container(
+          width: double.infinity,
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 64,
+              child: _isSaving
+                  ? const Center(
+                      child: SizedBox(
+                        height: 24, width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        l10n.saveGoal,
+                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
             ),
           ),
         ),

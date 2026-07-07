@@ -6,14 +6,20 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../../core/services/currency_service.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../providers/transaction_provider.dart';
+import '../../../budgets/presentation/providers/budgets_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -215,6 +221,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
     final savingsState = ref.watch(savingsNotifierProvider);
+    final budgetsState = ref.watch(budgetsNotifierProvider);
+    final iconShape = ref.watch(categoryIconShapeProvider);
+    final profileState = ref.watch(profileProvider);
+    final currencyCode = profileState.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
 
     return Scaffold(
       appBar: AppBar(
@@ -238,113 +249,247 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ),
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: InkWell(
-          onTap: _selectedCategoryId == null
-              ? () => _showCategoryPickerSheet(context, isDark, categoriesAsync)
-              : _isSaving ? null : _save,
-          child: Container(
-            width: double.infinity,
-            height: 60,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(_selectedCategoryId == null ? 0.7 : 1.0),
-            ),
-            child: _isSaving
-                ? const SizedBox(
-                    height: 24, width: 24,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                  )
-                : Text(
-                    _selectedCategoryId == null ? l10n.selectCategoryAction : l10n.saveTransaction,
-                    style: AppTypography.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+      bottomNavigationBar: GestureDetector(
+        onTap: _selectedCategoryId == null
+            ? () => _showCategoryPickerSheet(context, isDark, categoriesAsync)
+            : _isSaving ? null : _save,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: _selectedCategoryId == null
+                ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9))
+                : AppColors.primary,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 64,
+              child: _isSaving
+                  ? const Center(
+                      child: SizedBox(
+                        height: 24, width: 24,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        _selectedCategoryId == null ? l10n.selectCategoryAction : l10n.saveTransaction,
+                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
       ),
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            // ── Top Integrated Block ─────────────────────────────────────────────
-            Container(
-              color: isDark ? const Color(0xFF232838) : AppColors.primary.withOpacity(0.05),
-              child: Column(
-                children: [
-                  Row(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Top Integrated Block (scrolls with page) ─────────────────
+                Container(
+                  color: isDark ? const Color(0xFF232838) : AppColors.primary.withOpacity(0.05),
+                  child: Column(
                     children: [
-                      _buildTypeTab(
-                        context: context,
-                        targetType: 'expense',
-                        label: l10n.expenseType,
-                        activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withOpacity(0.1),
-                        isDark: isDark,
-                        icon: Icons.arrow_drop_down_rounded,
-                        iconColor: AppColors.danger,
+                      Row(
+                        children: [
+                          _buildTypeTab(
+                            context: context,
+                            targetType: 'expense',
+                            label: l10n.expenseType,
+                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withOpacity(0.1),
+                            isDark: isDark,
+                            icon: Icons.arrow_drop_down_rounded,
+                            iconColor: AppColors.danger,
+                          ),
+                          _buildTypeTab(
+                            context: context,
+                            targetType: 'income',
+                            label: l10n.incomeType,
+                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withOpacity(0.1),
+                            isDark: isDark,
+                            icon: Icons.arrow_drop_up_rounded,
+                            iconColor: AppColors.success,
+                          ),
+                        ],
                       ),
-                      _buildTypeTab(
-                        context: context,
-                        targetType: 'income',
-                        label: l10n.incomeType,
-                        activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withOpacity(0.1),
-                        isDark: isDark,
-                        icon: Icons.arrow_drop_up_rounded,
-                        iconColor: AppColors.success,
+                      AnimatedBuilder(
+                        animation: _amountController,
+                        builder: (context, _) {
+                          Map<String, dynamic>? selectedCategoryObj;
+                          categoriesAsync.whenData((categories) {
+                            if (_selectedCategoryId != null) {
+                              try {
+                                selectedCategoryObj = categories.firstWhere((c) => c['id'] == _selectedCategoryId);
+                              } catch (_) {}
+                            }
+                          });
+
+                          final amount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
+                          final categoryEmoji = selectedCategoryObj?['emojiIcon'] as String?;
+                          final categoryColorHex = selectedCategoryObj?['colorCode'] as String?;
+                          final categoryColor = categoryColorHex != null 
+                              ? AppColors.colorFromHex(categoryColorHex)
+                              : const Color(0xFF121212);
+
+                          return TransactionFormHeader(
+                            amount: amount,
+                            currencyCode: _selectedCurrency,
+                            categoryEmoji: categoryEmoji,
+                            categoryColor: categoryColor,
+                            type: _type,
+                            isDark: isDark,
+                            onCategoryTap: () => _showCategoryPickerSheet(context, isDark, categoriesAsync),
+                            onAmountTap: () => _showAmountCalculatorSheet(),
+                          );
+                        },
                       ),
                     ],
                   ),
-                  AnimatedBuilder(
-                    animation: Listenable.merge([
-                      _amountController,
-                    ]),
-                    builder: (context, _) {
-                      Map<String, dynamic>? selectedCategoryObj;
-                      categoriesAsync.whenData((categories) {
-                        if (_selectedCategoryId != null) {
-                          try {
-                            selectedCategoryObj = categories.firstWhere((c) => c['id'] == _selectedCategoryId);
-                          } catch (_) {}
-                        }
-                      });
+                ),
 
-                      final amount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
-                      final categoryEmoji = selectedCategoryObj?['emojiIcon'] as String?;
-                      final categoryColorHex = selectedCategoryObj?['colorCode'] as String?;
-                      final categoryColor = categoryColorHex != null 
-                          ? AppColors.colorFromHex(categoryColorHex)
-                          : const Color(0xFF121212);
-
-                      return TransactionFormHeader(
-                        amount: amount,
-                        currencyCode: _selectedCurrency,
-                        categoryEmoji: categoryEmoji,
-                        categoryColor: categoryColor,
-                        type: _type,
-                        isDark: isDark,
-                        onCategoryTap: () => _showCategoryPickerSheet(context, isDark, categoriesAsync),
-                        onAmountTap: () {
-                          _showAmountCalculatorSheet();
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Scrollable Form Fields ───────────────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                physics: const BouncingScrollPhysics(),
-                child: Form(
-                  key: _formKey,
+                // ── Form Fields ──────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── Budget Info for selected category (above Date Picker) ──
+                      if (_selectedCategoryId != null && _type == 'expense') ...[
+                        Builder(builder: (context) {
+                          final budget = budgetsState.budgets.cast<Map<String, dynamic>?>().firstWhere(
+                            (b) => b?['category']?['id'] == _selectedCategoryId || b?['categoryId'] == _selectedCategoryId,
+                            orElse: () => null,
+                          );
+
+                          if (budget == null) return const SizedBox.shrink();
+
+                          final rawL = budget['limitAmount'];
+                          final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
+                          final rawS = budget['spentAmount'];
+                          final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
+                          final baseRemaining = limitAmount - spentAmount;
+                          
+                          final budgetCurrency = budget['currency'] as String? ?? AppConstants.defaultCurrency;
+                          final enteredAmount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
+
+                          final catHex = budget['category']?['colorCode'] as String? ?? budget['colorCode'] as String?;
+                          final budgetColor = AppColors.colorFromHex(catHex, fallback: AppColors.primary);
+                          final fmt = NumberFormat.currency(locale: 'en_US', symbol: AppConstants.getCurrencySymbol(budgetCurrency), decimalDigits: 0);
+
+                          return FutureBuilder<double>(
+                            future: ref.read(currencyServiceProvider).convert(enteredAmount, _selectedCurrency, budgetCurrency),
+                            builder: (context, snapshot) {
+                              final convertedInput = snapshot.data ?? enteredAmount;
+                              final newSpent = spentAmount + convertedInput;
+                              final remaining = limitAmount - newSpent;
+                              final percentage = limitAmount > 0 ? (newSpent / limitAmount).clamp(0.0, 1.0) : 0.0;
+
+                              Color progressColor;
+                              if (percentage >= 1.0) {
+                                progressColor = AppColors.danger;
+                              } else if (percentage >= 0.8) {
+                                progressColor = AppColors.warning;
+                              } else {
+                                progressColor = AppColors.success;
+                              }
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: budgetColor.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: budgetColor.withOpacity(remaining < 0 ? 0.6 : 0.25),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.account_balance_wallet_rounded, size: 14, color: budgetColor),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Budget Kategori',
+                                              style: AppTypography.textTheme.labelMedium?.copyWith(
+                                                color: budgetColor,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          fmt.format(limitAmount),
+                                          style: AppTypography.textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark ? Colors.white70 : Colors.black54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: LinearProgressIndicator(
+                                        value: percentage,
+                                        minHeight: 6,
+                                        backgroundColor: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                                        valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Terpakai: ${fmt.format(newSpent)}',
+                                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                          ),
+                                        ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              remaining < 0 ? Icons.warning_rounded : Icons.savings_rounded,
+                                              size: 13,
+                                              color: remaining < 0 ? AppColors.danger : AppColors.success,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              remaining < 0
+                                                  ? 'Melebihi ${fmt.format(remaining.abs())}'
+                                                  : 'Sisa ${fmt.format(remaining)}',
+                                              style: AppTypography.textTheme.labelSmall?.copyWith(
+                                                color: remaining < 0 ? AppColors.danger : AppColors.success,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }),
+                      ],
+
                       // ── Date & Time Picker ─────────────────────────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -396,7 +541,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // ── Savings Goals ──────────────────────────────────────
                       if (widget.lockedSavingsGoal && _selectedSavingsGoalId != null) ...[
                         Builder(builder: (context) {
@@ -473,106 +618,108 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         }),
                         const SizedBox(height: 24),
                       ] else ...[
-                        Transform.translate(
-                          offset: const Offset(-24, 0),
-                          child: SizedBox(
-                            width: MediaQuery.of(context).size.width,
-                            height: 48,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(horizontal: 24),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: 2 + (savingsState.isLoading ? 3 : savingsState.goals.length),
-                              separatorBuilder: (context, index) => const SizedBox(width: 12),
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  // 1. No saving goals
-                                  final isSelected = _selectedSavingsGoalId == null;
-                                  return GestureDetector(
-                                    onTap: () => setState(() => _selectedSavingsGoalId = null),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                        border: Border.all(
-                                          color: isSelected ? AppColors.primary : Colors.transparent,
-                                          width: 1.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
+                        SizedBox(
+                          height: 48,
+                          child: ListView.separated(
+                            padding: EdgeInsets.zero,
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: 2 + (savingsState.isLoading ? 3 : savingsState.goals.length),
+                            separatorBuilder: (context, index) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                // 1. No saving goals
+                                final isSelected = _selectedSavingsGoalId == null;
+                                return GestureDetector(
+                                  onTap: () => setState(() => _selectedSavingsGoalId = null),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                      border: Border.all(
+                                        color: isSelected ? AppColors.primary : Colors.transparent,
+                                        width: 1.5,
                                       ),
-                                      child: Center(
-                                        child: Text(
-                                          l10n.noSavingsGoals,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        l10n.noSavingsGoals,
+                                        style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              } else if (index == 1 + (savingsState.isLoading ? 3 : savingsState.goals.length)) {
+                                // 3. Button plus (Last item)
+                                return GestureDetector(
+                                  onTap: () => context.push('/savings/form'),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(Icons.add, size: 20),
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                // 2. Data saving
+                                final goalIndex = index - 1;
+                                if (savingsState.isLoading) {
+                                  return _SkeletonChip(isDark: isDark);
+                                }
+
+                                final goal = savingsState.goals[goalIndex];
+                                final goalId = goal['id'] as String;
+                                final goalName = goal['name'] as String? ?? '';
+                                final goalEmoji = goal['emojiIcon'] as String? ?? '🎯';
+
+                                final isSelected = _selectedSavingsGoalId == goalId;
+
+                                return GestureDetector(
+                                  onTap: () => setState(() => _selectedSavingsGoalId = goalId),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 200),
+                                    height: 48,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                      border: Border.all(
+                                        color: isSelected ? AppColors.primary : Colors.transparent,
+                                        width: 1.5,
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(goalEmoji, style: const TextStyle(fontSize: 16)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          goalName,
                                           style: AppTypography.textTheme.bodyMedium?.copyWith(
                                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                             color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                  );
-                                } else if (index == 1 + (savingsState.isLoading ? 3 : savingsState.goals.length)) {
-                                  // 3. Button plus (Last item)
-                                  return GestureDetector(
-                                    onTap: () => context.push('/savings/form'),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.add, size: 20),
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  // 2. Data saving
-                                  final goalIndex = index - 1;
-                                  if (savingsState.isLoading) {
-                                    return _SkeletonChip(isDark: isDark);
-                                  }
-
-                                  final goal = savingsState.goals[goalIndex];
-                                  final goalId = goal['id'] as String;
-                                  final goalName = goal['name'] as String? ?? '';
-                                  final goalEmoji = goal['emojiIcon'] as String? ?? '🎯';
-                                  
-                                  final isSelected = _selectedSavingsGoalId == goalId;
-                                  
-                                  return GestureDetector(
-                                    onTap: () => setState(() => _selectedSavingsGoalId = goalId),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                        border: Border.all(
-                                          color: isSelected ? AppColors.primary : Colors.transparent,
-                                          width: 1.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(goalEmoji, style: const TextStyle(fontSize: 16)),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            goalName,
-                                            style: AppTypography.textTheme.bodyMedium?.copyWith(
-                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -601,9 +748,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -705,31 +852,39 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   void _showCategoryPickerSheet(BuildContext context, bool isDark, AsyncValue<List<dynamic>> categoriesAsync) {
-    showModalBottomSheet(
+    final iconShape = ref.read(categoryIconShapeProvider);
+    AppBottomSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.65,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 12),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pilih Kategori',
+                    style: AppTypography.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surfaceDark : const Color(0xFFF1F3F5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.category_rounded,
+                      size: 20,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Pilih Kategori',
-              style: AppTypography.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -745,12 +900,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   }
 
                   return GridView.builder(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
-                      mainAxisSpacing: 24,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 0.7,
+                      mainAxisSpacing: 20,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.72,
                     ),
                     itemCount: filtered.length,
                     itemBuilder: (context, index) {
@@ -760,35 +915,57 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       final catEmoji = cat['emojiIcon'] as String? ?? '💰';
                       final catColorHex = cat['colorCode'] as String?;
                       final catColor = AppColors.colorFromHex(catColorHex);
+                      final isSelected = _selectedCategoryId == catId;
 
                       return GestureDetector(
                         onTap: () {
                           setState(() => _selectedCategoryId = catId);
-                          Navigator.pop(context);
+                          Navigator.pop(ctx);
                         },
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: catColor.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: catColor, width: 2),
-                              ),
-                              child: Center(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          decoration: BoxDecoration(
+                            color: isSelected ? catColor.withOpacity(0.15) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: isSelected ? Border.all(color: catColor, width: 1.5) : null,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                alignment: Alignment.center,
+                                decoration: ShapeDecoration(
+                                  color: catColor.withOpacity(0.18),
+                                  shape: iconShape == CategoryIconShape.circle
+                                      ? CircleBorder(side: BorderSide(color: catColor, width: 2))
+                                      : iconShape == CategoryIconShape.squircle
+                                          ? ContinuousRectangleBorder(
+                                              borderRadius: BorderRadius.circular(24),
+                                              side: BorderSide(color: catColor, width: 2),
+                                            )
+                                          : RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(14),
+                                              side: BorderSide(color: catColor, width: 2),
+                                            ),
+                                ),
                                 child: Text(catEmoji, style: const TextStyle(fontSize: 24)),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              catName,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.textTheme.labelSmall,
-                            ),
-                          ],
+                              const SizedBox(height: 6),
+                              Text(
+                                catName,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTypography.textTheme.labelSmall?.copyWith(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? catColor : null,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -904,7 +1081,7 @@ class TransactionFormHeader extends StatelessWidget {
             color: typeColor.withOpacity(0.15),
             child: InkWell(
               onTap: onCategoryTap,
-              child: Container(
+              child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
                 child: Container(
                   width: 64,

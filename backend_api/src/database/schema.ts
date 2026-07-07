@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, boolean, uuid, integer, decimal, pgEnum } from 'drizzle-orm/pg-core';
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense']);
+export const walletTypeEnum = pgEnum('wallet_type', ['cash', 'bank', 'e_wallet', 'crypto', 'other']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -26,7 +27,7 @@ export const userProfiles = pgTable('user_profiles', {
   birthDate: timestamp('birth_date'),
   gender: text('gender'),
   bio: text('bio'),
-  currency: text('currency').default('USD'),
+  baseCurrency: text('base_currency').default('IDR'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -41,13 +42,26 @@ export const categories = pgTable('categories', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const wallets = pgTable('wallets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  type: walletTypeEnum('type').default('cash').notNull(),
+  currency: text('currency').default('IDR').notNull(),
+  balance: decimal('balance', { precision: 19, scale: 2 }).default('0').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  walletId: uuid('wallet_id').notNull().references(() => wallets.id, { onDelete: 'cascade' }),
   title: text('title'),
   type: transactionTypeEnum('type').notNull(),
   amount: decimal('amount', { precision: 19, scale: 2 }).notNull(),
-  currency: text('currency').default('IDR').notNull(),
+  exchangeRate: decimal('exchange_rate', { precision: 19, scale: 6 }).default('1').notNull(),
+  baseAmount: decimal('base_amount', { precision: 19, scale: 2 }).notNull(),
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
   savingsGoalId: uuid('savings_goal_id').references(() => savingsGoals.id, { onDelete: 'set null' }),
   note: text('note'),
@@ -63,7 +77,6 @@ export const budgets = pgTable('budgets', {
   limitAmount: decimal('limit_amount', { precision: 19, scale: 2 }).notNull(),
   periodCount: integer('period_count').default(1).notNull(), // how many months this budget spans
   startDay: integer('start_day').default(1).notNull(),       // which day of month the period starts
-  currency: text('currency').default('IDR').notNull(),
   monthYear: text('month_year').notNull(), // format YYYY-MM (start month)
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -77,7 +90,6 @@ export const savingsGoals = pgTable('savings_goals', {
   colorCode: text('color_code').default('#6C63FF'),
   targetAmount: decimal('target_amount', { precision: 19, scale: 2 }).notNull(),
   currentAmount: decimal('current_amount', { precision: 19, scale: 2 }).default('0').notNull(),
-  currency: text('currency').default('IDR').notNull(),
   targetDate: timestamp('target_date'),
   status: text('status').default('in_progress'), // in_progress, completed
   createdAt: timestamp('created_at').defaultNow().notNull(),

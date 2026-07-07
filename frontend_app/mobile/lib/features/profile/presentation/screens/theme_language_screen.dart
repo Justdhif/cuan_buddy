@@ -411,17 +411,14 @@ class _ShapePickerSheet extends StatelessWidget {
       {
         'shape': CategoryIconShape.circle,
         'name': CategoryIconShape.circle.displayName,
-        'icon': Icons.circle_outlined
       },
       {
         'shape': CategoryIconShape.square,
         'name': CategoryIconShape.square.displayName,
-        'icon': Icons.crop_square_outlined
       },
       {
         'shape': CategoryIconShape.squircle,
         'name': CategoryIconShape.squircle.displayName,
-        'icon': Icons.check_box_outline_blank
       },
     ];
 
@@ -440,6 +437,21 @@ class _ShapePickerSheet extends StatelessWidget {
             ...shapes.map((s) {
               final shape = s['shape'] as CategoryIconShape;
               final isSelected = shape == currentShape;
+              
+              // Custom Preview Container representing each actual shape
+              final previewColor = isSelected ? AppColors.primary : (isDark ? Colors.white60 : Colors.black54);
+              final ShapeBorder previewShape = shape == CategoryIconShape.circle
+                  ? CircleBorder(side: BorderSide(color: previewColor, width: 2))
+                  : shape == CategoryIconShape.squircle
+                      ? ContinuousRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: previewColor, width: 2),
+                        )
+                      : RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: previewColor, width: 2),
+                        );
+
               return GestureDetector(
                 onTap: () => onSelect(shape),
                 child: AnimatedContainer(
@@ -462,9 +474,22 @@ class _ShapePickerSheet extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(s['icon'] as IconData,
-                          size: 28,
-                          color: isSelected ? AppColors.primary : null),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: ShapeDecoration(
+                          shape: previewShape,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '💡',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isSelected ? AppColors.primary : null,
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Text(

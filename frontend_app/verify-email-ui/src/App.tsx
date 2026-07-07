@@ -17,6 +17,13 @@ function App() {
         if (response.ok) {
           setStatus("success");
           setMessage(data.message || "Your account has been successfully verified!");
+          
+          // Auto-login flow: redirect back to the app with the tokens
+          if (data.accessToken && data.refreshToken) {
+            setTimeout(() => {
+              window.location.href = `cuanbuddy://verify?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`;
+            }, 2000);
+          }
         } else {
           setStatus("error");
           setMessage(data.message || "Verification link is invalid or has expired.");

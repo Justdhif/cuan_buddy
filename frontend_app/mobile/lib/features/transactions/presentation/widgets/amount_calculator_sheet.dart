@@ -248,25 +248,28 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           ),
         ),
         const Divider(height: 1),
-        // Numpad Grid
-        Container(
-          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildNumpadRow(['1', '2', '3', '÷'], isDark),
-              const SizedBox(height: 12),
-              _buildNumpadRow(['4', '5', '6', '×'], isDark),
-              const SizedBox(height: 12),
-              _buildNumpadRow(['7', '8', '9', '-'], isDark),
-              const SizedBox(height: 12),
-              _buildNumpadRow([',', '0', '⌫', '+'], isDark),
-            ],
+        // Numpad Card
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A3349) : const Color(0xFFE8ECF2),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                _buildNumpadRow(['1', '2', '3', '÷'], isDark),
+                _buildNumpadRow(['4', '5', '6', '×'], isDark),
+                _buildNumpadRow(['7', '8', '9', '-'], isDark),
+                _buildNumpadRow([',', '0', '⌫', '+'], isDark),
+              ],
+            ),
           ),
         ),
         // Save Button
         Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ElevatedButton(
             onPressed: () {
               widget.onSave(_result, _currency);
@@ -281,9 +284,9 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
               ),
               elevation: 0,
             ),
-            child: Text(
-              'Atur jumlah', // Set amount
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            child: const Text(
+              'Atur jumlah',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -293,33 +296,30 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
 
   Widget _buildNumpadRow(List<String> keys, bool isDark) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: keys.map((key) {
         return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => _onKeyPress(key),
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  height: 56,
-                  alignment: Alignment.center,
-                  child: key == '⌫'
-                      ? Icon(Icons.backspace_outlined, 
-                          color: isDark ? Colors.white70 : Colors.black87)
-                      : Text(
-                          key,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: ['÷', '×', '-', '+'].contains(key) 
-                                ? FontWeight.w400 
-                                : FontWeight.w500,
-                            color: isDark ? Colors.white : Colors.black87,
-                          ),
+          child: InkWell(
+            onTap: () => _onKeyPress(key),
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              height: 64,
+              child: Center(
+                child: key == '⌫'
+                    ? Icon(
+                        Icons.backspace_outlined,
+                        size: 24,
+                        color: isDark ? Colors.white : Colors.black87,
+                      )
+                    : Text(
+                        key,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: ['÷', '×', '-', '+'].contains(key)
+                              ? FontWeight.w300
+                              : FontWeight.w400,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
-                ),
+                      ),
               ),
             ),
           ),

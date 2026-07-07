@@ -10,8 +10,9 @@ import '../../../../core/widgets/app_button.dart';
 import '../providers/auth_provider.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
-  const EmailVerificationScreen({super.key, this.email});
+  const EmailVerificationScreen({super.key, this.email, this.password});
   final String? email;
+  final String? password;
 
   @override
   ConsumerState<EmailVerificationScreen> createState() =>
@@ -67,13 +68,35 @@ class _EmailVerificationScreenState
 
       if (isActive) {
         setState(() => _isVerified = true);
+        
+        // Attempt to auto-login
+        if (widget.password != null && widget.password!.isNotEmpty) {
+          final loginResult = await ref.read(authNotifierProvider.notifier).login(
+            email: widget.email!,
+            password: widget.password!,
+          );
+          if (loginResult == null) { // null means success
+            AppSnackbar.show(
+              context,
+              title: l10n.success,
+              message: l10n.accountVerifiedRedirecting, // Or 'Auto-login successful'
+              type: SnackbarType.success,
+            );
+            _redirectTimer = Timer(const Duration(seconds: 2), () {
+              if (mounted) context.go('/profile-setup');
+            });
+            return;
+          }
+        }
+        
+        // Fallback if password is missing or login failed
         AppSnackbar.show(
           context,
           title: l10n.success,
           message: l10n.accountVerifiedRedirecting,
           type: SnackbarType.success,
         );
-        _redirectTimer = Timer(const Duration(seconds: 5), () {
+        _redirectTimer = Timer(const Duration(seconds: 3), () {
           if (mounted) context.go('/login');
         });
       } else {
@@ -250,7 +273,17 @@ class _EmailVerificationScreenState
                 label: l10n.goToLoginNow,
                 onPressed: () {
                   _redirectTimer?.cancel();
-                  context.go('/login');
+                  if (widget.password != null && widget.password!.isNotEmpty) {
+                    ref.read(authNotifierProvider.notifier).login(
+                      email: widget.email!,
+                      password: widget.password!,
+                    ).then((err) {
+                      if (err == null && mounted) context.go('/profile-setup');
+                      else if (mounted) context.go('/login');
+                    });
+                  } else {
+                    context.go('/login');
+                  }
                 },
                 type: AppButtonType.primary,
               ),

@@ -44,7 +44,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = false);
     if (!mounted) return;
     if (message != null) {
-      context.push('/verify-email', extra: _emailController.text.trim());
+      context.push('/verify-email', extra: {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      });
     }
   }
 

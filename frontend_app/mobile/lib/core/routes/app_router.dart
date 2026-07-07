@@ -83,8 +83,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/verify-email',
         pageBuilder: (context, state) {
-          final email = state.extra as String?;
-          return _buildPage(state, EmailVerificationScreen(email: email));
+          final extra = state.extra as Map<String, dynamic>?;
+          final email = extra?['email'] as String?;
+          final password = extra?['password'] as String?;
+          return _buildPage(state, EmailVerificationScreen(email: email, password: password));
         },
       ),
       GoRoute(
