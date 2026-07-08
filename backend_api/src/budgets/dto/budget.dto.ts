@@ -2,7 +2,12 @@ import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
 export const CreateBudgetSchema = z.object({
-  categoryId: z.string().uuid(),
+  name: z.string().optional().nullable(),
+  emojiIcon: z.string().optional().nullable(),
+  colorCode: z.string().optional().nullable(),
+  type: z.enum(['standalone', 'category']).optional().default('category'),
+  categoryIds: z.array(z.string().uuid()).optional().nullable(),
+  categoryId: z.string().uuid().optional().nullable(),
   walletId: z.string().uuid().optional().nullable(),
   limitAmount: z.number().positive(),
   currency: z.string().optional(),

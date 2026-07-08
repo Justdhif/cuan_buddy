@@ -426,59 +426,83 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
 
                 // ── Wallet Selector ───────────────────────────────────────
                 Text('Pilih Dompet', style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Text(
-                  'Biarkan "Semua Dompet" untuk membuat tabungan global',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                  ),
-                ),
                 const SizedBox(height: 8),
                 walletsAsync.when(
                   loading: () => const SizedBox(height: 52, child: Center(child: CircularProgressIndicator())),
                   error: (_, __) => const Text('Gagal memuat dompet', style: TextStyle(color: AppColors.danger, fontSize: 12)),
                   data: (wallets) {
+                    if (wallets.isEmpty) {
+                      return Row(
+                        children: [
+                          const Expanded(child: Text('No wallets found. Please create one.')),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline),
+                            onPressed: () => context.push('/manage-wallets'),
+                          ),
+                        ],
+                      );
+                    }
                     return SizedBox(
-                      height: 52,
+                      height: 36,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         padding: EdgeInsets.zero,
+                        clipBehavior: Clip.none,
+                        physics: const BouncingScrollPhysics(),
                         itemCount: wallets.length + 1,
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
-                          final isAll = index == 0;
-                          final walletId = isAll ? null : wallets[index - 1]['id'] as String;
-                          final walletName = isAll ? 'Semua Dompet' : wallets[index - 1]['name'] as String;
+                          if (index == wallets.length) {
+                            return GestureDetector(
+                              onTap: () => context.push('/manage-wallets'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.add, size: 16),
+                                ),
+                              ),
+                            );
+                          }
+                          
+                          final wallet = wallets[index];
+                          final walletId = wallet['id'] as String;
+                          final walletName = '${wallet['name']} (${wallet['currency']})';
+                          final walletEmoji = wallet['emojiIcon'] as String? ?? '💼';
+                          final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
+                          final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
                           final isSelected = _selectedWalletId == walletId;
 
                           return GestureDetector(
                             onTap: () => setState(() => _selectedWalletId = walletId),
                             child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              duration: const Duration(milliseconds: 200),
+                              height: 36,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
-                                borderRadius: BorderRadius.circular(14),
+                                color: isSelected ? walletColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                                  width: isSelected ? 1.5 : 1,
+                                  color: isSelected ? walletColor : Colors.transparent,
+                                  width: 1.5,
                                 ),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
-                                    isAll ? Icons.account_balance_wallet_rounded : Icons.account_balance_wallet_outlined,
-                                    size: 18,
-                                    color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
-                                  ),
+                                  Text(walletEmoji, style: const TextStyle(fontSize: 14)),
                                   const SizedBox(width: 6),
                                   Text(
                                     walletName,
                                     style: AppTypography.textTheme.labelMedium?.copyWith(
-                                      color: isSelected ? AppColors.primary : null,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected ? (isDark ? Colors.white : walletColor) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
                                 ],

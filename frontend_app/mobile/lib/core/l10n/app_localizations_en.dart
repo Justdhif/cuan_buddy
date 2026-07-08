@@ -497,6 +497,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteCategoryConfirm =>
       'Are you sure you want to delete this category?';
   @override
+  String get newLabel => 'New';
+  @override
   String get newCategory => 'New Category';
   @override
   String get editCategory => 'Edit Category';
@@ -1116,4 +1118,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackInstruction => 'Help us improve CuanBuddy by sending your suggestions or bug reports.';
   @override
   String get sendFeedback => 'Send Feedback';
+
+  // Budget Screen Additions
+  @override
+  String get startMonth => 'Start Month';
+  @override
+  String get startDate => 'Start Date';
+  @override
+  String get periodStartsOnWhatDate => 'On what date does the period start each month';
+  @override
+  String selectedDateInfo(int day) => 'Selected date: $day';
+  @override
+  String get periodCountMonths => 'Period Count (Months)';
+  @override
+  String get howManyMonthsBudgetValid => 'How many months is this budget valid for';
+  @override
+  String get monthLabel => 'months';
+  @override
+  String get categoryBudget => 'Category Budget';
+  @override
+  String get endMonth => 'End';
+  @override
+  String get budgetName => 'Budget Name';
+  @override
+  String get budgetNameHint => 'e.g. Monthly Groceries';
+  @override
+  String get budgetTypeStandalone => 'Standalone Budget';
+  @override
+  String get budgetTypeAll => 'All Categories';
+  @override
+  String get budgetTypeSpecific => 'Specific Categories';
+  @override
+  String get selectCategories => 'Select Categories';
+  @override
+  String get selectAll => 'Select All';
+  @override
+  String get budgetIcon => 'Budget Icon';
+  @override
+  String get budgetColor => 'Budget Color';
 }

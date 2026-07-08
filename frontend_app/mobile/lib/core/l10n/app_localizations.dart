@@ -287,6 +287,7 @@ abstract class AppLocalizations {
   String get noCategoriesFound;
   String get deleteCategory;
   String get deleteCategoryConfirm;
+  String get newLabel;
   String get newCategory;
   String get editCategory;
   String get categoryName;
@@ -594,6 +595,26 @@ abstract class AppLocalizations {
   String get feedbackEmptyError;
   String get feedbackInstruction;
   String get sendFeedback;
+
+  // Budget Screen Additions
+  String get startMonth;
+  String get startDate;
+  String get periodStartsOnWhatDate;
+  String selectedDateInfo(int day);
+  String get periodCountMonths;
+  String get howManyMonthsBudgetValid;
+  String get monthLabel;
+  String get categoryBudget;
+  String get endMonth;
+  String get budgetName;
+  String get budgetNameHint;
+  String get budgetTypeStandalone;
+  String get budgetTypeAll;
+  String get budgetTypeSpecific;
+  String get selectCategories;
+  String get selectAll;
+  String get budgetIcon;
+  String get budgetColor;
 }
 class AppLocalizationsScope extends InheritedWidget {
   const AppLocalizationsScope({

@@ -501,6 +501,8 @@ class AppLocalizationsId extends AppLocalizations {
   String get deleteCategoryConfirm =>
       'Apakah kamu yakin ingin menghapus kategori ini?';
   @override
+  String get newLabel => 'Baru';
+  @override
   String get newCategory => 'Kategori Baru';
   @override
   String get editCategory => 'Edit Kategori';
@@ -1119,4 +1121,42 @@ class AppLocalizationsId extends AppLocalizations {
   String get feedbackInstruction => 'Bantu kami meningkatkan CuanBuddy dengan mengirimkan saran atau laporan masalah Anda.';
   @override
   String get sendFeedback => 'Kirim Masukan';
+
+  // Budget Screen Additions
+  @override
+  String get startMonth => 'Bulan Mulai';
+  @override
+  String get startDate => 'Mulai Tanggal';
+  @override
+  String get periodStartsOnWhatDate => 'Periode dimulai pada tanggal berapa setiap bulannya';
+  @override
+  String selectedDateInfo(int day) => 'Tanggal dipilih: $day';
+  @override
+  String get periodCountMonths => 'Jumlah Periode (Bulan)';
+  @override
+  String get howManyMonthsBudgetValid => 'Berapa bulan budget ini berlaku';
+  @override
+  String get monthLabel => 'bulan';
+  @override
+  String get categoryBudget => 'Budget Kategori';
+  @override
+  String get endMonth => 'Akhir';
+  @override
+  String get budgetName => 'Nama Budget';
+  @override
+  String get budgetNameHint => 'Mis. Belanja Bulanan';
+  @override
+  String get budgetTypeStandalone => 'Hanya Menambahkan';
+  @override
+  String get budgetTypeAll => 'Semua Kategori';
+  @override
+  String get budgetTypeSpecific => 'Kategori Tertentu';
+  @override
+  String get selectCategories => 'Pilih Kategori';
+  @override
+  String get selectAll => 'Pilih Semua';
+  @override
+  String get budgetIcon => 'Ikon Budget';
+  @override
+  String get budgetColor => 'Warna Budget';
 }

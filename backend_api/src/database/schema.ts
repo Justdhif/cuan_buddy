@@ -1,7 +1,8 @@
-import { pgTable, text, timestamp, boolean, uuid, integer, decimal, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, uuid, integer, decimal, pgEnum, jsonb } from 'drizzle-orm/pg-core';
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense']);
 export const walletTypeEnum = pgEnum('wallet_type', ['cash', 'bank', 'e_wallet', 'crypto', 'other']);
+export const budgetTypeEnum = pgEnum('budget_type', ['standalone', 'category']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -75,7 +76,12 @@ export const transactions = pgTable('transactions', {
 export const budgets = pgTable('budgets', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').notNull().references(() => categories.id, { onDelete: 'cascade' }),
+  name: text('name'),
+  emojiIcon: text('emoji_icon'),
+  colorCode: text('color_code'),
+  type: budgetTypeEnum('type').default('category').notNull(),
+  categoryIds: jsonb('category_ids'),
+  categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }),
   walletId: uuid('wallet_id').references(() => wallets.id, { onDelete: 'set null' }),
   limitAmount: decimal('limit_amount', { precision: 19, scale: 2 }).notNull(),
   periodCount: integer('period_count').default(1).notNull(), // how many months this budget spans

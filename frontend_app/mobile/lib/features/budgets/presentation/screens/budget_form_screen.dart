@@ -6,14 +6,16 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import '../../../../core/constants/app_constants.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/providers/core_providers.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/theme/category_icon_shape.dart';
 import '../providers/budgets_provider.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
+import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../../../wallets/providers/wallet_provider.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
   const BudgetFormScreen({super.key, this.budget, this.initialCategoryId});
@@ -28,13 +30,33 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
-  String? _selectedCategoryId;
+  final _nameController = TextEditingController();
+  
+  String? _selectedEmoji;
+  Color _selectedColor = AppColors.primary;
+  String _budgetType = 'category'; // 'standalone' or 'category'
+  Set<String> _selectedCategoryIds = {};
+  
   String? _selectedWalletId;
   DateTime _selectedDate = DateTime.now();
-  String _selectedCurrency = AppConstants.defaultCurrency;
+  String _selectedCurrency = 'IDR';
   int _periodCount = 1;
   int _startDay = 1;
   bool _isSaving = false;
+
+  final List<Color> _presetColors = [
+    AppColors.primary,
+    Colors.red,
+    Colors.orange,
+    Colors.amber,
+    Colors.green,
+    Colors.teal,
+    Colors.cyan,
+    Colors.blue,
+    Colors.indigo,
+    Colors.purple,
+    Colors.pink,
+  ];
 
   @override
   void initState() {
@@ -45,10 +67,32 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           ? rawL.toDouble()
           : double.tryParse(rawL?.toString() ?? '0') ?? 0;
       _amountController.text = limitAmount.toStringAsFixed(0);
-      _selectedCategoryId = widget.budget!['categoryId']?.toString();
+      
+      _nameController.text = widget.budget!['name'] as String? ?? '';
+      _selectedEmoji = widget.budget!['emojiIcon'] as String?;
+      
+      final colorHex = widget.budget!['colorCode'] as String?;
+      if (colorHex != null) {
+        _selectedColor = AppColors.colorFromHex(colorHex);
+      }
+      
+      // Parse type
+      _budgetType = widget.budget!['type'] == 'standalone' ? 'standalone' : 'category';
+      
+      // Parse category IDs
+      final cats = widget.budget!['categoryIds'];
+      if (cats is List) {
+        _selectedCategoryIds = cats.map((e) => e.toString()).toSet();
+      } else if (widget.budget!['categoryId'] != null) {
+        _selectedCategoryIds = {widget.budget!['categoryId'].toString()};
+      }
+      
+      if (_budgetType == 'category' && _selectedCategoryIds.isEmpty && widget.budget!['categoryId'] != null) {
+          _selectedCategoryIds.add(widget.budget!['categoryId'].toString());
+      }
+      
       _selectedWalletId = widget.budget!['walletId']?.toString();
-      _selectedCurrency =
-          widget.budget!['currency'] ?? AppConstants.defaultCurrency;
+      _selectedCurrency = widget.budget!['currency'] ?? 'IDR';
       _periodCount = (widget.budget!['periodCount'] as num?)?.toInt() ?? 1;
       _startDay = (widget.budget!['startDay'] as num?)?.toInt() ?? 1;
 
@@ -59,32 +103,25 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         }
       }
 
-      final daysInMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
+      final daysInMonth =
+          DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
       if (_startDay > daysInMonth) {
         _startDay = daysInMonth;
       }
     } else if (widget.initialCategoryId != null) {
-      _selectedCategoryId = widget.initialCategoryId;
+      _selectedCategoryIds = {widget.initialCategoryId!};
     }
   }
 
   @override
   void dispose() {
     _amountController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedCategoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.pleaseSelectCategory),
-          backgroundColor: AppColors.danger,
-        ),
-      );
-      return;
-    }
 
     setState(() => _isSaving = true);
 
@@ -93,14 +130,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     try {
       final dio = ref.read(dioClientProvider).dio;
       final payload = {
-        'categoryId': _selectedCategoryId!,
-        'limitAmount': double.parse(_amountController.text.replaceAll(',', '')),
+        'name': _nameController.text.trim(),
+        'emojiIcon': _selectedEmoji,
+        'colorCode': '#${_selectedColor.value.toRadixString(16).substring(2).toUpperCase()}',
+        'type': _budgetType,
+        'categoryIds': _budgetType == 'standalone' ? [] : _selectedCategoryIds.toList(),
+        if (_budgetType == 'category' && _selectedCategoryIds.isNotEmpty)
+           'categoryId': _selectedCategoryIds.first, // Backward compatibility
+        'limitAmount':
+            double.parse(_amountController.text.replaceAll(',', '')),
         'currency': _selectedCurrency,
         'monthYear': monthYearStr,
         'periodCount': _periodCount,
         'startDay': _startDay,
         if (_selectedWalletId != null) 'walletId': _selectedWalletId,
       };
+      
       if (widget.budget == null) {
         await dio.post('/budgets', data: payload);
         ref.invalidate(budgetsNotifierProvider);
@@ -126,7 +171,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       setState(() => _isSaving = false);
       if (mounted) {
         AppSnackbar.show(context,
-            title: l10n.error, message: e.toString(), type: SnackbarType.error);
+            title: l10n.error,
+            message: e.toString(),
+            type: SnackbarType.error);
       }
     }
   }
@@ -136,7 +183,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Budget?'),
-        content: const Text('Are you sure you want to delete this budget?'),
+        content:
+            const Text('Are you sure you want to delete this budget?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -144,8 +192,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child:
-                const Text('Delete', style: TextStyle(color: AppColors.danger)),
+            child: const Text('Delete',
+                style: TextStyle(color: AppColors.danger)),
           ),
         ],
       ),
@@ -174,15 +222,132 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     }
   }
 
+  void _showAmountCalculatorSheet() {
+    AmountCalculatorSheet.show(
+      context,
+      initialAmount:
+          double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0,
+      initialCurrency: _selectedCurrency,
+      onSave: (amount, currency) {
+        setState(() {
+          _amountController.text = NumberFormat('#,###').format(amount);
+          _selectedCurrency = currency;
+        });
+      },
+    );
+  }
+
+  void _showEmojiPicker() {
+    AppBottomSheet.show(
+      context: context,
+      builder: (ctx) => SizedBox(
+        height: 300,
+        child: EmojiPicker(
+          onEmojiSelected: (category, emoji) {
+            setState(() {
+              _selectedEmoji = emoji.emoji;
+            });
+            Navigator.pop(ctx);
+          },
+        ),
+      ),
+    );
+  }
+  
+  void _showColorPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    AppBottomSheet.show(
+      context: context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.budgetColor,
+              style: AppTypography.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              alignment: WrapAlignment.center,
+              children: _presetColors.map((color) {
+                final isSelected = _selectedColor == color;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedColor = color);
+                    Navigator.pop(ctx);
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                      border: isSelected ? Border.all(color: isDark ? Colors.white : Colors.black, width: 3) : null,
+                      boxShadow: [
+                        BoxShadow(
+                          color: color.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
     final walletsAsync = ref.watch(walletsProvider);
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
-    // Only show expense categories for budgets
-    final expenseCategories = categoriesAsync.whenData((all) =>
-        all.where((c) => c['type'] == 'expense' || c['type'] == null).toList());
+    // Auto-select base currency wallet on create
+    if (widget.budget == null &&
+        _selectedWalletId == null &&
+        walletsAsync is AsyncData &&
+        walletsAsync.value != null &&
+        walletsAsync.value!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          try {
+            final baseWallet = walletsAsync.value!
+                .firstWhere((w) => w['isBaseCurrency'] == true);
+            setState(() => _selectedWalletId = baseWallet['id']);
+          } catch (_) {
+            setState(() => _selectedWalletId = walletsAsync.value!.first['id']);
+          }
+        }
+      });
+    }
+
+    // Sync currency from selected wallet
+    if (_selectedWalletId != null &&
+        walletsAsync is AsyncData &&
+        walletsAsync.value != null) {
+      try {
+        final wallet = walletsAsync.value!
+            .firstWhere((w) => w['id'] == _selectedWalletId);
+        final walletCurrency = wallet['currency'] as String?;
+        if (walletCurrency != null && walletCurrency != _selectedCurrency) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _selectedCurrency = walletCurrency);
+          });
+        }
+      } catch (_) {}
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -192,9 +357,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         scrolledUnderElevation: 0,
         title: Text(
           widget.budget == null ? l10n.setBudget : 'Edit Budget',
-          style: AppTypography.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppTypography.textTheme.titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         actions: [
           if (widget.budget != null)
@@ -208,310 +372,460 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         ],
       ),
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Limit Amount & Currency ──────────────────────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedCurrency,
-                        isExpanded: true,
-                        icon: const Icon(Icons.arrow_drop_down_rounded),
-                        decoration: InputDecoration(
-                          labelText: l10n.currency,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: isDark
-                                  ? AppColors.borderDark
-                                  : AppColors.borderLight,
+                // ── Top Integrated Block ──────────────────────────────────
+                Container(
+                  color: isDark
+                      ? const Color(0xFF232838)
+                      : AppColors.primary.withOpacity(0.05),
+                  child: AnimatedBuilder(
+                    animation: _amountController,
+                    builder: (context, _) {
+                      final amount =
+                          double.tryParse(_amountController.text
+                                  .replaceAll(',', '')) ??
+                              0.0;
+
+                      return BudgetFormHeader(
+                        amount: amount,
+                        currencyCode: _selectedCurrency,
+                        categoryEmoji: _selectedEmoji ?? '💰',
+                        categoryColor: _selectedColor,
+                        name: _nameController.text.isNotEmpty ? _nameController.text : l10n.budgetName,
+                        isDark: isDark,
+                        iconShape: iconShape,
+                        onCategoryTap: _showEmojiPicker,
+                        onAmountTap: _showAmountCalculatorSheet,
+                      );
+                    },
+                  ),
+                ),
+
+                // ── Form Fields ───────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Name & Styling ──
+                      Text(l10n.budgetName, style: AppTypography.textTheme.titleSmall),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _nameController,
+                              style: AppTypography.textTheme.bodyLarge,
+                              decoration: InputDecoration(
+                                hintText: l10n.budgetNameHint,
+                                hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.black38),
+                                filled: true,
+                                fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                              ),
+                              onChanged: (_) => setState(() {}),
                             ),
                           ),
-                        ),
-                        items: AppConstants.supportedCurrencies.map((c) {
-                          return DropdownMenuItem<String>(
-                            value: c['code'],
-                            child: Text('${c['code']} (${c['symbol']})',
-                                style: AppTypography.textTheme.bodyMedium),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedCurrency = val);
-                          }
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 3,
-                      child: AppTextField(
-                        controller: _amountController,
-                        label: l10n.limitAmount,
-                        hint: '0',
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.amountRequired;
-                          }
-                          if (double.tryParse(value.replaceAll(',', '')) ==
-                              null) {
-                            return l10n.invalidAmount;
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // ── Category ──────────────────────────────────────────────
-                Text(l10n.category, style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 8),
-                expenseCategories.when(
-                  loading: () => _buildCategorySkeletonLoader(isDark),
-                  error: (_, __) => Text(
-                    l10n.failedToLoadCategories,
-                    style:
-                        const TextStyle(color: AppColors.danger, fontSize: 12),
-                  ),
-                  data: (filtered) {
-                    if (filtered.isEmpty) {
-                      return Text(
-                        l10n.noCategories,
-                        style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
-                      );
-                    }
-                    return SizedBox(
-                      height: 52,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.zero,
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final cat = filtered[index];
-                          final catId = cat['id'] as String?;
-                          final catName = cat['name'] as String? ?? '';
-                          final catEmoji = cat['emojiIcon'] as String? ??
-                              cat['emoji'] as String? ??
-                              '📦';
-                          final isSelected = _selectedCategoryId == catId;
-
-                          return GestureDetector(
-                            onTap: () => setState(() {
-                              _selectedCategoryId = isSelected ? null : catId;
-                            }),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                          const SizedBox(width: 12),
+                          GestureDetector(
+                            onTap: _showColorPicker,
+                            child: Container(
+                              width: 52,
+                              height: 52,
                               decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primary.withValues(alpha: 0.15)
-                                    : (isDark
-                                        ? AppColors.surfaceDark
-                                        : const Color(0xFFF3F0FF)),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primary
-                                      : (isDark
-                                          ? AppColors.borderDark
-                                          : AppColors.borderLight),
-                                  width: isSelected ? 1.5 : 1,
-                                ),
+                                color: _selectedColor,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    catEmoji,
-                                    style: const TextStyle(fontSize: 18),
+                              child: const Icon(Icons.palette_rounded, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+
+                      // ── Budget Type ──
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _budgetType = 'standalone'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _budgetType == 'standalone' ? _selectedColor.withOpacity(0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _budgetType == 'standalone' ? _selectedColor : Colors.transparent,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    catName,
-                                    style: AppTypography.textTheme.labelMedium
-                                        ?.copyWith(
-                                      color:
-                                          isSelected ? AppColors.primary : null,
-                                      fontWeight: isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    l10n.budgetTypeStandalone,
+                                    style: TextStyle(
+                                      fontWeight: _budgetType == 'standalone' ? FontWeight.bold : FontWeight.normal,
+                                      color: _budgetType == 'standalone' ? (isDark ? Colors.white : _selectedColor) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                // ── Wallet Selector ───────────────────────────────────────
-                Text('Pilih Dompet', style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Text(
-                  'Biarkan "Semua Dompet" untuk membuat budget global',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                walletsAsync.when(
-                  loading: () => _buildCategorySkeletonLoader(isDark),
-                  error: (_, __) => const Text('Gagal memuat dompet', style: TextStyle(color: AppColors.danger, fontSize: 12)),
-                  data: (wallets) {
-                    return SizedBox(
-                      height: 52,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.zero,
-                        itemCount: wallets.length + 1,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final isAll = index == 0;
-                          final walletId = isAll ? null : wallets[index - 1]['id'] as String;
-                          final walletName = isAll ? 'Semua Dompet' : wallets[index - 1]['name'] as String;
-                          final isSelected = _selectedWalletId == walletId;
-
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedWalletId = walletId),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? AppColors.surfaceDark : const Color(0xFFF3F0FF)),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                                  width: isSelected ? 1.5 : 1,
                                 ),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    isAll ? Icons.account_balance_wallet_rounded : Icons.account_balance_wallet_outlined,
-                                    size: 18,
-                                    color: isSelected ? AppColors.primary : (isDark ? Colors.white70 : Colors.black87),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => _budgetType = 'category'),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: _budgetType == 'category' ? _selectedColor.withOpacity(0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _budgetType == 'category' ? _selectedColor : Colors.transparent,
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    walletName,
-                                    style: AppTypography.textTheme.labelMedium?.copyWith(
-                                      color: isSelected ? AppColors.primary : null,
-                                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    l10n.budgetTypeSpecific,
+                                    style: TextStyle(
+                                      fontWeight: _budgetType == 'category' ? FontWeight.bold : FontWeight.normal,
+                                      color: _budgetType == 'category' ? (isDark ? Colors.white : _selectedColor) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                // ── Start Month Picker ─────────────────────────────────────
-                Text('Bulan Mulai', style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 8),
-                InkWell(
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (picked != null && picked != _selectedDate) {
-                      setState(() {
-                        _selectedDate = picked;
-                        final daysInMonth = DateTime(picked.year, picked.month + 1, 0).day;
-                        if (_startDay > daysInMonth) {
-                          _startDay = daysInMonth;
-                        }
-                      });
-                    }
-                  },
-                  child: InputDecorator(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight,
-                          width: 1,
+                      // ── Categories Grid (If specific) ──
+                      if (_budgetType == 'category') ...[
+                        Text(l10n.selectCategories, style: AppTypography.textTheme.titleSmall),
+                        const SizedBox(height: 12),
+                        categoriesAsync.when(
+                          loading: () => _buildCategorySkeletonLoader(isDark),
+                          error: (_, __) => Text('Error loading categories', style: TextStyle(color: AppColors.danger)),
+                          data: (categories) {
+                            final filtered = categories.where((c) {
+                              final catType = (c as Map)['type'] as String?;
+                              return catType == 'expense' || catType == null;
+                            }).toList();
+
+                            return GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 12,
+                                childAspectRatio: 0.75,
+                              ),
+                              itemCount: filtered.length + 1, // +1 for "All" button
+                              itemBuilder: (context, index) {
+                                // The first item is "All" button
+                                if (index == 0) {
+                                  final isAllSelected = _selectedCategoryIds.isEmpty;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedCategoryIds.clear(); // Clear all specific categories, means "All" is active
+                                      });
+                                    },
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Stack(
+                                          children: [
+                                            AnimatedContainer(
+                                              duration: const Duration(milliseconds: 200),
+                                              width: 56,
+                                              height: 56,
+                                              alignment: Alignment.center,
+                                              decoration: ShapeDecoration(
+                                                color: isAllSelected ? AppColors.primary.withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                                shape: iconShape == CategoryIconShape.circle
+                                                    ? const CircleBorder()
+                                                    : iconShape == CategoryIconShape.squircle
+                                                        ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(28))
+                                                        : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                                shadows: isAllSelected ? [
+                                                  BoxShadow(
+                                                    color: AppColors.primary.withOpacity(0.3),
+                                                    blurRadius: 8,
+                                                    spreadRadius: -2,
+                                                  )
+                                                ] : null,
+                                              ),
+                                              child: Text('🌐', style: const TextStyle(fontSize: 24)),
+                                            ),
+                                            if (isAllSelected)
+                                              Positioned(
+                                                right: 0,
+                                                top: 0,
+                                                child: Container(
+                                                  padding: const EdgeInsets.all(2),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary,
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                                                  ),
+                                                  child: const Icon(Icons.check, size: 12, color: Colors.white),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'All',
+                                          textAlign: TextAlign.center,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                                            fontWeight: isAllSelected ? FontWeight.bold : FontWeight.normal,
+                                            color: isAllSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                final catIndex = index - 1;
+                                final cat = filtered[catIndex] as Map;
+                                final catId = cat['id'] as String;
+                                final catName = cat['name'] as String;
+                                final catEmoji = cat['emojiIcon'] as String? ?? cat['emoji'] as String? ?? '💰';
+                                final catColorHex = cat['colorCode'] as String?;
+                                final catColor = catColorHex != null ? AppColors.colorFromHex(catColorHex) : AppColors.primary;
+                                final isSelected = _selectedCategoryIds.contains(catId);
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      if (isSelected) {
+                                        _selectedCategoryIds.remove(catId);
+                                      } else {
+                                        _selectedCategoryIds.add(catId); // Adding a specific category auto-cancels "All" because _selectedCategoryIds is no longer empty
+                                      }
+                                    });
+                                  },
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          AnimatedContainer(
+                                            duration: const Duration(milliseconds: 200),
+                                            width: 56,
+                                            height: 56,
+                                            alignment: Alignment.center,
+                                            decoration: ShapeDecoration(
+                                              color: isSelected ? catColor.withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                              shape: iconShape == CategoryIconShape.circle
+                                                  ? const CircleBorder()
+                                                  : iconShape == CategoryIconShape.squircle
+                                                      ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(28))
+                                                      : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                              shadows: isSelected ? [
+                                                BoxShadow(
+                                                  color: catColor.withOpacity(0.3),
+                                                  blurRadius: 8,
+                                                  spreadRadius: -2,
+                                                )
+                                              ] : null,
+                                            ),
+                                            child: Text(catEmoji, style: const TextStyle(fontSize: 24)),
+                                          ),
+                                          if (isSelected)
+                                            Positioned(
+                                              right: 0,
+                                              top: 0,
+                                              child: Container(
+                                                padding: const EdgeInsets.all(2),
+                                                decoration: BoxDecoration(
+                                                  color: catColor,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                                                ),
+                                                child: const Icon(Icons.check, size: 12, color: Colors.white),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        catName,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.textTheme.labelSmall?.copyWith(
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: isSelected ? (isDark ? Colors.white : catColor) : (isDark ? Colors.white70 : Colors.black87),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
                         ),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          DateFormat('MMMM yyyy').format(_selectedDate),
-                          style: AppTypography.textTheme.bodyLarge,
-                        ),
-                        const Icon(Icons.calendar_today_rounded, size: 20),
+                        const SizedBox(height: 32),
                       ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                      
 
-                // ── Start Day ─────────────────────────────────────────────
-                Text('Mulai Tanggal', style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Text(
-                  'Periode dimulai pada tanggal berapa setiap bulannya',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                _buildDayPicker(isDark),
-                const SizedBox(height: 24),
+                      // ── Wallet Selector ──────────────────────────────────
+                      Text('Wallet', style: AppTypography.textTheme.titleSmall),
+                      const SizedBox(height: 12),
+                      walletsAsync.when(
+                        loading: () => _buildCategorySkeletonLoader(isDark),
+                        error: (_, __) => const Text('Gagal memuat dompet',
+                            style: TextStyle(
+                                color: AppColors.danger, fontSize: 12)),
+                        data: (wallets) {
+                          if (wallets.isEmpty) {
+                            return Row(
+                              children: [
+                                const Expanded(
+                                    child: Text(
+                                        'No wallets found. Please create one.')),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline),
+                                  onPressed: () =>
+                                      context.push('/manage-wallets'),
+                                ),
+                              ],
+                            );
+                          }
+                          return SizedBox(
+                            height: 44,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.zero,
+                              clipBehavior: Clip.none,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: wallets.length + 1,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(width: 8),
+                              itemBuilder: (context, index) {
+                                if (index == wallets.length) {
+                                  return GestureDetector(
+                                    onTap: () =>
+                                        context.push('/manage-wallets'),
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 200),
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? const Color(0xFF1E293B)
+                                            : const Color(0xFFF1F5F9),
+                                        borderRadius:
+                                            BorderRadius.circular(14),
+                                      ),
+                                      child: const Center(
+                                          child: Icon(Icons.add, size: 20)),
+                                    ),
+                                  );
+                                }
 
-                // ── Period Count ──────────────────────────────────────────
-                Text('Jumlah Periode (Bulan)', style: AppTypography.textTheme.labelMedium),
-                const SizedBox(height: 4),
-                Text(
-                  'Berapa bulan budget ini berlaku',
-                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                                final wallet = wallets[index];
+                                final walletId = wallet['id'] as String;
+                                final walletName =
+                                    '${wallet['name']} (${wallet['currency']})';
+                                final walletEmoji =
+                                    wallet['emojiIcon'] as String? ?? '💼';
+                                final walletColorHex =
+                                    wallet['colorCode'] as String? ??
+                                        '#6C63FF';
+                                final walletColor = AppColors.colorFromHex(
+                                    walletColorHex,
+                                    fallback: AppColors.primary);
+                                final isSelected =
+                                    _selectedWalletId == walletId;
+
+                                return GestureDetector(
+                                  onTap: () => setState(
+                                      () => _selectedWalletId = walletId),
+                                  child: AnimatedContainer(
+                                    duration:
+                                        const Duration(milliseconds: 200),
+                                    height: 44,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? walletColor.withValues(alpha: 0.2)
+                                          : (isDark
+                                              ? const Color(0xFF1E293B)
+                                              : const Color(0xFFF1F5F9)),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? walletColor
+                                            : Colors.transparent,
+                                        width: 1.5,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(walletEmoji,
+                                            style:
+                                                const TextStyle(fontSize: 16)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          walletName,
+                                          style: AppTypography
+                                              .textTheme.labelMedium
+                                              ?.copyWith(
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            color: isSelected
+                                                ? (isDark
+                                                    ? Colors.white
+                                                    : walletColor)
+                                                : (isDark
+                                                    ? Colors.white70
+                                                    : Colors.black87),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      // ── Unified Period Card ───────────────────────────────
+                      _buildPeriodCard(isDark),
+                      const SizedBox(height: 40),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 10),
-                _buildPeriodStepper(isDark),
-                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -521,9 +835,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         onTap: _isSaving ? null : _save,
         child: Container(
           width: double.infinity,
-          decoration: const BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          decoration: BoxDecoration(
+            color: _selectedColor,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
             top: false,
@@ -532,14 +847,17 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
               child: _isSaving
                   ? const Center(
                       child: SizedBox(
-                        height: 24, width: 24,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2.5),
                       ),
                     )
                   : Center(
                       child: Text(
                         l10n.saveBudget,
-                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                        style:
+                            AppTypography.textTheme.titleMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -552,179 +870,233 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     );
   }
 
-  // ── Start Day Picker ──────────────────────────────────────
-  Widget _buildDayPicker(bool isDark) {
-    final daysInMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 0).day;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: List.generate(daysInMonth, (i) {
-              final day = i + 1;
-              final isSelected = _startDay == day;
-              return GestureDetector(
-                onTap: () => setState(() => _startDay = day),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  width: 36,
-                  height: 36,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary
-                        : (isDark
-                            ? const Color(0xFF2D3748)
-                            : Colors.white),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                      width: isSelected ? 2 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    '$day',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimaryLight),
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline_rounded,
-                size: 14,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  'Tanggal dipilih: $_startDay',
-                  style: AppTypography.textTheme.labelSmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Period Count Stepper ─────────────────────────────────────────────────
-  Widget _buildPeriodStepper(bool isDark) {
+  // ── Unified Period Card ──────────────────────────────────────────────────
+  Widget _buildPeriodCard(bool isDark) {
     final endMonth = DateTime(
       _selectedDate.year,
       _selectedDate.month + _periodCount - 1,
     );
-    final endMonthStr = DateFormat('MMMM yyyy').format(endMonth);
+    final startMonthStr = DateFormat('MMM yyyy').format(_selectedDate);
+    final endMonthStr = DateFormat('MMM yyyy').format(endMonth);
+    final cardBg = isDark ? const Color(0xFF1A2235) : Colors.white;
+    final dividerColor =
+        isDark ? const Color(0xFF2D3748) : const Color(0xFFEEF0F5);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(16),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          color: isDark
+              ? const Color(0xFF2D3748)
+              : const Color(0xFFE8ECF0),
+          width: 1.5,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(isDark ? 0.08 : 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Decrease
-              _StepperButton(
-                icon: Icons.remove_rounded,
-                onTap: _periodCount > 1
-                    ? () => setState(() => _periodCount--)
-                    : null,
-                isDark: isDark,
-              ),
-              // Value display
-              Column(
-                children: [
-                  Text(
-                    '$_periodCount',
-                    style: AppTypography.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  Text(
-                    _periodCount == 1 ? 'bulan' : 'bulan',
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-              // Increase
-              _StepperButton(
-                icon: Icons.add_rounded,
-                onTap: () => setState(() => _periodCount++),
-                isDark: isDark,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          // ── Top: Period Count ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.date_range_rounded,
-                    size: 14, color: AppColors.primary),
-                const SizedBox(width: 6),
-                Text(
-                  '${DateFormat('MMM yyyy').format(_selectedDate)}  →  $endMonthStr',
-                  style: AppTypography.textTheme.labelMedium?.copyWith(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: _selectedColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.repeat_rounded,
+                          size: 15, color: _selectedColor),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      l10n.periodCountMonths,
+                      style: AppTypography.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _buildInlineStepper(
+                      icon: Icons.remove_rounded,
+                      enabled: _periodCount > 1,
+                      isDark: isDark,
+                      onTap: () => setState(() => _periodCount--),
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            '$_periodCount',
+                            style:
+                                AppTypography.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: _selectedColor,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            l10n.monthLabel,
+                            style:
+                                AppTypography.textTheme.labelSmall?.copyWith(
+                              color: _selectedColor.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildInlineStepper(
+                      icon: Icons.add_rounded,
+                      enabled: true,
+                      isDark: isDark,
+                      onTap: () => setState(() => _periodCount++),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // ── Divider ──
+          Divider(height: 1, thickness: 1, color: dividerColor),
+
+          // ── Bottom: Month Range ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+            child: Row(
+              children: [
+                // Start Month (tappable)
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                        initialEntryMode: DatePickerEntryMode.calendarOnly,
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _selectedDate =
+                              DateTime(picked.year, picked.month, 1);
+                        });
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.startMonth,
+                          style:
+                              AppTypography.textTheme.labelSmall?.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 14,
+                              color: _selectedColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              startMonthStr,
+                              style: AppTypography.textTheme.titleSmall
+                                  ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? Colors.white
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Arrow
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: _selectedColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 14,
+                    color: _selectedColor,
+                  ),
+                ),
+
+                // End Month (auto-computed, read-only)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        l10n.endMonth,
+                        style:
+                            AppTypography.textTheme.labelSmall?.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.lock_rounded,
+                            size: 12,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            endMonthStr,
+                            style: AppTypography.textTheme.titleSmall
+                                ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -735,61 +1107,48 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     );
   }
 
-  /// Skeleton loader for the category chips row
-  Widget _buildCategorySkeletonLoader(bool isDark) {
-    return SizedBox(
-      height: 52,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
-      ),
-    );
-  }
-}
-
-// ─── Stepper Button ───────────────────────────────────────────────────────────
-class _StepperButton extends StatelessWidget {
-  const _StepperButton({
-    required this.icon,
-    required this.onTap,
-    required this.isDark,
-  });
-  final IconData icon;
-  final VoidCallback? onTap;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
+  Widget _buildInlineStepper({
+    required IconData icon,
+    required bool enabled,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         width: 44,
         height: 44,
         decoration: BoxDecoration(
           color: enabled
-              ? AppColors.primary.withValues(alpha: 0.12)
-              : (isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0)),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: enabled
-                ? AppColors.primary.withValues(alpha: 0.3)
-                : (isDark ? AppColors.borderDark : AppColors.borderLight),
-          ),
+              ? _selectedColor.withOpacity(0.1)
+              : (isDark
+                  ? const Color(0xFF2D3748)
+                  : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
           icon,
+          size: 20,
           color: enabled
-              ? AppColors.primary
+              ? _selectedColor
               : (isDark
                   ? AppColors.textSecondaryDark
                   : AppColors.textSecondaryLight),
-          size: 22,
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategorySkeletonLoader(bool isDark) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: 5,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
       ),
     );
   }
@@ -837,13 +1196,152 @@ class _SkeletonChipState extends State<_SkeletonChip>
       builder: (_, __) => Opacity(
         opacity: _anim.value,
         child: Container(
-          width: 100,
-          height: 52,
+          width: 80,
+          height: 44,
           decoration: BoxDecoration(
             color: baseColor,
             borderRadius: BorderRadius.circular(14),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ─── Budget Form Header ───────────────────────────────────────────────────────
+class BudgetFormHeader extends StatelessWidget {
+  const BudgetFormHeader({
+    super.key,
+    required this.amount,
+    required this.currencyCode,
+    this.name,
+    this.categoryEmoji,
+    this.categoryColor,
+    required this.isDark,
+    required this.iconShape,
+    required this.onCategoryTap,
+    required this.onAmountTap,
+  });
+
+  final double amount;
+  final String currencyCode;
+  final String? name;
+  final String? categoryEmoji;
+  final Color? categoryColor;
+  final bool isDark;
+  final CategoryIconShape iconShape;
+  final VoidCallback onCategoryTap;
+  final VoidCallback onAmountTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final typeColor = categoryColor ?? AppColors.primary;
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Category Hitbox (Left Side)
+          Material(
+            color: typeColor.withOpacity(0.15),
+            child: InkWell(
+              onTap: onCategoryTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0, vertical: 24.0),
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: ShapeDecoration(
+                    color: categoryEmoji == null
+                        ? (isDark
+                            ? const Color(0xFF0F172A)
+                            : const Color(0xFF1E293B))
+                        : typeColor.withOpacity(0.2),
+                    shape: iconShape == CategoryIconShape.circle
+                        ? const CircleBorder()
+                        : iconShape == CategoryIconShape.squircle
+                            ? ContinuousRectangleBorder(
+                                borderRadius: BorderRadius.circular(32),
+                              )
+                            : RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                  ),
+                  child: Center(
+                    child: categoryEmoji == null
+                        ? null
+                        : Text(categoryEmoji!,
+                            style: const TextStyle(fontSize: 28)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Amount & Name Hitbox (Right Side)
+          Expanded(
+            child: Material(
+              color: typeColor.withOpacity(0.15),
+              child: InkWell(
+                onTap: onAmountTap,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            currencyCode,
+                            style: AppTypography.textTheme.headlineLarge
+                                ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              amount == 0
+                                  ? '0'
+                                  : NumberFormat('#,###').format(amount),
+                              textAlign: TextAlign.end,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.textTheme.headlineLarge
+                                  ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color:
+                                    isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (name != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          name!,
+                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

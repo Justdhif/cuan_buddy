@@ -439,17 +439,15 @@ class _ShapePickerSheet extends StatelessWidget {
               final isSelected = shape == currentShape;
               
               // Custom Preview Container representing each actual shape
-              final previewColor = isSelected ? AppColors.primary : (isDark ? Colors.white60 : Colors.black54);
+              final previewColor = isSelected ? AppColors.primary : (isDark ? Colors.white30 : Colors.black12);
               final ShapeBorder previewShape = shape == CategoryIconShape.circle
-                  ? CircleBorder(side: BorderSide(color: previewColor, width: 2))
+                  ? const CircleBorder()
                   : shape == CategoryIconShape.squircle
                       ? ContinuousRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: previewColor, width: 2),
                         )
                       : RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: previewColor, width: 2),
                         );
 
               return GestureDetector(
@@ -478,16 +476,8 @@ class _ShapePickerSheet extends StatelessWidget {
                         width: 32,
                         height: 32,
                         decoration: ShapeDecoration(
+                          color: previewColor,
                           shape: previewShape,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '💡',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isSelected ? AppColors.primary : null,
-                            ),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 16),

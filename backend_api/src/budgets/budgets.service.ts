@@ -14,23 +14,26 @@ export class BudgetsService {
   ) {}
 
   async create(userId: string, createBudgetDto: CreateBudgetDto) {
-    // Check if budget for this category and month already exists
-    const existing = await this.db.query.budgets.findFirst({
-      where: and(
-        eq(budgets.userId, userId),
-        eq(budgets.categoryId, createBudgetDto.categoryId),
-        eq(budgets.monthYear, createBudgetDto.monthYear)
-      )
-    });
+    // Check if budget for this category and month already exists (only if category based)
+    if (createBudgetDto.type === 'category' && createBudgetDto.categoryId) {
+      const existing = await this.db.query.budgets.findFirst({
+        where: and(
+          eq(budgets.userId, userId),
+          eq(budgets.categoryId, createBudgetDto.categoryId),
+          eq(budgets.monthYear, createBudgetDto.monthYear)
+        )
+      });
 
-    if (existing) {
-      throw new ConflictException('Budget for this category and month already exists');
+      if (existing) {
+        throw new ConflictException('Budget for this category and month already exists');
+      }
     }
 
     const [newBudget] = await this.db.insert(budgets).values({
       userId,
       ...createBudgetDto,
       walletId: createBudgetDto.walletId || null,
+      categoryId: createBudgetDto.categoryId || null,
       limitAmount: createBudgetDto.limitAmount.toString(),
       periodCount: createBudgetDto.periodCount ?? 1,
       startDay: createBudgetDto.startDay ?? 1,
@@ -170,6 +173,7 @@ export class BudgetsService {
     const updateData: any = { ...updateBudgetDto, updatedAt: new Date() };
     if (updateBudgetDto.limitAmount) updateData.limitAmount = updateBudgetDto.limitAmount.toString();
     if (updateBudgetDto.walletId === null) updateData.walletId = null;
+    if (updateBudgetDto.type === 'standalone') updateData.categoryId = null;
 
     const [updated] = await this.db.update(budgets)
       .set(updateData)

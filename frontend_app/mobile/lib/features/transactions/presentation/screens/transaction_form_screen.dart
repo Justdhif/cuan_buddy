@@ -633,7 +633,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 final isSelected = _selectedWalletId == walletId;
 
                                 return GestureDetector(
-                                  onTap: () => setState(() => _selectedWalletId = walletId),
+                                  onTap: () {
+                                    setState(() {
+                                      _selectedWalletId = walletId;
+                                      if (_selectedSavingsGoalId != null) {
+                                        final currentGoal = savingsState.goals.cast<Map<String, dynamic>?>().firstWhere(
+                                          (g) => g?['id'] == _selectedSavingsGoalId,
+                                          orElse: () => null,
+                                        );
+                                        if (currentGoal != null) {
+                                          final goalWalletId = currentGoal['walletId'] as String? ?? currentGoal['wallet']?['id'] as String?;
+                                          if (goalWalletId != null && goalWalletId != walletId) {
+                                            _selectedSavingsGoalId = null;
+                                          }
+                                        }
+                                      }
+                                    });
+                                  },
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
                                     height: 36,
@@ -748,119 +764,127 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         }),
                         const SizedBox(height: 24),
                       ] else ...[
-                        SizedBox(
-                          height: 36,
-                          child: ListView.separated(
-                            padding: EdgeInsets.zero,
-                            scrollDirection: Axis.horizontal,
-                            clipBehavior: Clip.none,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: 2 + (savingsState.isLoading ? 3 : savingsState.goals.length),
-                            separatorBuilder: (context, index) => const SizedBox(width: 8),
-                            itemBuilder: (context, index) {
-                              if (index == 0) {
-                                // 1. No saving goals
-                                final isSelected = _selectedSavingsGoalId == null;
-                                return GestureDetector(
-                                  onTap: () => setState(() => _selectedSavingsGoalId = null),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    height: 36,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                      border: Border.all(
-                                        color: isSelected ? AppColors.primary : Colors.transparent,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        l10n.noSavingsGoals,
-                                        style: AppTypography.textTheme.labelMedium?.copyWith(
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                        Builder(builder: (context) {
+                          final goals = savingsState.goals.where((g) {
+                            if (g == null) return false;
+                            final goalWalletId = g['walletId'] as String? ?? g['wallet']?['id'] as String?;
+                            return goalWalletId == null || goalWalletId == _selectedWalletId;
+                          }).toList();
+                          
+                          return SizedBox(
+                            height: 36,
+                            child: ListView.separated(
+                              padding: EdgeInsets.zero,
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.none,
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: 2 + (savingsState.isLoading ? 3 : goals.length),
+                              separatorBuilder: (context, index) => const SizedBox(width: 8),
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  // 1. No saving goals
+                                  final isSelected = _selectedSavingsGoalId == null;
+                                  return GestureDetector(
+                                    onTap: () => setState(() => _selectedSavingsGoalId = null),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      height: 36,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                        border: Border.all(
+                                          color: isSelected ? AppColors.primary : Colors.transparent,
+                                          width: 1.5,
                                         ),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              } else if (index == 1 + (savingsState.isLoading ? 3 : savingsState.goals.length)) {
-                                // 3. Button plus (Last item)
-                                return GestureDetector(
-                                  onTap: () => context.push('/savings/form'),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Center(
-                                      child: Icon(Icons.add, size: 16),
-                                    ),
-                                  ),
-                                );
-                              } else {
-                                // 2. Data saving
-                                final goalIndex = index - 1;
-                                if (savingsState.isLoading) {
-                                  return _SkeletonChip(isDark: isDark);
-                                }
-
-                                final goal = savingsState.goals[goalIndex];
-                                final goalId = goal['id'] as String;
-                                final goalName = goal['name'] as String? ?? '';
-                                final goalEmoji = goal['emojiIcon'] as String? ?? '🎯';
-                                final goalColorHex = goal['colorCode'] as String? ?? '#6C63FF';
-                                final goalColor = AppColors.colorFromHex(goalColorHex, fallback: AppColors.primary);
-
-                                final isSelected = _selectedSavingsGoalId == goalId;
-
-                                return GestureDetector(
-                                  onTap: () => setState(() => _selectedSavingsGoalId = goalId),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    height: 36,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: isSelected ? goalColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                      border: Border.all(
-                                        color: isSelected ? goalColor : Colors.transparent,
-                                        width: 1.5,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(goalEmoji, style: const TextStyle(fontSize: 14)),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          goalName,
+                                      child: Center(
+                                        child: Text(
+                                          l10n.noSavingsGoals,
                                           style: AppTypography.textTheme.labelMedium?.copyWith(
                                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                            color: isSelected ? (isDark ? Colors.white : goalColor) : (isDark ? Colors.white70 : Colors.black87),
+                                            color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
+                                  );
+                                } else if (index == 1 + (savingsState.isLoading ? 3 : goals.length)) {
+                                  // 3. Button plus (Last item)
+                                  return GestureDetector(
+                                    onTap: () => context.push('/savings/form'),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(Icons.add, size: 16),
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  // 2. Data saving
+                                  final goalIndex = index - 1;
+                                  if (savingsState.isLoading) {
+                                    return _SkeletonChip(isDark: isDark);
+                                  }
+
+                                  final goal = goals[goalIndex];
+                                  final goalId = goal['id'] as String;
+                                  final goalName = goal['name'] as String? ?? '';
+                                  final goalEmoji = goal['emojiIcon'] as String? ?? '🎯';
+                                  final goalColorHex = goal['colorCode'] as String? ?? '#6C63FF';
+                                  final goalColor = AppColors.colorFromHex(goalColorHex, fallback: AppColors.primary);
+
+                                  final isSelected = _selectedSavingsGoalId == goalId;
+
+                                  return GestureDetector(
+                                    onTap: () => setState(() => _selectedSavingsGoalId = goalId),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      height: 36,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? goalColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                        border: Border.all(
+                                          color: isSelected ? goalColor : Colors.transparent,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(goalEmoji, style: const TextStyle(fontSize: 14)),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            goalName,
+                                            style: AppTypography.textTheme.labelMedium?.copyWith(
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelected ? (isDark ? Colors.white : goalColor) : (isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 24),
                       ],
 
                       // ── Title & Notes Area ─────────────────────────────────
                       AppTextField(
                         controller: _titleController,
-                        label: l10n.transactionTitleHint,
+                        label: l10n.transactionTitle,
                         hint: l10n.transactionTitleHint,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -995,7 +1019,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 24),
               child: Text(
-                'Pilih Kategori',
+                l10n.selectCategoryAction,
                 style: AppTypography.textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
@@ -1020,8 +1044,59 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.72,
                     ),
-                    itemCount: filtered.length,
+                    itemCount: filtered.length + 1,
                     itemBuilder: (context, index) {
+                      if (index == filtered.length) {
+                        final catColor = AppColors.primary;
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            context.push('/manage-categories');
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 52,
+                                  height: 52,
+                                  alignment: Alignment.center,
+                                  decoration: ShapeDecoration(
+                                    color: catColor.withOpacity(0.1),
+                                    shape: iconShape == CategoryIconShape.circle
+                                        ? const CircleBorder()
+                                        : iconShape == CategoryIconShape.squircle
+                                            ? ContinuousRectangleBorder(
+                                                borderRadius: BorderRadius.circular(24),
+                                              )
+                                            : RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(14),
+                                              ),
+                                  ),
+                                  child: Icon(Icons.add_rounded, color: catColor, size: 28),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  l10n.newLabel,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.textTheme.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: catColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
                       final cat = filtered[index] as Map;
                       final catId = cat['id'] as String;
                       final catName = cat['name'] as String;
@@ -1053,15 +1128,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 decoration: ShapeDecoration(
                                   color: catColor.withOpacity(0.18),
                                   shape: iconShape == CategoryIconShape.circle
-                                      ? CircleBorder(side: BorderSide(color: catColor, width: 2))
+                                      ? const CircleBorder()
                                       : iconShape == CategoryIconShape.squircle
                                           ? ContinuousRectangleBorder(
                                               borderRadius: BorderRadius.circular(24),
-                                              side: BorderSide(color: catColor, width: 2),
                                             )
                                           : RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(14),
-                                              side: BorderSide(color: catColor, width: 2),
                                             ),
                                 ),
                                 child: Text(catEmoji, style: const TextStyle(fontSize: 24)),
@@ -1206,15 +1279,13 @@ class TransactionFormHeader extends StatelessWidget {
                         ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
                         : (categoryColor ?? typeColor).withOpacity(0.2),
                     shape: iconShape == CategoryIconShape.circle
-                        ? CircleBorder(side: BorderSide(color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor), width: 2))
+                        ? const CircleBorder()
                         : iconShape == CategoryIconShape.squircle
                             ? ContinuousRectangleBorder(
                                 borderRadius: BorderRadius.circular(32),
-                                side: BorderSide(color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor), width: 2),
                               )
                             : RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
-                                side: BorderSide(color: categoryEmoji == null ? Colors.transparent : (categoryColor ?? typeColor), width: 2),
                               ),
                   ),
                   child: Center(
