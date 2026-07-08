@@ -33,7 +33,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
   String? _selectedWalletId;
   DateTime? _selectedDate;
   String _selectedCurrency = AppConstants.defaultCurrency;
-  String _selectedEmoji = '🎯';
+  String? _selectedEmoji;
   Color _selectedColor = AppColors.primary;
   bool _isPin = false;
   bool _isSaving = false;
@@ -73,7 +73,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
     super.initState();
     if (widget.goal != null) {
       _nameController.text = widget.goal!['name'] ?? '';
-      _selectedEmoji = widget.goal!['emojiIcon'] as String? ?? '🎯';
+      _selectedEmoji = widget.goal!['emojiIcon'] as String?;
       _selectedColor = _colorFromHex(widget.goal!['colorCode'] as String?);
       _isPin = widget.goal!['isPin'] as bool? ?? false;
       _linkController.text = widget.goal!['link'] as String? ?? '';
