@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, desc, asc, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { savingsGoals } from '../database/schema';
 import { CreateSavingsGoalDto, UpdateSavingsGoalDto } from './dto/savings-goal.dto';
@@ -23,6 +23,8 @@ export class SavingsGoalsService {
     if (createSavingsGoalDto.targetDate) data.targetDate = new Date(createSavingsGoalDto.targetDate);
     if (createSavingsGoalDto.status) data.status = createSavingsGoalDto.status;
     if (createSavingsGoalDto.walletId) data.walletId = createSavingsGoalDto.walletId;
+    if (createSavingsGoalDto.isPin !== undefined) data.isPin = createSavingsGoalDto.isPin;
+    if (createSavingsGoalDto.link !== undefined) data.link = createSavingsGoalDto.link;
 
     try {
       const [newGoal] = await this.db.insert(savingsGoals).values(data).returning();
@@ -47,6 +49,7 @@ export class SavingsGoalsService {
     const data = await this.db.query.savingsGoals.findMany({
       where: eq(savingsGoals.userId, userId),
       with: { wallet: true },
+      orderBy: [desc(savingsGoals.isPin), asc(savingsGoals.createdAt)],
       limit: Number(limit),
       offset: offset,
     });
@@ -92,6 +95,8 @@ export class SavingsGoalsService {
     if (updateSavingsGoalDto.targetDate) updateData.targetDate = new Date(updateSavingsGoalDto.targetDate);
     if (updateSavingsGoalDto.status) updateData.status = updateSavingsGoalDto.status;
     if (updateSavingsGoalDto.walletId !== undefined) updateData.walletId = updateSavingsGoalDto.walletId;
+    if (updateSavingsGoalDto.isPin !== undefined) updateData.isPin = updateSavingsGoalDto.isPin;
+    if (updateSavingsGoalDto.link !== undefined) updateData.link = updateSavingsGoalDto.link;
 
     const [updated] = await this.db
       .update(savingsGoals)

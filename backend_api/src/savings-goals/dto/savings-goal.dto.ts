@@ -11,6 +11,8 @@ export const CreateSavingsGoalSchema = z.object({
   currency: z.string().optional(),
   targetDate: z.string().optional(),
   status: z.enum(['in_progress', 'completed']).optional(),
+  isPin: z.boolean().optional(),
+  link: z.string().optional().nullable(),
 });
 
 export const UpdateSavingsGoalSchema = CreateSavingsGoalSchema.partial();

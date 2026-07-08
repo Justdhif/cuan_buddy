@@ -102,6 +102,8 @@ export const savingsGoals = pgTable('savings_goals', {
   currentAmount: decimal('current_amount', { precision: 19, scale: 2 }).default('0').notNull(),
   targetDate: timestamp('target_date'),
   status: text('status').default('in_progress'), // in_progress, completed
+  isPin: boolean('is_pin').default(false).notNull(),
+  link: text('link'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
