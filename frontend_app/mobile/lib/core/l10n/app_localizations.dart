@@ -597,7 +597,6 @@ abstract class AppLocalizations {
   String get sendFeedback;
 
   // Budget Screen Additions
-  String get startMonth;
   String get startDate;
   String get periodStartsOnWhatDate;
   String selectedDateInfo(int day);
@@ -615,6 +614,17 @@ abstract class AppLocalizations {
   String get selectAll;
   String get budgetIcon;
   String get budgetColor;
+  String get startMonth;
+  String budgetActivePeriod(String startMonth, String endMonth);
+
+  // ─── Savings Form (new fields) ────────────────────────────────────────────────
+  String get selectWallet;
+  String get failedToLoadWallet;
+  String get noWalletsFound;
+  String get pinGoal;
+  String get purchaseLinkOptional;
+  String get purchaseLinkLabel;
+  String get purchaseLinkHint;
 }
 class AppLocalizationsScope extends InheritedWidget {
   const AppLocalizationsScope({
@@ -637,3 +647,4 @@ class AppLocalizationsScope extends InheritedWidget {
     return localizations.languageCode != oldWidget.localizations.languageCode;
   }
 }
+

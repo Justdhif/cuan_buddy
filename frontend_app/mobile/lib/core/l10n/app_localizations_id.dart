@@ -1159,4 +1159,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get budgetIcon => 'Ikon Budget';
   @override
   String get budgetColor => 'Warna Budget';
+  @override
+  String budgetActivePeriod(String startMonth, String endMonth) => 'Anggaran berlaku dari $startMonth hingga $endMonth.';
+
+  // ─── Savings Form (new fields) ─────────────────────────────────────────────
+  @override
+  String get selectWallet => 'Pilih Dompet';
+  @override
+  String get failedToLoadWallet => 'Gagal memuat dompet';
+  @override
+  String get noWalletsFound => 'Belum ada dompet. Silakan buat terlebih dahulu.';
+  @override
+  String get pinGoal => 'Sematkan Goal';
+  @override
+  String get purchaseLinkOptional => 'Link Pembelian (Opsional)';
+  @override
+  String get purchaseLinkLabel => 'URL Link Pembelian';
+  @override
+  String get purchaseLinkHint => 'https://shopee.co.id/... atau Tokopedia';
 }

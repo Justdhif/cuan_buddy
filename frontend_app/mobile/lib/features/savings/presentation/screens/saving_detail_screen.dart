@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show lerpDouble, TextDirection;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -218,6 +219,99 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                   child: _buildInfoCards(context, isDark, useFmt ? fmt : fmtGoal),
                 ),
               ),
+
+              if (_goal['link'] != null && _goal['link'].toString().trim().isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.surfaceDark : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: InkWell(
+                        onTap: () async {
+                          final urlStr = _goal['link'].toString().trim();
+                          final uri = Uri.tryParse(urlStr);
+                          if (uri != null) {
+                            try {
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  AppSnackbar.show(context,
+                                      title: 'Error',
+                                      message: 'Could not launch URL',
+                                      type: SnackbarType.error);
+                                }
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                AppSnackbar.show(context,
+                                    title: 'Error',
+                                    message: 'Failed to launch link: $e',
+                                    type: SnackbarType.error);
+                              }
+                            }
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.link_rounded, color: AppColors.primary, size: 20),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Target Pembelian',
+                                      style: AppTypography.textTheme.labelSmall?.copyWith(
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _goal['link'].toString().trim(),
+                                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.open_in_new_rounded, size: 16, color: AppColors.primary),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               // ── Transactions Section Header ────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
@@ -445,35 +539,66 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (_isCompleted) ...[
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppColors.success.withValues(alpha: 0.4),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.check_circle_rounded,
-                                        color: AppColors.success, size: 12),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      l10n.completedBadge,
-                                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                                        color: AppColors.success,
-                                        fontWeight: FontWeight.w700,
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                if (_isCompleted)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.success.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: AppColors.success.withValues(alpha: 0.4),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.check_circle_rounded,
+                                            color: AppColors.success, size: 12),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          l10n.completedBadge,
+                                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                                            color: AppColors.success,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (_goal['isPin'] == true)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: AppColors.primary.withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.push_pin_rounded,
+                                            color: AppColors.primary, size: 12),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Pinned',
+                                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                             if (targetDateFormatted != null) ...[
                               const SizedBox(height: 6),
                               Row(

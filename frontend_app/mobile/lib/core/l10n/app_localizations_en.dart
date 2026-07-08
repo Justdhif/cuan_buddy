@@ -1156,4 +1156,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get budgetIcon => 'Budget Icon';
   @override
   String get budgetColor => 'Budget Color';
+  @override
+  String budgetActivePeriod(String startMonth, String endMonth) => 'Budget is valid from $startMonth to $endMonth.';
+
+  // ─── Savings Form (new fields) ─────────────────────────────────────────────
+  @override
+  String get selectWallet => 'Select Wallet';
+  @override
+  String get failedToLoadWallet => 'Failed to load wallets';
+  @override
+  String get noWalletsFound => 'No wallets found. Please create one.';
+  @override
+  String get pinGoal => 'Pin Goal';
+  @override
+  String get purchaseLinkOptional => 'Purchase Link (Optional)';
+  @override
+  String get purchaseLinkLabel => 'Purchase URL';
+  @override
+  String get purchaseLinkHint => 'https://shopee.co.id/... or Tokopedia';
 }
