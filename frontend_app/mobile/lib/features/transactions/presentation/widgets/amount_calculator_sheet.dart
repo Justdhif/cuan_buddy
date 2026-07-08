@@ -147,8 +147,9 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       final op = tempTokens[i];
       if (i + 1 >= tempTokens.length) break;
       final right = double.tryParse(tempTokens[i + 1]) ?? 0.0;
-      if (op == '+') finalResult += right;
-      else if (op == '-') finalResult -= right;
+      if (op == '+') {
+        finalResult += right;
+      } else if (op == '-') finalResult -= right;
     }
 
     return finalResult;

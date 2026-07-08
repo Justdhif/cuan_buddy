@@ -333,7 +333,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               children: [
                 // ── Top Integrated Block (scrolls with page) ─────────────────
                 Container(
-                  color: isDark ? const Color(0xFF232838) : AppColors.primary.withOpacity(0.05),
+                  color: isDark ? const Color(0xFF232838) : AppColors.primary.withValues(alpha: 0.05),
                   child: Column(
                     children: [
                       Row(
@@ -342,7 +342,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             context: context,
                             targetType: 'expense',
                             label: l10n.expenseType,
-                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withOpacity(0.1),
+                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withValues(alpha: 0.1),
                             isDark: isDark,
                             icon: Icons.arrow_drop_down_rounded,
                             iconColor: AppColors.danger,
@@ -351,7 +351,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             context: context,
                             targetType: 'income',
                             label: l10n.incomeType,
-                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withOpacity(0.1),
+                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withValues(alpha: 0.1),
                             isDark: isDark,
                             icon: Icons.arrow_drop_up_rounded,
                             iconColor: AppColors.success,
@@ -444,10 +444,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 margin: const EdgeInsets.only(bottom: 20),
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: budgetColor.withOpacity(0.08),
+                                  color: budgetColor.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(
-                                    color: budgetColor.withOpacity(remaining < 0 ? 0.6 : 0.25),
+                                    color: budgetColor.withValues(alpha: remaining < 0 ? 0.6 : 0.25),
                                     width: 1.5,
                                   ),
                                 ),
@@ -712,7 +712,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withOpacity(0.1),
+                                      color: AppColors.primary.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Row(
@@ -1067,7 +1067,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   height: 52,
                                   alignment: Alignment.center,
                                   decoration: ShapeDecoration(
-                                    color: catColor.withOpacity(0.1),
+                                    color: catColor.withValues(alpha: 0.1),
                                     shape: iconShape == CategoryIconShape.circle
                                         ? const CircleBorder()
                                         : iconShape == CategoryIconShape.squircle
@@ -1113,7 +1113,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
                           decoration: BoxDecoration(
-                            color: isSelected ? catColor.withOpacity(0.15) : Colors.transparent,
+                            color: isSelected ? catColor.withValues(alpha: 0.15) : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                             border: isSelected ? Border.all(color: catColor, width: 1.5) : null,
                           ),
@@ -1126,7 +1126,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 height: 52,
                                 alignment: Alignment.center,
                                 decoration: ShapeDecoration(
-                                  color: catColor.withOpacity(0.18),
+                                  color: catColor.withValues(alpha: 0.18),
                                   shape: iconShape == CategoryIconShape.circle
                                       ? const CircleBorder()
                                       : iconShape == CategoryIconShape.squircle
@@ -1266,7 +1266,7 @@ class TransactionFormHeader extends StatelessWidget {
         children: [
           // Category Hitbox (Left Side)
           Material(
-            color: typeColor.withOpacity(0.15),
+            color: typeColor.withValues(alpha: 0.15),
             child: InkWell(
               onTap: onCategoryTap,
               child: Padding(
@@ -1277,7 +1277,7 @@ class TransactionFormHeader extends StatelessWidget {
                   decoration: ShapeDecoration(
                     color: categoryEmoji == null 
                         ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
-                        : (categoryColor ?? typeColor).withOpacity(0.2),
+                        : (categoryColor ?? typeColor).withValues(alpha: 0.2),
                     shape: iconShape == CategoryIconShape.circle
                         ? const CircleBorder()
                         : iconShape == CategoryIconShape.squircle
@@ -1301,7 +1301,7 @@ class TransactionFormHeader extends StatelessWidget {
           // Amount Hitbox (Right Side)
           Expanded(
             child: Material(
-              color: typeColor.withOpacity(0.15),
+              color: typeColor.withValues(alpha: 0.15),
               child: InkWell(
                 onTap: onAmountTap,
                 child: Container(

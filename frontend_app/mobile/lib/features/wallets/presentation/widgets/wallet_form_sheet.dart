@@ -335,7 +335,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _currencyValue,
+                  initialValue: _currencyValue,
                   dropdownColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
                   style: AppTypography.textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.white : Colors.black87,
@@ -388,7 +388,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
               setState(() => _isBaseCurrency = val);
             },
             activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
           ),
           const SizedBox(height: 32),
           AppButton(
