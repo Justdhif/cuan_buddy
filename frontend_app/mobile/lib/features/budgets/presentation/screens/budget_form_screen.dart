@@ -16,7 +16,7 @@ import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
 import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../../../wallets/providers/wallet_provider.dart';
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
   const BudgetFormScreen({super.key, this.budget, this.initialCategoryId});
@@ -239,19 +239,14 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   }
 
   void _showEmojiPicker() {
-    AppBottomSheet.show(
+    CustomEmojiPickerSheet.show(
       context: context,
-      builder: (ctx) => SizedBox(
-        height: 300,
-        child: EmojiPicker(
-          onEmojiSelected: (category, emoji) {
-            setState(() {
-              _selectedEmoji = emoji.emoji;
-            });
-            Navigator.pop(ctx);
-          },
-        ),
-      ),
+      onEmojiSelected: (emoji) {
+        setState(() {
+          _selectedEmoji = emoji;
+        });
+        Navigator.pop(context);
+      },
     );
   }
   
