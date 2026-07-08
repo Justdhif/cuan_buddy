@@ -552,6 +552,14 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                     children: [
                       Row(
                         children: [
+                          if (goal['isPin'] == true) ...[
+                            const Icon(
+                              Icons.push_pin,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                          ],
                           if (isCompleted) ...[
                             Container(
                               width: 8,

@@ -8,6 +8,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
+import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/theme/category_icon_shape.dart';
@@ -35,7 +37,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   
   String? _selectedEmoji;
   Color _selectedColor = AppColors.primary;
-  String _budgetType = 'category'; // 'standalone' or 'category'
+  String _budgetType = 'standalone'; // 'standalone' or 'category'
   Set<String> _selectedCategoryIds = {};
   
   String? _selectedWalletId;
@@ -133,7 +135,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       final payload = {
         'name': _nameController.text.trim(),
         'emojiIcon': _selectedEmoji,
-        'colorCode': '#${_selectedColor.value.toRadixString(16).substring(2).toUpperCase()}',
+        'colorCode': '#${_selectedColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
         'type': _budgetType,
         'categoryIds': _budgetType == 'standalone' ? [] : _selectedCategoryIds.toList(),
         if (_budgetType == 'category' && _selectedCategoryIds.isNotEmpty)
@@ -223,6 +225,74 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     }
   }
 
+  void _showNameInputSheet() {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetController = TextEditingController(text: _nameController.text);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.budgetName,
+                style: AppTypography.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              AppTextField(
+                controller: sheetController,
+                label: l10n.budgetName,
+                hint: l10n.budgetNameHint,
+                autofocus: true,
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _nameController.text = sheetController.text;
+                  });
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      l10n.saveChanges,
+                      style: AppTypography.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showAmountCalculatorSheet() {
     AmountCalculatorSheet.show(
       context,
@@ -250,57 +320,14 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     );
   }
   
-  void _showColorPicker() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    AppBottomSheet.show(
+  Future<void> _showColorPicker() async {
+    final newColor = await showCustomColorPicker(
       context: context,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.budgetColor,
-              style: AppTypography.textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              alignment: WrapAlignment.center,
-              children: _presetColors.map((color) {
-                final isSelected = _selectedColor == color;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() => _selectedColor = color);
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: isSelected ? Border.all(color: isDark ? Colors.white : Colors.black, width: 3) : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
+      initialColor: _selectedColor,
     );
+    if (newColor != null) {
+      setState(() => _selectedColor = newColor);
+    }
   }
 
   @override
@@ -355,6 +382,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           widget.budget == null ? l10n.setBudget : 'Edit Budget',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
         actions: [
           if (widget.budget != null)
             IconButton(
@@ -393,11 +424,12 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         currencyCode: _selectedCurrency,
                         categoryEmoji: _selectedEmoji,
                         categoryColor: _selectedColor,
-                        name: null,
+                        name: _nameController.text,
                         isDark: isDark,
                         iconShape: iconShape,
                         onCategoryTap: _showEmojiPicker,
                         onAmountTap: _showAmountCalculatorSheet,
+                        onNameTap: _showNameInputSheet,
                       );
                     },
                   ),
@@ -413,6 +445,8 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       const SizedBox(height: 12),
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        physics: const BouncingScrollPhysics(),
                         child: Row(
                           children: [
                             GestureDetector(
@@ -597,23 +631,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 32),
-                      const SizedBox(height: 32),
 
-                      AppTextField(
-                        controller: _nameController,
-                        label: l10n.budgetName,
-                        hint: l10n.budgetNameHint,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.pleaseFillAllFields;
-                          }
-                          return null;
-                        },
-                        onChanged: (_) => setState(() {}),
-                      ),
+
                       const SizedBox(height: 24),
-
                       Text('Period', style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 12),
                       Container(
@@ -621,18 +641,21 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Periode
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(l10n.periodCountMonths, style: AppTypography.textTheme.bodyLarge),
+                                Text(l10n.periodCountMonths, style: AppTypography.textTheme.bodyMedium),
                                 Row(
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.remove_circle_outline),
-                                      color: _selectedColor,
+                                      color: AppColors.primary,
                                       onPressed: _periodCount > 1
                                           ? () => setState(() => _periodCount--)
                                           : null,
@@ -643,12 +666,81 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.add_circle_outline),
-                                      color: _selectedColor,
+                                      color: AppColors.primary,
                                       onPressed: () => setState(() => _periodCount++),
                                     ),
                                   ],
                                 ),
                               ],
+                            ),
+                            Divider(color: isDark ? Colors.white12 : Colors.black12, height: 24),
+                            // Bulan Permulaan
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(l10n.startMonth, style: AppTypography.textTheme.bodyMedium),
+                                GestureDetector(
+                                  onTap: () async {
+                                    final picked = await showDatePicker(
+                                      context: context,
+                                      initialDate: _selectedDate,
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime(2100),
+                                    );
+                                    if (picked != null) {
+                                      setState(() => _selectedDate = picked);
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          DateFormat('MMM yyyy').format(_selectedDate),
+                                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            // Info Bulan Akhir
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.black26 : Colors.white60,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.info_outline_rounded, size: 16, color: isDark ? Colors.white54 : Colors.black54),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Builder(
+                                      builder: (context) {
+                                        final endDate = DateTime(_selectedDate.year, _selectedDate.month + _periodCount - 1);
+                                        return Text(
+                                          l10n.budgetActivePeriod(DateFormat('MMM yyyy').format(_selectedDate), DateFormat('MMM yyyy').format(endDate)),
+                                          style: AppTypography.textTheme.bodySmall?.copyWith(
+                                            color: isDark ? Colors.white70 : Colors.black87,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -664,10 +756,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: _budgetType == 'standalone' ? _selectedColor.withOpacity(0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  color: _budgetType == 'standalone' ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: _budgetType == 'standalone' ? _selectedColor : Colors.transparent,
+                                    color: _budgetType == 'standalone' ? AppColors.primary : Colors.transparent,
                                   ),
                                 ),
                                 child: Center(
@@ -675,7 +767,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     l10n.budgetTypeStandalone,
                                     style: TextStyle(
                                       fontWeight: _budgetType == 'standalone' ? FontWeight.bold : FontWeight.normal,
-                                      color: _budgetType == 'standalone' ? (isDark ? Colors.white : _selectedColor) : (isDark ? Colors.white70 : Colors.black87),
+                                      color: _budgetType == 'standalone' ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
                                 ),
@@ -690,10 +782,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: _budgetType == 'category' ? _selectedColor.withOpacity(0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  color: _budgetType == 'category' ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: _budgetType == 'category' ? _selectedColor : Colors.transparent,
+                                    color: _budgetType == 'category' ? AppColors.primary : Colors.transparent,
                                   ),
                                 ),
                                 child: Center(
@@ -701,7 +793,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     l10n.budgetTypeSpecific,
                                     style: TextStyle(
                                       fontWeight: _budgetType == 'category' ? FontWeight.bold : FontWeight.normal,
-                                      color: _budgetType == 'category' ? (isDark ? Colors.white : _selectedColor) : (isDark ? Colors.white70 : Colors.black87),
+                                      color: _budgetType == 'category' ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
                                 ),
@@ -712,10 +804,16 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // ── Categories Grid (If specific) ──
-                      if (_budgetType == 'category') ...[
-                        Text(l10n.selectCategories, style: AppTypography.textTheme.titleSmall),
-                        const SizedBox(height: 12),
+                      // ── Categories List (If specific) ──
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOutCubic,
+                        child: _budgetType == 'category'
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(l10n.selectCategories, style: AppTypography.textTheme.titleSmall),
+                                  const SizedBox(height: 12),
                         categoriesAsync.when(
                           loading: () => _buildCategorySkeletonLoader(isDark),
                           error: (_, __) => Text('Error loading categories', style: TextStyle(color: AppColors.danger)),
@@ -725,22 +823,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                               return catType == 'expense' || catType == null;
                             }).toList();
 
-                            return GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 12,
-                                childAspectRatio: 0.75,
-                              ),
+                            return SizedBox(
+                              height: 112,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                physics: const BouncingScrollPhysics(),
+                                separatorBuilder: (context, index) => const SizedBox(width: 16),
                               itemCount: filtered.length + 1, // +1 for "All" button
                               itemBuilder: (context, index) {
                                 // The first item is "All" button
                                 if (index == 0) {
                                   final isAllSelected = _selectedCategoryIds.isEmpty;
-                                  return GestureDetector(
-                                    onTap: () {
+                                  return SizedBox(
+                                    width: 72,
+                                    child: GestureDetector(
+                                      onTap: () {
                                       setState(() {
                                         _selectedCategoryIds.clear(); // Clear all specific categories, means "All" is active
                                       });
@@ -756,7 +854,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                               height: 56,
                                               alignment: Alignment.center,
                                               decoration: ShapeDecoration(
-                                                color: isAllSelected ? AppColors.primary.withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                                color: isAllSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                                 shape: iconShape == CategoryIconShape.circle
                                                     ? const CircleBorder()
                                                     : iconShape == CategoryIconShape.squircle
@@ -764,7 +862,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                                         : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                                 shadows: isAllSelected ? [
                                                   BoxShadow(
-                                                    color: AppColors.primary.withOpacity(0.3),
+                                                    color: AppColors.primary.withValues(alpha: 0.3),
                                                     blurRadius: 8,
                                                     spreadRadius: -2,
                                                   )
@@ -801,8 +899,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                         ),
                                       ],
                                     ),
-                                  );
-                                }
+                                  ),
+                                );
+                              }
 
                                 final catIndex = index - 1;
                                 final cat = filtered[catIndex] as Map;
@@ -813,8 +912,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                 final catColor = catColorHex != null ? AppColors.colorFromHex(catColorHex) : AppColors.primary;
                                 final isSelected = _selectedCategoryIds.contains(catId);
 
-                                return GestureDetector(
-                                  onTap: () {
+                                return SizedBox(
+                                  width: 72,
+                                  child: GestureDetector(
+                                    onTap: () {
                                     setState(() {
                                       if (isSelected) {
                                         _selectedCategoryIds.remove(catId);
@@ -834,7 +935,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                             height: 56,
                                             alignment: Alignment.center,
                                             decoration: ShapeDecoration(
-                                              color: isSelected ? catColor.withOpacity(0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                              color: isSelected ? catColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                               shape: iconShape == CategoryIconShape.circle
                                                   ? const CircleBorder()
                                                   : iconShape == CategoryIconShape.squircle
@@ -842,7 +943,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                                       : RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                               shadows: isSelected ? [
                                                 BoxShadow(
-                                                  color: catColor.withOpacity(0.3),
+                                                  color: catColor.withValues(alpha: 0.3),
                                                   blurRadius: 8,
                                                   spreadRadius: -2,
                                                 )
@@ -879,13 +980,17 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                       ),
                                     ],
                                   ),
-                                );
-                              },
-                            );
-                          },
+                                ),
+                              );
+                            },
+                            ),
+                          );
+                        },
                         ),
                         const SizedBox(height: 32),
-                      ],
+                      ]
+                    ) : const SizedBox(width: double.infinity, height: 0),
+                  ),
                       
 
                       const SizedBox(height: 40),
@@ -902,7 +1007,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: _selectedColor,
+            color: AppColors.primary,
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(20)),
           ),
@@ -1019,6 +1124,7 @@ class BudgetFormHeader extends StatelessWidget {
     required this.iconShape,
     required this.onCategoryTap,
     required this.onAmountTap,
+    required this.onNameTap,
   });
 
   final double amount;
@@ -1030,113 +1136,132 @@ class BudgetFormHeader extends StatelessWidget {
   final CategoryIconShape iconShape;
   final VoidCallback onCategoryTap;
   final VoidCallback onAmountTap;
+  final VoidCallback onNameTap;
 
   @override
   Widget build(BuildContext context) {
     final typeColor = categoryColor ?? AppColors.primary;
+    final l10n = AppLocalizations.of(context);
+    final displayName = (name == null || name!.isEmpty) ? l10n.budgetName : name!;
 
-    return IntrinsicHeight(
-      child: Row(
+    return Material(
+      color: typeColor.withValues(alpha: 0.15),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Category Hitbox (Left Side)
-          Material(
-            color: typeColor.withValues(alpha: 0.15),
-            child: InkWell(
-              onTap: onCategoryTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0, vertical: 24.0),
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: ShapeDecoration(
-                    color: categoryEmoji == null
-                        ? (isDark
-                            ? const Color(0xFF0F172A)
-                            : const Color(0xFF1E293B))
-                        : typeColor.withValues(alpha: 0.2),
-                    shape: iconShape == CategoryIconShape.circle
-                        ? const CircleBorder()
-                        : iconShape == CategoryIconShape.squircle
-                            ? ContinuousRectangleBorder(
-                                borderRadius: BorderRadius.circular(32),
-                              )
-                            : RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                  ),
-                  child: Center(
-                    child: categoryEmoji == null
-                        ? null
-                        : Text(categoryEmoji!,
-                            style: const TextStyle(fontSize: 28)),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Amount & Name Hitbox (Right Side)
-          Expanded(
-            child: Material(
-              color: typeColor.withValues(alpha: 0.15),
-              child: InkWell(
-                onTap: onAmountTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24.0, vertical: 24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            currencyCode,
-                            style: AppTypography.textTheme.headlineMedium
-                                ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
+          // Name Area (Top)
+          InkWell(
+            onTap: onNameTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: IntrinsicWidth(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: Colors.white, width: 3),
                           ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              amount == 0
-                                  ? '0'
-                                  : NumberFormat('#,###').format(amount),
-                              textAlign: TextAlign.end,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.textTheme.headlineMedium
-                                  ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color:
-                                    isDark ? Colors.white : Colors.black,
-                              ),
-                            ),
+                        ),
+                        child: Text(
+                          displayName,
+                          style: AppTypography.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                        ],
-                      ),
-                      if (name != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          name!,
-                          style: AppTypography.textTheme.bodyMedium?.copyWith(
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
+                          textAlign: TextAlign.left,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Emoji & Amount Area (Bottom)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Category Hitbox (Left Side)
+                InkWell(
+                  onTap: onCategoryTap,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 24.0, right: 12.0, bottom: 24.0),
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: ShapeDecoration(
+                        color: categoryEmoji == null
+                            ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
+                            : typeColor.withValues(alpha: 0.2),
+                        shape: iconShape == CategoryIconShape.circle
+                            ? const CircleBorder()
+                            : iconShape == CategoryIconShape.squircle
+                                ? ContinuousRectangleBorder(
+                                    borderRadius: BorderRadius.circular(32),
+                                  )
+                                : RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                      ),
+                      child: Center(
+                        child: categoryEmoji == null
+                            ? null
+                            : Text(categoryEmoji!, style: const TextStyle(fontSize: 28)),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                // Amount Hitbox (Right Side)
+                Expanded(
+                  child: InkWell(
+                    onTap: onAmountTap,
+                    child: Container(
+                      padding: const EdgeInsets.only(right: 24.0, left: 12.0, bottom: 24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                currencyCode,
+                                style: AppTypography.textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  amount == 0 ? '0' : NumberFormat('#,###').format(amount),
+                                  textAlign: TextAlign.end,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

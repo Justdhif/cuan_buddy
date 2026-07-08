@@ -1,4 +1,4 @@
-import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
+import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -7,7 +7,6 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/app_snackbar.dart';
-import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/widgets/color_picker_sheet.dart';
@@ -126,20 +125,13 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
   }
 
   void _showEmojiPicker() {
-    AppBottomSheet.show(
+    CustomEmojiPickerSheet.show(
       context: context,
-      builder: (context) {
-        return SizedBox(
-          height: 300,
-          child: EmojiPicker(
-            onEmojiSelected: (category, emoji) {
-              setState(() {
-                _emojiController.text = emoji.emoji;
-              });
-              Navigator.pop(context);
-            },
-          ),
-        );
+      onEmojiSelected: (emoji) {
+        setState(() {
+          _emojiController.text = emoji;
+        });
+        Navigator.pop(context);
       },
     );
   }
@@ -220,6 +212,8 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
           const SizedBox(height: 24),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
                 GestureDetector(

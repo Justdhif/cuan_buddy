@@ -51,6 +51,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   late String _type;
   String? _selectedCategoryId;
   String? _selectedSavingsGoalId;
+  String? _selectedBudgetId;
   String? _selectedWalletId;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -73,6 +74,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       _noteController.text = tx['note'] as String? ?? '';
       _selectedCategoryId = tx['categoryId'] as String?;
       _selectedSavingsGoalId = tx['savingsGoalId'] as String?;
+      _selectedBudgetId = tx['budgetId'] as String?;
       _selectedWalletId = tx['walletId'] as String?;
       if (tx['date'] != null) {
         _selectedDate = DateTime.parse(tx['date'] as String).toLocal();
@@ -124,6 +126,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         'exchangeRate': 1.0, // For MVP, assuming 1.0 or implement fetching later
         'categoryId': _selectedCategoryId,
         'savingsGoalId': _selectedSavingsGoalId,
+        'budgetId': _selectedBudgetId,
         'date': _selectedDate.toUtc().toIso8601String(),
       };
       if (_noteController.text.isNotEmpty) {
@@ -378,6 +381,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               : const Color(0xFF121212);
 
                           return TransactionFormHeader(
+                            title: _titleController.text,
                             amount: amount,
                             currencyCode: _selectedCurrency,
                             categoryEmoji: categoryEmoji,
@@ -386,7 +390,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             isDark: isDark,
                             iconShape: iconShape,
                             onCategoryTap: () => _showCategoryPickerSheet(context, isDark, categoriesAsync),
-                            onAmountTap: () => _showAmountCalculatorSheet(),
+                            onAmountTap: _showAmountCalculatorSheet,
+                            onTitleTap: _showTitleInputSheet,
                           );
                         },
                       ),
@@ -881,19 +886,117 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         const SizedBox(height: 24),
                       ],
 
+                      // ── Budgets (standalone only) ──────────────────────────
+                      Builder(builder: (context) {
+                        final allBudgets = budgetsState.budgets;
+                        final standaloneBudgets = allBudgets.where((b) {
+                          return (b as Map)['type'] == 'standalone';
+                        }).toList();
+
+                        if (standaloneBudgets.isEmpty && !budgetsState.isLoading) {
+                          return const SizedBox.shrink();
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Budget',
+                              style: AppTypography.textTheme.titleSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 36,
+                              child: ListView.separated(
+                                padding: EdgeInsets.zero,
+                                scrollDirection: Axis.horizontal,
+                                clipBehavior: Clip.none,
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: 1 + (budgetsState.isLoading ? 3 : standaloneBudgets.length),
+                                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                itemBuilder: (context, index) {
+                                  if (index == 0) {
+                                    final isSelected = _selectedBudgetId == null;
+                                    return GestureDetector(
+                                      onTap: () => setState(() => _selectedBudgetId = null),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        height: 36,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                          border: Border.all(
+                                            color: isSelected ? AppColors.primary : Colors.transparent,
+                                            width: 1.5,
+                                          ),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            'Tidak ada',
+                                            style: AppTypography.textTheme.labelMedium?.copyWith(
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  final budgetIndex = index - 1;
+                                  if (budgetsState.isLoading) {
+                                    return _SkeletonChip(isDark: isDark);
+                                  }
+
+                                  final budget = standaloneBudgets[budgetIndex] as Map;
+                                  final budgetId = budget['id'] as String;
+                                  final budgetName = budget['name'] as String? ?? 'Budget';
+                                  final budgetEmoji = budget['emojiIcon'] as String? ?? '💰';
+                                  final budgetColorHex = budget['colorCode'] as String? ?? '#6C63FF';
+                                  final budgetColor = AppColors.colorFromHex(budgetColorHex, fallback: AppColors.primary);
+                                  final isSelected = _selectedBudgetId == budgetId;
+
+                                  return GestureDetector(
+                                    onTap: () => setState(() => _selectedBudgetId = isSelected ? null : budgetId),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      height: 36,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? budgetColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                        border: Border.all(
+                                          color: isSelected ? budgetColor : Colors.transparent,
+                                          width: 1.5,
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(budgetEmoji, style: const TextStyle(fontSize: 14)),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            budgetName,
+                                            style: AppTypography.textTheme.labelMedium?.copyWith(
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              color: isSelected ? (isDark ? Colors.white : budgetColor) : (isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        );
+                      }),
+
                       // ── Title & Notes Area ─────────────────────────────────
-                      AppTextField(
-                        controller: _titleController,
-                        label: l10n.transactionTitle,
-                        hint: l10n.transactionTitleHint,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.titleRequired;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
                       AppTextField(
                         controller: _noteController,
                         label: l10n.noteOptional,
@@ -991,6 +1094,74 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (picked != null) {
       setState(() => _selectedTime = picked);
     }
+  }
+
+  void _showTitleInputSheet() {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sheetController = TextEditingController(text: _titleController.text);
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.transactionTitle,
+                style: AppTypography.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              AppTextField(
+                controller: sheetController,
+                label: l10n.transactionTitle,
+                hint: l10n.transactionTitleHint,
+                autofocus: true,
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _titleController.text = sheetController.text;
+                  });
+                  Navigator.pop(context);
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Save',
+                      style: AppTypography.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showAmountCalculatorSheet() {
@@ -1235,6 +1406,7 @@ class _SkeletonChipState extends State<_SkeletonChip>
 class TransactionFormHeader extends StatelessWidget {
   const TransactionFormHeader({
     super.key,
+    this.title,
     required this.amount,
     required this.currencyCode,
     this.categoryEmoji,
@@ -1244,8 +1416,10 @@ class TransactionFormHeader extends StatelessWidget {
     required this.iconShape,
     required this.onCategoryTap,
     required this.onAmountTap,
+    required this.onTitleTap,
   });
 
+  final String? title;
   final double amount;
   final String currencyCode;
   final String? categoryEmoji;
@@ -1255,92 +1429,133 @@ class TransactionFormHeader extends StatelessWidget {
   final CategoryIconShape iconShape;
   final VoidCallback onCategoryTap;
   final VoidCallback onAmountTap;
+  final VoidCallback onTitleTap;
 
   @override
   Widget build(BuildContext context) {
     final typeColor = type == 'income' ? AppColors.success : AppColors.danger;
-    
-    return IntrinsicHeight(
-      child: Row(
+    final l10n = AppLocalizations.of(context);
+    final displayTitle = (title == null || title!.isEmpty) ? l10n.transactionTitle : title!;
+
+    return Material(
+      color: typeColor.withValues(alpha: 0.15),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Category Hitbox (Left Side)
-          Material(
-            color: typeColor.withValues(alpha: 0.15),
-            child: InkWell(
-              onTap: onCategoryTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: ShapeDecoration(
-                    color: categoryEmoji == null 
-                        ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
-                        : (categoryColor ?? typeColor).withValues(alpha: 0.2),
-                    shape: iconShape == CategoryIconShape.circle
-                        ? const CircleBorder()
-                        : iconShape == CategoryIconShape.squircle
-                            ? ContinuousRectangleBorder(
-                                borderRadius: BorderRadius.circular(32),
-                              )
-                            : RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
+          // Title Area (Top)
+          InkWell(
+            onTap: onTitleTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: IntrinsicWidth(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(color: Colors.white, width: 3),
+                          ),
+                        ),
+                        child: Text(
+                          displayTitle,
+                          style: AppTypography.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.left,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ),
-                  child: Center(
-                    child: categoryEmoji == null
-                        ? null
-                        : Text(categoryEmoji!, style: const TextStyle(fontSize: 28)),
-                  ),
-                ),
+                ],
               ),
             ),
           ),
           
-          // Amount Hitbox (Right Side)
-          Expanded(
-            child: Material(
-              color: typeColor.withValues(alpha: 0.15),
-              child: InkWell(
-                onTap: onAmountTap,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+          // Emoji & Amount Area (Bottom)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Category Hitbox (Left Side)
+                InkWell(
+                  onTap: onCategoryTap,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 24.0, right: 12.0, bottom: 24.0),
+                    child: Container(
+                      width: 64,
+                      height: 64,
+                      decoration: ShapeDecoration(
+                        color: categoryEmoji == null 
+                            ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
+                            : (categoryColor ?? typeColor).withValues(alpha: 0.2),
+                        shape: iconShape == CategoryIconShape.circle
+                            ? const CircleBorder()
+                            : iconShape == CategoryIconShape.squircle
+                                ? ContinuousRectangleBorder(
+                                    borderRadius: BorderRadius.circular(32),
+                                  )
+                                : RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                      ),
+                      child: Center(
+                        child: categoryEmoji == null
+                            ? null
+                            : Text(categoryEmoji!, style: const TextStyle(fontSize: 28)),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Amount Hitbox (Right Side)
+                Expanded(
+                  child: InkWell(
+                    onTap: onAmountTap,
+                    child: Container(
+                      padding: const EdgeInsets.only(right: 24.0, left: 12.0, bottom: 24.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
-                            currencyCode,
-                            style: AppTypography.textTheme.headlineMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              amount == 0 ? '0' : NumberFormat('#,###').format(amount),
-                              textAlign: TextAlign.end,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? Colors.white : Colors.black,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                currencyCode,
+                                style: AppTypography.textTheme.headlineMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : Colors.black,
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  amount == 0 ? '0' : NumberFormat('#,###').format(amount),
+                                  textAlign: TextAlign.end,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTypography.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

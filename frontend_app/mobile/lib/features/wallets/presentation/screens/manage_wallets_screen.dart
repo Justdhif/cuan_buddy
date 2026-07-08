@@ -10,6 +10,7 @@ import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../providers/wallet_provider.dart';
 import '../widgets/wallet_form_sheet.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class ManageWalletsScreen extends ConsumerStatefulWidget {
   const ManageWalletsScreen({super.key, this.isOnboarding = false});
@@ -124,47 +125,50 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                             final colorCode = wallet['colorCode'] as String?;
                             final backgroundColor = AppColors.colorFromHex(colorCode, fallback: AppColors.primary);
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.cardDark
-                                    : AppColors.cardLight,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isDark
-                                      ? AppColors.borderDark
-                                      : AppColors.borderLight,
-                                ),
-                              ),
-                              child: ListTile(
-                                leading: Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: ShapeDecoration(
-                                    color: backgroundColor.withValues(alpha: 0.15),
-                                    shape: iconShape == CategoryIconShape.circle
-                                        ? const CircleBorder()
-                                        : iconShape == CategoryIconShape.squircle
-                                            ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(20))
-                                            : RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      emoji,
-                                      style: const TextStyle(fontSize: 20),
+                                final currencyCode = wallet['currency'] as String? ?? 'USD';
+                                final symbol = AppConstants.supportedCurrencies.firstWhere((c) => c['code'] == currencyCode, orElse: () => {'symbol': currencyCode})['symbol'];
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? AppColors.cardDark
+                                        : AppColors.cardLight,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? AppColors.borderDark
+                                          : AppColors.borderLight,
                                     ),
                                   ),
-                                ),
-                                title: Text(wallet['name'] ?? '',
-                                    style: AppTypography.textTheme.labelLarge),
-                                subtitle: Text(
-                                  '\$${wallet['balance'] ?? '0.00'} ${wallet['currency']}',
-                                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                  child: ListTile(
+                                    leading: Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: ShapeDecoration(
+                                        color: backgroundColor.withValues(alpha: 0.15),
+                                        shape: iconShape == CategoryIconShape.circle
+                                            ? const CircleBorder()
+                                            : iconShape == CategoryIconShape.squircle
+                                                ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(20))
+                                                : RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          emoji,
+                                          style: const TextStyle(fontSize: 20),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(wallet['name'] ?? '',
+                                        style: AppTypography.textTheme.labelLarge),
+                                    subtitle: Text(
+                                      '$symbol${wallet['balance'] ?? '0.00'}',
+                                      style: AppTypography.textTheme.bodySmall?.copyWith(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [

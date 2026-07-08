@@ -208,26 +208,15 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Currency Dropdown
-                  DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _currency,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                      items: AppConstants.supportedCurrencies.map((c) {
-                        return DropdownMenuItem<String>(
-                          value: c['code'],
-                          child: Text('${c['symbol']}'),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _currency = val);
-                        }
-                      },
+                  // Fixed Currency Label
+                  Text(
+                    AppConstants.supportedCurrencies.firstWhere(
+                      (c) => c['code'] == _currency, 
+                      orElse: () => {'symbol': _currency}
+                    )['symbol'] as String,
+                    style: AppTypography.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
                   // Live Result
