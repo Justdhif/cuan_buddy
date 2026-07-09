@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How It Works",
+    "testimonials": "Testimonials",
+    "faq": "FAQ",
+    "download": "Get App"
+  },
+  "hero": {
+    "title": "Smart Money Management",
+    "subtitle": "Your friendly financial companion for tracking expenses, managing budgets, and achieving your savings goals.",
+    "cta": "Download CuanBuddy"
+  },
+  "features": {
+    "title": "Core Features",
+    "f1_title": "Track Expenses",
+    "f1_desc": "Easily record every penny going in and out.",
+    "f2_title": "Smart Budgets",
+    "f2_desc": "Set monthly limits and get warned before you overspend.",
+    "f3_title": "AI Advisor",
+    "f3_desc": "Get personalized financial insights directly from Buddy."
+  },
+  "how": {
+    "title": "How It Works",
+    "step1": "Download & Register",
+    "step2": "Set Your Goals",
+    "step3": "Grow Your Savings"
+  },
+  "testi": {
+    "title": "What Users Say"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions"
+  },
+  "footer": {
+    "rights": "All rights reserved."
+  }
+}
