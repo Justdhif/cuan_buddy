@@ -7,6 +7,7 @@ enum CategoryIconShape {
   hexagon, // Hexagonal (segi enam)
   diamond, // Diamond / rhombus
   sharp, // Sharp corners (square without rounding)
+  squircle, // Continuous rounded rectangle (like iOS)
 }
 
 extension CategoryIconShapeExtension on CategoryIconShape {
@@ -22,6 +23,8 @@ extension CategoryIconShapeExtension on CategoryIconShape {
         return 'Diamond';
       case CategoryIconShape.sharp:
         return 'Sharp Square';
+      case CategoryIconShape.squircle:
+        return 'Squircle';
     }
   }
 
@@ -42,6 +45,10 @@ extension CategoryIconShapeExtension on CategoryIconShape {
       case CategoryIconShape.sharp:
         return const RoundedRectangleBorder(
           borderRadius: BorderRadius.zero,
+        );
+      case CategoryIconShape.squircle:
+        return ContinuousRectangleBorder(
+          borderRadius: BorderRadius.circular(size * 0.4),
         );
     }
   }
@@ -122,3 +129,4 @@ class _DiamondBorder extends ShapeBorder {
   @override
   ShapeBorder scale(double t) => this;
 }
+

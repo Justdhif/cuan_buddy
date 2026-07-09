@@ -428,6 +428,10 @@ class _ShapePickerSheet extends StatelessWidget {
         'shape': CategoryIconShape.sharp,
         'name': CategoryIconShape.sharp.displayName,
       },
+      {
+        'shape': CategoryIconShape.squircle,
+        'name': CategoryIconShape.squircle.displayName,
+      },
     ];
 
     return SafeArea(
@@ -445,7 +449,6 @@ class _ShapePickerSheet extends StatelessWidget {
             ...shapes.map((s) {
               final shape = s['shape'] as CategoryIconShape;
               final isSelected = shape == currentShape;
-
               final previewColor = isSelected ? AppColors.primary : (isDark ? Colors.white30 : Colors.black12);
               final previewShape = shape.toShapeBorder(32);
 
@@ -507,7 +510,6 @@ class _ShapePickerSheet extends StatelessWidget {
     );
   }
 }
-
 // ─── Shape Preview Painter ─────────────────────────────────────────────────────
 class _ShapePreviewPainter extends CustomPainter {
   _ShapePreviewPainter({required this.shapeBorder, required this.color});

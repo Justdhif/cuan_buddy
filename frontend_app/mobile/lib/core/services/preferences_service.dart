@@ -41,6 +41,8 @@ class PreferencesService {
         return CategoryIconShape.diamond;
       case 'sharp':
         return CategoryIconShape.sharp;
+      case 'squircle':
+        return CategoryIconShape.squircle;
       case 'circle':
       default:
         return CategoryIconShape.circle;
@@ -54,6 +56,7 @@ class PreferencesService {
       CategoryIconShape.hexagon => 'hexagon',
       CategoryIconShape.diamond => 'diamond',
       CategoryIconShape.sharp => 'sharp',
+      CategoryIconShape.squircle => 'squircle',
     };
     await _prefs.setString(AppConstants.categoryIconShapeKey, value);
   }
