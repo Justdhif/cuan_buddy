@@ -96,7 +96,7 @@ Future<Color?> showCustomColorPicker({
                       controller: hexController,
                       label: l10n.hexColor,
                       hint: 'FFFFFF',
-                      prefixIcon: const Icon(Icons.numbers_rounded, color: AppColors.primary),
+                      prefixIcon: Icon(Icons.numbers_rounded, color: AppColors.primary),
                       onChanged: (val) {
                         final hexStr = val.replaceAll('#', '');
                         if (hexStr.length == 6) {

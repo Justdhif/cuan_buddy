@@ -102,7 +102,7 @@ class AppButton extends StatelessWidget {
           onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
-            side: const BorderSide(color: AppColors.primary, width: 1.5),
+            side: BorderSide(color: AppColors.primary, width: 1.5),
             padding: padding,
             textStyle: AppTypography.textTheme.labelLarge
                 ?.copyWith(fontSize: fontSize),

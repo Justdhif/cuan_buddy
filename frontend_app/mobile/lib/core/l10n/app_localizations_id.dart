@@ -594,6 +594,8 @@ class AppLocalizationsId extends AppLocalizations {
   // ─── Profile ──────────────────────────────────────────────────────────────────
   @override
   String get profile => 'Profil';
+    @override
+    String get accentColor => 'Warna Aksen';
   @override
   String get preferences => 'Preferensi';
   @override

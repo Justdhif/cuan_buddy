@@ -142,7 +142,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -178,9 +178,9 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
                   labelStyle: TextStyle(
                     color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                   ),
-                  focusedBorder: const OutlineInputBorder(
+                  focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: AppColors.primary, width: 2),
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
@@ -190,7 +190,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
                     borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight.withValues(alpha: 0.5)),
                     borderRadius: const BorderRadius.all(Radius.circular(12)),
                   ),
-                  prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primary),
+                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -297,7 +297,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
                     onPressed: () => setState(() => _otpSent = false),
                     child: Text(
                       l10n.changePhoneNumberLink,
-                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),

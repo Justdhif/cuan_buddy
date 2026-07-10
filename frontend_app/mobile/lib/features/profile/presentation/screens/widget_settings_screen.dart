@@ -58,7 +58,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.account_balance_wallet_rounded,
+                  child: Icon(Icons.account_balance_wallet_rounded,
                       color: AppColors.primary),
                 ),
                 const SizedBox(width: 16),
@@ -219,7 +219,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                               title: Text(goal['name'] as String? ?? 'Goal',
                                   style: AppTypography.textTheme.bodyLarge),
                               trailing: isSelected
-                                  ? const Icon(Icons.check_circle_rounded,
+                                  ? Icon(Icons.check_circle_rounded,
                                       color: AppColors.primary)
                                   : null,
                               onTap: () async {

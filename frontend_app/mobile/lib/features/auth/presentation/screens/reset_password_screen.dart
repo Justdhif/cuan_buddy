@@ -85,7 +85,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
               if (!_resetSuccess)
                 IconButton(
                   onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  icon: const Icon(Icons.chevron_left_rounded),
                 ),
               const SizedBox(height: 24),
               if (_resetSuccess)

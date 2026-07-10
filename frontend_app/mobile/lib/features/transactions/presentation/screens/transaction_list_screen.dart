@@ -463,7 +463,7 @@ class _TransactionHeroHeader extends StatelessWidget {
                       color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 26),
+                    child: Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 26),
                   ),
                 ),
                 // Top-right – income arrow up

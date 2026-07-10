@@ -77,7 +77,7 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
       appBar: AppBar(
         title: Text(l10n.linkTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,

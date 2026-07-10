@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/theme/category_icon_shape.dart';
@@ -146,133 +145,222 @@ class _CategoryFormSheetState extends ConsumerState<CategoryFormSheet> {
     }
   }
 
+  Future<void> _confirmDelete() async {
+    if (widget.initialCategory == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteCategory),
+        content: Text(l10n.deleteCategoryConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              l10n.delete,
+              style: const TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    await ref
+        .read(categoryNotifierProvider.notifier)
+        .deleteCategory(widget.initialCategory!['id']);
+
+    if (!mounted) return;
+    Navigator.pop(context);
+    AppSnackbar.show(
+      context,
+      title: l10n.success,
+      message: l10n.deleteCategory,
+      type: SnackbarType.success,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final iconShape = ref.watch(categoryIconShapeProvider);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 24,
-        right: 24,
-        top: 12,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.initialCategory == null ? l10n.newCategory : l10n.editCategory,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          if (widget.initialCategory != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              onPressed: _confirmDelete,
+              tooltip: l10n.deleteCategory,
+            ),
+        ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            widget.initialCategory == null
-                ? l10n.newCategory
-                : l10n.editCategory,
-            style: AppTypography.textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).unfocus();
-                  _showEmojiPicker();
-                },
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: ShapeDecoration(
-                    color: _selectedColor,
-                    shape: iconShape.toShapeBorder(64),
-                  ),
-                  child: Center(
-                    child: Text(
-                      _emojiController.text.isNotEmpty
-                          ? _emojiController.text
-                          : '💰',
-                      style: const TextStyle(fontSize: 32),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: AppTextField(
-                  label: l10n.categoryName,
-                  hint: l10n.categoryNameHint,
-                  controller: _nameController,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            physics: const BouncingScrollPhysics(),
-            child: Row(
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 24,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    FocusScope.of(context).unfocus();
-                    _showColorPicker();
-                  },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFB3B9D6),
-                      shape: BoxShape.circle,
-                      border: !_presetColors.contains(_selectedColor)
-                          ? Border.all(
-                              color: isDark ? Colors.white : AppColors.primary,
-                              width: 3,
-                            )
-                          : null,
-                    ),
-                    child: const Icon(
-                      Icons.palette_outlined,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                ..._presetColors.map((color) {
-                  final isSelected = _selectedColor == color;
-                  return GestureDetector(
-                    onTap: () {
-                      FocusScope.of(context).unfocus();
-                      setState(() => _selectedColor = color);
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      margin: const EdgeInsets.only(right: 12),
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: isSelected
-                            ? Border.all(
-                                color: isDark ? Colors.white : AppColors.primary,
-                                width: 3,
-                              )
-                            : null,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        _showEmojiPicker();
+                      },
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: ShapeDecoration(
+                          color: _selectedColor,
+                          shape: iconShape.toShapeBorder(64),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _emojiController.text.isNotEmpty
+                                ? _emojiController.text
+                                : '💰',
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                }),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: AppTextField(
+                        label: l10n.categoryName,
+                        hint: l10n.categoryNameHint,
+                        controller: _nameController,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          FocusScope.of(context).unfocus();
+                          _showColorPicker();
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFB3B9D6),
+                            shape: BoxShape.circle,
+                            border: !_presetColors.contains(_selectedColor)
+                                ? Border.all(
+                                    color: isDark ? Colors.white : AppColors.primary,
+                                    width: 3,
+                                  )
+                                : null,
+                          ),
+                          child: const Icon(
+                            Icons.palette_outlined,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      ..._presetColors.map((color) {
+                        final isSelected = _selectedColor == color;
+                        return GestureDetector(
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            setState(() => _selectedColor = color);
+                          },
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: isSelected
+                                  ? Border.all(
+                                      color: isDark ? Colors.white : AppColors.primary,
+                                      width: 3,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                const SizedBox(height: 12),
               ],
             ),
           ),
-          const SizedBox(height: 32),
-          AppButton(
-            label: widget.initialCategory == null
-                ? l10n.createCategory
-                : l10n.saveChanges,
-            onPressed: _isLoading ? null : _submit,
-            isLoading: _isLoading,
+        ),
+      ),
+      bottomNavigationBar: GestureDetector(
+        onTap: _isLoading ? null : _submit,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
-        ],
+          child: SafeArea(
+            top: false,
+            child: SizedBox(
+              height: 64,
+              child: _isLoading
+                  ? const Center(
+                      child: SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        widget.initialCategory == null
+                            ? l10n.createCategory
+                            : l10n.saveChanges,
+                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ),
       ),
     );
   }

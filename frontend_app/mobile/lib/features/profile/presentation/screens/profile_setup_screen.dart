@@ -79,7 +79,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     child: LinearProgressIndicator(
                       value: 0.6,
                       backgroundColor: AppColors.borderLight,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
+                      valueColor: AlwaysStoppedAnimation<Color>(
                           AppColors.primary),
                       borderRadius: BorderRadius.circular(4),
                     ),

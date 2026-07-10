@@ -722,7 +722,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.lock_rounded, size: 11, color: AppColors.primary),
+                                        Icon(Icons.lock_rounded, size: 11, color: AppColors.primary),
                                         const SizedBox(width: 4),
                                         Text(
                                           'Terkunci',

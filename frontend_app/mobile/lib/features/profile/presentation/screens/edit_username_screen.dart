@@ -97,7 +97,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -123,18 +123,18 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
                     ),
                     decoration: InputDecoration(
                       labelText: l10n.yourUsername,
-                      labelStyle: const TextStyle(color: AppColors.primary),
+                      labelStyle: TextStyle(color: AppColors.primary),
                       prefixText: '@',
-                      prefixStyle: const TextStyle(
+                      prefixStyle: TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                       counterText: '',
-                      focusedBorder: const UnderlineInputBorder(
+                      focusedBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: AppColors.primary, width: 2),
                       ),
-                      enabledBorder: const UnderlineInputBorder(
+                      enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: AppColors.primary),
                       ),
                     ),

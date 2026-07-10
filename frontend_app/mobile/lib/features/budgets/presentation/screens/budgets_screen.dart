@@ -523,7 +523,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.add_rounded,
                 color: AppColors.primary,
                 size: 24,

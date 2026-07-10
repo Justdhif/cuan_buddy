@@ -7,6 +7,7 @@ import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class ThemeLanguageScreen extends ConsumerStatefulWidget {
@@ -35,6 +36,11 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
   }
 
   String _getShapeLabel(CategoryIconShape shape) => shape.displayName;
+
+  String _getAccentLabel(Color color) {
+    final hex = color.toARGB32().toRadixString(16).padLeft(8, '0');
+    return '#${hex.substring(2).toUpperCase()}';
+  }
 
   Future<void> _showThemePicker(BuildContext context) async {
     final l10n = AppLocalizations.of(context);
@@ -87,10 +93,23 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
     );
   }
 
+  Future<void> _showAccentPicker(BuildContext context) async {
+    final currentColor = ref.read(accentColorProvider);
+    final pickedColor = await showCustomColorPicker(
+      context: context,
+      initialColor: currentColor,
+    );
+
+    if (pickedColor != null) {
+      await ref.read(accentColorProvider.notifier).setAccentColor(pickedColor);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeProvider);
+    final accentColor = ref.watch(accentColorProvider);
     final shapeMode = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
@@ -105,7 +124,7 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
         scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -118,6 +137,14 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
             title: l10n.theme,
             subtitle: _getThemeLabel(themeMode, l10n),
             onTap: () => _showThemePicker(context),
+          ),
+          _buildColorTile(
+            context: context,
+            icon: Icons.color_lens_outlined,
+            title: l10n.accentColor,
+            subtitle: _getAccentLabel(accentColor),
+            color: accentColor,
+            onTap: () => _showAccentPicker(context),
           ),
           _buildListTile(
             context: context,
@@ -179,6 +206,70 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isDark ? Colors.white60 : Colors.black54,
+              size: 24,
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                ),
               ),
             ),
           ],
@@ -272,7 +363,7 @@ class _ThemePickerSheet extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
                           color: AppColors.primary,
                         ),
@@ -376,7 +467,7 @@ class _LanguagePickerSheet extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
                           color: AppColors.primary,
                         ),
@@ -495,7 +586,7 @@ class _ShapePickerSheet extends StatelessWidget {
                         ),
                       ),
                       if (isSelected)
-                        const Icon(
+                        Icon(
                           Icons.check_circle_rounded,
                           color: AppColors.primary,
                         ),

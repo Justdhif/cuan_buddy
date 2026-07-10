@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../theme/app_colors.dart';
 import '../services/preferences_service.dart';
 import 'core_providers.dart';
 
@@ -20,8 +21,32 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   }
 }
 
+class AccentColorNotifier extends StateNotifier<Color> {
+  AccentColorNotifier(this._prefs) : super(_prefs.accentColor) {
+    AppColors.primary = state;
+  }
+
+  final PreferencesService _prefs;
+
+  Future<void> setAccentColor(Color color) async {
+    await _prefs.setAccentColor(color);
+    state = color;
+    AppColors.primary = color;
+  }
+
+  Future<void> resetAccentColor() async {
+    await setAccentColor(AppColors.defaultPrimary);
+  }
+}
+
 final themeModeProvider =
     StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   final prefs = ref.watch(preferencesServiceProvider);
   return ThemeModeNotifier(prefs);
+});
+
+final accentColorProvider =
+    StateNotifierProvider<AccentColorNotifier, Color>((ref) {
+  final prefs = ref.watch(preferencesServiceProvider);
+  return AccentColorNotifier(prefs);
 });

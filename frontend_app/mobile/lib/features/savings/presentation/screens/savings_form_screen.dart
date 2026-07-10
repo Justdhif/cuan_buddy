@@ -669,9 +669,9 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
         onTap: _isSaving ? null : _save,
         child: Container(
           width: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.primary,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
             top: false,

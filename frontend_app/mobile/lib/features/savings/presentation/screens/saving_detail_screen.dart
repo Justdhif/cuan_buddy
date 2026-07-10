@@ -276,7 +276,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                                   color: AppColors.primary.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: const Icon(Icons.link_rounded, color: AppColors.primary, size: 20),
+                                child: Icon(Icons.link_rounded, color: AppColors.primary, size: 20),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -304,7 +304,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.open_in_new_rounded, size: 16, color: AppColors.primary),
+                              Icon(Icons.open_in_new_rounded, size: 16, color: AppColors.primary),
                             ],
                           ),
                         ),
@@ -373,7 +373,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                 children: [
                   IconButton(
                     icon: Icon(
-                      Icons.arrow_back_rounded,
+                      Icons.chevron_left_rounded,
                       color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                     ),
                     onPressed: () => context.pop(),
@@ -386,7 +386,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                         color: AppColors.primary.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.edit_rounded,
                         size: 18,
                         color: AppColors.primary,
@@ -584,7 +584,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.push_pin_rounded,
+                                        Icon(Icons.push_pin_rounded,
                                             color: AppColors.primary, size: 12),
                                         const SizedBox(width: 4),
                                         Text(

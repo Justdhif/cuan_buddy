@@ -23,7 +23,7 @@ class AccountScreen extends ConsumerWidget {
         scrolledUnderElevation: 0,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),

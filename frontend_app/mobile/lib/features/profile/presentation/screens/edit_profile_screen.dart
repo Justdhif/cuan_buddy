@@ -195,7 +195,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         l10n.chooseAvatar,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -258,15 +258,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                               },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: AppColors.primary),
+                          side: BorderSide(color: AppColors.primary),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        icon: const Icon(Icons.upload_file_outlined, color: AppColors.primary),
+                        icon: Icon(Icons.upload_file_outlined, color: AppColors.primary),
                         label: Text(
                           l10n.uploadNewPhoto,
-                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -378,7 +378,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -459,7 +459,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         onPressed: _showAvatarEditSheet,
                         child: Text(
                           l10n.editPhoto,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,

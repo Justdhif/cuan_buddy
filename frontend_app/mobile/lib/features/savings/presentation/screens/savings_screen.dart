@@ -389,7 +389,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.add_rounded,
                 color: AppColors.primary,
                 size: 24,
@@ -553,7 +553,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       Row(
                         children: [
                           if (goal['isPin'] == true) ...[
-                            const Icon(
+                            Icon(
                               Icons.push_pin,
                               size: 14,
                               color: AppColors.primary,
@@ -749,7 +749,7 @@ class _SavingsHeroHeader extends StatelessWidget {
                         color: AppColors.primary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(Icons.savings_rounded, color: AppColors.primary, size: 26),
+                      child: Icon(Icons.savings_rounded, color: AppColors.primary, size: 26),
                     ),
                   ),
                   // Top-right – star / target

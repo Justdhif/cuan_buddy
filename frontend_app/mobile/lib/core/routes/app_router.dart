@@ -43,8 +43,10 @@ import '../../features/notifications/presentation/screens/notifications_screen.d
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/ai/presentation/screens/ai_chat_screen.dart';
 import '../../features/categories/presentation/screens/category_list_screen.dart';
+import '../../features/categories/presentation/widgets/category_form_sheet.dart';
 import '../../features/shared/presentation/screens/shared_screen.dart';
 import '../../features/wallets/presentation/screens/manage_wallets_screen.dart';
+import '../../features/wallets/presentation/widgets/wallet_form_sheet.dart';
 
 CustomTransitionPage _buildPage(GoRouterState state, Widget child) {
   return CustomTransitionPage(
@@ -283,9 +285,29 @@ final routerProvider = Provider<GoRouter>((ref) {
             _buildPage(state, const CategoryListScreen()),
       ),
       GoRoute(
+        path: '/manage-categories/form',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return _buildPage(
+            state,
+            CategoryFormSheet(initialCategory: extra?['category'] as Map<String, dynamic>?),
+          );
+        },
+      ),
+      GoRoute(
         path: '/manage-wallets',
         pageBuilder: (context, state) =>
             _buildPage(state, const ManageWalletsScreen()),
+      ),
+      GoRoute(
+        path: '/manage-wallets/form',
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return _buildPage(
+            state,
+            WalletFormSheet(initialWallet: extra?['wallet'] as Map<String, dynamic>?),
+          );
+        },
       ),
       GoRoute(
         path: '/home/profile',

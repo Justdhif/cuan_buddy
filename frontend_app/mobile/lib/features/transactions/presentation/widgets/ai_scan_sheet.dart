@@ -142,7 +142,7 @@ class _AiScanSheetState extends ConsumerState<AiScanSheet> {
             color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.document_scanner, size: 40, color: AppColors.primary),
+          child: Icon(Icons.document_scanner, size: 40, color: AppColors.primary),
         ),
         const SizedBox(height: 24),
         Text(
@@ -202,7 +202,7 @@ class _AiScanSheetState extends ConsumerState<AiScanSheet> {
               ),
             ),
           ),
-        const CircularProgressIndicator(color: AppColors.primary),
+        CircularProgressIndicator(color: AppColors.primary),
         const SizedBox(height: 32),
         Text(
           'Analyzing Receipt...',

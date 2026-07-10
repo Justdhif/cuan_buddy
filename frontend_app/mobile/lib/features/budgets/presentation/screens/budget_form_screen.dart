@@ -697,7 +697,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                                        Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
                                         const SizedBox(width: 8),
                                         Text(
                                           DateFormat('MMM yyyy').format(_selectedDate),

@@ -83,7 +83,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       appBar: AppBar(
         title: Text(l10n.changePassword),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -126,7 +126,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   onPressed: () => context.push('/forgot-password'),
                   child: Text(
                     l10n.forgotPassword,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                     ),

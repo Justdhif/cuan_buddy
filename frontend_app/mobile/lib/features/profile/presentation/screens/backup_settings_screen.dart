@@ -111,7 +111,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
           : AppBar(
               title: Text(l10n.backupRestore),
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                icon: const Icon(Icons.chevron_left_rounded),
                 onPressed: () => context.pop(),
               ),
             ),
@@ -146,7 +146,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
                       child: LinearProgressIndicator(
                         value: 1.0,
                         backgroundColor: AppColors.borderLight,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
+                        valueColor: AlwaysStoppedAnimation<Color>(
                             AppColors.primary),
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -395,7 +395,7 @@ class _BackupSettingsScreenState extends ConsumerState<BackupSettingsScreen> {
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle_rounded, color: AppColors.primary),
+              Icon(Icons.check_circle_rounded, color: AppColors.primary),
           ],
         ),
       ),
@@ -435,7 +435,7 @@ class _RestoreSheet extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.restore_page_rounded,
                 size: 40,
                 color: AppColors.primary,
@@ -522,7 +522,7 @@ class _RestoreSheet extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.download_rounded,
               size: 16,
               color: AppColors.primary,

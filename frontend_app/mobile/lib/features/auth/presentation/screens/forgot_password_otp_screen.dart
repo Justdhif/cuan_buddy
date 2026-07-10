@@ -123,7 +123,7 @@ class _ForgotPasswordOtpScreenState
               const SizedBox(height: 24),
               IconButton(
                 onPressed: () => context.pop(),
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                icon: const Icon(Icons.chevron_left_rounded),
               ),
               const SizedBox(height: 24),
               Text(

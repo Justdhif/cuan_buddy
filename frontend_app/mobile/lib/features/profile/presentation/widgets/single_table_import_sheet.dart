@@ -35,7 +35,7 @@ class SingleTableImportSheet extends ConsumerWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.download_rounded,
               size: 16,
               color: AppColors.primary,
@@ -113,7 +113,7 @@ class SingleTableImportSheet extends ConsumerWidget {
                 color: AppColors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.restore_page_rounded,
                 size: 40,
                 color: AppColors.primary,

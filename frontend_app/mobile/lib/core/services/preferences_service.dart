@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
+import '../theme/app_colors.dart';
 import '../theme/category_icon_shape.dart';
 class PreferencesService {
   PreferencesService(this._prefs);
@@ -27,6 +28,19 @@ class PreferencesService {
       ThemeMode.system => 'system',
     };
     await _prefs.setString(AppConstants.themeModeKey, value);
+  }
+
+  // ─── Accent Color ───────────────────────────────────────────────────────────
+  Color get accentColor {
+    final value = _prefs.getString(AppConstants.accentColorKey);
+    return AppColors.colorFromHex(
+      value,
+      fallback: AppColors.defaultPrimary,
+    );
+  }
+
+  Future<void> setAccentColor(Color color) async {
+    await _prefs.setString(AppConstants.accentColorKey, _colorToHex(color));
   }
 
   // ─── Icon Shape ───────────────────────────────────────────────────────────────
@@ -111,5 +125,10 @@ class PreferencesService {
 
   Future<void> clearAll() async {
     await _prefs.clear();
+  }
+
+  String _colorToHex(Color color) {
+    final value = color.toARGB32().toRadixString(16).padLeft(8, '0');
+    return value.substring(2).toUpperCase();
   }
 }

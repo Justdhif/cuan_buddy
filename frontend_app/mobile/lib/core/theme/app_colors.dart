@@ -4,9 +4,11 @@ class AppColors {
   AppColors._();
 
   // ─── Brand Colors ────────────────────────────────────────────────────────────
-  static const Color primary = Color(0xFF60A5FA);
-  static const Color primaryLight = Color(0xFF93C5FD);
-  static const Color primaryDark = Color(0xFF2563EB);
+  static const Color defaultPrimary = Color(0xFF60A5FA);
+  static Color primary = defaultPrimary;
+
+  static Color get primaryLight => _lighten(primary, 0.18);
+  static Color get primaryDark => _darken(primary, 0.14);
 
   static const Color secondary = Color(0xFF6EE7B7);
   static const Color secondaryLight = Color(0xFFA7F3D0);
@@ -50,17 +52,17 @@ class AppColors {
   static const Color dividerDark = Color(0xFF1E293B);
 
   // ─── Gradients ───────────────────────────────────────────────────────────────
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
-  );
+  static LinearGradient get primaryGradient => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [primaryDark, primary],
+      );
 
-  static const LinearGradient balanceGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF2563EB), Color(0xFF60A5FA), Color(0xFF6EE7B7)],
-  );
+  static LinearGradient get balanceGradient => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [primaryDark, primary, secondary],
+      );
 
   static const LinearGradient incomeGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -87,16 +89,24 @@ class AppColors {
   ];
 
   // ─── Utilities ───────────────────────────────────────────────────────────────
-  static Color colorFromHex(String? hexString,
-      {Color fallback = AppColors.primary}) {
-    if (hexString == null || hexString.isEmpty) return fallback;
+  static Color colorFromHex(String? hexString, {Color? fallback}) {
+    final defaultFallback = fallback ?? AppColors.primary;
+    if (hexString == null || hexString.isEmpty) return defaultFallback;
     final buffer = StringBuffer();
     if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
     buffer.write(hexString.replaceFirst('#', ''));
     try {
       return Color(int.parse(buffer.toString(), radix: 16));
     } catch (_) {
-      return fallback;
+      return defaultFallback;
     }
+  }
+
+  static Color _lighten(Color color, double amount) {
+    return Color.lerp(color, Colors.white, amount) ?? color;
+  }
+
+  static Color _darken(Color color, double amount) {
+    return Color.lerp(color, Colors.black, amount) ?? color;
   }
 }

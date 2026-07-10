@@ -1,24 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../providers/category_provider.dart';
-import '../widgets/category_form_sheet.dart';
-import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class CategoryListScreen extends ConsumerWidget {
   const CategoryListScreen({super.key});
 
   void _showCategoryForm(BuildContext context,
       {Map<String, dynamic>? category}) {
-    AppBottomSheet.show(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => CategoryFormSheet(initialCategory: category),
-    );
+    context.push('/manage-categories/form', extra: {'category': category});
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, String id) {

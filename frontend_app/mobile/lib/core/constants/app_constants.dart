@@ -21,10 +21,12 @@ class AppConstants {
   static const String backupSetupCompleteKey = 'backup_setup_complete';
   static const String onboardingCompleteKey = 'onboarding_complete';
   static const String categoryIconShapeKey = 'category_icon_shape';
+  static const String accentColorKey = 'accent_color';
   // ─── Defaults ────────────────────────────────────────────────────────────────
   static const String defaultCurrency = 'IDR';
   static const String defaultCurrencySymbol = 'Rp';
   static const String defaultLanguage = 'en';
+  static const String defaultAccentColorHex = '60A5FA';
   static const List<String> supportedLanguages = ['en', 'id'];
 
   static const List<Map<String, String>> supportedCurrencies = [

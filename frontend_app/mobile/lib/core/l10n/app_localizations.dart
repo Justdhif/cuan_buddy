@@ -339,6 +339,7 @@ abstract class AppLocalizations {
 
   // ─── Profile ──────────────────────────────────────────────────────────────────
   String get profile;
+  String get accentColor;
   String get preferences;
   String get account;
   String get darkMode;

@@ -280,7 +280,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
       mainAxisSize: MainAxisSize.min,
       children: [
         const SizedBox(height: 48),
-        const CircularProgressIndicator(color: AppColors.primary),
+        CircularProgressIndicator(color: AppColors.primary),
         const SizedBox(height: 32),
         Text(
           l10n.aiVoiceAnalyzing,

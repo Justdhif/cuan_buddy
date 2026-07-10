@@ -56,6 +56,7 @@ class CuanBuddyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final accentColor = ref.watch(accentColorProvider);
     final languageCode = ref.watch(languageProvider);
     final l10n = AppLocalizations.forLocale(languageCode);
 
@@ -64,8 +65,8 @@ class CuanBuddyApp extends ConsumerWidget {
       child: MaterialApp.router(
         title: 'CuanBuddy',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
+        theme: AppTheme.light(accentColor),
+        darkTheme: AppTheme.dark(accentColor),
         themeMode: themeMode,
         locale: Locale(languageCode),
         supportedLocales: const [Locale('en'), Locale('id')],

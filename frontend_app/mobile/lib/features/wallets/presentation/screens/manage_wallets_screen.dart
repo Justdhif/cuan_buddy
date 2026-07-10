@@ -4,12 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_bottom_sheet.dart';
-import '../../../../core/theme/category_icon_shape.dart';
-import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../providers/wallet_provider.dart';
-import '../widgets/wallet_form_sheet.dart';
 import '../../../../core/constants/app_constants.dart';
 
 class ManageWalletsScreen extends ConsumerStatefulWidget {
@@ -22,11 +17,7 @@ class ManageWalletsScreen extends ConsumerStatefulWidget {
 
 class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
   void _showWalletForm(BuildContext context, {Map<String, dynamic>? wallet}) {
-    AppBottomSheet.show(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => WalletFormSheet(initialWallet: wallet),
-    );
+    context.push('/manage-wallets/form', extra: {'wallet': wallet});
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, String id) {
@@ -59,7 +50,6 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
     final state = ref.watch(walletsProvider);
     final wallets = state.valueOrNull ?? [];
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final iconShape = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
       appBar: widget.isOnboarding
@@ -124,60 +114,52 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                             final emoji = wallet['emojiIcon'] ?? '💼';
                             final colorCode = wallet['colorCode'] as String?;
                             final backgroundColor = AppColors.colorFromHex(colorCode, fallback: AppColors.primary);
+                            final currencyCode = wallet['currency'] as String? ?? 'USD';
+                            final symbol = AppConstants.supportedCurrencies.firstWhere((c) => c['code'] == currencyCode, orElse: () => {'symbol': currencyCode})['symbol'];
 
-                                final currencyCode = wallet['currency'] as String? ?? 'USD';
-                                final symbol = AppConstants.supportedCurrencies.firstWhere((c) => c['code'] == currencyCode, orElse: () => {'symbol': currencyCode})['symbol'];
-
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? AppColors.cardDark
-                                        : AppColors.cardLight,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: isDark
-                                          ? AppColors.borderDark
-                                          : AppColors.borderLight,
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                ),
+                              ),
+                              child: ListTile(
+                                leading: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: ShapeDecoration(
+                                    color: backgroundColor.withValues(alpha: 0.15),
+                                    shape: const CircleBorder(),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      emoji,
+                                      style: const TextStyle(fontSize: 20),
                                     ),
                                   ),
-                                  child: ListTile(
-                                    leading: Container(
-                                      width: 40,
-                                      height: 40,
-                                      decoration: ShapeDecoration(
-                                        color: backgroundColor.withValues(alpha: 0.15),
-                                        shape: iconShape.toShapeBorder(40),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          emoji,
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
-                                      ),
-                                    ),
-                                    title: Text(wallet['name'] ?? '',
-                                        style: AppTypography.textTheme.labelLarge),
-                                    subtitle: Text(
-                                      '$symbol${wallet['balance'] ?? '0.00'}',
-                                      style: AppTypography.textTheme.bodySmall?.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                ),
+                                title: Text(wallet['name'] ?? '',
+                                    style: AppTypography.textTheme.labelLarge),
+                                subtitle: Text(
+                                  '$symbol${wallet['balance'] ?? '0.00'}',
+                                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined, size: 20),
-                                      onPressed: () => _showWalletForm(context,
-                                          wallet: wallet),
+                                      onPressed: () => _showWalletForm(context, wallet: wallet),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          size: 20, color: Colors.red),
-                                      onPressed: () =>
-                                          _confirmDelete(context, ref, wallet['id']),
+                                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                      onPressed: () => _confirmDelete(context, ref, wallet['id']),
                                     ),
                                   ],
                                 ),
@@ -189,11 +171,33 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
             if (widget.isOnboarding)
               Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: AppButton(
-                  label: l10n.finishAndStart,
-                  onPressed: () {
-                    context.go('/dashboard');
-                  },
+                child: SizedBox(
+                  width: double.infinity,
+                  child: GestureDetector(
+                    onTap: () => context.go('/dashboard'),
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        child: SizedBox(
+                          height: 64,
+                          child: Center(
+                            child: Text(
+                              l10n.finishAndStart,
+                              style: AppTypography.textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
           ],

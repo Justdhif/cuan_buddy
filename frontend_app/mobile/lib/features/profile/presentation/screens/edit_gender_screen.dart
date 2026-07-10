@@ -153,7 +153,7 @@ class _EditGenderScreenState extends ConsumerState<EditGenderScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
