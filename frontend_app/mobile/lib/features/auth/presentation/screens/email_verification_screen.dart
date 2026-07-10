@@ -75,6 +75,7 @@ class _EmailVerificationScreenState
             email: widget.email!,
             password: widget.password!,
           );
+          if (!mounted) return;
           if (ref.read(authNotifierProvider) is AuthStateAuthenticated) {
             AppSnackbar.show(
               context,
@@ -90,6 +91,7 @@ class _EmailVerificationScreenState
         }
         
         // Fallback if password is missing or login failed
+        if (!mounted) return;
         AppSnackbar.show(
           context,
           title: l10n.success,
@@ -274,14 +276,15 @@ class _EmailVerificationScreenState
                 onPressed: () {
                   _redirectTimer?.cancel();
                   if (widget.password != null && widget.password!.isNotEmpty) {
+                    final goRouter = GoRouter.of(context);
                     ref.read(authNotifierProvider.notifier).login(
                       email: widget.email!,
                       password: widget.password!,
                     ).then((_) {
-                      if (ref.read(authNotifierProvider) is AuthStateAuthenticated && mounted) {
-                        context.go('/profile-setup');
-                      } else if (mounted) {
-                        context.go('/login');
+                      if (ref.read(authNotifierProvider) is AuthStateAuthenticated) {
+                        goRouter.go('/profile-setup');
+                      } else {
+                        goRouter.go('/login');
                       }
                     });
                   } else {

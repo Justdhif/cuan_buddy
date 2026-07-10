@@ -1,5 +1,6 @@
 import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -32,6 +33,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
   late String _typeValue;
   late String _currencyValue;
   late bool _isBaseCurrency;
+  late int _decimalPrecision;
   bool _isLoading = false;
 
   final List<Color> _presetColors = [
@@ -60,21 +62,36 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.initialWallet?['name']);
-    _balanceController = TextEditingController(text: widget.initialWallet?['balance']?.toString() ?? '0');
-    _emojiController = TextEditingController(text: widget.initialWallet?['emojiIcon'] ?? '💼');
+    _nameController =
+        TextEditingController(text: widget.initialWallet?['name']);
+    _balanceController = TextEditingController(
+        text: widget.initialWallet?['balance']?.toString() ?? '0');
+    _balanceController.addListener(_onBalanceChanged);
+    _emojiController =
+        TextEditingController(text: widget.initialWallet?['emojiIcon'] ?? '💼');
     _typeValue = widget.initialWallet?['type'] ?? 'cash';
-    _currencyValue = widget.initialWallet?['currency'] ?? AppConstants.defaultCurrency;
+    _currencyValue =
+        widget.initialWallet?['currency'] ?? AppConstants.defaultCurrency;
     _isBaseCurrency = widget.initialWallet?['isBaseCurrency'] == true;
-    _selectedColor = _colorFromHex(widget.initialWallet?['colorCode'] as String?);
+    _decimalPrecision =
+        (widget.initialWallet?['decimalPrecision'] as num?)?.toInt() ?? 2;
+    _selectedColor =
+        _colorFromHex(widget.initialWallet?['colorCode'] as String?);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
+    _balanceController.removeListener(_onBalanceChanged);
     _balanceController.dispose();
     _emojiController.dispose();
     super.dispose();
+  }
+
+  void _onBalanceChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _submit() async {
@@ -84,7 +101,10 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
     final emoji = _emojiController.text.trim();
     final colorCode = _colorToHex(_selectedColor);
 
-    if (name.isEmpty || currency.isEmpty || balanceText.isEmpty || emoji.isEmpty) {
+    if (name.isEmpty ||
+        currency.isEmpty ||
+        balanceText.isEmpty ||
+        emoji.isEmpty) {
       AppSnackbar.show(
         context,
         title: l10n.info,
@@ -106,23 +126,22 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
         'type': _typeValue,
         'currency': currency,
         'isBaseCurrency': _isBaseCurrency,
+        'decimalPrecision': _decimalPrecision,
         'balance': balance,
         'emojiIcon': emoji,
         'colorCode': colorCode,
       });
     } else {
-      error = await notifier.updateWallet(
-        widget.initialWallet!['id'],
-        {
-          'name': name,
-          'type': _typeValue,
-          'currency': currency,
-          'isBaseCurrency': _isBaseCurrency,
-          'balance': balance,
-          'emojiIcon': emoji,
-          'colorCode': colorCode,
-        }
-      );
+      error = await notifier.updateWallet(widget.initialWallet!['id'], {
+        'name': name,
+        'type': _typeValue,
+        'currency': currency,
+        'isBaseCurrency': _isBaseCurrency,
+        'decimalPrecision': _decimalPrecision,
+        'balance': balance,
+        'emojiIcon': emoji,
+        'colorCode': colorCode,
+      });
     }
 
     if (!mounted) return;
@@ -166,6 +185,50 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
     if (newColor != null) {
       setState(() => _selectedColor = newColor);
     }
+  }
+
+  String _formatPreviewAmount(double value) {
+    final formatter = NumberFormat.currency(
+      locale: 'en_US',
+      symbol: '',
+      decimalDigits: _decimalPrecision,
+    );
+    return formatter.format(value).trim();
+  }
+
+  Widget _precisionChip(int precision) {
+    final isSelected = _decimalPrecision == precision;
+    return ChoiceChip(
+      label: Text(
+        '$precision',
+        style: AppTypography.textTheme.labelLarge?.copyWith(
+          color: isSelected
+              ? Colors.white
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white70
+                  : Colors.black87),
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (_) {
+        setState(() => _decimalPrecision = precision);
+      },
+      selectedColor: AppColors.primary,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AppColors.surfaceDark
+          : const Color(0xFFF4F2FF),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      side: BorderSide(
+        color: isSelected
+            ? AppColors.primary
+            : (Theme.of(context).brightness == Brightness.dark
+                ? Colors.white12
+                : Colors.black12),
+      ),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    );
   }
 
   Future<void> _confirmDelete() async {
@@ -235,7 +298,8 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
         actions: [
           if (widget.initialWallet != null)
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              icon: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.danger),
               onPressed: _confirmDelete,
               tooltip: l10n.deleteWallet,
             ),
@@ -272,7 +336,9 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                         ),
                         child: Center(
                           child: Text(
-                            _emojiController.text.isNotEmpty ? _emojiController.text : '💼',
+                            _emojiController.text.isNotEmpty
+                                ? _emojiController.text
+                                : '💼',
                             style: const TextStyle(fontSize: 32),
                           ),
                         ),
@@ -309,7 +375,9 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                             shape: BoxShape.circle,
                             border: !_presetColors.contains(_selectedColor)
                                 ? Border.all(
-                                    color: isDark ? Colors.white : AppColors.primary,
+                                    color: isDark
+                                        ? Colors.white
+                                        : AppColors.primary,
                                     width: 3,
                                   )
                                 : null,
@@ -336,7 +404,9 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                               shape: BoxShape.circle,
                               border: isSelected
                                   ? Border.all(
-                                      color: isDark ? Colors.white : AppColors.primary,
+                                      color: isDark
+                                          ? Colors.white
+                                          : AppColors.primary,
                                       width: 3,
                                     )
                                   : null,
@@ -350,7 +420,9 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: _typeValue,
-                  dropdownColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+                  dropdownColor: isDark
+                      ? AppColors.backgroundDark
+                      : AppColors.backgroundLight,
                   style: AppTypography.textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -361,19 +433,25 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                      borderSide: BorderSide(
+                          color: isDark ? Colors.white24 : Colors.black12),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(color: AppColors.primary),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'cash', child: Text(l10n.walletTypeCash)),
-                    DropdownMenuItem(value: 'bank', child: Text(l10n.walletTypeBank)),
-                    DropdownMenuItem(value: 'e_wallet', child: Text(l10n.walletTypeEWallet)),
-                    DropdownMenuItem(value: 'crypto', child: Text(l10n.walletTypeCrypto)),
+                    DropdownMenuItem(
+                        value: 'cash', child: Text(l10n.walletTypeCash)),
+                    DropdownMenuItem(
+                        value: 'bank', child: Text(l10n.walletTypeBank)),
+                    DropdownMenuItem(
+                        value: 'e_wallet', child: Text(l10n.walletTypeEWallet)),
+                    DropdownMenuItem(
+                        value: 'crypto', child: Text(l10n.walletTypeCrypto)),
                     DropdownMenuItem(value: 'other', child: Text(l10n.other)),
                   ],
                   onChanged: (val) {
@@ -389,24 +467,30 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _currencyValue,
-                        dropdownColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+                        dropdownColor: isDark
+                            ? AppColors.backgroundDark
+                            : AppColors.backgroundLight,
                         style: AppTypography.textTheme.bodyMedium?.copyWith(
                           color: isDark ? Colors.white : Colors.black87,
                         ),
                         decoration: InputDecoration(
                           labelText: 'Currency',
-                          labelStyle: AppTypography.textTheme.bodySmall?.copyWith(
+                          labelStyle:
+                              AppTypography.textTheme.bodySmall?.copyWith(
                             color: isDark ? Colors.white60 : Colors.black54,
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                            borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white24 : Colors.black12),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide(color: AppColors.primary),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                         ),
                         items: AppConstants.supportedCurrencies.map((c) {
                           return DropdownMenuItem(
@@ -421,21 +505,142 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: AppTextField(
-                        label: l10n.initialBalance,
-                        hint: '0',
-                        controller: _balanceController,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      ),
-                    ),
                   ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [
+                              AppColors.surfaceDark,
+                              AppColors.surfaceDark.withValues(alpha: 0.85)
+                            ]
+                          : [const Color(0xFFF8F7FF), const Color(0xFFF0ECFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : Colors.black12,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(Icons.tune_rounded,
+                                color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  l10n.walletDecimalPrecision,
+                                  style: AppTypography.textTheme.titleSmall
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  l10n.walletDecimalPrecisionHint,
+                                  style: AppTypography.textTheme.bodySmall
+                                      ?.copyWith(
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: List.generate(3, _precisionChip),
+                      ),
+                      const SizedBox(height: 14),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.04)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isDark ? Colors.white12 : Colors.black12,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: AppColors.balanceGradient,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Icon(
+                                  Icons.account_balance_wallet_rounded,
+                                  color: Colors.white),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    l10n.initialBalance,
+                                    style: AppTypography.textTheme.bodySmall
+                                        ?.copyWith(
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  AppTextField(
+                                    hint: '0',
+                                    controller: _balanceController,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${l10n.preview}: ${_formatPreviewAmount(double.tryParse(_balanceController.text.trim()) ?? 0)}',
+                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.isBaseCurrency, style: AppTypography.textTheme.bodyMedium),
+                  title: Text(l10n.isBaseCurrency,
+                      style: AppTypography.textTheme.bodyMedium),
                   value: _isBaseCurrency,
                   onChanged: (val) {
                     setState(() => _isBaseCurrency = val);

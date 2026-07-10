@@ -1,0 +1,1 @@
+ALTER TABLE "wallets" ADD COLUMN "decimal_precision" integer DEFAULT 2 NOT NULL;--> statement-breakpoint

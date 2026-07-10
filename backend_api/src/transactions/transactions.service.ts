@@ -13,6 +13,7 @@ import {
 } from '../common/utils/formatter.util';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AiService } from '../ai/ai.service';
+import { roundDecimal } from '../common/utils/formatter.util';
 
 @Injectable()
 export class TransactionsService {
@@ -39,8 +40,14 @@ export class TransactionsService {
       finalTitle = createTransactionDto.type === 'income' ? 'Income' : 'Expense';
     }
 
+    const wallet = await this.db.query.wallets.findFirst({
+      where: and(eq(wallets.id, createTransactionDto.walletId), eq(wallets.userId, userId)),
+    });
+    const walletPrecision = wallet?.decimalPrecision ?? 2;
+    const roundedAmount = roundDecimal(createTransactionDto.amount, walletPrecision);
+
     const exchangeRate = createTransactionDto.exchangeRate ?? 1;
-    const baseAmount = createTransactionDto.amount * exchangeRate;
+    const baseAmount = roundDecimal(roundedAmount * exchangeRate, 2);
 
     const [newTransaction] = await this.db
       .insert(transactions)
@@ -49,14 +56,14 @@ export class TransactionsService {
         ...createTransactionDto,
         title: finalTitle,
         date: new Date(createTransactionDto.date),
-        amount: createTransactionDto.amount.toString(),
+        amount: roundedAmount.toString(),
         exchangeRate: exchangeRate.toString(),
         baseAmount: baseAmount.toString(),
       })
       .returning();
 
     // Update wallet balance
-    await this.applyWalletEffect(userId, createTransactionDto.walletId, createTransactionDto.type as 'income' | 'expense', createTransactionDto.amount);
+    await this.applyWalletEffect(userId, createTransactionDto.walletId, createTransactionDto.type as 'income' | 'expense', roundedAmount);
 
     if (newTransaction.savingsGoalId) {
       void this.applySavingsGoalEffect(userId, newTransaction.savingsGoalId, newTransaction.type as 'income' | 'expense', Number(newTransaction.amount), Number(newTransaction.baseAmount));
@@ -97,12 +104,14 @@ export class TransactionsService {
     });
     if (!wallet) return;
 
-    let adjustment = type === 'income' ? amount : -amount;
+    const roundedAmount = roundDecimal(amount, wallet.decimalPrecision ?? 2);
+
+    let adjustment = type === 'income' ? roundedAmount : -roundedAmount;
     if (isRevert) {
       adjustment = -adjustment;
     }
 
-    const newBalance = Number(wallet.balance) + adjustment;
+    const newBalance = roundDecimal(Number(wallet.balance) + adjustment, wallet.decimalPrecision ?? 2);
     await this.db.update(wallets).set({ balance: newBalance.toString(), updatedAt: new Date() }).where(eq(wallets.id, walletId));
   }
 
@@ -291,17 +300,25 @@ export class TransactionsService {
     });
     if (!oldTx) throw new NotFoundException('Transaction not found');
 
+    const targetWalletId = updateTransactionDto.walletId ?? oldTx.walletId;
+    const targetWallet = await this.db.query.wallets.findFirst({
+      where: and(eq(wallets.id, targetWalletId), eq(wallets.userId, userId)),
+    });
+    const walletPrecision = targetWallet?.decimalPrecision ?? 2;
+
     const updateData: any = { ...updateTransactionDto, updatedAt: new Date() };
     if (updateTransactionDto.date)
       updateData.date = new Date(updateTransactionDto.date);
-    if (updateTransactionDto.amount)
-      updateData.amount = updateTransactionDto.amount.toString();
-      
-    if (updateTransactionDto.amount !== undefined || updateTransactionDto.exchangeRate !== undefined) {
-      const amt = updateTransactionDto.amount ?? Number(oldTx.amount);
+    if (updateTransactionDto.amount !== undefined || updateTransactionDto.walletId !== undefined) {
+      const amt = roundDecimal(updateTransactionDto.amount ?? Number(oldTx.amount), walletPrecision);
+      updateData.amount = amt.toString();
+    }
+
+    if (updateTransactionDto.amount !== undefined || updateTransactionDto.exchangeRate !== undefined || updateTransactionDto.walletId !== undefined) {
+      const amt = roundDecimal(updateTransactionDto.amount ?? Number(oldTx.amount), walletPrecision);
       const rate = updateTransactionDto.exchangeRate ?? Number(oldTx.exchangeRate);
       updateData.exchangeRate = rate.toString();
-      updateData.baseAmount = (amt * rate).toString();
+      updateData.baseAmount = roundDecimal(amt * rate, 2).toString();
     }
 
     const [updated] = await this.db

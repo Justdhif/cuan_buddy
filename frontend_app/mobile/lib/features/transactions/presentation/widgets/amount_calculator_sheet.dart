@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import 'package:intl/intl.dart';
@@ -149,7 +148,9 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       final right = double.tryParse(tempTokens[i + 1]) ?? 0.0;
       if (op == '+') {
         finalResult += right;
-      } else if (op == '-') finalResult -= right;
+      } else if (op == '-') {
+        finalResult -= right;
+      }
     }
 
     return finalResult;
@@ -158,7 +159,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final l10n = AppLocalizations.of(context);
     
     // Formatters
     final displayFormatter = NumberFormat('#,##0.##', 'id');

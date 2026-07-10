@@ -34,7 +34,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   late ScrollController _scrollController;
   late PageController _budgetPageController;
-  int _currentBudgetPage = 0;
 
   @override
   void initState() {
@@ -270,11 +269,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             height: 240,
                             child: PageView.builder(
                               controller: _budgetPageController,
-                              onPageChanged: (index) {
-                                setState(() {
-                                  _currentBudgetPage = index;
-                                });
-                              },
                               physics: const BouncingScrollPhysics(),
                               itemCount: budgetsState.budgets.isEmpty ? 1 : budgetsState.budgets.length + 1,
                               itemBuilder: (context, index) {

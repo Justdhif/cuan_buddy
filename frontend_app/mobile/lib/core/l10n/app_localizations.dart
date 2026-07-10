@@ -307,6 +307,9 @@ abstract class AppLocalizations {
   String get walletName;
   String get walletType;
   String get initialBalance;
+  String get walletDecimalPrecision;
+  String get walletDecimalPrecisionHint;
+  String get preview;
   String get isBaseCurrency;
   String get walletSaved;
   String get deleteWallet;
@@ -365,7 +368,7 @@ abstract class AppLocalizations {
   String get newPasswordHint;
   String get confirmNewPasswordHint;
   String get oldPasswordRequired;
-  
+
   String get otpSentTitle;
   String otpSentMessage(String phone);
   String get otpSuccessTitle;
@@ -403,7 +406,7 @@ abstract class AppLocalizations {
   String get selectBirthdate;
   String get birthdatePrivacyInfo;
   String get saveButton;
-  
+
   String get pleaseSelectGender;
   String get genderUpdatedSuccess;
   String failedToUpdateGender(String error);
@@ -412,13 +415,13 @@ abstract class AppLocalizations {
   String get genderField;
   String get genderMale;
   String get genderFemale;
-  
+
   String get nameCannotBeEmpty;
   String get nameUpdatedSuccess;
   String failedToUpdateName(String error);
   String get yourFullName;
   String get editNamePrivacyInfo;
-  
+
   String get usernameCannotBeEmpty;
   String get usernameInvalidFormat;
   String get usernameUpdatedSuccess;
@@ -426,19 +429,19 @@ abstract class AppLocalizations {
   String get usernameField;
   String get yourUsername;
   String get editUsernamePrivacyInfo;
-  
+
   String get bioUpdatedSuccess;
   String failedToUpdateBio(String error);
   String get aboutTitle;
   String get aboutYou;
   String get editBioPrivacyInfo;
-  
+
   String get linkUpdatedSuccess;
   String failedToUpdateLink(String error);
   String get linkTitle;
   String get yourInstagramLink;
   String get editLinkPrivacyInfo;
-  
+
   String get profilePhotoUpdatedSuccess;
   String failedToUpdateAvatar(String error);
   String get profilePhoto;
@@ -447,16 +450,16 @@ abstract class AppLocalizations {
   String get notSet;
   String get editPhoto;
   String get bioField;
-  
+
   String get accountMenu;
   String get changePasswordDesc;
   String get changePhoneNumberDesc;
-  
+
   List<String> get months;
   List<String> get shortMonths;
   List<String> get shortDays;
   String get today;
-  
+
   String get accountMenuDesc;
   String get appearanceMenu;
   String get appearanceMenuDesc;
@@ -560,11 +563,13 @@ abstract class AppLocalizations {
   String get newBudgetCreated;
   String budgetSetTo(String monthYear, String limitStr);
   String get budgetExceededNotification;
-  String budgetExceededWarning(String monthYear, String categoryName, String limitStr, String spentStr);
+  String budgetExceededWarning(
+      String monthYear, String categoryName, String limitStr, String spentStr);
   String get budgetWarningNotification;
   String budgetWarningDetail(int ratio, String monthYear, String categoryName);
   String get budgetPredictionWarning;
-  String budgetPredictionWarningDetail(String monthYear, String categoryName, String predictedStr);
+  String budgetPredictionWarningDetail(
+      String monthYear, String categoryName, String predictedStr);
   String get incomeNotification;
   String get expenseNotification;
 
@@ -627,6 +632,7 @@ abstract class AppLocalizations {
   String get purchaseLinkLabel;
   String get purchaseLinkHint;
 }
+
 class AppLocalizationsScope extends InheritedWidget {
   const AppLocalizationsScope({
     super.key,
@@ -648,4 +654,3 @@ class AppLocalizationsScope extends InheritedWidget {
     return localizations.languageCode != oldWidget.localizations.languageCode;
   }
 }
-

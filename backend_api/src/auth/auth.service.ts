@@ -75,6 +75,7 @@ export class AuthService {
         type: 'cash',
         currency: 'IDR',
         isBaseCurrency: true,
+        decimalPrecision: 2,
         balance: '0',
       });
 

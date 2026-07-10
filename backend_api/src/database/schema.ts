@@ -51,6 +51,7 @@ export const wallets = pgTable('wallets', {
   type: walletTypeEnum('type').default('cash').notNull(),
   currency: text('currency').default('IDR').notNull(),
   isBaseCurrency: boolean('is_base_currency').default(false).notNull(),
+  decimalPrecision: integer('decimal_precision').default(2).notNull(),
   balance: decimal('balance', { precision: 19, scale: 2 }).default('0').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

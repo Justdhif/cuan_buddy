@@ -10,6 +10,14 @@ export function formatCurrency(amount: string | number): string {
   }).format(numericAmount);
 }
 
+export function roundDecimal(value: string | number, precision = 2): number {
+  const numericValue = Number(value);
+  if (isNaN(numericValue)) return 0;
+
+  const safePrecision = Number.isInteger(precision) && precision >= 0 ? precision : 2;
+  return Number(numericValue.toFixed(safePrecision));
+}
+
 export function formatDate(date: Date | string): string {
   if (!date) return '-';
   const d = new Date(date);

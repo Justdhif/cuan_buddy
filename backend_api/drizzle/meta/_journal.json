@@ -57,6 +57,13 @@
       "when": 1782271985553,
       "tag": "0007_melodic_supreme_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783660800000,
+      "tag": "0008_wallet_decimal_precision",
+      "breakpoints": true
     }
   ]
 }

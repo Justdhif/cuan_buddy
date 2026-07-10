@@ -18,7 +18,6 @@ import '../providers/transaction_provider.dart';
 import '../../../budgets/presentation/providers/budgets_provider.dart';
 import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../../../wallets/providers/wallet_provider.dart';
 
@@ -232,13 +231,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final typeColor = _type == 'income' ? AppColors.success : AppColors.danger;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final categoriesAsync = ref.watch(categoriesProvider);
     final savingsState = ref.watch(savingsNotifierProvider);
     final budgetsState = ref.watch(budgetsNotifierProvider);
     final iconShape = ref.watch(categoryIconShapeProvider);
-    final profileState = ref.watch(profileProvider);
     final walletsState = ref.watch(walletsProvider);
 
     // Auto-select first wallet if none selected
@@ -254,7 +251,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
        try {
          final wallet = walletsState.value!.firstWhere((w) => w['id'] == _selectedWalletId);
          currentWalletCurrency = wallet['currency'];
-       } catch (e) {}
+       } catch (e) {
+         // Ignore if wallet is not found
+       }
     }
     
     if (currentWalletCurrency != null && currentWalletCurrency != _selectedCurrency) {
@@ -262,9 +261,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
          if (mounted) setState(() => _selectedCurrency = currentWalletCurrency!);
        });
     }
-
-    final currencyCode = _selectedCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
 
     return Scaffold(
       appBar: AppBar(
@@ -418,7 +414,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
                           final rawS = budget['spentAmount'];
                           final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-                          final baseRemaining = limitAmount - spentAmount;
                           
                           final budgetCurrency = budget['currency'] as String? ?? AppConstants.defaultCurrency;
                           final enteredAmount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
@@ -701,8 +696,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           );
                           final goalName = goal?['name'] as String? ?? l10n.savingsGoals;
                           final goalEmoji = goal?['emojiIcon'] as String? ?? '🎯';
-                          final colorHex = goal?['colorCode'] as String? ?? '#6C63FF';
-                          final goalColor = AppColors.colorFromHex(colorHex, fallback: AppColors.primary);
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1317,18 +1310,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-  Widget _buildCategorySkeletonLoader(bool isDark) {
-    return SizedBox(
-      height: 52,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, __) => _SkeletonChip(isDark: isDark),
       ),
     );
   }

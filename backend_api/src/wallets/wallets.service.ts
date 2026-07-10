@@ -3,6 +3,7 @@ import { eq, and } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { wallets } from '../database/schema';
 import { CreateWalletDto, UpdateWalletDto } from './dto/wallet.dto';
+import { roundDecimal } from '../common/utils/formatter.util';
 
 @Injectable()
 export class WalletsService {
@@ -17,6 +18,8 @@ export class WalletsService {
         .where(eq(wallets.userId, userId));
     }
 
+    const decimalPrecision = createWalletDto.decimalPrecision ?? 2;
+
     const [newWallet] = await this.db
       .insert(wallets)
       .values({
@@ -25,7 +28,8 @@ export class WalletsService {
         type: createWalletDto.type,
         currency: createWalletDto.currency,
         isBaseCurrency: createWalletDto.isBaseCurrency || false,
-        balance: createWalletDto.balance.toString(),
+        decimalPrecision,
+        balance: roundDecimal(createWalletDto.balance, decimalPrecision).toString(),
       })
       .returning();
 
@@ -52,15 +56,27 @@ export class WalletsService {
   }
 
   async update(userId: string, id: string, updateWalletDto: UpdateWalletDto) {
+    const existingWallet = await this.db.query.wallets.findFirst({
+      where: and(eq(wallets.id, id), eq(wallets.userId, userId)),
+    });
+
+    if (!existingWallet) {
+      throw new NotFoundException('Wallet not found');
+    }
+
     if (updateWalletDto.isBaseCurrency) {
       await this.db.update(wallets)
         .set({ isBaseCurrency: false })
         .where(eq(wallets.userId, userId));
     }
 
-    const updateData: any = { ...updateWalletDto, updatedAt: new Date() };
+    const decimalPrecision = updateWalletDto.decimalPrecision ?? existingWallet.decimalPrecision ?? 2;
+
+    const updateData: any = { ...updateWalletDto, updatedAt: new Date(), decimalPrecision };
     if (updateWalletDto.balance !== undefined) {
-      updateData.balance = updateWalletDto.balance.toString();
+      updateData.balance = roundDecimal(updateWalletDto.balance, decimalPrecision).toString();
+    } else if (updateWalletDto.decimalPrecision !== undefined) {
+      updateData.balance = roundDecimal(existingWallet.balance, decimalPrecision).toString();
     }
 
     const [updated] = await this.db
@@ -68,10 +84,6 @@ export class WalletsService {
       .set(updateData)
       .where(and(eq(wallets.id, id), eq(wallets.userId, userId)))
       .returning();
-
-    if (!updated) {
-      throw new NotFoundException('Wallet not found');
-    }
 
     return updated;
   }

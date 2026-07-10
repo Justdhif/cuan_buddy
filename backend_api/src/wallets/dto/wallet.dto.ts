@@ -6,6 +6,7 @@ export const CreateWalletSchema = z.object({
   type: z.enum(['cash', 'bank', 'e_wallet', 'crypto', 'other']).default('cash'),
   currency: z.string().min(2).max(10).default('IDR'),
   isBaseCurrency: z.boolean().default(false).optional(),
+  decimalPrecision: z.number().int().min(0).max(2).default(2),
   balance: z.number().default(0),
   emojiIcon: z.string().optional().default('💼'),
   colorCode: z.string().optional().default('#6C63FF'),
