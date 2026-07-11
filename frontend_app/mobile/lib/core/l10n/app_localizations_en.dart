@@ -559,6 +559,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletTypeEWallet => 'E-Wallet';
   @override
   String get walletTypeCrypto => 'Crypto';
+  @override
+  String get walletSearchCurrency => 'Search Currency...';
+  @override
+  String get walletDecimalPrecisionSheetDesc =>
+      'Decimal places for rounding transaction amounts';
+  @override
+  String walletDecimalBadge(int n) => '$n decimal${n == 1 ? '' : 's'}';
+  @override
+  String get walletDecimalReset => 'Reset';
+  @override
+  String get walletDecimalSetAmount => 'Set amount';
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   @override

@@ -1,6 +1,5 @@
 import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -10,7 +9,10 @@ import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/widgets/color_picker_sheet.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../providers/wallet_provider.dart';
 
 class WalletFormSheet extends ConsumerStatefulWidget {
@@ -188,46 +190,54 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
   }
 
   String _formatPreviewAmount(double value) {
-    final formatter = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: '',
-      decimalDigits: _decimalPrecision,
-    );
-    return formatter.format(value).trim();
+    return CurrencyFormatter.formatAmount(value, decimalPrecision: _decimalPrecision);
   }
 
-  Widget _precisionChip(int precision) {
-    final isSelected = _decimalPrecision == precision;
-    return ChoiceChip(
-      label: Text(
-        '$precision',
-        style: AppTypography.textTheme.labelLarge?.copyWith(
-          color: isSelected
-              ? Colors.white
-              : (Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white70
-                  : Colors.black87),
-          fontWeight: FontWeight.w700,
-        ),
+  String _getCountryForCurrency(String code) {
+    switch (code) {
+      case 'IDR': return 'Indonesia';
+      case 'USD': return 'United States';
+      case 'EUR': return 'Euro Member';
+      case 'SGD': return 'Singapore';
+      case 'MYR': return 'Malaysia';
+      case 'GBP': return 'United Kingdom';
+      case 'JPY': return 'Japan';
+      case 'AUD': return 'Australia';
+      default: return '';
+    }
+  }
+
+  void _showDecimalPrecisionSheet() {
+    AppBottomSheet.show(
+      context: context,
+      builder: (_) => _DecimalPrecisionSheet(
+        initialPrecision: _decimalPrecision,
+        onSave: (val) {
+          setState(() {
+            _decimalPrecision = val;
+          });
+        },
       ),
-      selected: isSelected,
-      onSelected: (_) {
-        setState(() => _decimalPrecision = precision);
+    );
+  }
+
+  void _showBalanceCalculatorSheet() {
+    final currentAmount = double.tryParse(_balanceController.text.trim()) ?? 0.0;
+    AmountCalculatorSheet.show(
+      context,
+      initialAmount: currentAmount,
+      initialCurrency: _currencyValue,
+      decimalPrecision: _decimalPrecision,
+      title: l10n.initialBalance,
+      description: l10n.languageCode == 'id'
+          ? 'Saldo awal untuk memulai pencatatan wallet'
+          : 'Initial balance to start tracking wallet',
+      onSave: (amount, currency) {
+        setState(() {
+          _balanceController.text = amount.toString();
+          _currencyValue = currency;
+        });
       },
-      selectedColor: AppColors.primary,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppColors.surfaceDark
-          : const Color(0xFFF4F2FF),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      side: BorderSide(
-        color: isSelected
-            ? AppColors.primary
-            : (Theme.of(context).brightness == Brightness.dark
-                ? Colors.white12
-                : Colors.black12),
-      ),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
     );
   }
 
@@ -418,6 +428,18 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.isBaseCurrency,
+                      style: AppTypography.textTheme.bodyMedium),
+                  value: _isBaseCurrency,
+                  onChanged: (val) {
+                    setState(() => _isBaseCurrency = val);
+                  },
+                  activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
+                  activeThumbColor: AppColors.primary,
+                ),
+                const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   initialValue: _typeValue,
                   dropdownColor: isDark
@@ -461,195 +483,186 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _currencyValue,
-                        dropdownColor: isDark
-                            ? AppColors.backgroundDark
-                            : AppColors.backgroundLight,
-                        style: AppTypography.textTheme.bodyMedium?.copyWith(
-                          color: isDark ? Colors.white : Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: 'Currency',
-                          labelStyle:
-                              AppTypography.textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.white60 : Colors.black54,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                                color:
-                                    isDark ? Colors.white24 : Colors.black12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: AppColors.primary),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 16),
-                        ),
-                        items: AppConstants.supportedCurrencies.map((c) {
-                          return DropdownMenuItem(
-                            value: c['code'],
-                            child: Text('${c['code']} - ${c['symbol']}'),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _currencyValue = val);
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
+                // ── Decimal Precision & Initial Balance Combined Card (Stacked vertically) ──
                 Container(
-                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [
-                              AppColors.surfaceDark,
-                              AppColors.surfaceDark.withValues(alpha: 0.85)
-                            ]
-                          : [const Color(0xFFF8F7FF), const Color(0xFFF0ECFF)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isDark ? Colors.white10 : Colors.black12,
-                    ),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(Icons.tune_rounded,
-                                color: AppColors.primary),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
+                      // Top hitbox: Decimal Precision (no left icon)
+                      InkWell(
+                        onTap: _showDecimalPrecisionSheet,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
                                   l10n.walletDecimalPrecision,
-                                  style: AppTypography.textTheme.titleSmall
-                                      ?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                                  style: AppTypography.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black87,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  l10n.walletDecimalPrecisionHint,
-                                  style: AppTypography.textTheme.bodySmall
-                                      ?.copyWith(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black54,
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  l10n.walletDecimalBadge(_decimalPrecision),
+                                  style: AppTypography.textTheme.labelMedium?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: List.generate(3, _precisionChip),
-                      ),
-                      const SizedBox(height: 14),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.04)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: isDark ? Colors.white12 : Colors.black12,
+                              ),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                gradient: AppColors.balanceGradient,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Icon(
-                                  Icons.account_balance_wallet_rounded,
-                                  color: Colors.white),
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    l10n.initialBalance,
-                                    style: AppTypography.textTheme.bodySmall
-                                        ?.copyWith(
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black54,
+                      ),
+                      // Horizontal Divider
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark ? Colors.white10 : Colors.black12,
+                      ),
+                      // Bottom hitbox: Initial Balance (label + amount stacked, chevron right)
+                      InkWell(
+                        onTap: _showBalanceCalculatorSheet,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.initialBalance,
+                                      style: AppTypography.textTheme.labelMedium?.copyWith(
+                                        color: isDark ? Colors.white54 : Colors.black45,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  AppTextField(
-                                    hint: '0',
-                                    controller: _balanceController,
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatPreviewAmount(double.tryParse(_balanceController.text.trim()) ?? 0),
+                                      style: AppTypography.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        '${l10n.preview}: ${_formatPreviewAmount(double.tryParse(_balanceController.text.trim()) ?? 0)}',
-                        style: AppTypography.textTheme.bodySmall?.copyWith(
-                          color: isDark ? Colors.white70 : Colors.black54,
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: isDark ? Colors.white30 : Colors.black26,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l10n.isBaseCurrency,
-                      style: AppTypography.textTheme.bodyMedium),
-                  value: _isBaseCurrency,
-                  onChanged: (val) {
-                    setState(() => _isBaseCurrency = val);
-                  },
-                  activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
-                  activeThumbColor: AppColors.primary,
+                const SizedBox(height: 24),
+                // ── Currency Selection Section ──
+                Builder(
+                  builder: (context) {
+                    final currencies = AppConstants.supportedCurrencies;
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.95,
+                      ),
+                      itemCount: currencies.length,
+                      itemBuilder: (context, index) {
+                        final c = currencies[index];
+                        final code = c['code']!;
+                        final symbol = c['symbol']!;
+                        final name = c['name']!;
+                        final country = _getCountryForCurrency(code);
+                        final isSelected = _currencyValue == code;
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _currencyValue = code;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withValues(alpha: 0.1)
+                                  : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : (isDark ? Colors.white10 : Colors.black12),
+                                width: isSelected ? 2 : 1,
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  code,
+                                  style: AppTypography.textTheme.labelSmall?.copyWith(
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  symbol,
+                                  style: AppTypography.textTheme.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  country.isNotEmpty ? country : name,
+                                  style: AppTypography.textTheme.labelSmall?.copyWith(
+                                    fontSize: 10,
+                                    color: isDark ? Colors.white54 : Colors.black45,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }
                 ),
-                const SizedBox(height: 32),
-                const SizedBox(height: 12),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -691,6 +704,238 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DecimalPrecisionSheet extends StatefulWidget {
+  const _DecimalPrecisionSheet({
+    required this.initialPrecision,
+    required this.onSave,
+  });
+
+  final int initialPrecision;
+  final void Function(int precision) onSave;
+
+  @override
+  State<_DecimalPrecisionSheet> createState() => _DecimalPrecisionSheetState();
+}
+
+class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
+  // null = no user input yet (show placeholder)
+  String? _typedStr;
+  String? _pressedKey;
+
+  String get _displayStr => _typedStr ?? widget.initialPrecision.toString();
+  bool get _hasUserInput => _typedStr != null;
+
+  void _onKeyPress(String key) {
+    setState(() {
+      _pressedKey = key;
+      if (key == '⌫') {
+        if (_typedStr != null && _typedStr!.isNotEmpty) {
+          final next = _typedStr!.substring(0, _typedStr!.length - 1);
+          _typedStr = next.isEmpty ? null : next;
+        }
+      } else if (key == ',') {
+        // Precision is integer only, ignore comma
+      } else {
+        // Start fresh on first key press
+        if (_typedStr == null) {
+          _typedStr = key == '0' ? '0' : key;
+        } else {
+          if (_typedStr == '0') {
+            _typedStr = key;
+          } else if (_typedStr!.length < 2) {
+            _typedStr = _typedStr! + key;
+          }
+        }
+      }
+    });
+
+    Future.delayed(const Duration(milliseconds: 130), () {
+      if (mounted) setState(() => _pressedKey = null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Header: Title + Description ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.walletDecimalPrecision,
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.walletDecimalPrecisionSheetDesc,
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // ── Number Display (like calculator) ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          child: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Text(
+              _displayStr,
+              style: TextStyle(
+                fontSize: 56,
+                fontWeight: FontWeight.w800,
+                color: _hasUserInput
+                    ? (isDark ? Colors.white : Colors.black87)
+                    : (isDark ? Colors.white24 : Colors.black26),
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ),
+        const Divider(height: 1),
+        // ── Numpad Grid ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A3349) : const Color(0xFFE8ECF2),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              children: [
+                _buildNumpadRow(['1', '2', '3'], isDark),
+                _buildNumpadRow(['4', '5', '6'], isDark),
+                _buildNumpadRow(['7', '8', '9'], isDark),
+                _buildNumpadRow(['', '0', '⌫'], isDark),
+              ],
+            ),
+          ),
+        ),
+        // ── Action Buttons ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Row(
+            children: [
+              // Reset Button
+              Expanded(
+                flex: 1,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() => _typedStr = '2');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    foregroundColor: isDark ? Colors.white : Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    l10n.walletDecimalReset,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Save Button
+              Expanded(
+                flex: 2,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final val = int.tryParse(_displayStr) ?? 2;
+                    widget.onSave(val);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    l10n.walletDecimalSetAmount,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNumpadRow(List<String> keys, bool isDark) {
+    return Row(
+      children: keys.map((key) {
+        if (key.isEmpty) {
+          // Empty placeholder cell
+          return const Expanded(child: SizedBox(height: 64));
+        }
+        final isPressed = _pressedKey == key;
+        return Expanded(
+          child: GestureDetector(
+            onTap: () => _onKeyPress(key),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
+              height: 64,
+              decoration: BoxDecoration(
+                color: isPressed
+                    ? (isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : Colors.black.withValues(alpha: 0.10))
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: AnimatedScale(
+                  scale: isPressed ? 0.85 : 1.0,
+                  duration: const Duration(milliseconds: 80),
+                  child: key == '⌫'
+                      ? Icon(
+                          Icons.backspace_outlined,
+                          size: 22,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        )
+                      : Text(
+                          key,
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

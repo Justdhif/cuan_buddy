@@ -318,6 +318,11 @@ abstract class AppLocalizations {
   String get walletTypeBank;
   String get walletTypeEWallet;
   String get walletTypeCrypto;
+  String get walletSearchCurrency;
+  String get walletDecimalPrecisionSheetDesc;
+  String walletDecimalBadge(int n);
+  String get walletDecimalReset;
+  String get walletDecimalSetAmount;
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   String get notifications;

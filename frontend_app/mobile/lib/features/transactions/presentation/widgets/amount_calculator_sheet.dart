@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import 'package:intl/intl.dart';
 
 class AmountCalculatorSheet extends StatefulWidget {
@@ -11,11 +12,17 @@ class AmountCalculatorSheet extends StatefulWidget {
     required this.initialAmount,
     required this.initialCurrency,
     required this.onSave,
+    this.title,
+    this.description,
+    this.decimalPrecision = 2,
   });
 
   final double initialAmount;
   final String initialCurrency;
   final void Function(double amount, String currency) onSave;
+  final String? title;
+  final String? description;
+  final int decimalPrecision;
 
   @override
   State<AmountCalculatorSheet> createState() => _AmountCalculatorSheetState();
@@ -25,6 +32,9 @@ class AmountCalculatorSheet extends StatefulWidget {
     required double initialAmount,
     required String initialCurrency,
     required void Function(double amount, String currency) onSave,
+    String? title,
+    String? description,
+    int decimalPrecision = 2,
   }) {
     AppBottomSheet.show(
       context: context,
@@ -32,6 +42,9 @@ class AmountCalculatorSheet extends StatefulWidget {
         initialAmount: initialAmount,
         initialCurrency: initialCurrency,
         onSave: onSave,
+        title: title,
+        description: description,
+        decimalPrecision: decimalPrecision,
       ),
     );
   }
@@ -41,21 +54,27 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   late String _currency;
   String _expression = '';
   double _result = 0.0;
+  String? _pressedKey;
 
   @override
   void initState() {
     super.initState();
     _currency = widget.initialCurrency;
-    _expression = widget.initialAmount > 0 
-        ? widget.initialAmount.truncateToDouble() == widget.initialAmount 
-            ? widget.initialAmount.toInt().toString() 
-            : widget.initialAmount.toString()
-        : '';
+    if (widget.initialAmount > 0) {
+      // Convert initial double to comma-based expression string
+      if (widget.initialAmount.truncateToDouble() == widget.initialAmount) {
+        _expression = widget.initialAmount.toInt().toString();
+      } else {
+        _expression = widget.initialAmount.toString().replaceAll('.', ',');
+      }
+    }
     _evaluateExpression();
   }
 
   void _onKeyPress(String key) {
     setState(() {
+      _pressedKey = key;
+
       if (key == 'C') {
         _expression = '';
         _result = 0.0;
@@ -67,20 +86,41 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           _expression = _expression.substring(0, _expression.length - 1);
         }
       } else {
-        // Prevent multiple operators in a row
         final isOperator = ['+', '-', '×', '÷'].contains(key);
-        if (isOperator && _expression.isNotEmpty) {
+
+        if (key == ',') {
+          // Prevent duplicate comma in the current number segment
+          final segments = _expression.split(RegExp(r'[+\-×÷]'));
+          final lastSegment = segments.isNotEmpty ? segments.last : '';
+          if (lastSegment.contains(',')) return;
+          // Start with 0, if expression is empty or last char is operator
+          if (_expression.isEmpty || ['+', '-', '×', '÷'].contains(_expression[_expression.length - 1])) {
+            _expression += '0,';
+          } else {
+            _expression += ',';
+          }
+        } else if (isOperator && _expression.isNotEmpty) {
           final lastChar = _expression[_expression.length - 1];
           if (['+', '-', '×', '÷'].contains(lastChar)) {
+            // Replace trailing operator
             _expression = _expression.substring(0, _expression.length - 1) + key;
+          } else if (lastChar == ',') {
+            // Close trailing comma before adding operator
+            _expression = '${_expression}0$key';
           } else {
             _expression += key;
           }
-        } else {
+        } else if (!isOperator) {
           _expression += key;
         }
+        // Don't allow starting expression with an operator
       }
       _evaluateExpression();
+    });
+
+    // Clear pressed state after a short delay for visual feedback
+    Future.delayed(const Duration(milliseconds: 130), () {
+      if (mounted) setState(() => _pressedKey = null);
     });
   }
 
@@ -92,13 +132,12 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     try {
       _result = _calculateBODMAS(_expression);
     } catch (_) {
-      // If incomplete expression, just ignore or keep previous valid result
+      // Keep previous valid result on incomplete expression
     }
   }
 
   double _calculateBODMAS(String expr) {
-    // Basic BODMAS evaluator without parentheses
-    // 1. Tokenize
+    // 1. Tokenize by operators
     final tokens = <String>[];
     String currentNumber = '';
     for (int i = 0; i < expr.length; i++) {
@@ -117,30 +156,32 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       tokens.add(currentNumber);
     }
 
-    // Replace commas with dots for parsing if any
+    // 2. Convert comma to dot for parsing; handle trailing comma (e.g. "1,") → "1.0"
     for (int i = 0; i < tokens.length; i++) {
       if (!['+', '-', '×', '÷'].contains(tokens[i])) {
-        tokens[i] = tokens[i].replaceAll(',', '.');
+        var t = tokens[i].replaceAll(',', '.');
+        if (t.endsWith('.')) t = '${t}0';
+        tokens[i] = t;
       }
     }
 
-    // 2. Evaluate × and ÷
+    // 3. Evaluate × and ÷ first (BODMAS)
     var tempTokens = <String>[];
     for (int i = 0; i < tokens.length; i++) {
       final token = tokens[i];
       if (token == '×' || token == '÷') {
-        if (tempTokens.isEmpty || i == tokens.length - 1) continue; // Invalid state
+        if (tempTokens.isEmpty || i == tokens.length - 1) continue;
         final left = double.tryParse(tempTokens.removeLast()) ?? 0.0;
         final right = double.tryParse(tokens[i + 1]) ?? 0.0;
-        double res = token == '×' ? left * right : (right != 0 ? left / right : 0);
+        final res = token == '×' ? left * right : (right != 0 ? left / right : 0);
         tempTokens.add(res.toString());
-        i++; // Skip next number
+        i++;
       } else {
         tempTokens.add(token);
       }
     }
 
-    // 3. Evaluate + and -
+    // 4. Evaluate + and -
     double finalResult = double.tryParse(tempTokens.isNotEmpty ? tempTokens[0] : '0') ?? 0.0;
     for (int i = 1; i < tempTokens.length; i += 2) {
       final op = tempTokens[i];
@@ -156,23 +197,37 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     return finalResult;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Formatters
-    final displayFormatter = NumberFormat('#,##0.##', 'id');
-    final resultFormatter = NumberFormat.currency(locale: 'id', symbol: '', decimalDigits: 0);
+  /// Main display for the large result number.
+  ///
+  /// - No operator → format raw input (preserve trailing comma, don't pad zeros)
+  /// - Has operator → show calculated result rounded to [decimalPrecision], no trailing zeros
+  String _getDisplayResult() {
+    if (_expression.isEmpty) return '0';
 
-    // Format expression for display (add thousand separators to numbers)
+    final hasOperator = _expression.contains(RegExp(r'[+\-×÷]'));
+    if (!hasOperator) {
+      return CurrencyFormatter.formatRawInput(_expression, widget.decimalPrecision);
+    }
+
+    // Calculated result: up to decimalPrecision digits, no trailing zeros
+    if (widget.decimalPrecision == 0) {
+      return NumberFormat('#,##0', 'id').format(_result);
+    }
+    final pattern = '#,##0.${'#' * widget.decimalPrecision}';
+    return NumberFormat(pattern, 'id').format(_result);
+  }
+
+  /// Format expression string for the small secondary display (below the main number).
+  String _buildDisplayExpr() {
+    final compactFmt = NumberFormat('#,##0.##', 'id');
     String displayExpr = '';
     String currentNum = '';
+
     for (int i = 0; i < _expression.length; i++) {
       final char = _expression[i];
       if (['+', '-', '×', '÷'].contains(char)) {
         if (currentNum.isNotEmpty) {
-          final val = double.tryParse(currentNum.replaceAll(',', '.'));
-          displayExpr += val != null ? displayFormatter.format(val) : currentNum;
+          displayExpr += _formatNumToken(currentNum, compactFmt);
           currentNum = '';
         }
         displayExpr += ' $char ';
@@ -181,64 +236,97 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       }
     }
     if (currentNum.isNotEmpty) {
-      final val = double.tryParse(currentNum.replaceAll(',', '.'));
-      displayExpr += val != null ? displayFormatter.format(val) : currentNum;
+      displayExpr += _formatNumToken(currentNum, compactFmt);
     }
+    return displayExpr;
+  }
+
+  String _formatNumToken(String token, NumberFormat fmt) {
+    final hasTrailingComma = token.endsWith(',');
+    final cleanToken = token.replaceAll(',', '.');
+    final parseStr = cleanToken.endsWith('.') ? '${cleanToken}0' : cleanToken;
+    final val = double.tryParse(parseStr);
+    if (val == null) return token;
+    final formatted = fmt.format(val);
+    return hasTrailingComma ? '$formatted,' : formatted;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+    final displayTitle = widget.title ?? l10n.amount;
+    final displayDesc = widget.description ??
+        (l10n.languageCode == 'id'
+            ? 'Masukkan nominal jumlah transaksi'
+            : 'Enter transaction nominal amount');
+
+    final hasOperator = _expression.contains(RegExp(r'[+\-×÷]'));
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Top section: Expression & Result
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        // ── Header ──
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Expression
               Text(
-                displayExpr.isEmpty ? '0' : displayExpr,
-                style: AppTypography.textTheme.bodyLarge?.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                displayTitle,
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
-                textAlign: TextAlign.left,
               ),
-              const SizedBox(height: 8),
-              // Currency and Result Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Fixed Currency Label
-                  Text(
-                    AppConstants.supportedCurrencies.firstWhere(
-                      (c) => c['code'] == _currency, 
-                      orElse: () => {'symbol': _currency}
-                    )['symbol'] as String,
-                    style: AppTypography.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  // Live Result
-                  Expanded(
-                    child: Text(
-                      resultFormatter.format(_result),
-                      style: AppTypography.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 4),
+              Text(
+                displayDesc,
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
               ),
             ],
           ),
         ),
+
+        // ── Result Display ──
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _getDisplayResult(),
+                style: AppTypography.textTheme.headlineMedium?.copyWith(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                textAlign: TextAlign.right,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (hasOperator) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _buildDisplayExpr(),
+                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                  textAlign: TextAlign.right,
+                ),
+              ],
+            ],
+          ),
+        ),
+
         const Divider(height: 1),
-        // Numpad Card
+
+        // ── Numpad ──
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Container(
@@ -257,7 +345,8 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
             ),
           ),
         ),
-        // Save Button
+
+        // ── Save Button ──
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ElevatedButton(
@@ -274,9 +363,9 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
               ),
               elevation: 0,
             ),
-            child: const Text(
-              'Atur jumlah',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            child: Text(
+              l10n.walletDecimalSetAmount,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -287,29 +376,44 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
   Widget _buildNumpadRow(List<String> keys, bool isDark) {
     return Row(
       children: keys.map((key) {
+        final isPressed = _pressedKey == key;
+        final isOperator = ['+', '-', '×', '÷'].contains(key);
         return Expanded(
-          child: InkWell(
+          child: GestureDetector(
             onTap: () => _onKeyPress(key),
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
               height: 64,
+              decoration: BoxDecoration(
+                color: isPressed
+                    ? (isDark
+                        ? Colors.white.withValues(alpha: 0.18)
+                        : Colors.black.withValues(alpha: 0.10))
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Center(
-                child: key == '⌫'
-                    ? Icon(
-                        Icons.backspace_outlined,
-                        size: 24,
-                        color: isDark ? Colors.white : Colors.black87,
-                      )
-                    : Text(
-                        key,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: ['÷', '×', '-', '+'].contains(key)
-                              ? FontWeight.w300
-                              : FontWeight.w400,
+                child: AnimatedScale(
+                  scale: isPressed ? 0.85 : 1.0,
+                  duration: const Duration(milliseconds: 80),
+                  child: key == '⌫'
+                      ? Icon(
+                          Icons.backspace_outlined,
+                          size: 24,
                           color: isDark ? Colors.white : Colors.black87,
+                        )
+                      : Text(
+                          key,
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: isOperator
+                                ? FontWeight.w300
+                                : FontWeight.w400,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           ),

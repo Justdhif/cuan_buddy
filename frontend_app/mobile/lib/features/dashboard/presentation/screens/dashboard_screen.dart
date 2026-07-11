@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -545,8 +546,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
         AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final fmt = NumberFormat.currency(
-        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
+
 
     return GlassCard(
       child: Column(
@@ -569,7 +569,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    fmt.format(balance),
+                    CurrencyFormatter.formatAmount(balance, symbol: currencySymbol),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 30,
@@ -664,9 +664,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _miniStat(l10n.income, fmt.format(income))),
+              Expanded(child: _miniStat(l10n.income, CurrencyFormatter.formatAmount(income, symbol: currencySymbol))),
               const SizedBox(width: 12),
-              Expanded(child: _miniStat(l10n.expense, fmt.format(expense))),
+              Expanded(child: _miniStat(l10n.expense, CurrencyFormatter.formatAmount(expense, symbol: currencySymbol))),
             ],
           ),
         ],
@@ -715,8 +715,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
         AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-    final fmt = NumberFormat.currency(
-        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
+
 
     List<dynamic> data = [];
     if (monthlyTrend.isEmpty) {
@@ -842,7 +841,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         final label = isIncome ? l10n.incomeType : l10n.expenseType;
                         final color = isIncome ? AppColors.success : AppColors.danger;
                         return LineTooltipItem(
-                          '$label\n${fmt.format(val)}',
+                          '$label\n${CurrencyFormatter.formatAmount(val, symbol: currencySymbol)}',
                           TextStyle(
                             color: color,
                             fontWeight: FontWeight.w700,

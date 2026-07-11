@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -50,13 +51,12 @@ class TransactionCard extends ConsumerWidget {
             AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
-    final fmt = NumberFormat.currency(
-        locale: 'en_US', symbol: currencySymbol, decimalDigits: 0);
-    final fmtOriginal = NumberFormat.currency(
-        locale: 'en_US', symbol: txCurrencySymbol, decimalDigits: 0);
     final dynamic category = tx['category'];
     final dynamic savingsGoal = tx['savingsGoal'];
     final dynamic wallet = tx['wallet'];
+    final walletPrecision = (wallet is Map
+        ? (wallet['decimalPrecision'] as num?)?.toInt()
+        : null) ?? 2;
     final emoji = (category is Map
             ? (category['emojiIcon'] as String? ?? category['emoji'] as String?)
             : null) ??
@@ -192,7 +192,8 @@ class TransactionCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                 Text(
-                  '${isIncome ? "▲" : "▼"} ${txCurrency == currencyCode ? fmt.format(amount) : fmtOriginal.format(amount)}',
+                  '${isIncome ? "▲" : "▼"} ${txCurrency == currencyCode ? CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision) : CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
+
                   style: AppTypography.textTheme.titleMedium?.copyWith(
                     color: isIncome ? AppColors.success : AppColors.danger,
                     fontWeight: FontWeight.bold,
@@ -209,7 +210,7 @@ class TransactionCard extends ConsumerWidget {
                       )));
                       return convertedAsync.when(
                         data: (converted) => Text(
-                          '≈ ${isIncome ? '+' : '-'}${fmt.format(converted)}',
+                          '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
                           style: TextStyle(
                             color: AppColors.textSecondaryLight,
                             fontWeight: FontWeight.w500,

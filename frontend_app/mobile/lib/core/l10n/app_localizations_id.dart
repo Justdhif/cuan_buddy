@@ -567,6 +567,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletTypeEWallet => 'E-Wallet';
   @override
   String get walletTypeCrypto => 'Kripto';
+  @override
+  String get walletSearchCurrency => 'Cari Mata Uang...';
+  @override
+  String get walletDecimalPrecisionSheetDesc =>
+      'Tempat desimal untuk pembulatan jumlah transaksi';
+  @override
+  String walletDecimalBadge(int n) => '$n desimal';
+  @override
+  String get walletDecimalReset => 'Reset';
+  @override
+  String get walletDecimalSetAmount => 'Atur jumlah';
 
   // ─── Notifications ────────────────────────────────────────────────────────────
   @override

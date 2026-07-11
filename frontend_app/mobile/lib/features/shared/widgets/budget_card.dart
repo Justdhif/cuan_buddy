@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/currency_formatter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -55,17 +56,9 @@ class BudgetCard extends ConsumerWidget {
         tx['currency'] as String? ?? AppConstants.defaultCurrency;
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
 
-    final fmtOriginal = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: txCurrencySymbol,
-      decimalDigits: 0,
-    );
-
-    final fmt = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: currencySymbol,
-      decimalDigits: 0,
-    );
+    final walletPrecision = (tx['wallet'] is Map
+        ? (tx['wallet']['decimalPrecision'] as num?)?.toInt()
+        : null) ?? 2;
 
     // Parse period start/end dates
     DateTime startDate;
@@ -107,11 +100,11 @@ class BudgetCard extends ConsumerWidget {
         remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
 
     final remainingFormatted = txCurrency == currencyCode
-        ? fmt.format(remaining.abs())
-        : fmtOriginal.format(remaining.abs());
+        ? CurrencyFormatter.formatAmount(remaining.abs(), symbol: currencySymbol, decimalPrecision: walletPrecision)
+        : CurrencyFormatter.formatAmount(remaining.abs(), symbol: txCurrencySymbol, decimalPrecision: walletPrecision);
     final totalLimitFormatted = txCurrency == currencyCode
-        ? fmt.format(limitAmount)
-        : fmtOriginal.format(limitAmount);
+        ? CurrencyFormatter.formatAmount(limitAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)
+        : CurrencyFormatter.formatAmount(limitAmount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision);
 
     final String actionText;
     if (remaining >= 0) {
@@ -453,14 +446,14 @@ class BudgetCard extends ConsumerWidget {
                     if (remaining >= 0) {
                       if (remainingDays > 0) {
                         final allowanceFormatted =
-                            fmt.format(dailyAllowance);
+                            CurrencyFormatter.formatAmount(dailyAllowance, symbol: currencySymbol, decimalPrecision: walletPrecision);
                         infoText = l10n.dailyAllowance(allowanceFormatted, remainingDays);
                       } else {
                         infoText = l10n.budgetPeriodEnded;
                       }
                     } else {
                       final limitExceededFormatted =
-                          fmt.format(remaining.abs());
+                          CurrencyFormatter.formatAmount(remaining.abs(), symbol: currencySymbol, decimalPrecision: walletPrecision);
                       infoText = l10n.budgetExceededBy(limitExceededFormatted);
                     }
 

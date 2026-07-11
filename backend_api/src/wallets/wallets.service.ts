@@ -30,6 +30,8 @@ export class WalletsService {
         isBaseCurrency: createWalletDto.isBaseCurrency || false,
         decimalPrecision,
         balance: roundDecimal(createWalletDto.balance, decimalPrecision).toString(),
+        emojiIcon: createWalletDto.emojiIcon,
+        colorCode: createWalletDto.colorCode,
       })
       .returning();
 
