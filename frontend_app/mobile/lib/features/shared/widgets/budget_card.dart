@@ -3,11 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 class BudgetCard extends ConsumerWidget {
@@ -25,9 +23,6 @@ class BudgetCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode =
-        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
-            AppConstants.defaultCurrency;
     final localeCode = Localizations.localeOf(context).languageCode;
     final iconShape = ref.watch(categoryIconShapeProvider);
 
@@ -51,10 +46,6 @@ class BudgetCard extends ConsumerWidget {
     final percentage =
         limitAmount > 0 ? (spentAmount / limitAmount) : 0.0;
     final safePercentage = percentage.clamp(0.0, 1.0);
-
-    final txCurrency =
-        tx['currency'] as String? ?? AppConstants.defaultCurrency;
-    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
 
     final walletPrecision = (tx['wallet'] is Map
         ? (tx['wallet']['decimalPrecision'] as num?)?.toInt()
@@ -99,12 +90,8 @@ class BudgetCard extends ConsumerWidget {
     final dailyAllowance =
         remainingDays > 0 && remaining > 0 ? remaining / remainingDays : 0.0;
 
-    final remainingFormatted = txCurrency == currencyCode
-        ? CurrencyFormatter.formatAmount(remaining.abs(), symbol: currencySymbol, decimalPrecision: walletPrecision)
-        : CurrencyFormatter.formatAmount(remaining.abs(), symbol: txCurrencySymbol, decimalPrecision: walletPrecision);
-    final totalLimitFormatted = txCurrency == currencyCode
-        ? CurrencyFormatter.formatAmount(limitAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)
-        : CurrencyFormatter.formatAmount(limitAmount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision);
+    final remainingFormatted = CurrencyFormatter.formatAmount(remaining.abs(), symbol: currencySymbol, decimalPrecision: walletPrecision);
+    final totalLimitFormatted = CurrencyFormatter.formatAmount(limitAmount, symbol: currencySymbol, decimalPrecision: walletPrecision);
 
     final String actionText;
     if (remaining >= 0) {

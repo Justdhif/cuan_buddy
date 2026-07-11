@@ -20,6 +20,7 @@ import '../../../dashboard/presentation/providers/dashboard_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../../../wallets/providers/wallet_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({
@@ -116,12 +117,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     try {
       final dio = ref.read(dioClientProvider).dio;
+      final baseCurrency = ref.read(profileProvider).valueOrNull?['currency'] as String? ?? 'IDR';
+      final currencyService = ref.read(currencyServiceProvider);
+      double exchangeRate = 1.0;
+      if (_selectedCurrency != baseCurrency) {
+        try {
+          exchangeRate = await currencyService.convert(1.0, _selectedCurrency, baseCurrency);
+        } catch (_) {}
+      }
+
       final payload = <String, dynamic>{
         'title': _titleController.text.trim(),
         'type': _type,
         'amount': double.parse(_amountController.text.replaceAll(',', '')),
         'walletId': _selectedWalletId,
-        'exchangeRate': 1.0, // For MVP, assuming 1.0 or implement fetching later
+        'exchangeRate': exchangeRate,
         'categoryId': _selectedCategoryId,
         'savingsGoalId': _selectedSavingsGoalId,
         'budgetId': _selectedBudgetId,

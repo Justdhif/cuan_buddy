@@ -412,9 +412,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   Widget _buildGoalCard(
       BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
     final l10n = AppLocalizations.of(context);
-    final currencyCode =
-        ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
-            AppConstants.defaultCurrency;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final name = goal['name'] as String? ?? l10n.unnamedGoal;
@@ -448,16 +445,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       progressColor = AppColors.danger;
     }
 
-    final goalCurrency =
-        goal['currency'] as String? ?? AppConstants.defaultCurrency;
-    final goalCurrencySymbol = AppConstants.getCurrencySymbol(goalCurrency);
-
-    final fmtOriginal = NumberFormat.currency(
-      locale: 'en_US',
-      symbol: goalCurrencySymbol,
-      decimalDigits: 0,
-    );
-
     final fmt = NumberFormat.currency(
       locale: 'en_US',
       symbol: currencySymbol,
@@ -473,12 +460,8 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       } catch (_) {}
     }
 
-    final String currentFmt = goalCurrency == currencyCode
-        ? fmt.format(currentAmount)
-        : fmtOriginal.format(currentAmount);
-    final String targetFmt = goalCurrency == currencyCode
-        ? fmt.format(targetAmount)
-        : fmtOriginal.format(targetAmount);
+    final String currentFmt = fmt.format(currentAmount);
+    final String targetFmt = fmt.format(targetAmount);
 
     String? dailySaveText;
     if (!isCompleted && targetDateStr != null && targetAmount > currentAmount) {
@@ -491,14 +474,10 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
 
         if (diffDays > 0) {
           final dailyAmount = (targetAmount - currentAmount) / diffDays;
-          final String dailyFmt = goalCurrency == currencyCode
-              ? fmt.format(dailyAmount)
-              : fmtOriginal.format(dailyAmount);
+          final String dailyFmt = fmt.format(dailyAmount);
           dailySaveText = '$dailyFmt$perDayStr';
         } else if (diffDays == 0) {
-          final String dailyFmt = goalCurrency == currencyCode
-              ? fmt.format(targetAmount - currentAmount)
-              : fmtOriginal.format(targetAmount - currentAmount);
+          final String dailyFmt = fmt.format(targetAmount - currentAmount);
           dailySaveText = '$dailyFmt$perDayStr';
         }
       } catch (_) {}

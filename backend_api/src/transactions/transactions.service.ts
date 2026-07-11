@@ -230,6 +230,7 @@ export class TransactionsService {
       endDate,
       categoryId,
       walletId,
+      savingsGoalId,
       type,
       search,
       page = 1,
@@ -242,6 +243,7 @@ export class TransactionsService {
     if (endDate) conditions.push(lte(transactions.date, new Date(endDate)));
     if (categoryId) conditions.push(eq(transactions.categoryId, categoryId));
     if (walletId) conditions.push(eq(transactions.walletId, walletId));
+    if (savingsGoalId) conditions.push(eq(transactions.savingsGoalId, savingsGoalId));
     if (type) conditions.push(eq(transactions.type, type));
     if (search) conditions.push(or(ilike(transactions.title, `%${search}%`), ilike(transactions.note, `%${search}%`))!);
 

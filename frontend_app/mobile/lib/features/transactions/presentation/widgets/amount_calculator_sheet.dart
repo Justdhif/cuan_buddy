@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../wallets/providers/wallet_provider.dart';
+import '../../../../core/services/currency_service.dart';
 import 'package:intl/intl.dart';
 
-class AmountCalculatorSheet extends StatefulWidget {
+class AmountCalculatorSheet extends ConsumerStatefulWidget {
   const AmountCalculatorSheet({
     super.key,
     required this.initialAmount,
@@ -25,7 +31,7 @@ class AmountCalculatorSheet extends StatefulWidget {
   final int decimalPrecision;
 
   @override
-  State<AmountCalculatorSheet> createState() => _AmountCalculatorSheetState();
+  ConsumerState<AmountCalculatorSheet> createState() => _AmountCalculatorSheetState();
 
   static void show(
     BuildContext context, {
@@ -50,18 +56,21 @@ class AmountCalculatorSheet extends StatefulWidget {
   }
 }
 
-class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
-  late String _currency;
+class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
   String _expression = '';
   double _result = 0.0;
+  double _convertedResult = 0.0;
   String? _pressedKey;
+
+  // Selected wallet for input
+  Map<String, dynamic>? _selectedWallet;
+  bool _isConverting = false;
+  bool _showConverted = false; // Toggle state for display currency
 
   @override
   void initState() {
     super.initState();
-    _currency = widget.initialCurrency;
     if (widget.initialAmount > 0) {
-      // Convert initial double to comma-based expression string
       if (widget.initialAmount.truncateToDouble() == widget.initialAmount) {
         _expression = widget.initialAmount.toInt().toString();
       } else {
@@ -69,6 +78,20 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       }
     }
     _evaluateExpression();
+
+    // Auto-select initial wallet/currency after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final wallets = ref.read(walletsProvider).valueOrNull ?? [];
+      if (wallets.isNotEmpty) {
+        setState(() {
+          _selectedWallet = wallets.firstWhere(
+            (w) => w['currency'] == widget.initialCurrency,
+            orElse: () => wallets.first,
+          );
+        });
+        _updateConvertedResult();
+      }
+    });
   }
 
   void _onKeyPress(String key) {
@@ -78,6 +101,7 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       if (key == 'C') {
         _expression = '';
         _result = 0.0;
+        _convertedResult = 0.0;
         return;
       }
 
@@ -89,11 +113,9 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
         final isOperator = ['+', '-', '×', '÷'].contains(key);
 
         if (key == ',') {
-          // Prevent duplicate comma in the current number segment
           final segments = _expression.split(RegExp(r'[+\-×÷]'));
           final lastSegment = segments.isNotEmpty ? segments.last : '';
           if (lastSegment.contains(',')) return;
-          // Start with 0, if expression is empty or last char is operator
           if (_expression.isEmpty || ['+', '-', '×', '÷'].contains(_expression[_expression.length - 1])) {
             _expression += '0,';
           } else {
@@ -102,10 +124,8 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
         } else if (isOperator && _expression.isNotEmpty) {
           final lastChar = _expression[_expression.length - 1];
           if (['+', '-', '×', '÷'].contains(lastChar)) {
-            // Replace trailing operator
             _expression = _expression.substring(0, _expression.length - 1) + key;
           } else if (lastChar == ',') {
-            // Close trailing comma before adding operator
             _expression = '${_expression}0$key';
           } else {
             _expression += key;
@@ -113,12 +133,11 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
         } else if (!isOperator) {
           _expression += key;
         }
-        // Don't allow starting expression with an operator
       }
       _evaluateExpression();
+      _updateConvertedResult();
     });
 
-    // Clear pressed state after a short delay for visual feedback
     Future.delayed(const Duration(milliseconds: 130), () {
       if (mounted) setState(() => _pressedKey = null);
     });
@@ -132,12 +151,41 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     try {
       _result = _calculateBODMAS(_expression);
     } catch (_) {
-      // Keep previous valid result on incomplete expression
+      // Keep previous valid result
+    }
+  }
+
+  Future<void> _updateConvertedResult() async {
+    if (_selectedWallet == null) return;
+    final txCurrency = _selectedWallet!['currency'] as String? ?? 'IDR';
+    final baseCurrency = ref.read(profileProvider).valueOrNull?['currency'] as String? ?? 'IDR';
+
+    if (txCurrency == baseCurrency) {
+      if (mounted) {
+        setState(() {
+          _convertedResult = _result;
+          _showConverted = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _isConverting = true);
+    try {
+      final service = ref.read(currencyServiceProvider);
+      final converted = await service.convert(_result, txCurrency, baseCurrency);
+      if (mounted) {
+        setState(() {
+          _convertedResult = converted;
+          _isConverting = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isConverting = false);
     }
   }
 
   double _calculateBODMAS(String expr) {
-    // 1. Tokenize by operators
     final tokens = <String>[];
     String currentNumber = '';
     for (int i = 0; i < expr.length; i++) {
@@ -156,7 +204,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       tokens.add(currentNumber);
     }
 
-    // 2. Convert comma to dot for parsing; handle trailing comma (e.g. "1,") → "1.0"
     for (int i = 0; i < tokens.length; i++) {
       if (!['+', '-', '×', '÷'].contains(tokens[i])) {
         var t = tokens[i].replaceAll(',', '.');
@@ -165,7 +212,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       }
     }
 
-    // 3. Evaluate × and ÷ first (BODMAS)
     var tempTokens = <String>[];
     for (int i = 0; i < tokens.length; i++) {
       final token = tokens[i];
@@ -181,7 +227,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
       }
     }
 
-    // 4. Evaluate + and -
     double finalResult = double.tryParse(tempTokens.isNotEmpty ? tempTokens[0] : '0') ?? 0.0;
     for (int i = 1; i < tempTokens.length; i += 2) {
       final op = tempTokens[i];
@@ -197,27 +242,6 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
     return finalResult;
   }
 
-  /// Main display for the large result number.
-  ///
-  /// - No operator → format raw input (preserve trailing comma, don't pad zeros)
-  /// - Has operator → show calculated result rounded to [decimalPrecision], no trailing zeros
-  String _getDisplayResult() {
-    if (_expression.isEmpty) return '0';
-
-    final hasOperator = _expression.contains(RegExp(r'[+\-×÷]'));
-    if (!hasOperator) {
-      return CurrencyFormatter.formatRawInput(_expression, widget.decimalPrecision);
-    }
-
-    // Calculated result: up to decimalPrecision digits, no trailing zeros
-    if (widget.decimalPrecision == 0) {
-      return NumberFormat('#,##0', 'id').format(_result);
-    }
-    final pattern = '#,##0.${'#' * widget.decimalPrecision}';
-    return NumberFormat(pattern, 'id').format(_result);
-  }
-
-  /// Format expression string for the small secondary display (below the main number).
   String _buildDisplayExpr() {
     final compactFmt = NumberFormat('#,##0.##', 'id');
     String displayExpr = '';
@@ -261,6 +285,25 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
             ? 'Masukkan nominal jumlah transaksi'
             : 'Enter transaction nominal amount');
 
+    // Base currency info
+    final baseCurrency = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? 'IDR';
+    final baseCurrencySymbol = AppConstants.getCurrencySymbol(baseCurrency);
+
+    // Selected input currency info
+    final txCurrency = _selectedWallet?['currency'] as String? ?? 'IDR';
+    final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
+
+    // Precision is taken from selected wallet
+    final selectedPrecision = (_selectedWallet?['decimalPrecision'] as num?)?.toInt() ?? widget.decimalPrecision;
+
+    // Display formatted strings
+    final displayConverted = CurrencyFormatter.formatAmount(_convertedResult, symbol: baseCurrencySymbol, decimalPrecision: selectedPrecision);
+    final displayOriginal = CurrencyFormatter.formatAmount(_result, symbol: txCurrencySymbol, decimalPrecision: selectedPrecision);
+
+    // Wallets for selector
+    final walletsAsync = ref.watch(walletsProvider);
+    final wallets = walletsAsync.valueOrNull ?? [];
+
     final hasOperator = _expression.contains(RegExp(r'[+\-×÷]'));
 
     return Column(
@@ -291,31 +334,96 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           ),
         ),
 
-        // ── Result Display ──
+        // ── Result Display & Converter ──
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                _getDisplayResult(),
-                style: AppTypography.textTheme.headlineMedium?.copyWith(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w800,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                textAlign: TextAlign.right,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Loading Spinner if converting
+                  if (_isConverting)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  // Compact display: Toggles between original amount and converted amount
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (_showConverted) {
+                          setState(() {
+                            _showConverted = false;
+                          });
+                        }
+                      },
+                      child: Text(
+                        _showConverted ? displayConverted : displayOriginal,
+                        style: AppTypography.textTheme.headlineMedium?.copyWith(
+                          fontSize: 36, // Smaller size, as requested
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        textAlign: TextAlign.right,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+
+                  // Converter Action Button (only shown if selected wallet currency != base currency AND not currently showing converted)
+                  if (txCurrency != baseCurrency && !_showConverted) ...[
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _showConverted = true;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.currency_exchange_rounded,
+                              size: 16,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              baseCurrency,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white60 : AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               if (hasOperator) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   _buildDisplayExpr(),
                   style: AppTypography.textTheme.bodyMedium?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.right,
                 ),
@@ -326,9 +434,98 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
 
         const Divider(height: 1),
 
+        // ── Wallet Selector ──
+        if (wallets.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: SizedBox(
+              height: 40,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: wallets.length + 1,
+                itemBuilder: (context, index) {
+                  // The last item is the '+' button
+                  if (index == wallets.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: GestureDetector(
+                        onTap: () {
+                          // Navigate to wallet form sheet to create a new wallet
+                          context.push('/manage-wallets/form');
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                            border: Border.all(
+                              color: isDark ? Colors.white10 : Colors.black12,
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            size: 18,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final wallet = wallets[index];
+                  final isSelected = _selectedWallet?['id'] == wallet['id'];
+                  final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
+                  final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedWallet = wallet;
+                        });
+                        _updateConvertedResult();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                              ? walletColor.withValues(alpha: 0.15)
+                              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                          border: Border.all(
+                            color: isSelected ? walletColor : (isDark ? Colors.white10 : Colors.black12),
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '${wallet['name']}',
+                          style: TextStyle(
+                            color: isSelected 
+                                ? (isDark ? Colors.white : walletColor)
+                                : (isDark ? Colors.white70 : Colors.black87),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+
         // ── Numpad ──
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: Container(
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF2A3349) : const Color(0xFFE8ECF2),
@@ -351,7 +548,8 @@ class _AmountCalculatorSheetState extends State<AmountCalculatorSheet> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ElevatedButton(
             onPressed: () {
-              widget.onSave(_result, _currency);
+              // Save the converted base currency amount & original currency
+              widget.onSave(_convertedResult, baseCurrency);
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(

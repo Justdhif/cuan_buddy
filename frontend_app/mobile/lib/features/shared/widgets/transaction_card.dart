@@ -8,8 +8,8 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../profile/presentation/providers/profile_provider.dart';
-import '../../../../core/services/currency_service.dart';
 import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/services/currency_service.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 class TransactionCard extends ConsumerWidget {
   const TransactionCard({
@@ -83,6 +83,11 @@ class TransactionCard extends ConsumerWidget {
     final savingsColor = savingsGoal is Map ? AppColors.colorFromHex(savingsGoal['colorCode'] as String?, fallback: AppColors.success) : AppColors.success;
     
     final iconShape = ref.watch(categoryIconShapeProvider);
+
+    final baseAmountRaw = tx['baseAmount'];
+    final baseAmount = baseAmountRaw is num
+        ? baseAmountRaw.toDouble()
+        : double.tryParse(baseAmountRaw?.toString() ?? '0') ?? amount;
 
     return InkWell(
       onTap: onTap ??
@@ -192,39 +197,52 @@ class TransactionCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                Text(
-                  '${isIncome ? "▲" : "▼"} ${txCurrency == currencyCode ? CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision) : CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
-
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: isIncome ? AppColors.success : AppColors.danger,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (txCurrency != currencyCode)
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final convertedAsync =
-                          ref.watch(convertedAmountProvider(ConversionParams(
-                        amount: amount,
-                        from: txCurrency,
-                        to: currencyCode,
-                      )));
-                      return convertedAsync.when(
-                        data: (converted) => Text(
-                          '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                          style: TextStyle(
-                            color: AppColors.textSecondaryLight,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
+                txCurrency == currencyCode
+                    ? Text(
+                        '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                        style: AppTypography.textTheme.titleMedium?.copyWith(
+                          color: isIncome ? AppColors.success : AppColors.danger,
+                          fontWeight: FontWeight.bold,
                         ),
-                        loading: () => const SizedBox(
-                            width: 20,
-                            height: 12,
-                            child: CircularProgressIndicator(strokeWidth: 2)),
-                        error: (_, __) => const SizedBox(),
-                      );
-                    },
+                      )
+                    : Consumer(
+                        builder: (context, ref, _) {
+                          final convertedAsync =
+                              ref.watch(convertedAmountProvider(ConversionParams(
+                            amount: amount,
+                            from: txCurrency,
+                            to: currencyCode,
+                          )));
+                          return convertedAsync.when(
+                            data: (converted) => Text(
+                              '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                              style: AppTypography.textTheme.titleMedium?.copyWith(
+                                color: isIncome ? AppColors.success : AppColors.danger,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            loading: () => const SizedBox(
+                                width: 24,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2)),
+                            error: (_, __) => Text(
+                              '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(baseAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                              style: AppTypography.textTheme.titleMedium?.copyWith(
+                                color: isIncome ? AppColors.success : AppColors.danger,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                if (txCurrency != currencyCode)
+                  Text(
+                    '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
+                    style: TextStyle(
+                      color: AppColors.textSecondaryLight,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
+                    ),
                   ),
                 if (showTime && tx['date'] != null)
                   Text(

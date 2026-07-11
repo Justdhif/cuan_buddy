@@ -889,7 +889,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
           final dateKeys = grouped.keys.toList();
 
           return SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            padding: const EdgeInsets.fromLTRB(0, 12, 0, 0),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -901,7 +901,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                     children: [
                       // Date header
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 8, top: 4),
+                        padding: const EdgeInsets.only(bottom: 8, top: 4, left: 20, right: 20),
                         child: Text(
                           _formatDateHeader(context, dateKey),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
@@ -927,7 +927,8 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                               if (i < dayTxs.length - 1)
                                 Divider(
                                   height: 1,
-                                  indent: 72,
+                                  indent: 84,
+                                  endIndent: 20,
                                   color: isDark
                                       ? AppColors.borderDark
                                       : AppColors.borderLight,
