@@ -44,16 +44,17 @@ class TransactionCard extends ConsumerWidget {
         ? amountRaw.toDouble()
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
 
-    final txCurrency =
-        tx['currency'] as String? ?? AppConstants.defaultCurrency;
+    final dynamic category = tx['category'];
+    final dynamic savingsGoal = tx['savingsGoal'];
+    final dynamic wallet = tx['wallet'];
+    final txCurrency = (wallet is Map ? wallet['currency'] as String? : null) ??
+        tx['currency'] as String? ??
+        AppConstants.defaultCurrency;
     final currencyCode =
         ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
             AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
-    final dynamic category = tx['category'];
-    final dynamic savingsGoal = tx['savingsGoal'];
-    final dynamic wallet = tx['wallet'];
     final walletPrecision = (wallet is Map
         ? (wallet['decimalPrecision'] as num?)?.toInt()
         : null) ?? 2;

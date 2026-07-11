@@ -183,7 +183,10 @@ final monthlySummaryProvider =
     final amount = amountRaw is num
         ? amountRaw.toDouble()
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
-    final txCurrency = tx['currency'] as String? ?? 'IDR';
+    final wallet = tx['wallet'];
+    final txCurrency = (wallet is Map ? wallet['currency'] as String? : null) ??
+        tx['currency'] as String? ??
+        'IDR';
     double converted = amount;
     if (txCurrency != currencyCode) {
       converted = await currencyService.convert(amount, txCurrency, currencyCode);
@@ -218,7 +221,10 @@ final transactionListBalanceProvider = FutureProvider.autoDispose<double>((ref) 
         ? amountRaw.toDouble()
         : double.tryParse(amountRaw?.toString() ?? '0') ?? 0.0;
 
-    final txCurrency = tx['currency'] as String? ?? 'IDR';
+    final wallet = tx['wallet'];
+    final txCurrency = (wallet is Map ? wallet['currency'] as String? : null) ??
+        tx['currency'] as String? ??
+        'IDR';
     double converted = amount;
     if (txCurrency != currencyCode) {
       converted = await currencyService.convert(amount, txCurrency, currencyCode);

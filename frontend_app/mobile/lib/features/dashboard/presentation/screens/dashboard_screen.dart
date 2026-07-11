@@ -15,7 +15,6 @@ import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../analytics/presentation/providers/analytics_provider.dart';
 import '../../../notifications/presentation/providers/notifications_provider.dart';
 import '../providers/dashboard_provider.dart';
-import '../../../wallets/providers/wallet_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/widget_service.dart';
 import '../widgets/ai_insight_card.dart';
@@ -73,31 +72,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
     final budgetsState = ref.watch(budgetsNotifierProvider);
-    final walletsState = ref.watch(walletsProvider);
-    final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Auto-select wallet matching base currency if none is selected
-    if (selectedWalletId == null && walletsState is AsyncData && profileAsync is AsyncData) {
-      final wallets = walletsState.valueOrNull;
-      final profile = profileAsync.valueOrNull;
-      if (wallets != null && wallets.isNotEmpty && profile != null) {
-        final baseCurrency = profile['currency'] as String?;
-        if (baseCurrency != null) {
-          final defaultWallet = wallets.firstWhere(
-            (w) => w['currency'] == baseCurrency,
-            orElse: () => wallets.first,
-          );
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              ref.read(dashboardSelectedWalletProvider.notifier).state = defaultWallet['id'];
-              ref.invalidate(analyticsSummaryProvider);
-              ref.invalidate(recentTransactionsProvider);
-            }
-          });
-        }
-      }
-    }
 
     ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
         (previous, next) {
@@ -124,24 +99,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         onTap: () {},
         child: Stack(
           children: [
-            AnimatedBuilder(
-              animation: _scrollController,
-              builder: (context, child) {
-                double offset = 0.0;
-                if (_scrollController.hasClients) {
-                  offset = _scrollController.offset;
-                }
-                // Prevent it from pulling down when overscrolling at the top
-                if (offset < 0) offset = 0;
-                return Positioned(
-                  top: -offset,
-                  left: 0,
-                  right: 0,
-                  child: child!,
-                );
-              },
-              child: const _TimeSceneryBackground(),
-            ),
             Positioned.fill(
               child: RefreshIndicator(
                 onRefresh: () async {
@@ -166,75 +123,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           return _buildHeader(
                               context, ref, profileAsync, shrinkOffset);
                         },
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                        child: walletsState.when(
-                          data: (wallets) {
-                            if (wallets.isEmpty) return const SizedBox.shrink();
-                            return SizedBox(
-                              height: 36,
-                              child: ListView.separated(
-                                padding: EdgeInsets.zero,
-                                scrollDirection: Axis.horizontal,
-                                clipBehavior: Clip.none,
-                                physics: const BouncingScrollPhysics(),
-                                itemCount: wallets.length,
-                                separatorBuilder: (context, index) => const SizedBox(width: 8),
-                                itemBuilder: (context, index) {
-                                  final wallet = wallets[index];
-                                  final walletId = wallet['id'] as String;
-                                  final walletName = wallet['name'] as String;
-                                  final walletCurrency = wallet['currency'] as String;
-                                  final walletEmoji = wallet['emojiIcon'] as String? ?? '💼';
-                                  final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
-                                  final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
-                                  final isSelected = selectedWalletId == walletId;
-
-                                  return GestureDetector(
-                                    onTap: () {
-                                      ref.read(dashboardSelectedWalletProvider.notifier).state = walletId;
-                                      ref.invalidate(analyticsSummaryProvider);
-                                      ref.invalidate(recentTransactionsProvider);
-                                    },
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      height: 36,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? walletColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                        border: Border.all(
-                                          color: isSelected ? walletColor : Colors.transparent,
-                                          width: 1.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(walletEmoji, style: const TextStyle(fontSize: 14)),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            '$walletName ($walletCurrency)',
-                                            style: AppTypography.textTheme.labelMedium?.copyWith(
-                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              color: isSelected ? (isDark ? Colors.white : walletColor) : (isDark ? Colors.white70 : Colors.black87),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (_, __) => const SizedBox.shrink(),
-                        ),
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -970,78 +858,5 @@ class _DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
     return maxHeight != oldDelegate.maxHeight ||
         minHeight != oldDelegate.minHeight ||
         baseColor != oldDelegate.baseColor;
-  }
-}
-
-class _TimeSceneryBackground extends StatelessWidget {
-  const _TimeSceneryBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final hour = now.hour;
-
-    List<Color> gradientColors;
-
-    if (hour >= 6 && hour < 12) {
-      // Morning
-      gradientColors = [
-        const Color(0xFF87CEEB).withValues(alpha: 0.6),
-        const Color(0xFFFFE4B5).withValues(alpha: 0.2)
-      ];
-    } else if (hour >= 12 && hour < 15) {
-      // Afternoon
-      gradientColors = [
-        const Color(0xFF00BFFF).withValues(alpha: 0.6),
-        const Color(0xFF87CEEB).withValues(alpha: 0.2)
-      ];
-    } else if (hour >= 15 && hour < 19) {
-      // Evening
-      gradientColors = [
-        const Color(0xFFFF7E5F).withValues(alpha: 0.6),
-        const Color(0xFFFEB47B).withValues(alpha: 0.2)
-      ];
-    } else {
-      // Night
-      gradientColors = [
-        const Color(0xFF2C3E50).withValues(alpha: 0.8),
-        const Color(0xFF000000).withValues(alpha: 0.4)
-      ];
-    }
-
-    return Container(
-      height: 350,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: gradientColors,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Theme.of(context)
-                        .scaffoldBackgroundColor
-                        .withValues(alpha: 0.0),
-                    Theme.of(context).scaffoldBackgroundColor,
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

@@ -21,8 +21,6 @@ final analyticsSummaryProvider =
 
   // Fetch all transactions to calculate the accurate converted summary
   Map<String, dynamic> queryParams = {'limit': 10000};
-  final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
-  if (selectedWalletId != null) queryParams['walletId'] = selectedWalletId;
 
   final txRes = await dio.get('/transactions', queryParameters: queryParams);
   final txData = txRes.data;
@@ -39,7 +37,10 @@ final analyticsSummaryProvider =
   for (var tx in txList) {
     final amount = double.tryParse(tx['amount'].toString()) ?? 0.0;
     final type = tx['type'];
-    final txCurrency = tx['currency'] ?? baseCurrency;
+    final wallet = tx['wallet'];
+    final txCurrency = (wallet is Map ? wallet['currency'] as String? : null) ??
+        tx['currency'] as String? ??
+        baseCurrency;
 
     final convertedAmount =
         await currencyService.convert(amount, txCurrency, baseCurrency);
@@ -67,8 +68,6 @@ final recentTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
   
   Map<String, dynamic> queryParams = {'limit': 5};
-  final selectedWalletId = ref.watch(dashboardSelectedWalletProvider);
-  if (selectedWalletId != null) queryParams['walletId'] = selectedWalletId;
 
   final response = await dio.get('/transactions', queryParameters: queryParams);
   final data = response.data;

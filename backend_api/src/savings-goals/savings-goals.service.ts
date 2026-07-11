@@ -25,6 +25,8 @@ export class SavingsGoalsService {
     if (createSavingsGoalDto.walletId) data.walletId = createSavingsGoalDto.walletId;
     if (createSavingsGoalDto.isPin !== undefined) data.isPin = createSavingsGoalDto.isPin;
     if (createSavingsGoalDto.link !== undefined) data.link = createSavingsGoalDto.link;
+    if (createSavingsGoalDto.emojiIcon) data.emojiIcon = createSavingsGoalDto.emojiIcon;
+    if (createSavingsGoalDto.colorCode) data.colorCode = createSavingsGoalDto.colorCode;
 
     try {
       const [newGoal] = await this.db.insert(savingsGoals).values(data).returning();
@@ -97,6 +99,8 @@ export class SavingsGoalsService {
     if (updateSavingsGoalDto.walletId !== undefined) updateData.walletId = updateSavingsGoalDto.walletId;
     if (updateSavingsGoalDto.isPin !== undefined) updateData.isPin = updateSavingsGoalDto.isPin;
     if (updateSavingsGoalDto.link !== undefined) updateData.link = updateSavingsGoalDto.link;
+    if (updateSavingsGoalDto.emojiIcon) updateData.emojiIcon = updateSavingsGoalDto.emojiIcon;
+    if (updateSavingsGoalDto.colorCode) updateData.colorCode = updateSavingsGoalDto.colorCode;
 
     const [updated] = await this.db
       .update(savingsGoals)
