@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'dart:ui' show lerpDouble, TextDirection;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +15,8 @@ import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
 import '../../../shared/widgets/transaction_card.dart';
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 
 // ── Provider: transactions filtered by savingsGoalId ─────────────────────────
 final savingsGoalTransactionsProvider =
@@ -39,11 +40,8 @@ class SavingDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<SavingDetailScreen> createState() => _SavingDetailScreenState();
 }
 
-class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
-    with TickerProviderStateMixin {
+class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
-  late AnimationController _progressAnimController;
-  late Animation<double> _progressAnim;
 
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
@@ -86,14 +84,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
   @override
   void initState() {
     super.initState();
-    _progressAnimController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _progressAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _progressAnimController, curve: Curves.easeOutCubic),
-    );
-    _progressAnimController.forward();
 
     _scrollController.addListener(() {
       if (mounted) {
@@ -104,22 +94,25 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
 
   @override
   void dispose() {
-    _progressAnimController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   void _onEdit() {
-    context.push('/savings/form', extra: {'goal': _goal}).then((_) {
-      // Refresh the goal from provider after editing
+    context.push('/savings/form', extra: {'goal': _goal}).then((_) async {
       if (mounted) {
-        final updatedGoals = ref.read(savingsNotifierProvider).goals;
-        final updated = updatedGoals.firstWhere(
-          (g) => g['id'] == _goalId,
-          orElse: () => _goal,
-        );
-        setState(() => _latestGoal = updated as Map<String, dynamic>);
+        try {
+          final dio = ref.read(dioClientProvider).dio;
+          final response = await dio.get('/goals/$_goalId');
+          if (response.data != null && mounted) {
+            setState(() {
+              _latestGoal = response.data as Map<String, dynamic>;
+            });
+          }
+        } catch (_) {}
+        // Also refresh the global provider list
+        ref.read(savingsNotifierProvider.notifier).fetchGoals();
       }
     });
   }
@@ -217,6 +210,102 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                   child: _buildInfoCards(context, isDark, useFmt ? fmt : fmtGoal),
+                ),
+              ),
+
+              // ── Progress Card ─────────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surfaceDark : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Progress',
+                              style: AppTypography.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
+                            ),
+                            Text(
+                              '${fmt.format(_currentAmount)} / ${fmt.format(_targetAmount)}',
+                              style: AppTypography.textTheme.bodySmall?.copyWith(
+                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          height: 20,
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.borderDark : const Color(0xFFE2E8F0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Stack(
+                            children: [
+                              FractionallySizedBox(
+                                widthFactor: _percentage,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _progressColor,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: _percentage > 0.15
+                                      ? Text(
+                                          '${(_percentage * 100).toInt()}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                              if (_percentage <= 0.15)
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 8.0),
+                                    child: Text(
+                                      '${(_percentage * 100).toInt()}%',
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
 
@@ -654,75 +743,30 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen>
     );
   }
 
-  // ── Savings Icon with decoration ─────────────────────────────────────────────
   Widget _buildSavingsIcon() {
-    return SizedBox(
-      width: 80,
-      height: 80,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Main circle with emoji
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: _goalColor,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _goalColor.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(_emoji, style: const TextStyle(fontSize: 36)),
-            ),
-          ),
-          // Progress arc overlay
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _progressAnim,
-              builder: (_, __) => CustomPaint(
-                painter: _ArcProgressPainter(
-                  progress: _percentage * _progressAnim.value,
-                  color: _progressColor,
-                  trackColor: Colors.white.withValues(alpha: 0.2),
-                  strokeWidth: 4,
-                ),
+    final iconShape = ref.watch(categoryIconShapeProvider);
+    return Hero(
+      tag: 'savings_icon_$_goalId',
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 80,
+          height: 80,
+          decoration: ShapeDecoration(
+            color: _goalColor,
+            shape: iconShape.toShapeBorder(80),
+            shadows: [
+              BoxShadow(
+                color: _goalColor.withValues(alpha: 0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
-            ),
+            ],
           ),
-          // Percentage badge
-          Positioned(
-            right: -4,
-            bottom: -4,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: _progressColor,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: _progressColor.withValues(alpha: 0.4),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Text(
-                '${(_percentage * 100).toInt()}%',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
+          child: Center(
+            child: Text(_emoji, style: const TextStyle(fontSize: 36)),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1138,51 +1182,4 @@ class _InfoCard extends StatelessWidget {
 // ── Transaction Tile ─────────────────────────────────────────────────────────
 
 // ── Arc Progress Painter ─────────────────────────────────────────────────────
-class _ArcProgressPainter extends CustomPainter {
-  const _ArcProgressPainter({
-    required this.progress,
-    required this.color,
-    required this.trackColor,
-    required this.strokeWidth,
-  });
 
-  final double progress;
-  final Color color;
-  final Color trackColor;
-  final double strokeWidth;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (math.min(size.width, size.height) / 2) - strokeWidth / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-
-    // Track
-    final trackPaint = Paint()
-      ..color = trackColor
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawCircle(center, radius, trackPaint);
-
-    // Progress arc
-    if (progress > 0) {
-      final progressPaint = Paint()
-        ..color = color
-        ..strokeWidth = strokeWidth
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-      canvas.drawArc(
-        rect,
-        -math.pi / 2, // start at top
-        2 * math.pi * progress,
-        false,
-        progressPaint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ArcProgressPainter old) =>
-      old.progress != progress || old.color != color;
-}

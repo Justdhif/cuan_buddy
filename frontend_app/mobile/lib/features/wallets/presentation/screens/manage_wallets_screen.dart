@@ -6,6 +6,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../providers/wallet_provider.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 
 class ManageWalletsScreen extends ConsumerStatefulWidget {
   const ManageWalletsScreen({super.key, this.isOnboarding = false});
@@ -50,6 +52,8 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
     final state = ref.watch(walletsProvider);
     final wallets = state.valueOrNull ?? [];
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
       appBar: widget.isOnboarding
@@ -132,7 +136,7 @@ class _ManageWalletsScreenState extends ConsumerState<ManageWalletsScreen> {
                                   height: 40,
                                   decoration: ShapeDecoration(
                                     color: backgroundColor.withValues(alpha: 0.15),
-                                    shape: const CircleBorder(),
+                                    shape: iconShape.toShapeBorder(40),
                                   ),
                                   child: Center(
                                     child: Text(

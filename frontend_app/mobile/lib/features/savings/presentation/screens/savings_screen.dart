@@ -10,6 +10,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 
 class SavingsScreen extends ConsumerStatefulWidget {
   const SavingsScreen({super.key});
@@ -413,6 +415,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       BuildContext context, Map<String, dynamic> goal, String currencySymbol) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconShape = ref.watch(categoryIconShapeProvider);
 
     final name = goal['name'] as String? ?? l10n.unnamedGoal;
     final emoji = goal['emojiIcon'] as String? ?? '🎯';
@@ -512,15 +515,21 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             Row(
               children: [
                 // Icon circle
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: goalColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                 Hero(
+                  tag: 'savings_icon_${goal['id']}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: ShapeDecoration(
+                        color: goalColor,
+                        shape: iconShape.toShapeBorder(52),
+                      ),
+                      child: Center(
+                        child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
