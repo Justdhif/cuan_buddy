@@ -979,6 +979,35 @@ class AppLocalizationsId extends AppLocalizations {
   String get backupStarted => 'Backup dimulai...';
   @override
   String get failedToLoadBackupSettings => 'Gagal memuat pengaturan backup';
+  @override
+  String get backupHubBackupDesc => 'Buat snapshot data';
+  @override
+  String get backupHubRestoreDesc => 'Pulihkan dari file backup';
+  @override
+  String get backupHubExportDesc => 'Ekspor data ke spreadsheet';
+  @override
+  String get backupHubImportDesc => 'Impor data dari file';
+  @override
+  String get backupSheetDesc => 'Kelola backup otomatis dan manual';
+  @override
+  String get backupListTitle => 'File Cadangan';
+  @override
+  String get backupListSubtitle => 'Hingga 20 cadangan tersimpan';
+  @override
+  String get backupManualNow => 'Cadangkan Sekarang';
+  @override
+  String get backupInProgress => 'Sedang mencadangkan...';
+  @override
+  String get backupJustNow => 'Baru saja';
+  @override
+  String backupHoursAgo(int hours) => '$hours jam yang lalu';
+  @override
+  String backupDaysAgo(int days) => '$days hari yang lalu';
+  @override
+  String get backupNoFiles => 'Belum ada cadangan. Ketuk "Cadangkan Sekarang" untuk membuat.';
+  @override
+  String get backupDownloadedToDevice => 'Cadangan berhasil diunduh ke perangkat';
+
 
   // ─── Profile Setup ────────────────────────────────────────────────────────────
   @override
@@ -1257,4 +1286,106 @@ class AppLocalizationsId extends AppLocalizations {
   String get purchaseLinkLabel => 'URL Link Pembelian';
   @override
   String get purchaseLinkHint => 'https://shopee.co.id/... atau Tokopedia';
+
+  // ─── Shared Space (Lobi, Room, Teman) ──────────────────────────────────────────
+  @override
+  String get sharedSpace => 'Shared Space';
+  @override
+  String get manageFriends => 'Kelola Teman';
+  @override
+  String get friends => 'Teman';
+  @override
+  String get requests => 'Permintaan';
+  @override
+  String get search => 'Cari';
+  @override
+  String get noFriendsYet => 'Belum Ada Teman';
+  @override
+  String get friendsInviteDescription => 'Ajak teman Anda untuk mengelola keuangan bersama.';
+  @override
+  String get noRequestsYet => 'Tidak Ada Permintaan';
+  @override
+  String get incomingRequestsDescription => 'Permintaan pertemanan baru akan muncul di sini.';
+  @override
+  String get searchFriendsPlaceholder => 'Cari username atau email...';
+  @override
+  String get searchFriendsDescription => 'Masukkan username atau email teman Anda untuk mencari.';
+  @override
+  String get invite => 'Undang';
+  @override
+  String get pending => 'Pending';
+  @override
+  String get accept => 'Terima';
+  @override
+  String get decline => 'Tolak';
+  @override
+  String get friendRequestSentSuccess => 'Permintaan pertemanan berhasil dikirim!';
+  @override
+  String get friendRequestAccepted => 'Permintaan pertemanan diterima!';
+  @override
+  String get friendRequestDeclined => 'Permintaan pertemanan ditolak.';
+  @override
+  String get createRoom => 'Buat Room Baru';
+  @override
+  String get roomName => 'Nama Room';
+  @override
+  String get roomNameHint => 'Misal: Keuangan Kontrakan, Rencana Liburan';
+  @override
+  String get roomNameRequired => 'Nama room tidak boleh kosong';
+  @override
+  String get inviteFriends => 'Undang Teman';
+  @override
+  String get noFriendsInvite => 'Belum memiliki teman';
+  @override
+  String get searchFriendsAction => 'Cari Teman';
+  @override
+  String get createRoomButton => 'Buat Room';
+  @override
+  String get createRoomSuccess => 'Room bersama berhasil dibuat!';
+  @override
+  String get deleteRoom => 'Hapus Room';
+  @override
+  String get leaveRoom => 'Keluar Room';
+  @override
+  String get deleteRoomConfirm => 'Apakah Anda yakin ingin menghapus room ini? Semua data transaksi, budget, dan tabungan bersama akan terhapus permanen.';
+  @override
+  String get leaveRoomConfirm => 'Apakah Anda yakin ingin keluar dari room ini?';
+  @override
+  String get deleteRoomSuccess => 'Room berhasil dihapus.';
+  @override
+  String get leaveRoomSuccess => 'Berhasil keluar dari room.';
+  @override
+  String get roomNotFound => 'Room tidak ditemukan atau Anda tidak memiliki akses.';
+  @override
+  String get totalRoomBalance => 'Total Saldo Bersama';
+  @override
+  String get members => 'Anggota';
+  @override
+  String get noRoomsYet => 'Belum Ada Room';
+  @override
+  String get noRoomsYetSubtitle => 'Buat Room keuangan bersama pasangan atau teman untuk mulai patungan, merencanakan budget, dan menabung bersama.';
+  @override
+  String get noTransactionsYetRoom => 'Belum ada transaksi';
+  @override
+  String get noTransactionsYetRoomSubtitle => 'Transaksi bersama akan dicatat di sini.';
+  @override
+  String get noBudgetsYetRoom => 'Belum ada budget';
+  @override
+  String get noBudgetsYetRoomSubtitle => 'Budget bersama membantu mengontrol pengeluaran.';
+  @override
+  String get noSavingsYetRoom => 'Belum ada tabungan';
+  @override
+  String get noSavingsYetRoomSubtitle => 'Tabungan bersama untuk rencana masa depan.';
+  @override
+  String othersCount(int count) => '+$count lainnya';
+  @override
+  String get usedAmount => 'Terpakai';
+  @override
+  String get collectedAmount => 'Terkumpul';
+  @override
+  String get targetAmountLabel => 'Target';
+  @override
+  String get limitAmountLabel => 'Limit';
+  @override
+  String get friend => 'Teman';
 }

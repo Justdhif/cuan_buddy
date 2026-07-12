@@ -207,7 +207,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         if (transactions.isEmpty) {
                           return SliverToBoxAdapter(
                             child: AppEmptyState(
-                              emoji: '💸',
+                              icon: Icons.receipt_long_outlined,
                               title: l10n.noTransactionsYetTitle,
                               subtitle: l10n.noTransactionsYetSubtitle,
                             ),

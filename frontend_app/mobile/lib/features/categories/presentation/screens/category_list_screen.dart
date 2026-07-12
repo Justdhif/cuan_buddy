@@ -16,30 +16,6 @@ class CategoryListScreen extends ConsumerWidget {
     context.push('/manage-categories/form', extra: {'category': category});
   }
 
-  void _confirmDelete(BuildContext context, WidgetRef ref, String id) {
-    final l10n = AppLocalizations.of(context);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.deleteCategory),
-        content: Text(l10n.deleteCategoryConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(categoryNotifierProvider.notifier).deleteCategory(id);
-            },
-            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -100,21 +76,10 @@ class CategoryListScreen extends ConsumerWidget {
                         ),
                         title: Text(category['name'],
                             style: AppTypography.textTheme.labelLarge),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 20),
-                              onPressed: () => _showCategoryForm(context,
-                                  category: category),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 20, color: Colors.red),
-                              onPressed: () =>
-                                  _confirmDelete(context, ref, category['id']),
-                            ),
-                          ],
+                         trailing: IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          onPressed: () => _showCategoryForm(context,
+                              category: category),
                         ),
                       ),
                     );

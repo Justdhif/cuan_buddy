@@ -974,6 +974,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupStarted => 'Backup started...';
   @override
   String get failedToLoadBackupSettings => 'Failed to load backup settings';
+  @override
+  String get backupHubBackupDesc => 'Create a data snapshot';
+  @override
+  String get backupHubRestoreDesc => 'Recover from a backup file';
+  @override
+  String get backupHubExportDesc => 'Export data to spreadsheet';
+  @override
+  String get backupHubImportDesc => 'Import data from file';
+  @override
+  String get backupSheetDesc => 'Manage automatic and manual backups';
+  @override
+  String get backupListTitle => 'Backup Files';
+  @override
+  String get backupListSubtitle => 'Up to 20 backups are stored';
+  @override
+  String get backupManualNow => 'Backup Now';
+  @override
+  String get backupInProgress => 'Backing up...';
+  @override
+  String get backupJustNow => 'Just now';
+  @override
+  String backupHoursAgo(int hours) => '$hours hours ago';
+  @override
+  String backupDaysAgo(int days) => '$days days ago';
+  @override
+  String get backupNoFiles => 'No backups yet. Tap "Backup Now" to create one.';
+  @override
+  String get backupDownloadedToDevice => 'Backup downloaded to your device';
+
 
   // ─── Profile Setup ────────────────────────────────────────────────────────────
   @override
@@ -1251,4 +1280,106 @@ class AppLocalizationsEn extends AppLocalizations {
   String get purchaseLinkLabel => 'Purchase URL';
   @override
   String get purchaseLinkHint => 'https://shopee.co.id/... or Tokopedia';
+
+  // ─── Shared Space (Lobi, Room, Teman) ──────────────────────────────────────────
+  @override
+  String get sharedSpace => 'Shared Space';
+  @override
+  String get manageFriends => 'Manage Friends';
+  @override
+  String get friends => 'Friends';
+  @override
+  String get requests => 'Requests';
+  @override
+  String get search => 'Search';
+  @override
+  String get noFriendsYet => 'No Friends Yet';
+  @override
+  String get friendsInviteDescription => 'Invite your friends to manage finances together.';
+  @override
+  String get noRequestsYet => 'No Requests';
+  @override
+  String get incomingRequestsDescription => 'New friend requests will appear here.';
+  @override
+  String get searchFriendsPlaceholder => 'Search username or email...';
+  @override
+  String get searchFriendsDescription => 'Enter your friend\'s username or email to search.';
+  @override
+  String get invite => 'Invite';
+  @override
+  String get pending => 'Pending';
+  @override
+  String get accept => 'Accept';
+  @override
+  String get decline => 'Decline';
+  @override
+  String get friendRequestSentSuccess => 'Friend request sent successfully!';
+  @override
+  String get friendRequestAccepted => 'Friend request accepted!';
+  @override
+  String get friendRequestDeclined => 'Friend request declined.';
+  @override
+  String get createRoom => 'Create New Room';
+  @override
+  String get roomName => 'Room Name';
+  @override
+  String get roomNameHint => 'e.g. Shared House Finance, Vacation Plan';
+  @override
+  String get roomNameRequired => 'Room name cannot be empty';
+  @override
+  String get inviteFriends => 'Invite Friends';
+  @override
+  String get noFriendsInvite => 'You don\'t have friends yet';
+  @override
+  String get searchFriendsAction => 'Find Friends';
+  @override
+  String get createRoomButton => 'Create Room';
+  @override
+  String get createRoomSuccess => 'Shared room created successfully!';
+  @override
+  String get deleteRoom => 'Delete Room';
+  @override
+  String get leaveRoom => 'Leave Room';
+  @override
+  String get deleteRoomConfirm => 'Are you sure you want to delete this room? All collaborative transactions, budgets, and savings goals will be deleted permanently.';
+  @override
+  String get leaveRoomConfirm => 'Are you sure you want to leave this room?';
+  @override
+  String get deleteRoomSuccess => 'Room deleted successfully.';
+  @override
+  String get leaveRoomSuccess => 'Left room successfully.';
+  @override
+  String get roomNotFound => 'Room not found or access denied.';
+  @override
+  String get totalRoomBalance => 'Total Shared Balance';
+  @override
+  String get members => 'Members';
+  @override
+  String get noRoomsYet => 'No Rooms Yet';
+  @override
+  String get noRoomsYetSubtitle => 'Create a shared financial room with your partner or friends to start splitting expenses, budgeting, and saving together.';
+  @override
+  String get noTransactionsYetRoom => 'No Transactions Yet';
+  @override
+  String get noTransactionsYetRoomSubtitle => 'Shared transactions will be listed here.';
+  @override
+  String get noBudgetsYetRoom => 'No Budgets Yet';
+  @override
+  String get noBudgetsYetRoomSubtitle => 'Shared budgets help control expenses.';
+  @override
+  String get noSavingsYetRoom => 'No Savings Goals Yet';
+  @override
+  String get noSavingsYetRoomSubtitle => 'Shared savings goals for future plans.';
+  @override
+  String othersCount(int count) => '+$count others';
+  @override
+  String get usedAmount => 'Used';
+  @override
+  String get collectedAmount => 'Saved';
+  @override
+  String get targetAmountLabel => 'Target';
+  @override
+  String get limitAmountLabel => 'Limit';
+  @override
+  String get friend => 'Friend';
 }

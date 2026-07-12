@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/l10n/app_localizations.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
@@ -43,11 +44,12 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     final activeRoom = ref.read(sharedNotifierProvider).activeRoom;
     if (activeRoom == null) return;
 
+    final l10n = AppLocalizations.of(context);
     final String role = activeRoom['role'] ?? 'member';
-    final String title = role == 'owner' ? 'Hapus Room' : 'Keluar Room';
+    final String title = role == 'owner' ? l10n.deleteRoom : l10n.leaveRoom;
     final String message = role == 'owner'
-        ? 'Apakah Anda yakin ingin menghapus room ini? Semua data transaksi, budget, dan tabungan bersama akan terhapus permanen.'
-        : 'Apakah Anda yakin ingin keluar dari room ini?';
+        ? l10n.deleteRoomConfirm
+        : l10n.leaveRoomConfirm;
 
     showDialog(
       context: context,
@@ -57,7 +59,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
@@ -73,14 +75,14 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
               } else {
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text(role == 'owner' ? 'Room berhasil dihapus.' : 'Berhasil keluar dari room.'),
+                    content: Text(role == 'owner' ? l10n.deleteRoomSuccess : l10n.leaveRoomSuccess),
                     backgroundColor: AppColors.success,
                   ),
                 );
                 goRouter.pop(); // Return to lobby
               }
             },
-            child: Text(role == 'owner' ? 'Hapus' : 'Keluar', style: const TextStyle(color: Colors.white)),
+            child: Text(role == 'owner' ? l10n.delete : l10n.logOut, style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -130,6 +132,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(sharedNotifierProvider);
     final textTheme = AppTypography.textTheme;
+    final l10n = AppLocalizations.of(context);
 
     if (state.isRoomLoading && state.activeRoom == null) {
       return const Scaffold(
@@ -141,7 +144,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     if (room == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Room tidak ditemukan atau Anda tidak memiliki akses.')),
+        body: Center(child: Text(l10n.roomNotFound)),
       );
     }
 
@@ -177,7 +180,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                         children: [
                           Icon(Icons.exit_to_app, color: AppColors.danger),
                           const SizedBox(width: 8),
-                          Text(room['role'] == 'owner' ? 'Hapus Room' : 'Keluar Room',
+                          Text(room['role'] == 'owner' ? l10n.deleteRoom : l10n.leaveRoom,
                               style: TextStyle(color: AppColors.danger)),
                         ],
                       ),
@@ -206,7 +209,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Total Saldo Bersama',
+                        l10n.totalRoomBalance,
                         style: textTheme.bodySmall?.copyWith(
                           color: Colors.white.withValues(alpha: 0.7),
                         ),
@@ -252,7 +255,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                           if (members.length > 5) ...[
                             const SizedBox(width: 12),
                             Text(
-                              '+${members.length - 5} lainnya',
+                              l10n.othersCount(members.length - 5),
                               style: textTheme.bodySmall?.copyWith(color: Colors.white70),
                             ),
                           ]
@@ -271,10 +274,10 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                   labelColor: AppColors.primary,
                   unselectedLabelColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                   indicatorColor: AppColors.primary,
-                  tabs: const [
-                    Tab(text: 'Transaksi'),
-                    Tab(text: 'Anggaran'),
-                    Tab(text: 'Tabungan'),
+                  tabs: [
+                    Tab(text: l10n.transactions),
+                    Tab(text: l10n.budgets),
+                    Tab(text: l10n.savingsGoals),
                   ],
                 ),
               ),
@@ -288,7 +291,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
             RefreshIndicator(
               onRefresh: () => ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(widget.roomId),
               child: state.roomTransactions.isEmpty
-                  ? _buildEmptyTab(Icons.receipt_long_outlined, 'Belum ada transaksi', 'Transaksi bersama akan dicatat di sini.')
+                  ? _buildEmptyTab(Icons.receipt_long_outlined, l10n.noTransactionsYetRoom, l10n.noTransactionsYetRoomSubtitle)
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: state.roomTransactions.length,
@@ -304,7 +307,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
             RefreshIndicator(
               onRefresh: () => ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(widget.roomId),
               child: state.roomBudgets.isEmpty
-                  ? _buildEmptyTab(Icons.pie_chart_outline_rounded, 'Belum ada budget', 'Budget bersama membantu mengontrol pengeluaran.')
+                  ? _buildEmptyTab(Icons.pie_chart_outline_rounded, l10n.noBudgetsYetRoom, l10n.noBudgetsYetRoomSubtitle)
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: state.roomBudgets.length,
@@ -355,11 +358,11 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Terpakai: ${CurrencyFormatter.formatAmount(spent, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
+                                    '${l10n.usedAmount}: ${CurrencyFormatter.formatAmount(spent, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
                                     style: textTheme.bodySmall,
                                   ),
                                   Text(
-                                    'Limit: ${CurrencyFormatter.formatAmount(limit, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
+                                    '${l10n.limitAmountLabel}: ${CurrencyFormatter.formatAmount(limit, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
                                     style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],
@@ -375,7 +378,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
             RefreshIndicator(
               onRefresh: () => ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(widget.roomId),
               child: state.roomSavings.isEmpty
-                  ? _buildEmptyTab(Icons.savings_outlined, 'Belum ada tabungan', 'Tabungan bersama untuk rencana masa depan.')
+                  ? _buildEmptyTab(Icons.savings_outlined, l10n.noSavingsYetRoom, l10n.noSavingsYetRoomSubtitle)
                   : ListView.separated(
                       padding: const EdgeInsets.all(16),
                       itemCount: state.roomSavings.length,
@@ -417,11 +420,11 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Terkumpul: ${CurrencyFormatter.formatAmount(current, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
+                                    '${l10n.collectedAmount}: ${CurrencyFormatter.formatAmount(current, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
                                     style: textTheme.bodySmall,
                                   ),
                                   Text(
-                                    'Target: ${CurrencyFormatter.formatAmount(target, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
+                                    '${l10n.targetAmountLabel}: ${CurrencyFormatter.formatAmount(target, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
                                     style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ],

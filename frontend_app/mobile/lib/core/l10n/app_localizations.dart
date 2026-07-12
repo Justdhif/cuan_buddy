@@ -509,6 +509,21 @@ abstract class AppLocalizations {
   String get uploadAndRestore;
   String get backupStarted;
   String get failedToLoadBackupSettings;
+  // ─── Backup Hub & Main Sheet ────────────────────────────────────────────────
+  String get backupHubBackupDesc;
+  String get backupHubRestoreDesc;
+  String get backupHubExportDesc;
+  String get backupHubImportDesc;
+  String get backupSheetDesc;
+  String get backupListTitle;
+  String get backupListSubtitle;
+  String get backupManualNow;
+  String get backupInProgress;
+  String get backupJustNow;
+  String backupHoursAgo(int hours);
+  String backupDaysAgo(int days);
+  String get backupNoFiles;
+  String get backupDownloadedToDevice;
 
   // ─── Profile Setup ────────────────────────────────────────────────────────────
   String get step1of2;
@@ -636,6 +651,58 @@ abstract class AppLocalizations {
   String get purchaseLinkOptional;
   String get purchaseLinkLabel;
   String get purchaseLinkHint;
+
+  // ─── Shared Space (Lobi, Room, Teman) ──────────────────────────────────────────
+  String get sharedSpace;
+  String get manageFriends;
+  String get friends;
+  String get requests;
+  String get search;
+  String get noFriendsYet;
+  String get friendsInviteDescription;
+  String get noRequestsYet;
+  String get incomingRequestsDescription;
+  String get searchFriendsPlaceholder;
+  String get searchFriendsDescription;
+  String get invite;
+  String get pending;
+  String get accept;
+  String get decline;
+  String get friendRequestSentSuccess;
+  String get friendRequestAccepted;
+  String get friendRequestDeclined;
+  String get createRoom;
+  String get roomName;
+  String get roomNameHint;
+  String get roomNameRequired;
+  String get inviteFriends;
+  String get noFriendsInvite;
+  String get searchFriendsAction;
+  String get createRoomButton;
+  String get createRoomSuccess;
+  String get deleteRoom;
+  String get leaveRoom;
+  String get deleteRoomConfirm;
+  String get leaveRoomConfirm;
+  String get deleteRoomSuccess;
+  String get leaveRoomSuccess;
+  String get roomNotFound;
+  String get totalRoomBalance;
+  String get members;
+  String get noRoomsYet;
+  String get noRoomsYetSubtitle;
+  String get noTransactionsYetRoom;
+  String get noTransactionsYetRoomSubtitle;
+  String get noBudgetsYetRoom;
+  String get noBudgetsYetRoomSubtitle;
+  String get noSavingsYetRoom;
+  String get noSavingsYetRoomSubtitle;
+  String othersCount(int count);
+  String get usedAmount;
+  String get collectedAmount;
+  String get targetAmountLabel;
+  String get limitAmountLabel;
+  String get friend;
 }
 
 class AppLocalizationsScope extends InheritedWidget {

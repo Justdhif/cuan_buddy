@@ -41,46 +41,63 @@ class AppLoading extends StatelessWidget {
 class AppEmptyState extends StatelessWidget {
   const AppEmptyState({
     super.key,
-    required this.emoji,
+    this.emoji,
+    this.icon,
     required this.title,
     this.subtitle,
     this.action,
   });
 
-  final String emoji;
+  final String? emoji;
+  final IconData? icon;
   final String title;
   final String? subtitle;
   final Widget? action;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textTheme = AppTypography.textTheme;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 64)),
-            const SizedBox(height: 16),
+            if (icon != null)
+              Icon(
+                icon,
+                size: 80,
+                color: AppColors.primary.withValues(alpha: 0.5),
+              )
+            else if (emoji != null)
+              Text(
+                emoji!,
+                style: const TextStyle(fontSize: 64),
+              ),
+            const SizedBox(height: 24),
             Text(
               title,
-              style: AppTypography.textTheme.titleMedium,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              ),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 subtitle!,
-                style: AppTypography.textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                ),
                 textAlign: TextAlign.center,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                ),
               ),
             ],
             if (action != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               action!,
             ],
           ],

@@ -70,7 +70,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
     if (state.notifications.isEmpty) {
       return AppEmptyState(
-        emoji: '🔔',
+        icon: Icons.notifications_none_rounded,
         title: l10n.noNotifications,
         subtitle: l10n.noNotificationsSubtitle,
       );

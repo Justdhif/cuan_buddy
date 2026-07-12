@@ -201,7 +201,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                   child: savingsState.goals.isEmpty
                       ? Center(
                           child: AppEmptyState(
-                            emoji: '🎯',
+                            icon: Icons.savings_outlined,
                             title: 'No Savings Goals',
                             subtitle:
                                 'You have no active savings goals to display.',

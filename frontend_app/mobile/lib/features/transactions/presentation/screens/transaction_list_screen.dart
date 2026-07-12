@@ -193,9 +193,24 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: viewportHeight),
                   child: AppEmptyState(
-                    emoji: '💸',
+                    icon: Icons.receipt_long_outlined,
                     title: l10n.noTransactionsYetTitle,
                     subtitle: l10n.noTransactionsYetSubtitle,
+                    action: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        context.push('/transactions/form', extra: {'initialType': 'expense'});
+                      },
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      label: Text(
+                        l10n.addTransaction,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
                 ),
               )

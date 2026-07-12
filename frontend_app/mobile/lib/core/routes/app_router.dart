@@ -18,6 +18,7 @@ import '../../features/auth/presentation/screens/onboarding_screen.dart';
 // Profile Setup
 import '../../features/profile/presentation/screens/profile_setup_screen.dart';
 import '../../features/profile/presentation/screens/backup_settings_screen.dart';
+import '../../features/profile/presentation/screens/backup_restore_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
 import '../../features/profile/presentation/screens/widget_settings_screen.dart';
@@ -140,7 +141,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/backup',
         pageBuilder: (context, state) =>
-            _buildPage(state, const BackupSettingsScreen(isOnboarding: false)),
+            _buildPage(state, const BackupRestoreScreen()),
       ),
       GoRoute(
         path: '/profile/edit',
