@@ -1,7 +1,7 @@
-import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { eq, and, desc, asc, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { savingsGoals } from '../database/schema';
+import { savingsGoals, roomMembers } from '../database/schema';
 import { CreateSavingsGoalDto, UpdateSavingsGoalDto } from './dto/savings-goal.dto';
 import { formatPaginatedResponse, formatCurrency, formatDate } from '../common/utils/formatter.util';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -14,6 +14,15 @@ export class SavingsGoalsService {
   ) {}
 
   async create(userId: string, createSavingsGoalDto: CreateSavingsGoalDto) {
+    if (createSavingsGoalDto.roomId) {
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, createSavingsGoalDto.roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+    }
+
     const data: any = {
       userId,
       name: createSavingsGoalDto.name,
@@ -23,6 +32,7 @@ export class SavingsGoalsService {
     if (createSavingsGoalDto.targetDate) data.targetDate = new Date(createSavingsGoalDto.targetDate);
     if (createSavingsGoalDto.status) data.status = createSavingsGoalDto.status;
     if (createSavingsGoalDto.walletId) data.walletId = createSavingsGoalDto.walletId;
+    if (createSavingsGoalDto.roomId) data.roomId = createSavingsGoalDto.roomId;
     if (createSavingsGoalDto.isPin !== undefined) data.isPin = createSavingsGoalDto.isPin;
     if (createSavingsGoalDto.link !== undefined) data.link = createSavingsGoalDto.link;
     if (createSavingsGoalDto.emojiIcon) data.emojiIcon = createSavingsGoalDto.emojiIcon;
@@ -45,11 +55,27 @@ export class SavingsGoalsService {
   }
 
   async findAll(userId: string, query: any) {
-    const { page = 1, limit = 10 } = query;
+    const { roomId, page = 1, limit = 10 } = query;
     const offset = (Number(page) - 1) * Number(limit);
 
+    const conditions: any[] = [];
+
+    if (roomId) {
+      // Verify membership
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+      conditions.push(eq(savingsGoals.roomId, roomId));
+    } else {
+      conditions.push(eq(savingsGoals.userId, userId));
+      conditions.push(sql`${savingsGoals.roomId} IS NULL`);
+    }
+
     const data = await this.db.query.savingsGoals.findMany({
-      where: eq(savingsGoals.userId, userId),
+      where: and(...conditions),
       with: { wallet: true },
       orderBy: [desc(savingsGoals.isPin), asc(savingsGoals.createdAt)],
       limit: Number(limit),
@@ -66,7 +92,7 @@ export class SavingsGoalsService {
     const countData = await this.db
       .select({ count: sql`count(*)` })
       .from(savingsGoals)
-      .where(eq(savingsGoals.userId, userId));
+      .where(and(...conditions));
 
     const totalCount = Number(countData[0].count);
 
@@ -75,13 +101,26 @@ export class SavingsGoalsService {
 
   async findOne(userId: string, id: string) {
     const goal = await this.db.query.savingsGoals.findFirst({
-      where: and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)),
+      where: eq(savingsGoals.id, id),
       with: { wallet: true }
     });
 
     if (!goal) {
       throw new NotFoundException('Savings goal not found');
     }
+
+    if (goal.userId !== userId) {
+      if (!goal.roomId) {
+        throw new ForbiddenException('You do not have access to this savings goal');
+      }
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, goal.roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+    }
+
     return goal;
   }
 
@@ -105,7 +144,7 @@ export class SavingsGoalsService {
     const [updated] = await this.db
       .update(savingsGoals)
       .set({ ...updateData, updatedAt: new Date() })
-      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)))
+      .where(eq(savingsGoals.id, id))
       .returning();
 
     // Check if goal is reached after update
@@ -127,7 +166,7 @@ export class SavingsGoalsService {
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     await this.db.delete(savingsGoals)
-      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)));
+      .where(eq(savingsGoals.id, id));
     return { message: 'Savings goal deleted successfully' };
   }
 }

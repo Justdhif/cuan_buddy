@@ -1,7 +1,7 @@
-import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { eq, and, sql, gte, lte } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { budgets, transactions } from '../database/schema';
+import { budgets, transactions, roomMembers } from '../database/schema';
 import { CreateBudgetDto, UpdateBudgetDto } from './dto/budget.dto';
 import { formatPaginatedResponse, formatCurrency } from '../common/utils/formatter.util';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -14,13 +14,23 @@ export class BudgetsService {
   ) {}
 
   async create(userId: string, createBudgetDto: CreateBudgetDto) {
+    if (createBudgetDto.roomId) {
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, createBudgetDto.roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+    }
+
     // Check if budget for this category and month already exists (only if category based)
     if (createBudgetDto.type === 'category' && createBudgetDto.categoryId) {
       const existing = await this.db.query.budgets.findFirst({
         where: and(
           eq(budgets.userId, userId),
           eq(budgets.categoryId, createBudgetDto.categoryId),
-          eq(budgets.monthYear, createBudgetDto.monthYear)
+          eq(budgets.monthYear, createBudgetDto.monthYear),
+          createBudgetDto.roomId ? eq(budgets.roomId, createBudgetDto.roomId) : sql`${budgets.roomId} IS NULL`
         )
       });
 
@@ -55,17 +65,23 @@ export class BudgetsService {
   }
 
   async findAll(userId: string, query: any) {
-    const { monthYear, page = 1, limit = 10 } = query;
+    const { monthYear, roomId, page = 1, limit = 10 } = query;
     const offset = (Number(page) - 1) * Number(limit);
 
-    const conditions = [eq(budgets.userId, userId)];
+    const conditions: any[] = [];
 
-    // If monthYear filter is provided, find budgets that cover this month.
-    // A budget starting at monthYear and spanning periodCount months covers
-    // any queried month within that range.
-    if (monthYear) {
-      // We fetch all budgets for user then filter in JS so we can use periodCount
-      // This is simpler than complex SQL date arithmetic on text month fields
+    if (roomId) {
+      // Verify membership
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+      conditions.push(eq(budgets.roomId, roomId));
+    } else {
+      conditions.push(eq(budgets.userId, userId));
+      conditions.push(sql`${budgets.roomId} IS NULL`);
     }
 
     const data = await this.db.query.budgets.findMany({
@@ -112,12 +128,15 @@ export class BudgetsService {
       const walletCond = b.walletId ? eq(transactions.walletId, b.walletId) : undefined;
 
       const spentConds = [
-        eq(transactions.userId, userId),
+        b.roomId ? eq(transactions.roomId, b.roomId) : eq(transactions.userId, userId),
         eq(transactions.categoryId, b.categoryId),
         eq(transactions.type, 'expense'),
         gte(transactions.date, periodStartDate),
         lte(transactions.date, endMonthDate)
       ];
+      if (!b.roomId) {
+        spentConds.push(sql`${transactions.roomId} IS NULL`);
+      }
       if (walletCond) spentConds.push(walletCond);
 
       const spentData = await this.db
@@ -129,11 +148,14 @@ export class BudgetsService {
 
       // Also compute income in the same period for the summary pill
       const incomeConds = [
-        eq(transactions.userId, userId),
+        b.roomId ? eq(transactions.roomId, b.roomId) : eq(transactions.userId, userId),
         eq(transactions.type, 'income'),
         gte(transactions.date, periodStartDate),
         lte(transactions.date, endMonthDate)
       ];
+      if (!b.roomId) {
+        incomeConds.push(sql`${transactions.roomId} IS NULL`);
+      }
       if (walletCond) incomeConds.push(walletCond);
 
       const incomeData = await this.db
@@ -160,11 +182,24 @@ export class BudgetsService {
 
   async findOne(userId: string, id: string) {
     const budget = await this.db.query.budgets.findFirst({
-      where: and(eq(budgets.id, id), eq(budgets.userId, userId)),
+      where: eq(budgets.id, id),
       with: { category: true, wallet: true }
     });
 
     if (!budget) throw new NotFoundException('Budget not found');
+
+    if (budget.userId !== userId) {
+      if (!budget.roomId) {
+        throw new ForbiddenException('You do not have access to this budget');
+      }
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, budget.roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+    }
+
     return budget;
   }
 

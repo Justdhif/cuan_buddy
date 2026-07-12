@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { users, userProfiles, categories, transactions, budgets, savingsGoals, notifications, backupSettings, feedbacks, wallets } from './schema';
+import { users, userProfiles, categories, transactions, budgets, savingsGoals, notifications, backupSettings, feedbacks, wallets, friendships, rooms, roomMembers } from './schema';
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(userProfiles, {
@@ -16,6 +16,9 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [backupSettings.userId],
   }),
+  friendshipsSent: many(friendships, { relationName: 'sender' }),
+  friendshipsReceived: many(friendships, { relationName: 'receiver' }),
+  roomMemberships: many(roomMembers),
 }));
 
 export const walletsRelations = relations(wallets, ({ one, many }) => ({
@@ -40,6 +43,41 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
   budgets: many(budgets),
 }));
 
+export const friendshipsRelations = relations(friendships, ({ one }) => ({
+  sender: one(users, {
+    fields: [friendships.senderId],
+    references: [users.id],
+    relationName: 'sender',
+  }),
+  receiver: one(users, {
+    fields: [friendships.receiverId],
+    references: [users.id],
+    relationName: 'receiver',
+  }),
+}));
+
+export const roomsRelations = relations(rooms, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [rooms.createdBy],
+    references: [users.id],
+  }),
+  members: many(roomMembers),
+  transactions: many(transactions),
+  budgets: many(budgets),
+  savingsGoals: many(savingsGoals),
+}));
+
+export const roomMembersRelations = relations(roomMembers, ({ one }) => ({
+  room: one(rooms, {
+    fields: [roomMembers.roomId],
+    references: [rooms.id],
+  }),
+  user: one(users, {
+    fields: [roomMembers.userId],
+    references: [users.id],
+  }),
+}));
+
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   user: one(users, {
     fields: [transactions.userId],
@@ -57,6 +95,10 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     fields: [transactions.savingsGoalId],
     references: [savingsGoals.id],
   }),
+  room: one(rooms, {
+    fields: [transactions.roomId],
+    references: [rooms.id],
+  }),
 }));
 
 export const budgetsRelations = relations(budgets, ({ one }) => ({
@@ -72,6 +114,10 @@ export const budgetsRelations = relations(budgets, ({ one }) => ({
     fields: [budgets.walletId],
     references: [wallets.id],
   }),
+  room: one(rooms, {
+    fields: [budgets.roomId],
+    references: [rooms.id],
+  }),
 }));
 
 export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => ({
@@ -83,6 +129,10 @@ export const savingsGoalsRelations = relations(savingsGoals, ({ one, many }) => 
   wallet: one(wallets, {
     fields: [savingsGoals.walletId],
     references: [wallets.id],
+  }),
+  room: one(rooms, {
+    fields: [savingsGoals.roomId],
+    references: [rooms.id],
   }),
 }));
 

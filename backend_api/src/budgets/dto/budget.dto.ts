@@ -9,6 +9,7 @@ export const CreateBudgetSchema = z.object({
   categoryIds: z.array(z.string().uuid()).optional().nullable(),
   categoryId: z.string().uuid().optional().nullable(),
   walletId: z.string().uuid().optional().nullable(),
+  roomId: z.string().uuid().optional().nullable(),
   limitAmount: z.number().positive(),
   currency: z.string().optional(),
   monthYear: z.string().regex(/^\d{4}-\d{2}$/, 'Must be in YYYY-MM format'),

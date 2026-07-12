@@ -6,6 +6,7 @@ export const CreateTransactionSchema = z.object({
   type: z.enum(['income', 'expense']),
   amount: z.number().positive(),
   walletId: z.string().uuid(),
+  roomId: z.string().uuid().nullable().optional(),
   exchangeRate: z.number().positive().default(1),
   categoryId: z.string().uuid().nullable().optional(),
   savingsGoalId: z.string().uuid().nullable().optional(),

@@ -1,7 +1,7 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { eq, and, or, gte, lte, desc, ilike, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, budgets, categories, savingsGoals, wallets } from '../database/schema';
+import { transactions, budgets, categories, savingsGoals, wallets, roomMembers } from '../database/schema';
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -24,6 +24,15 @@ export class TransactionsService {
   ) {}
 
   async create(userId: string, createTransactionDto: CreateTransactionDto) {
+    if (createTransactionDto.roomId) {
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, createTransactionDto.roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+    }
+
     let finalTitle = createTransactionDto.title;
     if (!finalTitle) {
       finalTitle = createTransactionDto.note ?? undefined;
@@ -233,11 +242,27 @@ export class TransactionsService {
       savingsGoalId,
       type,
       search,
+      roomId,
       page = 1,
       limit = 10,
     } = query;
 
-    const conditions = [eq(transactions.userId, userId)];
+    const conditions: any[] = [];
+
+    if (roomId) {
+      // Verify membership
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+      conditions.push(eq(transactions.roomId, roomId));
+    } else {
+      // Personal space - only list user's personal (non-room) transactions
+      conditions.push(eq(transactions.userId, userId));
+      conditions.push(sql`${transactions.roomId} IS NULL`);
+    }
 
     if (startDate) conditions.push(gte(transactions.date, new Date(startDate)));
     if (endDate) conditions.push(lte(transactions.date, new Date(endDate)));
@@ -284,11 +309,24 @@ export class TransactionsService {
 
   async findOne(userId: string, id: string) {
     const transaction = await this.db.query.transactions.findFirst({
-      where: and(eq(transactions.id, id), eq(transactions.userId, userId)),
+      where: eq(transactions.id, id),
       with: { category: true, savingsGoal: true, wallet: true },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');
+
+    if (transaction.userId !== userId) {
+      if (!transaction.roomId) {
+        throw new ForbiddenException('You do not have access to this transaction');
+      }
+      const isMember = await this.db.query.roomMembers.findFirst({
+        where: and(eq(roomMembers.roomId, transaction.roomId), eq(roomMembers.userId, userId)),
+      });
+      if (!isMember) {
+        throw new ForbiddenException('You are not a member of this room');
+      }
+    }
+
     return transaction;
   }
 

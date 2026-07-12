@@ -3,6 +3,7 @@ import { pgTable, text, timestamp, boolean, uuid, integer, decimal, pgEnum, json
 export const transactionTypeEnum = pgEnum('transaction_type', ['income', 'expense']);
 export const walletTypeEnum = pgEnum('wallet_type', ['cash', 'bank', 'e_wallet', 'crypto', 'other']);
 export const budgetTypeEnum = pgEnum('budget_type', ['standalone', 'category']);
+export const friendshipStatusEnum = pgEnum('friendship_status', ['pending', 'accepted', 'declined']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -57,10 +58,35 @@ export const wallets = pgTable('wallets', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const friendships = pgTable('friendships', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  senderId: uuid('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  receiverId: uuid('receiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: friendshipStatusEnum('status').default('pending').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const rooms = pgTable('rooms', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const roomMembers = pgTable('room_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  roomId: uuid('room_id').notNull().references(() => rooms.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').default('member').notNull(), // owner, member
+  joinedAt: timestamp('joined_at').defaultNow().notNull(),
+});
+
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   walletId: uuid('wallet_id').notNull().references(() => wallets.id, { onDelete: 'cascade' }),
+  roomId: uuid('room_id').references(() => rooms.id, { onDelete: 'cascade' }),
   title: text('title'),
   type: transactionTypeEnum('type').notNull(),
   amount: decimal('amount', { precision: 19, scale: 2 }).notNull(),
@@ -77,6 +103,7 @@ export const transactions = pgTable('transactions', {
 export const budgets = pgTable('budgets', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  roomId: uuid('room_id').references(() => rooms.id, { onDelete: 'cascade' }),
   name: text('name'),
   emojiIcon: text('emoji_icon'),
   colorCode: text('color_code'),
@@ -96,6 +123,7 @@ export const savingsGoals = pgTable('savings_goals', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   walletId: uuid('wallet_id').references(() => wallets.id, { onDelete: 'set null' }),
+  roomId: uuid('room_id').references(() => rooms.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   emojiIcon: text('emoji_icon').default('🎯'),
   colorCode: text('color_code').default('#6C63FF'),

@@ -19,6 +19,8 @@ import { WalletsModule } from './wallets/wallets.module';
 import { BackupModule } from './backup/backup.module';
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { FriendshipsModule } from './friendships/friendships.module';
+import { RoomsModule } from './rooms/rooms.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { FeedbackModule } from './feedback/feedback.module';
     BackupModule,
     EmailModule,
     FeedbackModule,
+    FriendshipsModule,
+    RoomsModule,
   ],
   controllers: [AppController],
   providers: [
