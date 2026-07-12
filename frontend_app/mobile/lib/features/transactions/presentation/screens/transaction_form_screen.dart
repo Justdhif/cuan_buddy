@@ -52,6 +52,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _selectedSavingsGoalId;
   String? _selectedBudgetId;
   String? _selectedWalletId;
+  String? _roomId;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   String _selectedCurrency = AppConstants.defaultCurrency;
@@ -67,6 +68,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
     if (widget.initialTransaction != null) {
       final tx = widget.initialTransaction!;
+      _roomId = tx['roomId'] as String?;
       _type = tx['type'] as String? ?? widget.initialType;
       _titleController.text = tx['title'] as String? ?? '';
       _amountController.text = (tx['amount'] ?? '').toString();
@@ -137,11 +139,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         'budgetId': _selectedBudgetId,
         'date': _selectedDate.toUtc().toIso8601String(),
       };
+      if (_roomId != null) {
+        payload['roomId'] = _roomId;
+      }
       if (_noteController.text.isNotEmpty) {
         payload['note'] = _noteController.text.trim();
       }
 
-      if (widget.initialTransaction != null) {
+      if (widget.initialTransaction != null && widget.initialTransaction!['id'] != null) {
         final id = widget.initialTransaction!['id'];
         await dio.patch('/transactions/$id', data: payload);
       } else {

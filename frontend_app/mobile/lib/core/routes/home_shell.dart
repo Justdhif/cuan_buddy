@@ -24,7 +24,7 @@ class _CustomConvexStyle extends StyleHook {
   }
 }
 
-class HomeShell extends ConsumerWidget {
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({
     super.key,
     required this.navigationShell,
@@ -35,28 +35,89 @@ class HomeShell extends ConsumerWidget {
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      body: Stack(
-        children: List.generate(children.length, (index) {
-          final isActive = index == navigationShell.currentIndex;
-          return IgnorePointer(
-            ignoring: !isActive,
-            child: AnimatedOpacity(
-              opacity: isActive ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              child: children[index],
-            ),
+  ConsumerState<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateMixin {
+  late PageController _pageController;
+  late AnimationController _fadeController;
+  bool _isNavClick = false;
+  bool _isPageChangingFromSwipe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: widget.navigationShell.currentIndex);
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeController.forward(from: 1.0); // Start fully visible
+  }
+
+  @override
+  void didUpdateWidget(HomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.navigationShell.currentIndex != oldWidget.navigationShell.currentIndex) {
+      final targetIndex = widget.navigationShell.currentIndex;
+      if (_isNavClick) {
+        // Nav clicked: jump page immediately and trigger fade animation
+        _pageController.jumpToPage(targetIndex);
+        _fadeController.forward(from: 0.0);
+        _isNavClick = false;
+      } else if (!_isPageChangingFromSwipe) {
+        // Page changed externally or programmatically without click/swipe
+        if (_pageController.hasClients && _pageController.page?.round() != targetIndex) {
+          _pageController.animateToPage(
+            targetIndex,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
           );
-        }),
+        }
+      }
+      _isPageChangingFromSwipe = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: FadeTransition(
+        opacity: _fadeController,
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (index) {
+            if (index != widget.navigationShell.currentIndex) {
+              _isPageChangingFromSwipe = true;
+              widget.navigationShell.goBranch(
+                index,
+                initialLocation: index == widget.navigationShell.currentIndex,
+              );
+            }
+          },
+          children: widget.children,
+        ),
       ),
       bottomNavigationBar: _CuanBuddyNavBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) => navigationShell.goBranch(
-          index,
-          initialLocation: index == navigationShell.currentIndex,
-        ),
+        currentIndex: widget.navigationShell.currentIndex,
+        onTap: (index) {
+          if (index != widget.navigationShell.currentIndex) {
+            setState(() {
+              _isNavClick = true;
+            });
+            widget.navigationShell.goBranch(
+              index,
+              initialLocation: index == widget.navigationShell.currentIndex,
+            );
+          }
+        },
       ),
     );
   }
@@ -80,6 +141,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
     return StyleProvider(
       style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
       child: ConvexAppBar(
+        key: ValueKey(currentIndex),
         style: TabStyle.fixedCircle,
         backgroundColor: isDark
             ? AppColors.surfaceDark

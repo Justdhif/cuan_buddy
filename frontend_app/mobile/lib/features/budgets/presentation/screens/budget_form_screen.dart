@@ -39,6 +39,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Set<String> _selectedCategoryIds = {};
   
   String? _selectedWalletId;
+  String? _roomId;
   DateTime _selectedDate = DateTime.now();
   String _selectedCurrency = 'IDR';
   int _periodCount = 1;
@@ -63,6 +64,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   void initState() {
     super.initState();
     if (widget.budget != null) {
+      _roomId = widget.budget!['roomId'] as String?;
       final rawL = widget.budget!['limitAmount'];
       final limitAmount = rawL is num
           ? rawL.toDouble()
@@ -145,9 +147,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         'periodCount': _periodCount,
         'startDay': _startDay,
         if (_selectedWalletId != null) 'walletId': _selectedWalletId,
+        if (_roomId != null) 'roomId': _roomId,
       };
       
-      if (widget.budget == null) {
+      if (widget.budget == null || widget.budget!['id'] == null) {
         await dio.post('/budgets', data: payload);
         ref.invalidate(budgetsNotifierProvider);
         if (mounted) {

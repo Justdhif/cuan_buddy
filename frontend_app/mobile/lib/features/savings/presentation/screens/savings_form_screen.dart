@@ -31,6 +31,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
   final _amountController = TextEditingController();
   final _linkController = TextEditingController();
   String? _selectedWalletId;
+  String? _roomId;
   DateTime? _selectedDate;
   String _selectedCurrency = AppConstants.defaultCurrency;
   String? _selectedEmoji;
@@ -72,6 +73,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
   void initState() {
     super.initState();
     if (widget.goal != null) {
+      _roomId = widget.goal!['roomId'] as String?;
       _nameController.text = widget.goal!['name'] ?? '';
       _selectedEmoji = widget.goal!['emojiIcon'] as String?;
       _selectedColor = _colorFromHex(widget.goal!['colorCode'] as String?);
@@ -241,12 +243,13 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
         'isPin': _isPin,
         'link': _linkController.text.trim().isEmpty ? null : _linkController.text.trim(),
         if (_selectedWalletId != null) 'walletId': _selectedWalletId,
+        if (_roomId != null) 'roomId': _roomId,
       };
       if (_selectedDate != null) {
         payload['targetDate'] = _selectedDate!.toUtc().toIso8601String();
       }
       final dio = ref.read(dioClientProvider).dio;
-      if (widget.goal == null) {
+      if (widget.goal == null || widget.goal!['id'] == null) {
         await dio.post('/goals', data: payload);
         ref.invalidate(savingsNotifierProvider);
         if (mounted) {

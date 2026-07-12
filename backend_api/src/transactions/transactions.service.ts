@@ -283,6 +283,11 @@ export class TransactionsService {
         category: true,
         savingsGoal: true,
         wallet: true,
+        user: {
+          with: {
+            profile: true,
+          },
+        },
       },
     });
 
@@ -310,7 +315,7 @@ export class TransactionsService {
   async findOne(userId: string, id: string) {
     const transaction = await this.db.query.transactions.findFirst({
       where: eq(transactions.id, id),
-      with: { category: true, savingsGoal: true, wallet: true },
+      with: { category: true, savingsGoal: true, wallet: true, user: { with: { profile: true } } },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');

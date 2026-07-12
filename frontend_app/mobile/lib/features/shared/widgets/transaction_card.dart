@@ -184,6 +184,41 @@ class TransactionCard extends ConsumerWidget {
                             ),
                           ),
                         ),
+                      if (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircleAvatar(
+                                radius: 6,
+                                backgroundImage: (tx['user']['profile']['avatar'] != null && (tx['user']['profile']['avatar'] as String).isNotEmpty)
+                                    ? NetworkImage(tx['user']['profile']['avatar'])
+                                    : null,
+                                backgroundColor: AppColors.secondary,
+                                child: (tx['user']['profile']['avatar'] == null || (tx['user']['profile']['avatar'] as String).isEmpty)
+                                    ? Text(
+                                        (tx['user']['profile']['fullName'] ?? tx['user']['email']).toString().substring(0, 1).toUpperCase(),
+                                        style: const TextStyle(fontSize: 4, color: Colors.white, fontWeight: FontWeight.bold),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                tx['user']['profile']['fullName'] ?? tx['user']['profile']['username'] ?? 'User',
+                                style: AppTypography.textTheme.labelSmall?.copyWith(
+                                  color: AppColors.secondaryDark,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ],
