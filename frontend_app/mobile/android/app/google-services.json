@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "362235720933",
+    "project_id": "cuanbuddy-5df51",
+    "storage_bucket": "cuanbuddy-5df51.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:362235720933:android:2974df1e1caa6c41d7100c",
+        "android_client_info": {
+          "package_name": "com.cuanbuddy.cuan_buddy_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkpCfh7roz_cisWakIrQalnzWuYw8ByE0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
