@@ -85,7 +85,7 @@ export class TransactionsService {
       JSON.stringify({
         type: newTransaction.type,
         amount: Number(newTransaction.amount),
-        currency: newTransaction.currency
+        currency: wallet?.currency ?? 'IDR'
       }),
       'transaction',
     );

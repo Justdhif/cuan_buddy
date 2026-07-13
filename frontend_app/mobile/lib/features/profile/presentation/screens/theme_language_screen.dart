@@ -107,12 +107,26 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
     }
   }
 
+  IconData _getThemeIcon(AppThemeMode mode) {
+    switch (mode) {
+      case AppThemeMode.system:
+        return Icons.brightness_auto_outlined;
+      case AppThemeMode.light:
+        return Icons.light_mode_outlined;
+      case AppThemeMode.dark:
+        return Icons.dark_mode_outlined;
+      case AppThemeMode.sunrise:
+        return Icons.wb_twilight_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final themeMode = ref.watch(themeModeProvider);
     final accentColor = ref.watch(accentColorProvider);
     final shapeMode = ref.watch(categoryIconShapeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -139,14 +153,40 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
             title: l10n.theme,
             subtitle: _getThemeLabel(themeMode, l10n),
             onTap: () => _showThemePicker(context),
+            trailing: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                ),
+              ),
+              child: Icon(
+                _getThemeIcon(themeMode),
+                size: 16,
+                color: accentColor,
+              ),
+            ),
           ),
-          _buildColorTile(
+          _buildListTile(
             context: context,
             icon: Icons.color_lens_outlined,
             title: l10n.accentColor,
             subtitle: _getAccentLabel(accentColor),
-            color: accentColor,
             onTap: () => _showAccentPicker(context),
+            trailing: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: accentColor,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                ),
+              ),
+            ),
           ),
           _buildListTile(
             context: context,
@@ -154,6 +194,22 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
             title: l10n.language,
             subtitle: _getLanguageLabel(ref),
             onTap: () => _showLanguagePicker(context),
+            trailing: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                ref.watch(languageProvider) == 'id' ? '🇮🇩' : '🇬🇧',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
           ),
           _buildListTile(
             context: context,
@@ -161,6 +217,17 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
             title: 'Icon Shape',
             subtitle: _getShapeLabel(shapeMode),
             onTap: () => _showShapePicker(context),
+            trailing: SizedBox(
+              width: 28,
+              height: 28,
+              child: CustomPaint(
+                painter: _ShapePreviewPainter(
+                  shapeBorder: shapeMode.toShapeBorder(28),
+                  color: accentColor,
+                  borderColor: isDark ? Colors.white24 : Colors.black12,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -173,6 +240,7 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Widget? trailing,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
@@ -210,70 +278,10 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildColorTile({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: isDark ? Colors.white60 : Colors.black54,
-              size: 24,
-            ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isDark ? Colors.white24 : Colors.black12,
-                ),
-              ),
-            ),
+            if (trailing != null) ...[
+              const SizedBox(width: 12),
+              trailing,
+            ],
           ],
         ),
       ),
@@ -630,19 +638,33 @@ class _ShapePickerSheet extends StatelessWidget {
 }
 // ─── Shape Preview Painter ─────────────────────────────────────────────────────
 class _ShapePreviewPainter extends CustomPainter {
-  _ShapePreviewPainter({required this.shapeBorder, required this.color});
+  _ShapePreviewPainter({
+    required this.shapeBorder,
+    required this.color,
+    this.borderColor,
+  });
 
   final ShapeBorder shapeBorder;
   final Color color;
+  final Color? borderColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
     final path = shapeBorder.getOuterPath(rect);
     canvas.drawPath(path, Paint()..color = color);
+    if (borderColor != null) {
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = borderColor!
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1,
+      );
+    }
   }
 
   @override
   bool shouldRepaint(_ShapePreviewPainter old) =>
-      old.color != color || old.shapeBorder != shapeBorder;
+      old.color != color || old.shapeBorder != shapeBorder || old.borderColor != borderColor;
 }

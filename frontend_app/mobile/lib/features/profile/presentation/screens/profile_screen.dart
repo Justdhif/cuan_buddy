@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/app_state_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
@@ -26,8 +26,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     _scrollController.dispose();
     super.dispose();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -68,14 +66,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         scrolledUnderElevation: 0,
         elevation: 0,
       ),
-      body: profileAsync.when(
-        data: (profile) => _buildProfileContent(context, ref, profile),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => AppErrorState(
-          message: l10n.failedToLoadProfile,
-          onRetry: () => ref.invalidate(profileProvider),
-        ),
-      ),
+      body: _buildProfileContent(context, ref, profileAsync),
     );
   }
 
@@ -138,123 +129,242 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileContent(
-      BuildContext context, WidgetRef ref, Map<String, dynamic> profile) {
+  Widget _buildProfileHeaderSkeleton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Shimmer.fromColors(
+      baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
+      highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 14,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 20,
+                        width: 180,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              height: 14,
+              width: 220,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeaderError(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 36,
+            backgroundColor: AppColors.danger.withValues(alpha: 0.1),
+            child: const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.danger,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.failedToLoadProfile,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDarkMode ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () => ref.invalidate(profileProvider),
+                  child: Text(
+                    'Tap to retry',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, Map<String, dynamic> profile) {
     final l10n = AppLocalizations.of(context);
     final name = profile['fullName'] as String? ?? l10n.you;
     final avatar = profile['avatar'] as String?;
-
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    final validAvatar = avatar;
     final username = profile['username'] as String?;
     final bio = profile['bio'] as String?;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GestureDetector(
+            onTap: () => context.push('/profile/edit', extra: profile),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Hero(
+                  tag: 'avatar',
+                  child: CircleAvatar(
+                    radius: 36,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                    child: avatar != null
+                        ? ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: avatar,
+                              width: 72,
+                              height: 72,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  const CircularProgressIndicator(strokeWidth: 3),
+                              errorWidget: (context, url, error) => Text(
+                                name[0].toUpperCase(),
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 28,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            name[0].toUpperCase(),
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 28,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (username != null && username.isNotEmpty)
+                        Text(
+                          '@$username',
+                          style: AppTypography.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      Text(
+                        name,
+                        style: AppTypography.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GestureDetector(
+            onTap: () => context.push('/profile/edit', extra: profile),
+            behavior: HitTestBehavior.opaque,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: (bio != null && bio.isNotEmpty)
+                  ? Text(
+                      bio,
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    )
+                  : Text(
+                      l10n.noBioFallback,
+                      style: AppTypography.textTheme.bodyMedium?.copyWith(
+                        color: isDarkMode
+                            ? AppColors.textSecondaryDark.withValues(alpha: 0.5)
+                            : AppColors.textSecondaryLight.withValues(alpha: 0.5),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileContent(
+      BuildContext context, WidgetRef ref, AsyncValue<Map<String, dynamic>> profileAsync) {
+    final l10n = AppLocalizations.of(context);
 
     return SingleChildScrollView(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(0, 24, 0, 120),
       child: Column(
         children: [
-          // Profile Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GestureDetector(
-              onTap: () => context.push('/profile/edit', extra: profile),
-              behavior: HitTestBehavior.opaque,
-              child: Row(
-                children: [
-                  Hero(
-                    tag: 'avatar',
-                    child: CircleAvatar(
-                      radius: 36,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                      child: validAvatar != null
-                          ? ClipOval(
-                              child: CachedNetworkImage(
-                                imageUrl: validAvatar,
-                                width: 72,
-                                height: 72,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                    const CircularProgressIndicator(strokeWidth: 3),
-                                errorWidget: (context, url, error) => Text(
-                                  name[0].toUpperCase(),
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 28,
-                                  ),
-                                ),
-                              ),
-                            )
-                          : Text(
-                              name[0].toUpperCase(),
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 28,
-                              ),
-                            ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (username != null && username.isNotEmpty)
-                          Text(
-                            '@$username',
-                            style: AppTypography.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        Text(
-                          name,
-                          style: AppTypography.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          profileAsync.when(
+            data: (profile) => _buildProfileHeader(context, profile),
+            loading: () => _buildProfileHeaderSkeleton(context),
+            error: (_, __) => _buildProfileHeaderError(context, ref),
           ),
-          const SizedBox(height: 16),
-          // Bio Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: GestureDetector(
-              onTap: () => context.push('/profile/edit', extra: profile),
-              behavior: HitTestBehavior.opaque,
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: (bio != null && bio.isNotEmpty)
-                    ? Text(
-                        bio,
-                        style: AppTypography.textTheme.bodyMedium?.copyWith(
-                          color: isDarkMode
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
-                      )
-                    : Text(
-                        l10n.noBioFallback,
-                        style: AppTypography.textTheme.bodyMedium?.copyWith(
-                          color: isDarkMode
-                              ? AppColors.textSecondaryDark.withValues(alpha: 0.5)
-                              : AppColors.textSecondaryLight.withValues(alpha: 0.5),
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-              ),
-            ),
-          ),
-          
           const SizedBox(height: 16),
           const Divider(height: 1, thickness: 0.5),
           const SizedBox(height: 8),

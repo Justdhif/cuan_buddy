@@ -8,6 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
+import '../../../shared/presentation/providers/shared_provider.dart';
 
 import '../../../../core/l10n/app_localizations_en.dart';
 import '../../../../core/l10n/app_localizations_id.dart';
@@ -74,6 +75,14 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               ref.read(profileProvider).valueOrNull?['currency'] as String? ??
                   AppConstants.defaultCurrency;
 
+          // Trigger optimistic/silent refresh of lobby data on friendship notifications
+          if (title == 'FRIEND_REQUEST' ||
+              title == 'FRIEND_REQUEST_ACCEPTED' ||
+              title == 'FRIEND_REQUEST_DECLINED' ||
+              title == 'ROOM_INVITATION') {
+            ref.read(sharedNotifierProvider.notifier).fetchLobbyData();
+          }
+
           Future<String> formatWithConversion(
               double amount, String currency) async {
             final txCurrencySymbol = AppConstants.getCurrencySymbol(currency);
@@ -109,7 +118,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               final amount = payload['amount'] is num
                   ? (payload['amount'] as num).toDouble()
                   : double.parse(payload['amount'].toString());
-              final currency = payload['currency'] as String;
+              final currency = (payload['currency'] as String?) ?? defaultCurrency;
 
               final typeStr = type == 'income'
                   ? l10n.incomeNotification
