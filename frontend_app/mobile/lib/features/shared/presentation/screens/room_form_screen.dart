@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -309,22 +308,16 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
   Widget _buildStep1Members(SharedState state, bool isDark, AppLocalizations l10n) {
     if (state.friends.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.people_outline_rounded,
-        title: l10n.noFriendsInvite,
-        action: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          onPressed: () {
-            Navigator.pop(context);
-            context.push('/shared/friends');
-          },
-          child: Text(
-            l10n.searchFriendsAction,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+      return SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            const SizedBox(height: 60),
+            AppEmptyState(
+              icon: Icons.people_outline_rounded,
+              title: l10n.noFriendsInvite,
+            ),
+          ],
         ),
       );
     }
@@ -336,12 +329,20 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     }).toList();
 
     if (filtered.isEmpty) {
-      return AppEmptyState(
-        icon: Icons.search_off_rounded,
-        title: Localizations.localeOf(context).languageCode == 'id' ? 'Tidak ada teman ditemukan' : 'No friends found',
-        subtitle: Localizations.localeOf(context).languageCode == 'id'
-            ? 'Coba cari dengan kata kunci lain'
-            : 'Try searching with another keyword',
+      return SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            const SizedBox(height: 60),
+            AppEmptyState(
+              icon: Icons.search_off_rounded,
+              title: Localizations.localeOf(context).languageCode == 'id' ? 'Tidak ada teman ditemukan' : 'No friends found',
+              subtitle: Localizations.localeOf(context).languageCode == 'id'
+                  ? 'Coba cari dengan kata kunci lain'
+                  : 'Try searching with another keyword',
+            ),
+          ],
+        ),
       );
     }
 
