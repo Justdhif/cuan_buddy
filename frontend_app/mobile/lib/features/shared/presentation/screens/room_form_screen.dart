@@ -285,6 +285,10 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
@@ -297,10 +301,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
               },
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.apps_rounded),
-            onPressed: () {},
-          ),
+          const SizedBox(width: 16),
         ],
       ),
     );
