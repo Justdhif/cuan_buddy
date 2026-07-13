@@ -169,11 +169,21 @@ class SharedNotifier extends StateNotifier<SharedState> {
     }
   }
 
-  Future<String?> createRoom(String name, List<String> memberUserIds) async {
+  Future<String?> createRoom(
+    String name,
+    List<String> memberUserIds, {
+    String emojiIcon = '📁',
+    String colorCode = '#6C63FF',
+    String? description,
+  }) async {
     try {
       final res = await _dioClient.dio.post('/rooms', data: {
         'name': name,
         'memberUserIds': memberUserIds,
+        'emojiIcon': emojiIcon,
+        'colorCode': colorCode,
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
       });
       if (res.statusCode == 201) {
         await fetchRooms(silent: true);

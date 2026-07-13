@@ -70,6 +70,9 @@ export const friendships = pgTable('friendships', {
 export const rooms = pgTable('rooms', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  emojiIcon: text('emoji_icon').default('📁'),
+  colorCode: text('color_code').default('#6C63FF'),
+  description: text('description'),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

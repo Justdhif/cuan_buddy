@@ -174,7 +174,45 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
                   await formatWithConversion(predicted, currency);
               message = l10n.budgetPredictionWarningDetail(monthYear, categoryName, predictedStr);
             } catch (_) {}
+          } else if (title == 'FRIEND_REQUEST') {
+            title = langCode == 'id' ? 'Permintaan Pertemanan' : 'Friend Request';
+            try {
+              final payload = jsonDecode(message);
+              final senderName = payload['senderName'] ?? payload['senderEmail'] ?? 'Seseorang';
+              message = langCode == 'id'
+                  ? '$senderName ingin berteman dengan Anda'
+                  : '$senderName wants to be friends with you';
+            } catch (_) {}
+          } else if (title == 'FRIEND_REQUEST_ACCEPTED') {
+            title = langCode == 'id' ? 'Pertemanan Diterima' : 'Friend Request Accepted';
+            try {
+              final payload = jsonDecode(message);
+              final receiverName = payload['receiverName'] ?? payload['receiverEmail'] ?? 'Seseorang';
+              message = langCode == 'id'
+                  ? '$receiverName menerima permintaan pertemanan Anda'
+                  : '$receiverName accepted your friend request';
+            } catch (_) {}
+          } else if (title == 'FRIEND_REQUEST_DECLINED') {
+            title = langCode == 'id' ? 'Pertemanan Ditolak' : 'Friend Request Declined';
+            try {
+              final payload = jsonDecode(message);
+              final receiverName = payload['receiverName'] ?? payload['receiverEmail'] ?? 'Seseorang';
+              message = langCode == 'id'
+                  ? '$receiverName menolak permintaan pertemanan Anda'
+                  : '$receiverName declined your friend request';
+            } catch (_) {}
+          } else if (title == 'ROOM_INVITATION') {
+            title = langCode == 'id' ? 'Undangan Ruang' : 'Room Invitation';
+            try {
+              final payload = jsonDecode(message);
+              final inviterName = payload['inviterName'] ?? 'Seseorang';
+              final roomName = payload['roomName'] ?? 'Ruang';
+              message = langCode == 'id'
+                  ? '$inviterName mengundang Anda ke ruang $roomName'
+                  : '$inviterName invited you to room $roomName';
+            } catch (_) {}
           }
+          
 
           NotificationService().showSocketNotification(
             id: Random().nextInt(100000),

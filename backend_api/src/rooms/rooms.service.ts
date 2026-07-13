@@ -11,8 +11,8 @@ export class RoomsService {
     private readonly notificationsService: NotificationsService
   ) {}
 
-  async createRoom(userId: string, body: { name: string; memberUserIds?: string[] }) {
-    const { name, memberUserIds = [] } = body;
+  async createRoom(userId: string, body: { name: string; memberUserIds?: string[]; emojiIcon?: string; colorCode?: string; description?: string }) {
+    const { name, memberUserIds = [], emojiIcon, colorCode, description } = body;
     if (!name || name.trim() === '') {
       throw new BadRequestException('Room name is required');
     }
@@ -20,6 +20,9 @@ export class RoomsService {
     // 1. Create Room
     const [newRoom] = await this.db.insert(rooms).values({
       name,
+      emojiIcon: emojiIcon || undefined,
+      colorCode: colorCode || undefined,
+      description: description || null,
       createdBy: userId,
     }).returning();
 
