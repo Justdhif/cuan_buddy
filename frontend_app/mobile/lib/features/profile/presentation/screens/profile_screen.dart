@@ -277,17 +277,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           _buildSettingsTile(
             context: context,
-            icon: Icons.category_outlined,
-            title: l10n.manageCategories,
-            subtitle: l10n.manageCategoriesDesc,
-            onTap: () => context.push('/manage-categories'),
-          ),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.account_balance_wallet_outlined,
-            title: 'Manage Wallets',
-            subtitle: 'Manage your payment methods and wallets',
-            onTap: () => context.push('/manage-wallets'),
+            icon: Icons.storage_outlined,
+            title: 'Manage Data',
+            subtitle: 'Manage transaction categories and wallets',
+            onTap: () => context.push('/profile/manage-data'),
           ),
           _buildSettingsTile(
             context: context,

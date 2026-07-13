@@ -23,6 +23,7 @@ import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
 import '../../features/profile/presentation/screens/widget_settings_screen.dart';
 import '../../features/profile/presentation/screens/theme_language_screen.dart';
+import '../../features/profile/presentation/screens/manage_data_screen.dart';
 import '../../features/profile/presentation/screens/account_screen.dart';
 import '../../features/profile/presentation/screens/change_phone_screen.dart';
 import '../../features/profile/presentation/screens/edit_name_screen.dart';
@@ -165,6 +166,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/profile/account',
         pageBuilder: (context, state) =>
             _buildPage(state, const AccountScreen()),
+      ),
+      GoRoute(
+        path: '/profile/manage-data',
+        pageBuilder: (context, state) =>
+            _buildPage(state, const ManageDataScreen()),
       ),
       GoRoute(
         path: '/profile/change-phone',
