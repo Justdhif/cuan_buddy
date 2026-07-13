@@ -10,6 +10,7 @@ import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
+import '../../../../core/widgets/app_state_widgets.dart';
 import '../providers/shared_provider.dart';
 
 class RoomFormScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
   // Step 1 states
   final List<String> _selectedFriendIds = [];
+  final _searchController = TextEditingController();
 
   // Step 2 states
   final _formKey = GlobalKey<FormState>();
@@ -51,6 +53,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _nameController.dispose();
     _descriptionController.dispose();
     _emojiController.dispose();
@@ -159,18 +162,29 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     final iconShape = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _currentStep == 1 ? l10n.inviteFriends : l10n.createRoom,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: _goBack,
-        ),
-      ),
+      appBar: _currentStep == 2
+          ? AppBar(
+              title: Text(
+                l10n.createRoom,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: _goBack,
+              ),
+            )
+          : null,
       body: _currentStep == 1
-          ? _buildStep1Members(state, isDark, l10n)
+          ? SafeArea(
+              child: Column(
+                children: [
+                  _buildCustomHeader(isDark, l10n),
+                  Expanded(
+                    child: _buildStep1Members(state, isDark, l10n),
+                  ),
+                ],
+              ),
+            )
           : _buildStep2Details(isDark, l10n, iconShape),
       floatingActionButton: _currentStep == 1
           ? FloatingActionButton(
@@ -242,38 +256,99 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     );
   }
 
+  Widget _buildCustomHeader(bool isDark, AppLocalizations l10n) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: _goBack,
+          ),
+          Expanded(
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: Localizations.localeOf(context).languageCode == 'id'
+                    ? 'Nama, nama pengguna, atau email'
+                    : 'Name, username, or email',
+                hintStyle: TextStyle(
+                  color: isDark ? AppColors.textHintDark : AppColors.textHintLight,
+                  fontSize: 15,
+                ),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              style: TextStyle(
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                fontSize: 15,
+              ),
+              onChanged: (val) {
+                setState(() {});
+              },
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.apps_rounded),
+            onPressed: () {},
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStep1Members(SharedState state, bool isDark, AppLocalizations l10n) {
     if (state.friends.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                l10n.noFriendsInvite,
-                style: TextStyle(color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  GoRouter.of(context).push('/shared/friends');
-                },
-                child: Text(l10n.searchFriendsAction),
-              )
-            ],
+      return AppEmptyState(
+        icon: Icons.people_outline_rounded,
+        title: l10n.noFriendsInvite,
+        action: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () {
+            Navigator.pop(context);
+            context.push('/shared/friends');
+          },
+          child: Text(
+            l10n.searchFriendsAction,
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
       );
     }
 
+    final query = _searchController.text.trim().toLowerCase();
+    final filtered = state.friends.where((friend) {
+      final name = (friend['fullName'] ?? friend['username'] ?? friend['email'] ?? '').toString().toLowerCase();
+      return name.contains(query);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return AppEmptyState(
+        icon: Icons.search_off_rounded,
+        title: Localizations.localeOf(context).languageCode == 'id' ? 'Tidak ada teman ditemukan' : 'No friends found',
+        subtitle: Localizations.localeOf(context).languageCode == 'id'
+            ? 'Coba cari dengan kata kunci lain'
+            : 'Try searching with another keyword',
+      );
+    }
+
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 88),
-      itemCount: state.friends.length,
+      padding: const EdgeInsets.only(top: 8, left: 16, right: 16, bottom: 88),
+      itemCount: filtered.length,
       itemBuilder: (context, index) {
-        final friend = state.friends[index];
+        final friend = filtered[index];
         final String friendId = friend['userId'];
         final String name = friend['fullName'] ?? friend['username'] ?? friend['email'];
         final bool isSelected = _selectedFriendIds.contains(friendId);
