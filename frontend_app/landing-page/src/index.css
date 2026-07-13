@@ -4,30 +4,56 @@
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   
+  /* Stripe Brand System */
   --color-primary: #533afd;
   --color-primary-deep: #4434d4;
   --color-primary-press: #2e2b8c;
   --color-primary-soft: #665efd;
   --color-primary-bg-subdued-hover: #b9b9f9;
   --color-brand-dark-900: #1c1e54;
-  
   --color-ink: #0d253d;
   --color-ink-secondary: #273951;
   --color-ink-mute: #64748d;
   --color-ink-mute-2: #61718a;
-  
-  --color-on-primary: #ffffff;
   --color-canvas: #ffffff;
   --color-canvas-soft: #f6f9fc;
   --color-canvas-cream: #f5e9d4;
-  
   --color-hairline: #e3e8ee;
   --color-hairline-input: #a8c3de;
-  
   --color-ruby: #ea2261;
   --color-magenta: #f96bee;
   --color-lemon: #9b6829;
-  --color-shadow-blue: #003770;
+  
+  /* Linear Brand System */
+  --color-linear-primary: #5e6ad2;
+  --color-linear-primary-hover: #828fff;
+  --color-linear-canvas: #010102;
+  --color-linear-surface-1: #0f1011;
+  --color-linear-surface-2: #141516;
+  --color-linear-surface-3: #18191a;
+  --color-linear-hairline: #23252a;
+  --color-linear-ink: #f7f8f8;
+  --color-linear-ink-muted: #d0d6e0;
+  --color-linear-ink-subtle: #8a8f98;
+  
+  /* Apple Brand System */
+  --color-apple-primary: #0066cc;
+  --color-apple-primary-on-dark: #2997ff;
+  --color-apple-ink: #1d1d1f;
+  --color-apple-canvas-parchment: #f5f5f7;
+  
+  /* Airbnb Brand System */
+  --color-airbnb-primary: #ff385c;
+  --color-airbnb-primary-active: #e00b41;
+  --color-airbnb-ink: #222222;
+  --color-airbnb-body: #3f3f3f;
+  --color-airbnb-muted: #6a6a6a;
+  --color-airbnb-hairline: #dddddd;
+  --color-airbnb-surface-soft: #f7f7f7;
+  
+  /* OpenAI / AI Accents */
+  --color-openai-green: #10a37f;
+  --color-openai-glow: rgba(16, 163, 127, 0.15);
 }
 
 @layer base {
@@ -108,7 +134,7 @@
   letter-spacing: -0.3px;
 }
 
-/* Premium Gradient Mesh Backdrop */
+/* Premium Gradient Mesh Backdrop (Stripe Style) */
 .gradient-mesh-backdrop {
   position: absolute;
   top: 0;
@@ -134,4 +160,14 @@
 
 .shadow-level-2 {
   box-shadow: rgba(0, 55, 112, 0.08) 0px 8px 24px, rgba(0, 55, 112, 0.04) 0px 2px 6px;
+}
+
+/* Airbnb shadow definition */
+.shadow-airbnb-float {
+  box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px, rgba(0, 0, 0, 0.1) 0 4px 8px;
+}
+
+/* Apple image shadow definition */
+.shadow-apple-product {
+  box-shadow: rgba(0, 0, 0, 0.22) 3px 5px 30px 0px;
 }
