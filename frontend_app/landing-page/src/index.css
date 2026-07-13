@@ -1,13 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #A78BFA;
-  --color-secondary: #6EE7B7;
-  --color-accent: #FDBA74;
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-border: var(--border);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  --color-primary: #533afd;
+  --color-primary-deep: #4434d4;
+  --color-primary-press: #2e2b8c;
+  --color-primary-soft: #665efd;
+  --color-primary-bg-subdued-hover: #b9b9f9;
+  --color-brand-dark-900: #1c1e54;
+  
+  --color-ink: #0d253d;
+  --color-ink-secondary: #273951;
+  --color-ink-mute: #64748d;
+  --color-ink-mute-2: #61718a;
+  
+  --color-on-primary: #ffffff;
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #f6f9fc;
+  --color-canvas-cream: #f5e9d4;
+  
+  --color-hairline: #e3e8ee;
+  --color-hairline-input: #a8c3de;
+  
+  --color-ruby: #ea2261;
+  --color-magenta: #f96bee;
+  --color-lemon: #9b6829;
+  --color-shadow-blue: #003770;
 }
 
 @layer base {
@@ -15,23 +35,103 @@
     scroll-behavior: smooth;
   }
 
-  :root {
-    --background: #FAFAFC;
-    --foreground: #111827;
-    --card: #FFFFFF;
-    --border: #E5E7EB;
-  }
-  
-  .dark {
-    --background: #0F172A;
-    --foreground: #F8FAFC;
-    --card: #1E293B;
-    --border: #334155;
-  }
-
   body {
-    background-color: var(--background);
-    color: var(--foreground);
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01" on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* Custom Design tokens */
+.font-display-xxl {
+  font-family: var(--font-sans);
+  font-size: 56px;
+  font-weight: 300;
+  line-height: 1.03;
+  letter-spacing: -1.4px;
+}
+
+.font-display-xl {
+  font-family: var(--font-sans);
+  font-size: 48px;
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: -0.96px;
+}
+
+.font-display-lg {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.64px;
+}
+
+.font-display-md {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1.12;
+  letter-spacing: -0.26px;
+}
+
+.font-heading-lg {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.22px;
+}
+
+.font-heading-md {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+}
+
+.font-body-tabular {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.4;
+  letter-spacing: -0.42px;
+  font-feature-settings: "tnum" on, "ss01" on;
+}
+
+.tnum {
+  font-feature-settings: "tnum" on, "ss01" on;
+  letter-spacing: -0.3px;
+}
+
+/* Premium Gradient Mesh Backdrop */
+.gradient-mesh-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60vh;
+  background-color: var(--color-canvas);
+  background-image: 
+    radial-gradient(circle at 10% 10%, rgba(245, 233, 212, 0.75) 0%, transparent 40%),
+    radial-gradient(circle at 45% -5%, rgba(155, 104, 41, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 90% 5%, rgba(249, 107, 238, 0.35) 0%, transparent 40%),
+    radial-gradient(circle at 75% 25%, rgba(83, 58, 253, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 25% 30%, rgba(234, 34, 97, 0.2) 0%, transparent 40%);
+  filter: blur(40px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Premium elevation box shadows */
+.shadow-level-1 {
+  box-shadow: rgba(0, 55, 112, 0.08) 0px 1px 3px;
+}
+
+.shadow-level-2 {
+  box-shadow: rgba(0, 55, 112, 0.08) 0px 8px 24px, rgba(0, 55, 112, 0.04) 0px 2px 6px;
 }

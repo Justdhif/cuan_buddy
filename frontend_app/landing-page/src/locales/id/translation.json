@@ -11,6 +11,17 @@
     "subtitle": "Teman finansial Anda yang ramah untuk melacak pengeluaran, mengelola anggaran, dan mencapai tujuan tabungan Anda.",
     "cta": "Unduh CuanBuddy"
   },
+  "trusted": {
+    "stats": "Dicintai oleh lebih dari 50.000+ Penghemat Cerdas",
+    "rating": "Dinilai 4.8★ di App Store & Play Store"
+  },
+  "problem_solution": {
+    "title": "Mengapa Mengelola Uang itu Sulit",
+    "problem_title": "Perjuangan Sehari-hari",
+    "problem_desc": "Lupa mencatat pengeluaran harian, menebak-nebak sisa anggaran bulanan, dan rumitnya mengelola keuangan bersama pasangan menggunakan spreadsheet yang berantakan.",
+    "solution_title": "Solusi CuanBuddy",
+    "solution_desc": "Satu platform terintegrasi dengan pencatatan instan, alarm anggaran real-time, asisten keuangan AI pribadi Anda, dan ruang bersama untuk mengelola uang bersama secara langsung."
+  },
   "features": {
     "title": "Fitur Utama",
     "f1_title": "Lacak Pengeluaran",
@@ -20,17 +31,54 @@
     "f3_title": "Penasihat AI",
     "f3_desc": "Dapatkan wawasan keuangan yang dipersonalisasi langsung dari Buddy."
   },
+  "ai_assistant": {
+    "title": "Kenalkan Buddy: Asisten Keuangan AI Anda",
+    "subtitle": "Dapatkan jawaban instan untuk pertanyaan keuangan apa pun dan terima saran proaktif untuk mengoptimalkan tabungan Anda.",
+    "chat_q1": "Berapa banyak yang saya habiskan untuk kopi bulan ini?",
+    "chat_a1": "Anda menghabiskan Rp 350.000 untuk kopi. Itu 15% lebih sedikit dari bulan lalu! Pertahankan!",
+    "chat_q2": "Bagaimana cara menabung untuk laptop baru lebih cepat?",
+    "chat_a2": "Berdasarkan anggaran Anda, jika Anda mengurangi makan di luar sebesar 20%, Anda dapat mencapai tujuan Rp 10.000.000 Anda 2 bulan lebih cepat!"
+  },
+  "screenshots": {
+    "title": "Jelajahi Tampilan Aplikasi",
+    "screen1": "Ringkasan Dasbor",
+    "screen2": "Pemantau Anggaran",
+    "screen3": "Pelacak Target Tabungan",
+    "screen4": "Ruang Keuangan Bersama"
+  },
   "how": {
     "title": "Cara Kerja",
     "step1": "Unduh & Daftar",
     "step2": "Tetapkan Tujuan",
     "step3": "Tumbuhkan Tabungan"
   },
+  "security": {
+    "title": "Keamanan Kelas Bank & Privasi Mutlak",
+    "subtitle": "Catatan keuangan Anda sepenuhnya milik Anda. Kami melindunginya dengan protokol kriptografi tingkat lanjut.",
+    "f1_title": "Enkripsi End-to-End",
+    "f1_desc": "Semua data yang dikirimkan dienkripsi menggunakan protokol SSL 256-bit.",
+    "f2_title": "Pencadangan Cloud Otomatis",
+    "f2_desc": "Jangan pernah kehilangan riwayat Anda. Cadangan aman dibuat secara otomatis.",
+    "f3_title": "Kebijakan Tanpa Pengetahuan",
+    "f3_desc": "Kami tidak pernah menjual atau membagikan data transaksi Anda kepada pihak ketiga."
+  },
+  "shared_finance": {
+    "title": "Keuangan Bersama untuk Pasangan & Teman",
+    "subtitle": "Kolaborasi anggaran, kelola tagihan bersama, dan bangun tabungan bersama secara real-time.",
+    "bullet1": "Undang teman atau pasangan ke ruang Anda secara instan",
+    "bullet2": "Notifikasi socket real-time untuk undangan & respon",
+    "bullet3": "Log transaksi terpadu dan meteran anggaran bersama",
+    "bullet4": "Komentar interaktif dan reaksi emoji menarik"
+  },
   "testi": {
     "title": "Kata Pengguna Kami"
   },
   "faq": {
     "title": "Pertanyaan Umum"
+  },
+  "download_cta": {
+    "title": "Mulai Perjalanan Finansial Anda Hari Ini",
+    "subtitle": "Unduh CuanBuddy sekarang dan ambil kendali penuh atas uang Anda. Gratis di Android dan iOS."
   },
   "footer": {
     "rights": "Hak cipta dilindungi."

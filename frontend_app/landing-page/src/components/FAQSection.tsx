@@ -14,32 +14,46 @@ export default function FAQSection() {
   ];
 
   return (
-    <section id="faq" className="py-24 bg-card border-y border-border/50">
+    <section id="faq" className="py-24 bg-canvas dark:bg-ink transition-colors duration-300">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-4">{t('faq.title')}</h2>
-          <div className="w-24 h-1.5 bg-primary mx-auto rounded-full"></div>
+          <h2 className="font-display-xl text-ink dark:text-canvas mb-4 text-3xl sm:text-4xl">{t('faq.title')}</h2>
+          <div className="w-16 h-1 bg-primary dark:bg-primary-soft mx-auto rounded-full"></div>
         </div>
 
         <div className="space-y-4">
-          {faqs.map((faq, i) => (
-            <div key={i} className={`border border-border rounded-2xl overflow-hidden bg-background transition-all duration-300 ${openIndex === i ? 'shadow-md border-primary/30' : ''}`}>
-              <button 
-                className="w-full px-6 py-5 flex justify-between items-center text-left font-bold text-lg hover:bg-card transition-colors"
-                onClick={() => setOpenIndex(openIndex === i ? null : i)}
-              >
-                {faq.q}
-                <div className={`p-1 rounded-full ${openIndex === i ? 'bg-primary/10 text-primary' : 'text-foreground/50'}`}>
-                  <ChevronDown size={20} className={`transform transition-transform duration-300 ${openIndex === i ? 'rotate-180' : ''}`} />
-                </div>
-              </button>
+          {faqs.map((faq, i) => {
+            const isOpen = openIndex === i;
+            return (
               <div 
-                className={`px-6 text-foreground/70 font-medium overflow-hidden transition-all duration-300 ease-in-out ${openIndex === i ? 'max-h-40 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                key={i} 
+                className={`border rounded-[12px] overflow-hidden bg-canvas dark:bg-brand-dark-900 transition-all duration-350 ${
+                  isOpen 
+                    ? 'border-primary/30 dark:border-primary-soft/30 shadow-level-1' 
+                    : 'border-hairline dark:border-hairline/10'
+                }`}
               >
-                {faq.a}
+                <button 
+                  className="w-full px-6 py-5 flex justify-between items-center text-left font-medium text-ink dark:text-canvas text-base hover:bg-canvas-soft dark:hover:bg-brand-dark-900/50 transition-colors"
+                  onClick={() => setOpenIndex(isOpen ? null : i)}
+                >
+                  {faq.q}
+                  <div className={`p-1.5 rounded-full transition-colors duration-250 ${
+                    isOpen ? 'bg-primary/10 dark:bg-primary-soft/10 text-primary dark:text-primary-soft' : 'text-ink-mute/50'
+                  }`}>
+                    <ChevronDown size={16} className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                <div 
+                  className={`px-6 font-light text-ink-secondary dark:text-canvas-soft/80 text-[15px] overflow-hidden transition-all duration-300 ease-in-out ${
+                    isOpen ? 'max-h-40 pb-5 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <p className="leading-relaxed">{faq.a}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
