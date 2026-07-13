@@ -595,111 +595,105 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       const SizedBox(height: 24),
 
                       // ── Wallet Selector ──────────────────────────────────────
-                      walletsState.when(
-                        data: (wallets) {
-                          if (wallets.isEmpty) {
-                            return Row(
-                              children: [
-                                const Expanded(child: Text('No wallets found. Please create one.')),
-                                IconButton(
-                                  icon: const Icon(Icons.add_circle_outline),
-                                  onPressed: () => context.push('/manage-wallets'),
-                                ),
-                              ],
-                            );
-                          }
-                          return SizedBox(
-                            height: 36,
-                            child: ListView.separated(
-                              padding: EdgeInsets.zero,
-                              scrollDirection: Axis.horizontal,
-                              clipBehavior: Clip.none,
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: wallets.length + 1,
-                              separatorBuilder: (context, index) => const SizedBox(width: 8),
-                              itemBuilder: (context, index) {
-                                if (index == wallets.length) {
-                                  // Last item: Button plus
-                                  return GestureDetector(
-                                    onTap: () => context.push('/manage-wallets'),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.add, size: 16),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                
-                                final wallet = wallets[index];
-                                final walletId = wallet['id'] as String;
-                                final walletName = wallet['name'] as String;
-                                final walletCurrency = wallet['currency'] as String;
-                                final walletEmoji = wallet['emojiIcon'] as String? ?? '💼';
-                                final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
-                                final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
-                                final isSelected = _selectedWalletId == walletId;
+                      Builder(builder: (context) {
+                        final wallets = walletsState.valueOrNull ?? [];
+                        final isLoading = walletsState.isLoading;
 
+                        return SizedBox(
+                          height: 36,
+                          child: ListView.separated(
+                            padding: EdgeInsets.zero,
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: 1 + (isLoading ? 3 : wallets.length),
+                            separatorBuilder: (context, index) => const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                // 1. Button plus (First item on the left)
                                 return GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _selectedWalletId = walletId;
-                                      if (_selectedSavingsGoalId != null) {
-                                        final currentGoal = savingsState.goals.cast<Map<String, dynamic>?>().firstWhere(
-                                          (g) => g?['id'] == _selectedSavingsGoalId,
-                                          orElse: () => null,
-                                        );
-                                        if (currentGoal != null) {
-                                          final goalWalletId = currentGoal['walletId'] as String? ?? currentGoal['wallet']?['id'] as String?;
-                                          if (goalWalletId != null && goalWalletId != walletId) {
-                                            _selectedSavingsGoalId = null;
-                                          }
-                                        }
-                                      }
-                                    });
-                                  },
+                                  onTap: () => context.push('/manage-wallets'),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
+                                    width: 36,
                                     height: 36,
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
-                                      color: isSelected ? walletColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                      border: Border.all(
-                                        color: isSelected ? walletColor : Colors.transparent,
-                                        width: 1.5,
-                                      ),
+                                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(walletEmoji, style: const TextStyle(fontSize: 14)),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          '$walletName ($walletCurrency)',
-                                          style: AppTypography.textTheme.labelMedium?.copyWith(
-                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                            color: isSelected ? (isDark ? Colors.white : walletColor) : (isDark ? Colors.white70 : Colors.black87),
-                                          ),
-                                        ),
-                                      ],
+                                    child: const Center(
+                                      child: Icon(Icons.add, size: 16),
                                     ),
                                   ),
                                 );
-                              },
-                            ),
-                          );
-                        },
-                        loading: () => const CircularProgressIndicator(),
-                        error: (_, __) => const Text('Failed to load wallets'),
-                      ),
+                              }
+
+                              // 2. Data wallet or Skeleton loader
+                              if (isLoading) {
+                                return _SkeletonChip(isDark: isDark);
+                              }
+
+                              final walletIndex = index - 1;
+                              final wallet = wallets[walletIndex];
+                              final walletId = wallet['id'] as String;
+                              final walletName = wallet['name'] as String;
+                              final walletCurrency = wallet['currency'] as String;
+                              final walletEmoji = wallet['emojiIcon'] as String? ?? '💼';
+                              final walletColorHex = wallet['colorCode'] as String? ?? '#6C63FF';
+                              final walletColor = AppColors.colorFromHex(walletColorHex, fallback: AppColors.primary);
+                              final isSelected = _selectedWalletId == walletId;
+
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedWalletId = walletId;
+                                    if (_selectedSavingsGoalId != null) {
+                                      final currentGoal = savingsState.goals.cast<Map<String, dynamic>?>().firstWhere(
+                                        (g) => g?['id'] == _selectedSavingsGoalId,
+                                        orElse: () => null,
+                                      );
+                                      if (currentGoal != null) {
+                                        final goalWalletId = currentGoal['walletId'] as String? ?? currentGoal['wallet']?['id'] as String?;
+                                        if (goalWalletId != null && goalWalletId != walletId) {
+                                          _selectedSavingsGoalId = null;
+                                        }
+                                      }
+                                    }
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  height: 36,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? walletColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                    border: Border.all(
+                                      color: isSelected ? walletColor : Colors.transparent,
+                                      width: 1.5,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(walletEmoji, style: const TextStyle(fontSize: 14)),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '$walletName ($walletCurrency)',
+                                        style: AppTypography.textTheme.labelMedium?.copyWith(
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: isSelected ? (isDark ? Colors.white : walletColor) : (isDark ? Colors.white70 : Colors.black87),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      }),
                       const SizedBox(height: 12),
 
                       // ── Savings Goals ──────────────────────────────────────
@@ -794,7 +788,24 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               separatorBuilder: (context, index) => const SizedBox(width: 8),
                               itemBuilder: (context, index) {
                                 if (index == 0) {
-                                  // 1. No saving goals
+                                  // 1. Button plus (First item on the left)
+                                  return GestureDetector(
+                                    onTap: () => context.push('/savings/form'),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 36,
+                                      height: 36,
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(Icons.add, size: 16),
+                                      ),
+                                    ),
+                                  );
+                                } else if (index == 1) {
+                                  // 2. No saving goals (Tidak ada)
                                   final isSelected = _selectedSavingsGoalId == null;
                                   return GestureDetector(
                                     onTap: () => setState(() => _selectedSavingsGoalId = null),
@@ -821,30 +832,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       ),
                                     ),
                                   );
-                                } else if (index == 1 + (savingsState.isLoading ? 3 : goals.length)) {
-                                  // 3. Button plus (Last item)
-                                  return GestureDetector(
-                                    onTap: () => context.push('/savings/form'),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: 36,
-                                      height: 36,
-                                      decoration: BoxDecoration(
-                                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.add, size: 16),
-                                      ),
-                                    ),
-                                  );
                                 } else {
-                                  // 2. Data saving
-                                  final goalIndex = index - 1;
+                                  // 3. Data saving or Skeleton loader
                                   if (savingsState.isLoading) {
                                     return _SkeletonChip(isDark: isDark);
                                   }
 
+                                  final goalIndex = index - 2;
                                   final goal = goals[goalIndex];
                                   final goalId = goal['id'] as String;
                                   final goalName = goal['name'] as String? ?? '';
@@ -890,7 +884,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             ),
                           );
                         }),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 12),
                       ],
 
                       // ── Budgets (standalone only) ──────────────────────────
@@ -900,18 +894,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           return (b as Map)['type'] == 'standalone';
                         }).toList();
 
-                        if (standaloneBudgets.isEmpty && !budgetsState.isLoading) {
-                          return const SizedBox.shrink();
-                        }
-
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Budget',
-                              style: AppTypography.textTheme.titleSmall,
-                            ),
-                            const SizedBox(height: 8),
                             SizedBox(
                               height: 36,
                               child: ListView.separated(
@@ -919,10 +904,28 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 scrollDirection: Axis.horizontal,
                                 clipBehavior: Clip.none,
                                 physics: const BouncingScrollPhysics(),
-                                itemCount: 1 + (budgetsState.isLoading ? 3 : standaloneBudgets.length),
+                                itemCount: 2 + (budgetsState.isLoading ? 3 : standaloneBudgets.length),
                                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   if (index == 0) {
+                                    // 1. Button plus (First item on the left)
+                                    return GestureDetector(
+                                      onTap: () => context.push('/budgets/form'),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        width: 36,
+                                        height: 36,
+                                        decoration: BoxDecoration(
+                                          color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Center(
+                                          child: Icon(Icons.add, size: 16),
+                                        ),
+                                      ),
+                                    );
+                                  } else if (index == 1) {
+                                    // 2. Fallback: No budget (Tanpa Anggaran / No Budget)
                                     final isSelected = _selectedBudgetId == null;
                                     return GestureDetector(
                                       onTap: () => setState(() => _selectedBudgetId = null),
@@ -940,7 +943,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                         ),
                                         child: Center(
                                           child: Text(
-                                            'Tidak ada',
+                                            l10n.noBudget,
                                             style: AppTypography.textTheme.labelMedium?.copyWith(
                                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                               color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
@@ -949,52 +952,53 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                         ),
                                       ),
                                     );
-                                  }
+                                  } else {
+                                    // 3. Data budget or Skeleton loader
+                                    if (budgetsState.isLoading) {
+                                      return _SkeletonChip(isDark: isDark);
+                                    }
 
-                                  final budgetIndex = index - 1;
-                                  if (budgetsState.isLoading) {
-                                    return _SkeletonChip(isDark: isDark);
-                                  }
+                                    final budgetIndex = index - 2;
+                                    final budget = standaloneBudgets[budgetIndex] as Map;
+                                    final budgetId = budget['id'] as String;
+                                    final budgetName = budget['name'] as String? ?? 'Budget';
+                                    final budgetEmoji = budget['emojiIcon'] as String? ?? '💰';
+                                    final budgetColorHex = budget['colorCode'] as String? ?? '#6C63FF';
+                                    final budgetColor = AppColors.colorFromHex(budgetColorHex, fallback: AppColors.primary);
+                                    final isSelected = _selectedBudgetId == budgetId;
 
-                                  final budget = standaloneBudgets[budgetIndex] as Map;
-                                  final budgetId = budget['id'] as String;
-                                  final budgetName = budget['name'] as String? ?? 'Budget';
-                                  final budgetEmoji = budget['emojiIcon'] as String? ?? '💰';
-                                  final budgetColorHex = budget['colorCode'] as String? ?? '#6C63FF';
-                                  final budgetColor = AppColors.colorFromHex(budgetColorHex, fallback: AppColors.primary);
-                                  final isSelected = _selectedBudgetId == budgetId;
-
-                                  return GestureDetector(
-                                    onTap: () => setState(() => _selectedBudgetId = isSelected ? null : budgetId),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      height: 36,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? budgetColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                                        border: Border.all(
-                                          color: isSelected ? budgetColor : Colors.transparent,
-                                          width: 1.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(budgetEmoji, style: const TextStyle(fontSize: 14)),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            budgetName,
-                                            style: AppTypography.textTheme.labelMedium?.copyWith(
-                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              color: isSelected ? (isDark ? Colors.white : budgetColor) : (isDark ? Colors.white70 : Colors.black87),
-                                            ),
+                                    return GestureDetector(
+                                      onTap: () => setState(() => _selectedBudgetId = isSelected ? null : budgetId),
+                                      child: AnimatedContainer(
+                                        duration: const Duration(milliseconds: 200),
+                                        height: 36,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? budgetColor.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                          border: Border.all(
+                                            color: isSelected ? budgetColor : Colors.transparent,
+                                            width: 1.5,
                                           ),
-                                        ],
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(budgetEmoji, style: const TextStyle(fontSize: 14)),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              budgetName,
+                                              style: AppTypography.textTheme.labelMedium?.copyWith(
+                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                color: isSelected ? (isDark ? Colors.white : budgetColor) : (isDark ? Colors.white70 : Colors.black87),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  }
                                 },
                               ),
                             ),

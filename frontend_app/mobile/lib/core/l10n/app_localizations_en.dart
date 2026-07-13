@@ -330,6 +330,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get budget => 'Budget';
   @override
+  String get noBudget => 'No Budget';
+  @override
   String get noBudgetsSet => 'No Budgets Set';
   @override
   String get noBudgetsSetSubtitle =>

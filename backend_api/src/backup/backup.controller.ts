@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Post, Body, Param, UseGuards, Request, Response, UnauthorizedException, UseInterceptors, UploadedFile, Query } from '@nestjs/common';
+import { Controller, Get, Put, Post, Body, UseGuards, Request, Response, UnauthorizedException, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -33,33 +33,15 @@ export class BackupController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('export')
-  @ApiOperation({ summary: 'Export selected data as ZIP' })
-  exportAllAsZip(@Request() req: any, @Query('tables') tables: string, @Response() res: any) {
-    const tableList = tables ? tables.split(',') : [];
-    return this.backupService.exportAllAsZip(req.user.userId, tableList, res);
-  }
-
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
-  @Get('export/:table')
-  @ApiOperation({ summary: 'Export single table as Excel' })
-  exportSingleTable(@Request() req: any, @Param('table') table: string, @Response() res: any) {
-    return this.backupService.exportSingleTable(req.user.userId, table, res);
-  }
-
-  @Get('template/:table')
-  @ApiOperation({ summary: 'Download empty Excel template' })
-  downloadTemplate(@Param('table') table: string, @Response() res: any) {
-    if (table === 'all') {
-      return this.backupService.downloadAllTemplatesAsZip(res);
-    }
-    return this.backupService.downloadTemplate(table, res);
+  @ApiOperation({ summary: 'Export database as SQL file' })
+  exportDatabaseSql(@Request() req: any, @Response() res: any) {
+    return this.backupService.exportDatabaseSql(req.user.userId, res);
   }
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('import')
-  @ApiOperation({ summary: 'Import data from ZIP or Excel' })
+  @ApiOperation({ summary: 'Import and Restore data from SQL database file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

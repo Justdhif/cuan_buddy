@@ -1,11 +1,15 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and, or, ilike, ne } from 'drizzle-orm';
+import { eq, and, or, ilike, ne, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { friendships, users, userProfiles } from '../database/schema';
+import { friendships, users, userProfiles, notifications } from '../database/schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FriendshipsService {
-  constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
+  constructor(
+    @Inject(DATABASE_CONNECTION) private readonly db: any,
+    private readonly notificationsService: NotificationsService
+  ) {}
 
   async sendRequest(senderId: string, usernameOrEmail: string) {
     // 1. Find user by email or username
@@ -36,6 +40,15 @@ export class FriendshipsService {
       throw new BadRequestException('Cannot send friend request to yourself');
     }
 
+    // Get sender info for notification
+    const senderProfile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, senderId),
+    });
+    const senderUser = await this.db.query.users.findFirst({
+      where: eq(users.id, senderId),
+    });
+    const senderName = senderProfile?.fullName || senderProfile?.username || senderUser?.email || 'Someone';
+
     // 2. Check if friendship already exists
     const existing = await this.db.query.friendships.findFirst({
       where: or(
@@ -65,6 +78,19 @@ export class FriendshipsService {
         })
         .where(eq(friendships.id, existing.id))
         .returning();
+
+      void this.notificationsService.createAndBroadcast(
+        receiverId,
+        'FRIEND_REQUEST',
+        JSON.stringify({
+          friendshipId: updated.id,
+          senderId,
+          senderName,
+          senderEmail: senderUser?.email,
+        }),
+        'friend_request'
+      );
+
       return { message: 'Friend request sent successfully', friendship: updated };
     }
 
@@ -74,6 +100,18 @@ export class FriendshipsService {
       receiverId,
       status: 'pending',
     }).returning();
+
+    void this.notificationsService.createAndBroadcast(
+      receiverId,
+      'FRIEND_REQUEST',
+      JSON.stringify({
+        friendshipId: newFriendship.id,
+        senderId,
+        senderName,
+        senderEmail: senderUser?.email,
+      }),
+      'friend_request'
+    );
 
     return { message: 'Friend request sent successfully', friendship: newFriendship };
   }
@@ -99,6 +137,45 @@ export class FriendshipsService {
       })
       .where(eq(friendships.id, friendshipId))
       .returning();
+
+    // Send notification response back to the sender
+    const receiverProfile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, receiverId),
+    });
+    const receiverUser = await this.db.query.users.findFirst({
+      where: eq(users.id, receiverId),
+    });
+    const receiverName = receiverProfile?.fullName || receiverProfile?.username || receiverUser?.email || 'Someone';
+
+    void this.notificationsService.createAndBroadcast(
+      friendshipRecord.senderId,
+      status === 'accepted' ? 'FRIEND_REQUEST_ACCEPTED' : 'FRIEND_REQUEST_DECLINED',
+      JSON.stringify({
+        friendshipId: updated.id,
+        receiverId,
+        receiverName,
+        receiverEmail: receiverUser?.email,
+      }),
+      status === 'accepted' ? 'friend_accepted' : 'friend_declined'
+    );
+
+    // Mark original friend request notification received by receiver (B) as read
+    try {
+      const notifList = await this.db.query.notifications.findMany({
+        where: and(
+          eq(notifications.userId, receiverId),
+          eq(notifications.type, 'friend_request'),
+          sql`message LIKE ${'%' + friendshipId + '%'}`
+        )
+      });
+      for (const n of notifList) {
+        await this.db.update(notifications)
+          .set({ isRead: true })
+          .where(eq(notifications.id, n.id));
+      }
+    } catch (e) {
+      console.error('Failed to mark original request notification as read:', e);
+    }
 
     return {
       message: `Friend request ${status === 'accepted' ? 'accepted' : 'declined'} successfully`,

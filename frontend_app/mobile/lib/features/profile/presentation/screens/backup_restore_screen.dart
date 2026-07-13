@@ -37,8 +37,7 @@ class BackupRestoreScreen extends ConsumerWidget {
           // ── Backup ──────────────────────────────────────────────────
           _buildTile(
             context: context,
-            icon: Icons.backup_rounded,
-            iconColor: AppColors.primary,
+            icon: Icons.cloud_upload_outlined,
             title: l10n.backupNow,
             subtitle: l10n.backupHubBackupDesc,
             onTap: () => AppBottomSheet.show(
@@ -50,17 +49,16 @@ class BackupRestoreScreen extends ConsumerWidget {
           // ── Restore ─────────────────────────────────────────────────
           _buildTile(
             context: context,
-            icon: Icons.restore_rounded,
-            iconColor: AppColors.secondary,
+            icon: Icons.history_outlined,
             title: l10n.restore,
             subtitle: l10n.backupHubRestoreDesc,
             onTap: () => AppBottomSheet.show(
               context: context,
               isScrollControlled: true,
               builder: (_) => RestoreSheet(
-                onRestore: () {
+                onRestore: (filePath) {
                   Navigator.pop(context);
-                  ref.read(backupWorkerProvider).runRestoreProcess();
+                  ref.read(backupWorkerProvider).runRestoreProcess(filePath: filePath);
                 },
                 onDownloadTemplate: (table) {
                   Navigator.pop(context);
@@ -72,8 +70,7 @@ class BackupRestoreScreen extends ConsumerWidget {
           // ── Export (Coming Soon) ─────────────────────────────────────
           _buildTile(
             context: context,
-            icon: Icons.upload_file_rounded,
-            iconColor: AppColors.accent,
+            icon: Icons.upload_file_outlined,
             title: l10n.exportData,
             subtitle: l10n.backupHubExportDesc,
             isComingSoon: true,
@@ -82,8 +79,7 @@ class BackupRestoreScreen extends ConsumerWidget {
           // ── Import (Coming Soon) ─────────────────────────────────────
           _buildTile(
             context: context,
-            icon: Icons.download_for_offline_rounded,
-            iconColor: const Color(0xFF818CF8),
+            icon: Icons.download_outlined,
             title: l10n.importData,
             subtitle: l10n.backupHubImportDesc,
             isComingSoon: true,
@@ -97,7 +93,6 @@ class BackupRestoreScreen extends ConsumerWidget {
   Widget _buildTile({
     required BuildContext context,
     required IconData icon,
-    required Color iconColor,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
@@ -112,15 +107,12 @@ class BackupRestoreScreen extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 22),
+              Icon(
+                icon,
+                color: isDark ? Colors.white60 : Colors.black54,
+                size: 24,
               ),
-              const SizedBox(width: 20),
+              const SizedBox(width: 24),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,11 +149,11 @@ class BackupRestoreScreen extends ConsumerWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         color: isDark
                             ? AppColors.textSecondaryDark
                             : AppColors.textSecondaryLight,
@@ -170,11 +162,6 @@ class BackupRestoreScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              if (!isComingSoon)
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: isDark ? Colors.white30 : Colors.black26,
-                ),
             ],
           ),
         ),

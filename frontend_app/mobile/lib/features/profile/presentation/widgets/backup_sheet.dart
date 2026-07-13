@@ -72,6 +72,7 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
   void _toggleBackup(bool value) {
     setState(() => _backupEnabled = value);
     value ? _freqController.forward() : _freqController.reverse();
+    _saveSettings();
   }
 
   Future<void> _saveSettings() async {
@@ -111,7 +112,7 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
       final newFile = BackupFile(
         id: now.millisecondsSinceEpoch.toString(),
         label: 'justNow',
-        filename: 'cuanbuddy_backup_$dateStr.zip',
+        filename: 'cuanbuddy_backup_$dateStr.sql',
         createdAt: now,
       );
       ref.read(backupFilesProvider.notifier).addBackup(newFile);
@@ -229,40 +230,20 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Header ─────────────────────────────────────────────
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(Icons.backup_rounded,
-                        color: AppColors.primary, size: 22),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.backupNow,
-                          style: AppTypography.textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        Text(
-                          l10n.backupSheetDesc,
-                          style: AppTypography.textTheme.bodySmall?.copyWith(
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.backupNow,
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.backupSheetDesc,
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -294,22 +275,17 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
                             desc: _intervalDesc(item['value']!),
                             isSelected: _interval == item['value'],
                             isDark: isDark,
-                            onTap: () =>
-                                setState(() => _interval = item['value']!),
+                            onTap: () {
+                              setState(() => _interval = item['value']!);
+                              _saveSettings();
+                            },
                           )),
                       const SizedBox(height: 8),
                     ],
                   ),
                 ),
               ),
-
-              // ── Save Settings ───────────────────────────────────────
-              AppButton(
-                label: l10n.saveChanges,
-                onPressed: _isSaving ? null : _saveSettings,
-                isLoading: _isSaving,
-              ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
 
               // ── Backup File List Header ─────────────────────────────
               Row(
@@ -623,22 +599,23 @@ class _BackupFileItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    file.filename,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
                     label,
-                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isFirst
                           ? AppColors.primary
-                          : (isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight),
+                          : (isDark ? Colors.white : Colors.black87),
                     ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    file.filename,
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

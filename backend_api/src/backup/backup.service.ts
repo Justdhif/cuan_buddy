@@ -1,9 +1,8 @@
-import { Injectable, Inject, NotFoundException, BadRequestException, StreamableFile } from '@nestjs/common';
-import { eq, and, lte } from 'drizzle-orm';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { eq, and, lte, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { users, backupSettings, transactions, budgets, savingsGoals, categories } from '../database/schema';
+import { backupSettings, transactions, budgets, savingsGoals, categories, wallets } from '../database/schema';
 import { NotificationsService } from '../notifications/notifications.service';
-import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
 
 @Injectable()
@@ -38,7 +37,6 @@ export class BackupService {
     if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
     if (interval !== undefined) updateData.interval = interval;
 
-    // Calculate nextBackupAt if enabling
     if (updateData.isEnabled) {
       const currentInterval = interval || settings.interval;
       updateData.nextBackupAt = this.calculateNextBackupDate(currentInterval);
@@ -63,280 +61,128 @@ export class BackupService {
   }
 
   // ─────────────────────────────────────────────
-  // EXPORT (Highly Optimized Streaming)
+  // EXPORT (SQL Database Dump)
   // ─────────────────────────────────────────────
-  
-  // Creates an Excel workbook in memory for a specific table
-    private async createExcelWorkbook(userId: string, tableName: string): Promise<ExcelJS.Workbook> {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(tableName);
+  async exportDatabaseSql(userId: string, res: Response) {
+    // Fetch all user records
+    const userCategories = await this.db.query.categories.findMany({ where: eq(categories.userId, userId) });
+    const userWallets = await this.db.query.wallets.findMany({ where: eq(wallets.userId, userId) });
+    const userSavingsGoals = await this.db.query.savingsGoals.findMany({ where: eq(savingsGoals.userId, userId) });
+    const userBudgets = await this.db.query.budgets.findMany({ where: eq(budgets.userId, userId) });
+    const userTransactions = await this.db.query.transactions.findMany({ where: eq(transactions.userId, userId) });
 
-    // Helper to map categories
-    const categoriesList = await this.db.query.categories.findMany();
-    const categoriesMap = new Map();
-    for (const c of categoriesList) categoriesMap.set(c.id, c);
+    let sqlDump = `-- CuanBuddy Database Backup SQL Dump\n`;
+    sqlDump += `-- User: ${userId}\n`;
+    sqlDump += `-- Date: ${new Date().toISOString()}\n\n`;
 
-    // Fetch data based on table (excluding notifications as requested)
-    if (tableName === 'transactions') {
-      const data = await this.db.query.transactions.findMany({ where: eq(transactions.userId, userId) });
-      const mappedData = data.map((t: any) => {
-        const cat = categoriesMap.get(t.categoryId);
-        return {
-          ...t,
-          categoryName: cat ? cat.name : '',
-          categoryEmoji: cat ? cat.emojiIcon : ''
-        };
-      });
-      worksheet.columns = [
-        { header: 'ID', key: 'id' }, { header: 'Title', key: 'title' }, { header: 'Type', key: 'type' }, 
-        { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' },
-        { header: 'Note', key: 'note' }, 
-        { header: 'Category Name', key: 'categoryName' },
-        { header: 'Category Emoji', key: 'categoryEmoji' }
-      ];
-      worksheet.addRows(mappedData);
-    } else if (tableName === 'budgets') {
-      const data = await this.db.query.budgets.findMany({ where: eq(budgets.userId, userId) });
-      const mappedData = data.map((b: any) => {
-        const cat = categoriesMap.get(b.categoryId);
-        return {
-          ...b,
-          categoryName: cat ? cat.name : '',
-          categoryEmoji: cat ? cat.emojiIcon : ''
-        };
-      });
-      worksheet.columns = [
-        { header: 'ID', key: 'id' }, 
-        { header: 'Category Name', key: 'categoryName' },
-        { header: 'Category Emoji', key: 'categoryEmoji' },
-        { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }
-      ];
-      worksheet.addRows(mappedData);
-    } else if (tableName === 'savings_goals') {
-      const data = await this.db.query.savingsGoals.findMany({ where: eq(savingsGoals.userId, userId) });
-      worksheet.columns = [
-        { header: 'ID', key: 'id' }, { header: 'Name', key: 'name' }, 
-        { header: 'Target Amount', key: 'targetAmount' }, { header: 'Current Amount', key: 'currentAmount' },
-        { header: 'Target Date', key: 'targetDate' }, { header: 'Status', key: 'status' }
-      ];
-      worksheet.addRows(data);
-    } else if (tableName === 'categories') {
-      // Categories are global or user-specific depending on future design, fetching all for now
-      worksheet.columns = [
-        { header: 'ID', key: 'id' }, { header: 'Name', key: 'name' }, 
-        { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }
-      ];
-      worksheet.addRows(categoriesList);
+    const formatVal = (val: any) => {
+      if (val === null || val === undefined) return 'NULL';
+      if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+      if (val instanceof Date) return `'${val.toISOString()}'`;
+      if (typeof val === 'boolean') return val ? 'TRUE' : 'FALSE';
+      if (typeof val === 'object') return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
+      return val;
+    };
+
+    // 1. Categories
+    sqlDump += `-- Table: categories\n`;
+    for (const row of userCategories) {
+      sqlDump += `INSERT INTO categories (id, user_id, name, emoji_icon, color_code, created_at, updated_at) VALUES (` +
+        `${formatVal(row.id)}, ${formatVal(userId)}, ${formatVal(row.name)}, ${formatVal(row.emojiIcon)}, ` +
+        `${formatVal(row.colorCode)}, ${formatVal(row.createdAt)}, ${formatVal(row.updatedAt)});\n`;
+    }
+    sqlDump += `\n`;
+
+    // 2. Wallets
+    sqlDump += `-- Table: wallets\n`;
+    for (const row of userWallets) {
+      sqlDump += `INSERT INTO wallets (id, user_id, name, emoji_icon, color_code, type, currency, is_base_currency, decimal_precision, balance, created_at, updated_at) VALUES (` +
+        `${formatVal(row.id)}, ${formatVal(userId)}, ${formatVal(row.name)}, ${formatVal(row.emojiIcon)}, ` +
+        `${formatVal(row.colorCode)}, ${formatVal(row.type)}, ${formatVal(row.currency)}, ${formatVal(row.isBaseCurrency)}, ` +
+        `${formatVal(row.decimalPrecision)}, ${formatVal(row.balance)}, ${formatVal(row.createdAt)}, ${formatVal(row.updatedAt)});\n`;
+    }
+    sqlDump += `\n`;
+
+    // 3. Savings Goals
+    sqlDump += `-- Table: savings_goals\n`;
+    for (const row of userSavingsGoals) {
+      sqlDump += `INSERT INTO savings_goals (id, user_id, wallet_id, room_id, name, emoji_icon, color_code, target_amount, current_amount, target_date, status, is_pin, link, created_at, updated_at) VALUES (` +
+        `${formatVal(row.id)}, ${formatVal(userId)}, ${formatVal(row.walletId)}, ${formatVal(row.roomId)}, ` +
+        `${formatVal(row.name)}, ${formatVal(row.emojiIcon)}, ${formatVal(row.colorCode)}, ${formatVal(row.targetAmount)}, ` +
+        `${formatVal(row.currentAmount)}, ${formatVal(row.targetDate)}, ${formatVal(row.status)}, ${formatVal(row.isPin)}, ` +
+        `${formatVal(row.link)}, ${formatVal(row.createdAt)}, ${formatVal(row.updatedAt)});\n`;
+    }
+    sqlDump += `\n`;
+
+    // 4. Budgets
+    sqlDump += `-- Table: budgets\n`;
+    for (const row of userBudgets) {
+      sqlDump += `INSERT INTO budgets (id, user_id, room_id, name, emoji_icon, color_code, type, category_ids, category_id, wallet_id, limit_amount, period_count, start_day, month_year, created_at, updated_at) VALUES (` +
+        `${formatVal(row.id)}, ${formatVal(userId)}, ${formatVal(row.roomId)}, ${formatVal(row.name)}, ` +
+        `${formatVal(row.emojiIcon)}, ${formatVal(row.colorCode)}, ${formatVal(row.type)}, ${formatVal(row.categoryIds)}, ` +
+        `${formatVal(row.categoryId)}, ${formatVal(row.walletId)}, ${formatVal(row.limitAmount)}, ${formatVal(row.periodCount)}, ` +
+        `${formatVal(row.startDay)}, ${formatVal(row.monthYear)}, ${formatVal(row.createdAt)}, ${formatVal(row.updatedAt)});\n`;
+    }
+    sqlDump += `\n`;
+
+    // 5. Transactions
+    sqlDump += `-- Table: transactions\n`;
+    for (const row of userTransactions) {
+      sqlDump += `INSERT INTO transactions (id, user_id, wallet_id, room_id, title, type, amount, exchange_rate, base_amount, category_id, savings_goal_id, note, date, created_at, updated_at) VALUES (` +
+        `${formatVal(row.id)}, ${formatVal(userId)}, ${formatVal(row.walletId)}, ${formatVal(row.roomId)}, ` +
+        `${formatVal(row.title)}, ${formatVal(row.type)}, ${formatVal(row.amount)}, ${formatVal(row.exchangeRate)}, ` +
+        `${formatVal(row.baseAmount)}, ${formatVal(row.categoryId)}, ${formatVal(row.savingsGoalId)}, ${formatVal(row.note)}, ` +
+        `${formatVal(row.date)}, ${formatVal(row.createdAt)}, ${formatVal(row.updatedAt)});\n`;
     }
 
-    return workbook;
-  }
-
-  async exportSingleTable(userId: string, tableName: string, res: Response) {
-    const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
-    if (!validTables.includes(tableName)) throw new BadRequestException('Invalid table name');
-
-    const workbook = await this.createExcelWorkbook(userId, tableName);
-    
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=${tableName}_backup.xlsx`);
-    
-    // Stream directly to response, no file saved to disk (Compute/Storage optimization)
-    await workbook.xlsx.write(res);
-    res.end();
-  }
-
-    async exportAllAsZip(userId: string, reqTables: string[], res: Response) {
-    const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
-    const tables = reqTables.length > 0 ? reqTables.filter(t => validTables.includes(t)) : validTables;
-    
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_backup.zip');
-
-    const archiverModule = await import('archiver');
-    const ZipArchive = (archiverModule as any).ZipArchive;
-    const archive = new ZipArchive({ zlib: { level: 9 } }); // Maximum compression
-    archive.pipe(res);
-
-    // Generate Excel files in memory and append to ZIP stream
-    for (const table of tables) {
-      const workbook = await this.createExcelWorkbook(userId, table);
-      const buffer = await workbook.xlsx.writeBuffer();
-      archive.append(Buffer.from(buffer), { name: `${table}.xlsx` });
-    }
-
-    await archive.finalize();
+    const dateStr = new Date().toISOString().replaceAll(':', '-').split('.')[0];
+    res.setHeader('Content-Type', 'application/sql');
+    res.setHeader('Content-Disposition', `attachment; filename=cuanbuddy_backup_${dateStr}.sql`);
+    res.send(sqlDump);
   }
 
   // ─────────────────────────────────────────────
-  // TEMPLATE
+  // IMPORT / RESTORE (SQL Execution)
   // ─────────────────────────────────────────────
-  async downloadAllTemplatesAsZip(res: Response) {
-    const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
-    
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', 'attachment; filename=cuanbuddy_templates.zip');
-
-    const archiverModule = await import('archiver');
-    const ZipArchive = (archiverModule as any).ZipArchive;
-    const archive = new ZipArchive({ zlib: { level: 9 } });
-    archive.pipe(res);
-
-    for (const tableName of validTables) {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet(tableName);
-
-      if (tableName === 'transactions') worksheet.columns = [{ header: 'Title', key: 'title' }, { header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
-      else if (tableName === 'budgets') worksheet.columns = [{ header: 'CategoryID', key: 'categoryId' }, { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }];
-      else if (tableName === 'savings_goals') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Target Amount', key: 'targetAmount' }, { header: 'Current Amount', key: 'currentAmount' }, { header: 'Target Date', key: 'targetDate' }, { header: 'Status', key: 'status' }];
-      else if (tableName === 'categories') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }];
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      archive.append(Buffer.from(buffer), { name: `${tableName}_template.xlsx` });
-    }
-
-    await archive.finalize();
-  }
-
-  async downloadTemplate(tableName: string, res: Response) {
-    const validTables = ['transactions', 'budgets', 'savings_goals', 'categories'];
-    if (!validTables.includes(tableName)) throw new BadRequestException('Invalid table name');
-
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(tableName);
-
-    // Headers only
-    if (tableName === 'transactions') worksheet.columns = [{ header: 'Title', key: 'title' }, { header: 'Type', key: 'type' }, { header: 'Amount', key: 'amount' }, { header: 'Date', key: 'date' }, { header: 'Note', key: 'note' }, { header: 'CategoryID', key: 'categoryId' }];
-    else if (tableName === 'budgets') worksheet.columns = [{ header: 'CategoryID', key: 'categoryId' }, { header: 'Limit Amount', key: 'limitAmount' }, { header: 'Month Year', key: 'monthYear' }];
-    else if (tableName === 'savings_goals') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Target Amount', key: 'targetAmount' }, { header: 'Current Amount', key: 'currentAmount' }, { header: 'Target Date', key: 'targetDate' }, { header: 'Status', key: 'status' }];
-    else if (tableName === 'categories') worksheet.columns = [{ header: 'Name', key: 'name' }, { header: 'Slug', key: 'slug' }, { header: 'Emoji Icon', key: 'emojiIcon' }];
-
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=${tableName}_template.xlsx`);
-    
-    await workbook.xlsx.write(res);
-    res.end();
-  }
-
-  // ─────────────────────────────────────────────
-  // IMPORT (ZIP or Excel)
-  // ─────────────────────────────────────────────
-  // Note: For a production app, the import logic would parse the Excel/ZIP buffer,
-  // validate each row, and use bulk inserts. Due to space constraints in this service,
-  // we are implementing the structure. Actual DB inserts would follow Drizzle patterns.
-    async processImport(userId: string, file: Express.Multer.File) {
+  async processImport(userId: string, file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
 
-    const isZip = file.originalname.endsWith('.zip');
-    const isExcel = file.originalname.endsWith('.xlsx');
+    const isSql = file.originalname.endsWith('.sql');
+    if (!isSql) throw new BadRequestException('Only .sql database files are allowed');
 
-    if (!isZip && !isExcel) throw new BadRequestException('Only .zip or .xlsx allowed');
+    const sqlContent = file.buffer.toString('utf-8');
 
-    let buffersToProcess: { name: string; buffer: Buffer }[] = [];
+    await this.db.transaction(async (tx: any) => {
+      // Delete existing data in proper order to avoid constraint issues
+      await tx.execute(sql.raw(`DELETE FROM transactions WHERE user_id = '${userId}';`));
+      await tx.execute(sql.raw(`DELETE FROM budgets WHERE user_id = '${userId}';`));
+      await tx.execute(sql.raw(`DELETE FROM savings_goals WHERE user_id = '${userId}';`));
+      await tx.execute(sql.raw(`DELETE FROM wallets WHERE user_id = '${userId}';`));
+      await tx.execute(sql.raw(`DELETE FROM categories WHERE user_id = '${userId}';`));
 
-    if (isZip) {
-      const AdmZip = await import('adm-zip');
-      const zip = new AdmZip.default(file.buffer);
-      const zipEntries = zip.getEntries();
-      for (const entry of zipEntries) {
-        if (!entry.isDirectory && entry.entryName.endsWith('.xlsx')) {
-          buffersToProcess.push({ name: entry.entryName.replace('.xlsx', ''), buffer: entry.getData() });
-        }
+      const statements = sqlContent
+        .split(/;\r?\n/)
+        .map(stmt => stmt.trim())
+        .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+
+      for (const stmt of statements) {
+        await tx.execute(sql.raw(stmt + ';'));
       }
-    } else {
-      buffersToProcess.push({ name: file.originalname.replace('.xlsx', '').replace('_backup', ''), buffer: file.buffer });
-    }
+    });
 
-    let importedCount = 0;
-
-    for (const item of buffersToProcess) {
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(item.buffer as any);
-      
-      const worksheet = workbook.worksheets[0]; // Assuming one sheet per file
-      if (!worksheet) continue;
-
-      const tableName = worksheet.name || item.name;
-
-      // Ensure categories exist
-      if (tableName === 'transactions' || tableName === 'budgets') {
-        const rows: any[] = [];
-        worksheet.eachRow((row, rowNumber) => {
-          if (rowNumber === 1) return; // Skip header
-          rows.push(row.values);
-        });
-
-        // Column mapping depends on what we exported.
-        // ID, Title, Type, Amount, Date, Note, Category Name, Category Emoji
-        for (const rowVals of rows) {
-          const isTx = tableName === 'transactions';
-          const title = isTx ? rowVals[2] : null;
-          const type = isTx ? rowVals[3] : rowVals[2];
-          const amount = isTx ? rowVals[4] : rowVals[3];
-          const date = isTx ? rowVals[5] : rowVals[4];
-          const note = isTx ? rowVals[6] : rowVals[5];
-          const catName = isTx ? rowVals[7] : rowVals[2];
-          const catEmoji = isTx ? rowVals[8] : rowVals[3];
-          
-          let categoryId = null;
-          if (catName) {
-            let existingCat = await this.db.query.categories.findFirst({
-              where: and(eq(categories.name, String(catName)), eq(categories.userId, userId))
-            });
-            if (!existingCat) {
-               const [newCat] = await this.db.insert(categories).values({
-                 userId,
-                 name: String(catName),
-                 emojiIcon: catEmoji ? String(catEmoji) : null
-               }).returning();
-               existingCat = newCat;
-            }
-            categoryId = existingCat.id;
-          }
-
-          if (tableName === 'transactions') {
-            await this.db.insert(transactions).values({
-              userId,
-              title: title ? String(title) : null,
-              type: String(type) === 'income' ? 'income' : 'expense',
-              amount: String(amount),
-              date: new Date(date),
-              note: note ? String(note) : null,
-              categoryId
-            });
-            importedCount++;
-          } else if (tableName === 'budgets') {
-            const limitAmount = rowVals[4];
-            const monthYear = rowVals[5];
-            if (categoryId) {
-              await this.db.insert(budgets).values({
-                userId,
-                categoryId,
-                limitAmount: String(limitAmount),
-                monthYear: String(monthYear)
-              });
-              importedCount++;
-            }
-          }
-        }
-      }
-    }
-    
     return {
-      message: 'File received and processed successfully',
-      type: isZip ? 'zip' : 'excel',
+      message: 'Database restored successfully',
+      type: 'sql',
       fileName: file.originalname,
-      recordsImported: importedCount
     };
   }
 
   // ─────────────────────────────────────────────
-  // CRON JOB (Vercel Endpoint)
+  // CRON JOB
   // ─────────────────────────────────────────────
   async processScheduledBackups() {
     const now = new Date();
     
-    // Find users whose backup time has arrived
     const dueBackups = await this.db.query.backupSettings.findMany({
       where: and(
         eq(backupSettings.isEnabled, true),
@@ -345,18 +191,15 @@ export class BackupService {
     });
 
     for (const setting of dueBackups) {
-      // 1. Notify user
       void this.notificationsService.createAndBroadcast(
         setting.userId,
         'Backup Ready',
-        'Your scheduled backup is ready to be downloaded.',
+        'Your scheduled database backup (.sql) is ready to be downloaded.',
         'system'
       );
 
-      // 2. Calculate next backup time
       const nextDate = this.calculateNextBackupDate(setting.interval as any);
 
-      // 3. Update setting (fire-and-forget)
       void this.db.update(backupSettings)
         .set({ lastBackupAt: now, nextBackupAt: nextDate, updatedAt: new Date() })
         .where(eq(backupSettings.id, setting.id));
@@ -379,5 +222,4 @@ export class BackupService {
       
     return updated;
   }
-
 }

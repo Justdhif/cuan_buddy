@@ -168,7 +168,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     context.push('/transactions/form', extra: {
       'initialType': 'income',
       'initialSavingsGoalId': _goalId,
-      'lockedSavingsGoal': true,
+      'lockedSavingsGoal': false,
     }).then((_) {
       // Invalidate transactions and savings to refresh after adding
       ref.invalidate(savingsGoalTransactionsProvider(_goalId));

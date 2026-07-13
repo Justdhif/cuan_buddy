@@ -204,6 +204,7 @@ abstract class AppLocalizations {
   String get exceeded;
   String get budgetExceeded;
   String get budget;
+  String get noBudget;
   String get noBudgetsSet;
   String get noBudgetsSetSubtitle;
   String noBudgetsFilter(String filter);

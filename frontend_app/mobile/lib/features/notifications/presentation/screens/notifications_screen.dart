@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/services/currency_service.dart';
+import '../../../shared/presentation/providers/shared_provider.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -114,8 +115,11 @@ class _NotificationTile extends ConsumerWidget {
     String message = notif['message'] as String? ?? '';
     final createdAt = notif['createdAtFormatted'] as String? ?? '';
 
+    IconData tileIcon = Icons.notifications_rounded;
+
     if (title == 'TRANSACTION_RECORDED') {
       title = l10n.newTransactionRecorded;
+      tileIcon = Icons.account_balance_wallet_rounded;
       try {
         final payload = jsonDecode(message);
         final type = payload['type'];
@@ -154,7 +158,7 @@ class _NotificationTile extends ConsumerWidget {
         title == 'BUDGET_WARNING' ||
         title == 'BUDGET_PREDICTION_WARNING' ||
         title == 'BUDGET_CREATED') {
-
+      tileIcon = Icons.pie_chart_rounded;
       try {
         final payload = jsonDecode(message);
         final monthYear = payload['monthYear'] as String;
@@ -226,6 +230,47 @@ class _NotificationTile extends ConsumerWidget {
           title = l10n.budgetPredictionWarning;
         }
       }
+    } else if (title == 'FRIEND_REQUEST') {
+      title = l10n.languageCode == 'id' ? 'Permintaan Pertemanan' : 'Friend Request';
+      tileIcon = Icons.person_add_rounded;
+      try {
+        final payload = jsonDecode(message);
+        final senderName = payload['senderName'] ?? payload['senderEmail'] ?? 'Seseorang';
+        message = l10n.languageCode == 'id'
+            ? '$senderName ingin berteman dengan Anda'
+            : '$senderName wants to be friends with you';
+      } catch (_) {}
+    } else if (title == 'FRIEND_REQUEST_ACCEPTED') {
+      title = l10n.languageCode == 'id' ? 'Pertemanan Diterima' : 'Friend Request Accepted';
+      tileIcon = Icons.people_rounded;
+      try {
+        final payload = jsonDecode(message);
+        final receiverName = payload['receiverName'] ?? payload['receiverEmail'] ?? 'Seseorang';
+        message = l10n.languageCode == 'id'
+            ? '$receiverName menerima permintaan pertemanan Anda'
+            : '$receiverName accepted your friend request';
+      } catch (_) {}
+    } else if (title == 'FRIEND_REQUEST_DECLINED') {
+      title = l10n.languageCode == 'id' ? 'Pertemanan Ditolak' : 'Friend Request Declined';
+      tileIcon = Icons.person_remove_rounded;
+      try {
+        final payload = jsonDecode(message);
+        final receiverName = payload['receiverName'] ?? payload['receiverEmail'] ?? 'Seseorang';
+        message = l10n.languageCode == 'id'
+            ? '$receiverName menolak permintaan pertemanan Anda'
+            : '$receiverName declined your friend request';
+      } catch (_) {}
+    } else if (title == 'ROOM_INVITATION') {
+      title = l10n.languageCode == 'id' ? 'Undangan Ruang' : 'Room Invitation';
+      tileIcon = Icons.meeting_room_rounded;
+      try {
+        final payload = jsonDecode(message);
+        final inviterName = payload['inviterName'] ?? 'Seseorang';
+        final roomName = payload['roomName'] ?? 'Ruang';
+        message = l10n.languageCode == 'id'
+            ? '$inviterName mengundang Anda ke ruang $roomName'
+            : '$inviterName invited you to room $roomName';
+      } catch (_) {}
     }
 
     return InkWell(
@@ -259,7 +304,7 @@ class _NotificationTile extends ConsumerWidget {
                     : AppColors.primary.withValues(alpha: 0.15),
               ),
               child: Icon(
-                Icons.notifications_rounded,
+                tileIcon,
                 color: isRead
                     ? (isDark
                         ? AppColors.textSecondaryDark
@@ -303,6 +348,78 @@ class _NotificationTile extends ConsumerWidget {
                       ),
                     ),
                   ],
+                  if (notif['title'] == 'FRIEND_REQUEST' && !isRead) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            minimumSize: Size.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () async {
+                            try {
+                              final payload = jsonDecode(notif['message']);
+                              final friendshipId = payload['friendshipId'];
+                              final error = await ref.read(sharedNotifierProvider.notifier).respondFriendRequest(friendshipId, 'accept');
+                              if (context.mounted) {
+                                if (error != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.languageCode == 'id' ? 'Berhasil menerima pertemanan' : 'Friend request accepted'),
+                                      backgroundColor: AppColors.success,
+                                    ),
+                                  );
+                                  ref.read(notificationsNotifierProvider.notifier).markAsRead(notif['id']);
+                                  ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
+                                }
+                              }
+                            } catch (_) {}
+                          },
+                          child: Text(l10n.accept, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 8),
+                        OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            minimumSize: Size.zero,
+                            side: BorderSide(color: AppColors.danger),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () async {
+                            try {
+                              final payload = jsonDecode(notif['message']);
+                              final friendshipId = payload['friendshipId'];
+                              final error = await ref.read(sharedNotifierProvider.notifier).respondFriendRequest(friendshipId, 'decline');
+                              if (context.mounted) {
+                                if (error != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(l10n.languageCode == 'id' ? 'Berhasil menolak pertemanan' : 'Friend request declined'),
+                                      backgroundColor: AppColors.textSecondaryDark,
+                                    ),
+                                  );
+                                  ref.read(notificationsNotifierProvider.notifier).markAsRead(notif['id']);
+                                  ref.read(notificationsNotifierProvider.notifier).fetchNotifications();
+                                }
+                              }
+                            } catch (_) {}
+                          },
+                          child: Text(l10n.decline, style: TextStyle(color: AppColors.danger, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    )
+                  ]
                 ],
               ),
             ),

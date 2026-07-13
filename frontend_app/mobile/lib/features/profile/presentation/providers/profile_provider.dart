@@ -92,31 +92,31 @@ class BackupFilesNotifier extends Notifier<List<BackupFile>> {
       BackupFile(
         id: '1',
         label: 'justNow',
-        filename: 'cuanbuddy_backup_2026-07-12_10-00-00.zip',
+        filename: 'cuanbuddy_backup_2026-07-12_10-00-00.sql',
         createdAt: now,
       ),
       BackupFile(
         id: '2',
         label: 'hoursAgo22',
-        filename: 'cuanbuddy_backup_2026-07-11_12-00-00.zip',
+        filename: 'cuanbuddy_backup_2026-07-11_12-00-00.sql',
         createdAt: now.subtract(const Duration(hours: 22)),
       ),
       BackupFile(
         id: '3',
         label: 'daysAgo3',
-        filename: 'cuanbuddy_backup_2026-07-09_10-00-00.zip',
+        filename: 'cuanbuddy_backup_2026-07-09_10-00-00.sql',
         createdAt: now.subtract(const Duration(days: 3)),
       ),
       BackupFile(
         id: '4',
         label: 'daysAgo5',
-        filename: 'cuanbuddy_backup_2026-07-07_10-00-00.zip',
+        filename: 'cuanbuddy_backup_2026-07-07_10-00-00.sql',
         createdAt: now.subtract(const Duration(days: 5)),
       ),
       BackupFile(
         id: '5',
         label: 'jun26',
-        filename: 'cuanbuddy_backup_2026-06-26_10-00-00.zip',
+        filename: 'cuanbuddy_backup_2026-06-26_10-00-00.sql',
         createdAt: DateTime(now.year, 6, 26),
       ),
     ];

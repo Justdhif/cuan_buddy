@@ -336,6 +336,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get budget => 'Anggaran';
   @override
+  String get noBudget => 'Tanpa Anggaran';
+  @override
   String get noBudgetsSet => 'Belum Ada Anggaran';
   @override
   String get noBudgetsSetSubtitle =>

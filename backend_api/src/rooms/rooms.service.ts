@@ -2,10 +2,14 @@ import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestEx
 import { eq, and, inArray, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { rooms, roomMembers, users, userProfiles, transactions, budgets, savingsGoals } from '../database/schema';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class RoomsService {
-  constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
+  constructor(
+    @Inject(DATABASE_CONNECTION) private readonly db: any,
+    private readonly notificationsService: NotificationsService
+  ) {}
 
   async createRoom(userId: string, body: { name: string; memberUserIds?: string[] }) {
     const { name, memberUserIds = [] } = body;
@@ -34,6 +38,29 @@ export class RoomsService {
         role: 'member',
       }));
       await this.db.insert(roomMembers).values(valuesToInsert);
+
+      // Send notification to invited members
+      const creatorProfile = await this.db.query.userProfiles.findFirst({
+        where: eq(userProfiles.userId, userId),
+      });
+      const creatorUser = await this.db.query.users.findFirst({
+        where: eq(users.id, userId),
+      });
+      const creatorName = creatorProfile?.fullName || creatorProfile?.username || creatorUser?.email || 'Someone';
+
+      for (const mId of memberUserIds) {
+        void this.notificationsService.createAndBroadcast(
+          mId,
+          'ROOM_INVITATION',
+          JSON.stringify({
+            roomId: newRoom.id,
+            roomName: newRoom.name,
+            inviterId: userId,
+            inviterName: creatorName,
+          }),
+          'room_invite'
+        );
+      }
     }
 
     return newRoom;
@@ -198,12 +225,39 @@ export class RoomsService {
       throw new BadRequestException('User is already a member of this room');
     }
 
+    // Get room details
+    const roomRecord = await this.db.query.rooms.findFirst({
+      where: eq(rooms.id, roomId),
+    });
+
+    // Get inviter details
+    const inviterProfile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId),
+    });
+    const inviterUser = await this.db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    const inviterName = inviterProfile?.fullName || inviterProfile?.username || inviterUser?.email || 'Someone';
+
     // Add member
     const [newMember] = await this.db.insert(roomMembers).values({
       roomId,
       userId: inviteeId,
       role: 'member',
     }).returning();
+
+    // Send notification to invitee
+    void this.notificationsService.createAndBroadcast(
+      inviteeId,
+      'ROOM_INVITATION',
+      JSON.stringify({
+        roomId,
+        roomName: roomRecord?.name || 'Room',
+        inviterId: userId,
+        inviterName,
+      }),
+      'room_invite'
+    );
 
     return newMember;
   }

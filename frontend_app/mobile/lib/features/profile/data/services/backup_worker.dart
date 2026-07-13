@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:file_picker/file_picker.dart' as fp;
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,7 +50,7 @@ class BackupWorker {
       );
 
       Directory? directory;
-      if (Platform.isAndroid && isAuto) {
+      if (Platform.isAndroid) {
         directory = await getExternalStorageDirectory();
         if (directory != null) {
           String newPath = "";
@@ -70,7 +69,7 @@ class BackupWorker {
           directory = await getTemporaryDirectory();
         }
       } else {
-        directory = await getTemporaryDirectory();
+        directory = await getApplicationDocumentsDirectory();
       }
 
       if (!await directory.exists()) {
@@ -82,11 +81,7 @@ class BackupWorker {
           .replaceAll(':', '-')
           .split('.')
           .first;
-      final isSingle = tables.length == 1;
-      final ext = isSingle ? 'xlsx' : 'zip';
-      final fileName = isSingle
-          ? '${tables[0]}_backup_$dateStr.$ext'
-          : 'cuanbuddy_backup_$dateStr.$ext';
+      final fileName = 'cuanbuddy_backup_$dateStr.sql';
       final savePath = '${directory.path}/$fileName';
 
       await notificationService.showProgressNotification(
@@ -120,12 +115,8 @@ class BackupWorker {
       await notificationService.showSuccessNotification(
         id: 100,
         title: isAuto ? 'Auto Backup Successful ✅' : 'Backup Successful ✅',
-        body: isAuto ? 'Saved to Downloads' : 'Ready to share or save.',
+        body: 'Saved to device storage.',
       );
-
-      if (!isAuto) {
-        await SharePlus.instance.share(ShareParams(files: [XFile(savePath)], text: 'CuanBuddy Backup'));
-      }
     } catch (e) {
       await notificationService.flutterLocalNotificationsPlugin.cancel(id: 99);
       await notificationService.showErrorNotification(
@@ -207,34 +198,37 @@ class BackupWorker {
     }
   }
 
-  Future<void> runRestoreProcess() async {
+  Future<void> runRestoreProcess({String? filePath}) async {
     final notificationService = NotificationService();
     try {
-      final result = await fp.FilePicker.pickFiles(
-        type: fp.FileType.custom,
-        allowedExtensions: ['zip', 'xlsx'],
-      );
+      String? path = filePath;
+      if (path == null) {
+        final result = await fp.FilePicker.pickFiles(
+          type: fp.FileType.custom,
+          allowedExtensions: ['sql'],
+        );
 
-      if (result == null || result.files.single.path == null) {
-        return; // User canceled
+        if (result == null || result.files.single.path == null) {
+          return; // User canceled
+        }
+        path = result.files.single.path!;
       }
 
       await notificationService.showProgressNotification(
         id: 98,
         title: 'CuanBuddy Restore',
-        body: 'Uploading and restoring data...',
+        body: 'Uploading and restoring database...',
         progress: 50,
         maxProgress: 100,
       );
 
-      final filePath = result.files.single.path!;
-      await repository.uploadRestore(filePath);
+      await repository.uploadRestore(path);
 
       await notificationService.flutterLocalNotificationsPlugin.cancel(id: 98);
       await notificationService.showSuccessNotification(
         id: 102,
         title: 'Restore Successful ✅',
-        body: 'Your data has been restored.',
+        body: 'Your database has been restored.',
       );
     } catch (e) {
       await notificationService.flutterLocalNotificationsPlugin.cancel(id: 98);
@@ -243,6 +237,67 @@ class BackupWorker {
         title: 'Restore Failed ❌',
         body: 'Error: ${e.toString()}',
       );
+      rethrow;
+    }
+  }
+
+  Future<void> runSyncProcess(String filename) async {
+    final notificationService = NotificationService();
+    try {
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          String newPath = "";
+          List<String> paths = directory.path.split("/");
+          for (int x = 1; x < paths.length; x++) {
+            String folder = paths[x];
+            if (folder != "Android") {
+              newPath += "/$folder";
+            } else {
+              break;
+            }
+          }
+          newPath = "$newPath/Download";
+          directory = Directory(newPath);
+        } else {
+          directory = await getTemporaryDirectory();
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      final filePath = '${directory.path}/$filename';
+      final file = File(filePath);
+
+      if (!await file.exists()) {
+        throw Exception('Backup file not found locally on device.');
+      }
+
+      await notificationService.showProgressNotification(
+        id: 98,
+        title: 'CuanBuddy Sync',
+        body: 'Synchronizing database with local backup...',
+        progress: 50,
+        maxProgress: 100,
+      );
+
+      await repository.uploadRestore(filePath);
+
+      await notificationService.flutterLocalNotificationsPlugin.cancel(id: 98);
+      await notificationService.showSuccessNotification(
+        id: 102,
+        title: 'Sync Successful ✅',
+        body: 'Database has been synchronized.',
+      );
+    } catch (e) {
+      await notificationService.flutterLocalNotificationsPlugin.cancel(id: 98);
+      await notificationService.showErrorNotification(
+        id: 103,
+        title: 'Sync Failed ❌',
+        body: 'Error: ${e.toString()}',
+      );
+      rethrow;
     }
   }
 }
