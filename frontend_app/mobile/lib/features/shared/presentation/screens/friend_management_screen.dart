@@ -20,9 +20,6 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(sharedNotifierProvider.notifier).fetchLobbyData();
-    });
   }
 
   @override
@@ -131,7 +128,7 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
             ),
           ),
           Expanded(
-            child: state.isLoading
+            child: state.isSearchLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _searchController.text.isEmpty
                     ? AppEmptyState(

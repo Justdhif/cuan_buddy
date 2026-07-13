@@ -13,6 +13,7 @@ class SharedState {
   final List<dynamic> searchResults;
   final bool isLoading;
   final bool isRoomLoading;
+  final bool isSearchLoading;
   final String? error;
 
   SharedState({
@@ -26,6 +27,7 @@ class SharedState {
     this.searchResults = const [],
     this.isLoading = false,
     this.isRoomLoading = false,
+    this.isSearchLoading = false,
     this.error,
   });
 
@@ -41,6 +43,7 @@ class SharedState {
     List<dynamic>? searchResults,
     bool? isLoading,
     bool? isRoomLoading,
+    bool? isSearchLoading,
     String? error,
     bool clearError = false,
   }) {
@@ -55,6 +58,7 @@ class SharedState {
       searchResults: searchResults ?? this.searchResults,
       isLoading: isLoading ?? this.isLoading,
       isRoomLoading: isRoomLoading ?? this.isRoomLoading,
+      isSearchLoading: isSearchLoading ?? this.isSearchLoading,
       error: clearError ? null : (error ?? this.error),
     );
   }
@@ -127,14 +131,14 @@ class SharedNotifier extends StateNotifier<SharedState> {
       state = state.copyWith(searchResults: []);
       return;
     }
-    state = state.copyWith(isLoading: true, error: null);
+    state = state.copyWith(isSearchLoading: true, error: null);
     try {
       final res = await _dioClient.dio.get('/friendships/search', queryParameters: {'query': query});
       if (res.statusCode == 200) {
-        state = state.copyWith(searchResults: res.data as List, isLoading: false);
+        state = state.copyWith(searchResults: res.data as List, isSearchLoading: false);
       }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isSearchLoading: false, error: e.toString());
     }
   }
 
