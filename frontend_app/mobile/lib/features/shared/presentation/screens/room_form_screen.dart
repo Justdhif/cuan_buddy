@@ -161,6 +161,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     final iconShape = ref.watch(categoryIconShapeProvider);
 
     return Scaffold(
+      resizeToAvoidBottomInset: _currentStep == 2,
       appBar: _currentStep == 2
           ? AppBar(
               title: Text(
@@ -308,17 +309,9 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
   Widget _buildStep1Members(SharedState state, bool isDark, AppLocalizations l10n) {
     if (state.friends.isEmpty) {
-      return SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            const SizedBox(height: 60),
-            AppEmptyState(
-              icon: Icons.people_outline_rounded,
-              title: l10n.noFriendsInvite,
-            ),
-          ],
-        ),
+      return AppEmptyState(
+        icon: Icons.people_outline_rounded,
+        title: l10n.noFriendsInvite,
       );
     }
 
@@ -329,20 +322,12 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     }).toList();
 
     if (filtered.isEmpty) {
-      return SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            const SizedBox(height: 60),
-            AppEmptyState(
-              icon: Icons.search_off_rounded,
-              title: Localizations.localeOf(context).languageCode == 'id' ? 'Tidak ada teman ditemukan' : 'No friends found',
-              subtitle: Localizations.localeOf(context).languageCode == 'id'
-                  ? 'Coba cari dengan kata kunci lain'
-                  : 'Try searching with another keyword',
-            ),
-          ],
-        ),
+      return AppEmptyState(
+        icon: Icons.search_off_rounded,
+        title: Localizations.localeOf(context).languageCode == 'id' ? 'Tidak ada teman ditemukan' : 'No friends found',
+        subtitle: Localizations.localeOf(context).languageCode == 'id'
+            ? 'Coba cari dengan kata kunci lain'
+            : 'Try searching with another keyword',
       );
     }
 

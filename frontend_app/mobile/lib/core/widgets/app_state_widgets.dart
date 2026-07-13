@@ -80,8 +80,9 @@ class AppEmptyState extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               title,
-              style: textTheme.headlineSmall?.copyWith(
+              style: textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
+                fontSize: 18,
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
               textAlign: TextAlign.center,
