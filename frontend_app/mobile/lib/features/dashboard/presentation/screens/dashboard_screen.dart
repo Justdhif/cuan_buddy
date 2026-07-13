@@ -21,6 +21,7 @@ import '../widgets/ai_insight_card.dart';
 import '../../../shared/widgets/transaction_card.dart';
 import '../../../budgets/presentation/providers/budgets_provider.dart';
 import '../../../shared/widgets/budget_card.dart';
+import '../../../../core/services/notification_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -51,6 +52,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         // Warm-up the notifications provider *after* connect() so that its
         // onConnected callback fires with the correct timing.
         ref.read(notificationsNotifierProvider);
+        
+        // Upload FCM Token to backend for push notifications
+        try {
+          final fcmToken = await NotificationService().getFcmToken();
+          if (fcmToken != null) {
+            await ref.read(dioClientProvider).dio.patch('/profiles/fcm-token', data: {'token': fcmToken});
+            debugPrint('FCM Token uploaded successfully.');
+          }
+        } catch (e) {
+          debugPrint('Failed to upload FCM token to backend: $e');
+        }
+
         // Check for auto backup on launch
         ref.read(backupWorkerProvider).checkAndRunAutoBackup();
       }

@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:io';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -35,6 +42,42 @@ class NotificationService {
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
+    }
+
+    // Initialize Firebase Cloud Messaging
+    try {
+      await Firebase.initializeApp();
+      
+      final FirebaseMessaging messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        final notification = message.notification;
+        if (notification != null) {
+          showSocketNotification(
+            id: notification.hashCode,
+            title: notification.title ?? 'CuanBuddy',
+            body: notification.body ?? '',
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint('Failed to initialize Firebase Messaging: $e');
+    }
+  }
+
+  Future<String?> getFcmToken() async {
+    try {
+      return await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      debugPrint('Failed to get FCM token: $e');
+      return null;
     }
   }
 

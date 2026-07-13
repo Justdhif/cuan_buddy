@@ -15,6 +15,7 @@ export const users = pgTable('users', {
   resetOtp: text('reset_otp'),
   resetOtpExpiresAt: timestamp('reset_otp_expires_at'),
   lastLoginAt: timestamp('last_login_at'),
+  fcmToken: text('fcm_token'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { userProfiles, wallets } from '../database/schema';
+import { userProfiles, wallets, users } from '../database/schema';
 import { UpdateProfileDto, UpdateAvatarDto } from './dto/update-profile.dto';
 
 @Injectable()
@@ -48,5 +48,12 @@ export class UserProfilesService {
       
     const currency = await this.getBaseCurrency(userId);
     return { ...updated, currency };
+  }
+
+  async updateFcmToken(userId: string, token: string) {
+    await this.db.update(users)
+      .set({ fcmToken: token, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+    return { success: true };
   }
 }

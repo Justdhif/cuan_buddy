@@ -33,6 +33,11 @@ export class UserProfilesController {
     return this.userProfilesService.updateAvatar(req.user.userId, updateAvatarDto);
   }
 
+  @Patch('fcm-token')
+  updateFcmToken(@Req() req, @Body() body: { token: string }) {
+    return this.userProfilesService.updateFcmToken(req.user.userId, body.token);
+  }
+
   @Post('avatar/upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(@Req() req, @UploadedFile() file: Express.Multer.File) {
