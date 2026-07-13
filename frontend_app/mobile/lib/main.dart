@@ -55,7 +55,7 @@ class CuanBuddyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
-    final themeMode = ref.watch(themeModeProvider);
+    final themeMode = ref.watch(resolvedThemeModeProvider);
     final accentColor = ref.watch(accentColorProvider);
     final languageCode = ref.watch(languageProvider);
     final l10n = AppLocalizations.forLocale(languageCode);

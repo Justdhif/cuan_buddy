@@ -18,14 +18,16 @@ class ThemeLanguageScreen extends ConsumerStatefulWidget {
 }
 
 class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
-  String _getThemeLabel(ThemeMode mode, AppLocalizations l10n) {
+  String _getThemeLabel(AppThemeMode mode, AppLocalizations l10n) {
     switch (mode) {
-      case ThemeMode.system:
+      case AppThemeMode.system:
         return l10n.system;
-      case ThemeMode.light:
+      case AppThemeMode.light:
         return l10n.light;
-      case ThemeMode.dark:
+      case AppThemeMode.dark:
         return l10n.dark;
+      case AppThemeMode.sunrise:
+        return 'Sunrise & Sunset';
     }
   }
 
@@ -279,7 +281,7 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
   }
 }
 
-// ─── Theme Picker Sheet ────────────────────────────────────────────────────
+// ─── Theme Picker Sheet ──────────────────────────────────────────
 class _ThemePickerSheet extends StatelessWidget {
   const _ThemePickerSheet({
     required this.currentMode,
@@ -287,28 +289,37 @@ class _ThemePickerSheet extends StatelessWidget {
     required this.onSelect,
   });
 
-  final ThemeMode currentMode;
+  final AppThemeMode currentMode;
   final AppLocalizations l10n;
-  final ValueChanged<ThemeMode> onSelect;
+  final ValueChanged<AppThemeMode> onSelect;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themes = [
       {
-        'mode': ThemeMode.system,
+        'mode': AppThemeMode.system,
         'name': l10n.system,
-        'icon': Icons.brightness_auto_outlined
+        'icon': Icons.brightness_auto_outlined,
+        'desc': 'Follows your device setting',
       },
       {
-        'mode': ThemeMode.light,
+        'mode': AppThemeMode.light,
         'name': l10n.light,
-        'icon': Icons.light_mode_outlined
+        'icon': Icons.light_mode_outlined,
+        'desc': 'Always light mode',
       },
       {
-        'mode': ThemeMode.dark,
+        'mode': AppThemeMode.dark,
         'name': l10n.dark,
-        'icon': Icons.dark_mode_outlined
+        'icon': Icons.dark_mode_outlined,
+        'desc': 'Always dark mode',
+      },
+      {
+        'mode': AppThemeMode.sunrise,
+        'name': 'Sunrise & Sunset',
+        'icon': Icons.wb_twilight_rounded,
+        'desc': 'Light 06:00–18:00 • Dark 18:00–06:00',
       },
     ];
 
@@ -325,7 +336,7 @@ class _ThemePickerSheet extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             ...themes.map((theme) {
-              final mode = theme['mode'] as ThemeMode;
+              final mode = theme['mode'] as AppThemeMode;
               final isSelected = mode == currentMode;
               return GestureDetector(
                 onTap: () => onSelect(mode),
@@ -354,12 +365,28 @@ class _ThemePickerSheet extends StatelessWidget {
                           color: isSelected ? AppColors.primary : null),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: Text(
-                          theme['name'] as String,
-                          style: AppTypography.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: isSelected ? AppColors.primary : null,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              theme['name'] as String,
+                              style: AppTypography.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? AppColors.primary : null,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              theme['desc'] as String,
+                              style: AppTypography.textTheme.bodySmall?.copyWith(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.8)
+                                    : (isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       if (isSelected)

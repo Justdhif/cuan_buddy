@@ -3,31 +3,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_colors.dart';
 import '../theme/category_icon_shape.dart';
+import '../providers/theme_provider.dart' show AppThemeMode;
 class PreferencesService {
   PreferencesService(this._prefs);
 
   final SharedPreferences _prefs;
 
   // ─── Theme ────────────────────────────────────────────────────────────────────
-  ThemeMode get themeMode {
-    final value = _prefs.getString(AppConstants.themeModeKey);
-    switch (value) {
-      case 'dark':
-        return ThemeMode.dark;
-      case 'light':
-        return ThemeMode.light;
-      default:
-        return ThemeMode.system;
-    }
-  }
+  /// Raw stored string for AppThemeMode (includes 'sunrise').
+  String? get appThemeModeString => _prefs.getString(AppConstants.themeModeKey);
 
-  Future<void> setThemeMode(ThemeMode mode) async {
-    final value = switch (mode) {
-      ThemeMode.dark => 'dark',
-      ThemeMode.light => 'light',
-      ThemeMode.system => 'system',
-    };
-    await _prefs.setString(AppConstants.themeModeKey, value);
+  Future<void> setAppThemeMode(AppThemeMode mode) async {
+    await _prefs.setString(AppConstants.themeModeKey, mode.toStorageString());
   }
 
   // ─── Accent Color ───────────────────────────────────────────────────────────
