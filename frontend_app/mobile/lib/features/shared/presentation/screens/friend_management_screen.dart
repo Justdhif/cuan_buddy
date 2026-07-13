@@ -88,7 +88,10 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(l10n.manageFriends, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          Localizations.localeOf(context).languageCode == 'id' ? 'Cari Teman' : 'Find Friends',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
@@ -103,7 +106,9 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                 setState(() {});
               },
               decoration: InputDecoration(
-                hintText: l10n.searchFriendsPlaceholder,
+                hintText: Localizations.localeOf(context).languageCode == 'id'
+                    ? 'Cari nama pengguna atau email...'
+                    : 'Search username or email...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -129,71 +134,15 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _searchController.text.isEmpty
-                    ? (state.friends.isEmpty
-                        ? AppEmptyState(
-                            icon: Icons.people_outline,
-                            title: l10n.noFriendsYet,
-                            subtitle: l10n.friendsInviteDescription,
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            itemCount: state.friends.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final friend = state.friends[index];
-                              final String avatar = friend['avatar'] ?? '';
-                              final String name = friend['fullName'] ?? friend['username'] ?? friend['email'];
-                              final String username = friend['username'] != null ? '@${friend['username']}' : friend['email'];
-
-                              return Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: isDark ? AppColors.surfaceDark : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                                      child: avatar.isEmpty
-                                          ? Text(
-                                              name.substring(0, 1).toUpperCase(),
-                                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                                            )
-                                          : null,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            name,
-                                            style: textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            username,
-                                            style: textTheme.bodySmall?.copyWith(
-                                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ))
+                    ? AppEmptyState(
+                        icon: Icons.person_search_rounded,
+                        title: Localizations.localeOf(context).languageCode == 'id'
+                            ? 'Cari Teman Baru'
+                            : 'Search New Friends',
+                        subtitle: Localizations.localeOf(context).languageCode == 'id'
+                            ? 'Masukkan nama pengguna atau email mereka untuk mulai berteman.'
+                            : 'Enter their username or email address to start adding them.',
+                      )
                     : (state.searchResults.isEmpty
                         ? AppEmptyState(
                             icon: Icons.search_off_outlined,
