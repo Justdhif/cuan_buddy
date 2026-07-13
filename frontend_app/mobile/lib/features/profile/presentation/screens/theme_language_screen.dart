@@ -158,7 +158,7 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
           _buildListTile(
             context: context,
             icon: Icons.category_outlined,
-            title: 'Category Icon Shape',
+            title: 'Icon Shape',
             subtitle: _getShapeLabel(shapeMode),
             onTap: () => _showShapePicker(context),
           ),
