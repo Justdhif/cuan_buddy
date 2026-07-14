@@ -3,6 +3,7 @@ import { eq, and } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { userProfiles, wallets, users } from '../database/schema';
 import { UpdateProfileDto, UpdateAvatarDto } from './dto/update-profile.dto';
+import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 
 @Injectable()
 export class UserProfilesService {
@@ -64,34 +65,17 @@ export class UserProfilesService {
     const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
     this.otpStore.set(phone, { code, expiresAt });
 
-    const fonnteApiKey = process.env.FONNTE_API_KEY;
-    if (!fonnteApiKey) {
-      throw new BadRequestException('Fonnte API Key is not configured on the server.');
+    const result = await sendWhatsAppMessage({
+      phone,
+      title: 'OTP VERIFICATION CODE',
+      description: `Your verification code is: ${code}. This code is valid for 5 minutes. Please do not share it with anyone.`,
+    });
+
+    if (!result.success) {
+      throw new BadRequestException(`Failed to send WhatsApp OTP: ${result.reason}`);
     }
 
-    try {
-      const response = await fetch('https://api.fonnte.com/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': fonnteApiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          target: phone,
-          message: `Kode verifikasi OTP CuanBuddy Anda adalah: ${code}. Berlaku selama 5 menit. Jangan bagikan kode ini kepada siapa pun.`,
-        }),
-      });
-
-      const resData = await response.json();
-      if (!response.ok || !resData.status) {
-        throw new Error(resData.reason || 'Failed to send WhatsApp message via Fonnte');
-      }
-
-      return { success: true, message: 'OTP sent successfully' };
-    } catch (error) {
-      console.error('Failed to send OTP via Fonnte:', error);
-      throw new BadRequestException(`Failed to send WhatsApp OTP: ${error.message}`);
-    }
+    return { success: true, message: 'OTP sent successfully' };
   }
 
   async verifyOtp(userId: string, phone: string, code: string) {

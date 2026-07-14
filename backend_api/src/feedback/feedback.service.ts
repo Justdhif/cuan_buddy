@@ -2,6 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { feedbacks, userProfiles, users } from '../database/schema';
 import { eq } from 'drizzle-orm';
+import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 
 @Injectable()
 export class FeedbackService {
@@ -32,42 +33,28 @@ export class FeedbackService {
     }
 
     // 3. Send WhatsApp via Fonnte API
-    const fonnteApiKey = process.env.FONNTE_API_KEY;
     const targetPhone = process.env.FONNTE_TARGET_PHONE;
-
-    if (!fonnteApiKey) {
-      this.logger.warn('FONNTE_API_KEY is not defined in environment. WhatsApp notification skipped.');
+    if (!targetPhone) {
+      this.logger.warn('FONNTE_TARGET_PHONE is not defined in environment. WhatsApp notification skipped.');
       return feedback;
     }
 
-    const waMessage = `*FEEDBACK / MASUKAN BARU* 📩\n\n` +
-      `*Nama:* ${profile?.fullName || 'Tidak Diketahui'}\n` +
-      `*Email:* ${userDetail?.email || 'Tidak Diketahui'}\n` +
-      `*No. HP:* ${profile?.phoneNumber || 'Tidak Diketahui'}\n` +
-      `*Waktu:* ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n\n` +
-      `*Pesan:*\n"${message}"`;
+    const waDescription = `*Name:* ${profile?.fullName || 'Unknown'}\n` +
+      `*Email:* ${userDetail?.email || 'Unknown'}\n` +
+      `*Phone:* ${profile?.phoneNumber || 'Unknown'}\n` +
+      `*Time:* ${new Date().toUTCString()}\n\n` +
+      `*Message:*\n"${message}"`;
 
-    try {
-      const response = await fetch('https://api.fonnte.com/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': fonnteApiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          target: targetPhone,
-          message: waMessage,
-        }),
-      });
+    const result = await sendWhatsAppMessage({
+      phone: targetPhone,
+      title: 'NEW USER FEEDBACK',
+      description: waDescription,
+    });
 
-      const resData = await response.json();
-      if (!response.ok || !resData.status) {
-        this.logger.error(`Fonnte API responded with error: ${JSON.stringify(resData)}`);
-      } else {
-        this.logger.log(`Feedback WhatsApp sent successfully to ${targetPhone}`);
-      }
-    } catch (error) {
-      this.logger.error('Failed to send WhatsApp message via Fonnte', error);
+    if (!result.success) {
+      this.logger.error(`Failed to send WhatsApp message via Fonnte: ${result.reason}`);
+    } else {
+      this.logger.log(`Feedback WhatsApp sent successfully to ${targetPhone}`);
     }
 
     return feedback;
