@@ -44,51 +44,44 @@ class ProfileSetupScreen extends ConsumerStatefulWidget {
 class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
-  
-  // Input Controllers
-  final _fullNameController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _bioController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _otpController = TextEditingController();
 
-  // Date of Birth & Gender State
+  // State Variables
+  String _fullName = '';
+  String _username = '';
+  String _bio = '';
   DateTime? _selectedDate;
   String? _selectedGender;
 
-  // Avatar State (Same as EditProfile)
-  String? _selectedAvatarUrl;
-  File? _selectedLocalFile;
-  late List<String> _avatarOptions;
-
-  // Phone OTP Flow State
+  // Phone OTP State
+  final _phoneController = TextEditingController();
+  final _otpController = TextEditingController();
   bool _isSendingOtp = false;
   bool _otpSent = false;
   bool _isVerifying = false;
   bool _isPhoneVerified = false;
 
-  // Loading indicator for profile save
+  // Avatar State
+  String? _selectedAvatarUrl;
+  File? _selectedLocalFile;
+  late List<String> _avatarOptions;
+
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
     _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
-    // Default to the first avatar option
     _selectedAvatarUrl = _avatarOptions.first;
   }
 
   @override
   void dispose() {
-    _fullNameController.dispose();
-    _usernameController.dispose();
-    _bioController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
   }
 
-  // ─── Avatar Logic ──────────────────────────────────────────────────────────
+  // ─── Avatar Bottom Sheet ───────────────────────────────────────────────────
   Future<void> _pickAvatarAndCrop() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
@@ -264,7 +257,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ),
                         ),
                         child: Text(
-                          l10n.selectLanguage, // Just a confirmation button labeled Select
+                          l10n.selectLanguage,
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -274,6 +267,191 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  // ─── Input Bottom Sheets ───────────────────────────────────────────────────
+  void _showEditNameSheet() {
+    final controller = TextEditingController(text: _fullName);
+    final formKey = GlobalKey<FormState>();
+
+    AppBottomSheet.show<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.fullName,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: controller,
+                  hint: l10n.fullNameHint,
+                  autofocus: true,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return l10n.fullNameRequired;
+                    if (v.trim().length < 2) return l10n.nameTooShortSetup;
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (!formKey.currentState!.validate()) return;
+                      setState(() => _fullName = controller.text.trim());
+                      Navigator.pop(sheetContext);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(l10n.saveButton, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditUsernameSheet() {
+    final controller = TextEditingController(text: _username);
+    final formKey = GlobalKey<FormState>();
+
+    AppBottomSheet.show<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Username',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                AppTextField(
+                  controller: controller,
+                  hint: 'e.g. janesmith',
+                  autofocus: true,
+                  prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Username is required';
+                    if (v.trim().length < 3) return 'Username must be at least 3 characters';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (!formKey.currentState!.validate()) return;
+                      setState(() => _username = controller.text.trim());
+                      Navigator.pop(sheetContext);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(l10n.saveButton, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditBioSheet() {
+    final controller = TextEditingController(text: _bio);
+
+    AppBottomSheet.show<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 24,
+            left: 24,
+            right: 24,
+            top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.bioField,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: controller,
+                hint: 'e.g. Financial enthusiast',
+                autofocus: true,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() => _bio = controller.text.trim());
+                    Navigator.pop(sheetContext);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(l10n.saveButton, style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -305,11 +483,145 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day} ${l10n.shortMonths[date.month - 1]} ${date.year}';
+
+  // ─── Gender Bottom Sheet ───────────────────────────────────────────────────
+  Widget _buildGenderOption({
+    required String value,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required StateSetter setModalState,
+  }) {
+    final isSelected = _selectedGender == value;
+    return GestureDetector(
+      onTap: () {
+        setModalState(() => _selectedGender = value);
+        setState(() => _selectedGender = value);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : (isDark ? AppColors.surfaceDark : Colors.grey.shade50),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary.withValues(alpha: 0.15)
+                    : (isDark ? AppColors.backgroundDark : Colors.grey.shade100),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.primary : (isDark ? Colors.white60 : Colors.black45),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.primary : (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+            const Spacer(),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? AppColors.primary : (isDark ? Colors.white38 : Colors.black26),
+                  width: 2,
+                ),
+                color: isSelected ? AppColors.primary : Colors.transparent,
+              ),
+              child: isSelected
+                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  // ─── OTP Logic ─────────────────────────────────────────────────────────────
+  void _showEditGenderSheet() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    AppBottomSheet.show<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setModalState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.genderField,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildGenderOption(
+                      value: 'male',
+                      label: l10n.genderMale,
+                      icon: Icons.male_rounded,
+                      isDark: isDark,
+                      setModalState: setModalState,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildGenderOption(
+                      value: 'female',
+                      label: l10n.genderFemale,
+                      icon: Icons.female_rounded,
+                      isDark: isDark,
+                      setModalState: setModalState,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(l10n.saveButton, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ─── OTP / Phone Verification Logic ────────────────────────────────────────
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
@@ -332,8 +644,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
 
     setState(() => _isSendingOtp = true);
-
-    // Simulate OTP WhatsApp sending
     await Future.delayed(const Duration(seconds: 1));
 
     if (mounted) {
@@ -381,15 +691,22 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  // ─── Save Logic ────────────────────────────────────────────────────────────
+  // ─── Save & Submit ─────────────────────────────────────────────────────────
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
-    
+    if (_fullName.trim().isEmpty) {
+      AppSnackbar.show(
+        context,
+        title: l10n.error,
+        message: l10n.fullNameRequired,
+        type: SnackbarType.error,
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final repo = ref.read(profileRepositoryProvider);
-      
-      // Upload avatar first if local file selected
+
       String? finalAvatarUrl = _selectedAvatarUrl;
       if (_selectedLocalFile != null) {
         final dio = ref.read(dioClientProvider).dio;
@@ -409,23 +726,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         finalAvatarUrl = response.data['avatar'] as String;
       }
 
-      // Sync Avatar URL to server
       if (finalAvatarUrl != null) {
         await repo.updateAvatar(avatarUrl: finalAvatarUrl);
       }
 
-      // Sync remaining details
       final birthdateIso = _selectedDate?.toIso8601String().split('T').first;
       await repo.updateProfile(
-        fullName: _fullNameController.text.trim(),
-        username: _usernameController.text.trim().isNotEmpty ? _usernameController.text.trim() : null,
-        bio: _bioController.text.trim().isNotEmpty ? _bioController.text.trim() : null,
+        fullName: _fullName,
+        username: _username.isNotEmpty ? _username : null,
+        bio: _bio.isNotEmpty ? _bio : null,
         birthDate: birthdateIso,
         gender: _selectedGender,
         phoneNumber: _isPhoneVerified ? _phoneController.text.trim() : null,
       );
 
-      // Complete profile preferences flag
       await ref.read(preferencesServiceProvider).setProfileComplete(true);
       ref.invalidate(profileProvider);
 
@@ -444,12 +758,80 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
+  // ─── Info ListTile Builder (Identical to EditProfile) ─────────────────────
+  Widget _buildInfoTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isDark ? Colors.white60 : Colors.black54,
+              size: 24,
+            ),
+            const SizedBox(width: 24),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.white30 : Colors.black26,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hintColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
+    final fallback = l10n.notSet;
 
-    // Pin theme definitions for OTP verification code
+    // Formatting date display
+    String birthdateDisplay = fallback;
+    if (_selectedDate != null) {
+      birthdateDisplay = '${_selectedDate!.day} ${l10n.shortMonths[_selectedDate!.month - 1]} ${_selectedDate!.year}';
+    }
+
+    // Gender display
+    String genderDisplay = fallback;
+    if (_selectedGender == 'male') {
+      genderDisplay = l10n.genderMale;
+    } else if (_selectedGender == 'female') {
+      genderDisplay = l10n.genderFemale;
+    }
+
     final defaultPinTheme = PinTheme(
       width: 48,
       height: 48,
@@ -471,48 +853,53 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Step header progress indicator
-                Row(
-                  children: [
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: 0.6,
-                        backgroundColor: isDark ? Colors.white10 : AppColors.borderLight,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        borderRadius: BorderRadius.circular(4),
+                // Top step progress indicator
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: LinearProgressIndicator(
+                              value: 0.6,
+                              backgroundColor: isDark ? Colors.white10 : AppColors.borderLight,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            l10n.step1of2,
+                            style: AppTypography.textTheme.labelSmall?.copyWith(color: hintColor),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.step1of2,
-                      style: AppTypography.textTheme.labelSmall
-                          ?.copyWith(color: hintColor),
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+                      const Text('🎉', style: TextStyle(fontSize: 48)),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.completeYourProfile,
+                        style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.profileSetupSubtitle,
+                        style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
-                const Text('🎉', style: TextStyle(fontSize: 48)),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.completeYourProfile,
-                  style: AppTypography.textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  l10n.profileSetupSubtitle,
-                  style: AppTypography.textTheme.bodyLarge
-                      ?.copyWith(color: hintColor),
-                ),
-                const SizedBox(height: 28),
 
-                // ─── Interactive Circle Avatar Picker (Identical to EditProfile) ───
+                // Interactive Avatar Editor
                 Center(
                   child: Column(
                     children: [
@@ -560,313 +947,190 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
+                const Divider(height: 1, thickness: 0.5),
 
-                // ─── Input Fields Form ───
-                AppTextField(
-                  controller: _fullNameController,
-                  label: l10n.fullName,
-                  hint: l10n.fullNameHint,
-                  keyboardType: TextInputType.name,
-                  prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) {
-                      return l10n.fullNameRequired;
-                    }
-                    if (v.trim().length < 2) return l10n.nameTooShortSetup;
-                    return null;
-                  },
+                // ─── Input Fields Tiles (Styled exactly like EditProfile, opening Sheets) ───
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.person_outline_rounded,
+                  title: l10n.fullName,
+                  subtitle: _fullName.isNotEmpty ? _fullName : fallback,
+                  onTap: _showEditNameSheet,
                 ),
-                const SizedBox(height: 16),
-
-                AppTextField(
-                  controller: _usernameController,
-                  label: 'Username',
-                  hint: 'e.g. janesmith',
-                  keyboardType: TextInputType.text,
-                  prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20),
-                  validator: (v) {
-                    if (v != null && v.isNotEmpty && v.trim().length < 3) {
-                      return 'Username must be at least 3 characters';
-                    }
-                    return null;
-                  },
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.alternate_email_rounded,
+                  title: 'Username',
+                  subtitle: _username.isNotEmpty ? '@$_username' : fallback,
+                  onTap: _showEditUsernameSheet,
                 ),
-                const SizedBox(height: 16),
-
-                AppTextField(
-                  controller: _bioController,
-                  label: l10n.bioField,
-                  hint: 'e.g. Financial enthusiast',
-                  keyboardType: TextInputType.multiline,
-                  prefixIcon: const Icon(Icons.info_outline_rounded, size: 20),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.info_outline_rounded,
+                  title: l10n.bioField,
+                  subtitle: _bio.isNotEmpty ? _bio : fallback,
+                  onTap: _showEditBioSheet,
                 ),
-                const SizedBox(height: 16),
-
-                // Date of Birth Field
-                Text(
-                  l10n.dateOfBirth,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                InkWell(
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.cake_outlined,
+                  title: l10n.dateOfBirth,
+                  subtitle: birthdateDisplay,
                   onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      color: isDark ? AppColors.surfaceDark : Colors.white,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.cake_outlined,
-                          color: isDark ? Colors.white60 : Colors.black54,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _selectedDate != null
-                                ? _formatDate(_selectedDate!)
-                                : l10n.selectBirthdate,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: _selectedDate != null
-                                  ? (isDark ? Colors.white : Colors.black87)
-                                  : hintColor,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          color: AppColors.primary,
-                          size: 16,
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-                const SizedBox(height: 20),
-
-                // Gender Fields Selection Row
-                Text(
-                  l10n.genderField,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.wc_outlined,
+                  title: l10n.genderField,
+                  subtitle: genderDisplay,
+                  onTap: _showEditGenderSheet,
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    // Male Chip Option
-                    Expanded(
-                      child: ChoiceChip(
-                        label: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.male_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            Text(l10n.genderMale),
-                          ],
-                        ),
-                        selected: _selectedGender == 'male',
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedGender = selected ? 'male' : null;
-                          });
-                        },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: _selectedGender == 'male' ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Female Chip Option
-                    Expanded(
-                      child: ChoiceChip(
-                        label: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.female_rounded, size: 18),
-                            const SizedBox(width: 8),
-                            Text(l10n.genderFemale),
-                          ],
-                        ),
-                        selected: _selectedGender == 'female',
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedGender = selected ? 'female' : null;
-                          });
-                        },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                        checkmarkColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: _selectedGender == 'female' ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                const Divider(height: 1, thickness: 0.5),
                 const SizedBox(height: 24),
 
-                // ─── Phone Number OTP verification section ───
-                Text(
-                  l10n.whatsappPhoneNumber,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        enabled: !_otpSent && !_isPhoneVerified,
+                // ─── WhatsApp Phone Number OTP Section (Remains direct/inline) ───
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.whatsappPhoneNumber,
                         style: TextStyle(
-                          color: isDark ? Colors.white : Colors.black87,
-                          fontSize: 15,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'e.g. +6282113285557',
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: AppColors.primary, width: 2),
-                            borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-                            borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          ),
-                          disabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.4) : AppColors.borderLight.withValues(alpha: 0.4)),
-                            borderRadius: const BorderRadius.all(Radius.circular(12)),
-                          ),
-                          prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-                          suffixIcon: _isPhoneVerified
-                              ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
-                              : null,
+                          fontSize: 14,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    if (!_isPhoneVerified) ...[
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 52,
-                        child: OutlinedButton(
-                          onPressed: _isSendingOtp ? null : _sendOtp,
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.primary),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              enabled: !_otpSent && !_isPhoneVerified,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontSize: 15,
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'e.g. +6282113285557',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: AppColors.primary, width: 2),
+                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                ),
+                                disabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.4) : AppColors.borderLight.withValues(alpha: 0.4)),
+                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
+                                ),
+                                prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                                suffixIcon: _isPhoneVerified
+                                    ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                                    : null,
+                              ),
                             ),
                           ),
-                          child: _isSendingOtp
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Text(
-                                  _otpSent ? 'Resend' : 'Send OTP',
-                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                          if (!_isPhoneVerified) ...[
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 52,
+                              child: OutlinedButton(
+                                onPressed: _isSendingOtp ? null : _sendOtp,
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: AppColors.primary),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
                                 ),
-                        ),
+                                child: _isSendingOtp
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : Text(
+                                        _otpSent ? 'Resend' : 'Send OTP',
+                                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ],
-                ),
 
-                // OTP verification Pinput widget
-                if (_otpSent && !_isPhoneVerified) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.enterOtpTitle,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Pinput(
-                      controller: _otpController,
-                      length: 6,
-                      defaultPinTheme: defaultPinTheme,
-                      focusedPinTheme: focusedPinTheme,
-                      onCompleted: (_) => _verifyOtp(),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      l10n.useDemoCode,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.white60 : Colors.black54,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: () => setState(() => _otpSent = false),
-                        child: Text(
-                          l10n.changePhoneNumberLink,
-                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      // Inline OTP Pinput Area
+                      if (_otpSent && !_isPhoneVerified) ...[
+                        const SizedBox(height: 20),
+                        Text(
+                          l10n.enterOtpTitle,
+                          style: AppTypography.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                      ),
-                      ElevatedButton(
-                        onPressed: _isVerifying ? null : _verifyOtp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: Pinput(
+                            controller: _otpController,
+                            length: 6,
+                            defaultPinTheme: defaultPinTheme,
+                            focusedPinTheme: focusedPinTheme,
+                            onCompleted: (_) => _verifyOtp(),
                           ),
                         ),
-                        child: _isVerifying
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : Text(l10n.verifyAndSave),
+                        const SizedBox(height: 8),
+                        Center(
+                          child: Text(
+                            l10n.useDemoCode,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? Colors.white60 : Colors.black54,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: () => setState(() => _otpSent = false),
+                              child: Text(
+                                l10n.changePhoneNumberLink,
+                                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: _isVerifying ? null : _verifyOtp,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: _isVerifying
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : Text(l10n.verifyAndSave),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 48),
+
+                      // Continue / Complete Setup Button
+                      AppButton(
+                        label: l10n.continueButton,
+                        onPressed: _saveProfile,
+                        isLoading: _isSaving,
                       ),
                     ],
                   ),
-                ],
-                const SizedBox(height: 48),
-
-                // Main Save & Continue button
-                AppButton(
-                  label: l10n.continueButton,
-                  onPressed: _saveProfile,
-                  isLoading: _isSaving,
                 ),
               ],
             ),
