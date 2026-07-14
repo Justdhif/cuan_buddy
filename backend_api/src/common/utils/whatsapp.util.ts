@@ -30,21 +30,21 @@ export async function sendWhatsAppMessage({
   // Bold title and double space for application footer
   const messageText = `*${title}*\n${description}\n\n${appFooter}`;
 
-  // Standard fallback image URL
-  const finalImageUrl = imageUrl || 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=500';
+  // Standard fallback image URL (financial workspace)
+  const finalImageUrl = imageUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&fm=jpg';
 
   try {
+    const params = new URLSearchParams();
+    params.append('target', phone);
+    params.append('message', messageText);
+    params.append('url', finalImageUrl);
+
     const response = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
       headers: {
         'Authorization': fonnteApiKey,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        target: phone,
-        message: messageText,
-        url: finalImageUrl,
-      }),
+      body: params,
     });
 
     const resData = await response.json();
