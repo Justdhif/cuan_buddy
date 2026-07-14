@@ -534,6 +534,17 @@ abstract class AppLocalizations {
   String get continueButton;
   String get nameTooShortSetup;
   String get failedToSaveProfile;
+  String get whatsappVerificationTitle;
+  String get whatsappVerificationSubtitle;
+  String get fillFullNameAction;
+  String get fillUsernameAction;
+  String get verifyWhatsappFirst;
+  String get saveAndComplete;
+  String resendCodeIn(String time);
+  String get didNotReceiveCode;
+  String get resendAction;
+  String get backToProfile;
+  String get cropAvatar;
 
   // ─── Common ───────────────────────────────────────────────────────────────────
   String get retry;

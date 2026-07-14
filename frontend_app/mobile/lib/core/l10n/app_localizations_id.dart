@@ -1027,6 +1027,28 @@ class AppLocalizationsId extends AppLocalizations {
   String get nameTooShortSetup => 'Nama minimal 2 karakter';
   @override
   String get failedToSaveProfile => 'Gagal menyimpan profil';
+  @override
+  String get whatsappVerificationTitle => 'Verifikasi WhatsApp';
+  @override
+  String get whatsappVerificationSubtitle => 'Masukkan nomor telepon WhatsApp Anda untuk mengamankan akun.';
+  @override
+  String get fillFullNameAction => 'Isi Nama Lengkap';
+  @override
+  String get fillUsernameAction => 'Isi Username';
+  @override
+  String get verifyWhatsappFirst => 'Verifikasi WhatsApp Terlebih Dahulu';
+  @override
+  String get saveAndComplete => 'Simpan & Selesai';
+  @override
+  String resendCodeIn(String time) => 'Kirim ulang kode dalam $time';
+  @override
+  String get didNotReceiveCode => 'Tidak menerima kode?';
+  @override
+  String get resendAction => 'Kirim Ulang';
+  @override
+  String get backToProfile => 'Kembali ke Profil';
+  @override
+  String get cropAvatar => 'Potong Avatar';
 
   // ─── Common ───────────────────────────────────────────────────────────────────
   @override

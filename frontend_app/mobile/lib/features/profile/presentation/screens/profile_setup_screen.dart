@@ -129,14 +129,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Crop Avatar',
+          toolbarTitle: l10n.cropAvatar,
           toolbarColor: AppColors.primary,
           toolbarWidgetColor: Colors.white,
           initAspectRatio: CropAspectRatioPreset.square,
           lockAspectRatio: true,
         ),
         IOSUiSettings(
-          title: 'Crop Avatar',
+          title: l10n.cropAvatar,
           aspectRatioLockEnabled: true,
           resetAspectRatioEnabled: false,
         ),
@@ -389,19 +389,19 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Username',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Text(
+                  l10n.usernameField,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 AppTextField(
                   controller: controller,
-                  hint: 'e.g. janesmith',
+                  hint: l10n.usernameHint,
                   autofocus: true,
                   prefixIcon: const Icon(Icons.alternate_email_rounded, size: 20),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Username is required';
-                    if (v.trim().length < 3) return 'Username must be at least 3 characters';
+                    if (v == null || v.isEmpty) return l10n.usernameCannotBeEmpty;
+                    if (v.trim().length < 3) return l10n.usernameInvalidFormat;
                     return null;
                   },
                 ),
@@ -458,7 +458,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               const SizedBox(height: 16),
               AppTextField(
                 controller: controller,
-                hint: 'e.g. Financial enthusiast',
+                hint: l10n.bioHint,
                 autofocus: true,
                 maxLines: 3,
               ),
@@ -913,11 +913,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     if (_currentStep == 1) {
       if (isNameMissing) {
-        buttonText = 'Isi Nama Lengkap';
+        buttonText = l10n.fillFullNameAction;
         buttonAction = _showEditNameSheet;
         isButtonEnabled = false;
       } else if (isUsernameMissing) {
-        buttonText = 'Isi Username';
+        buttonText = l10n.fillUsernameAction;
         buttonAction = _showEditUsernameSheet;
         isButtonEnabled = false;
       } else {
@@ -928,11 +928,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     } else {
       // Step 2
       if (!_isPhoneVerified) {
-        buttonText = 'Verifikasi WhatsApp Terlebih Dahulu';
+        buttonText = l10n.verifyWhatsappFirst;
         buttonAction = null;
         isButtonEnabled = false;
       } else {
-        buttonText = 'Simpan & Selesai';
+        buttonText = l10n.saveAndComplete;
         buttonAction = _isSaving ? null : _saveProfile;
         isButtonEnabled = true;
       }
@@ -1022,14 +1022,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        _currentStep == 1 ? l10n.completeYourProfile : 'Verifikasi WhatsApp',
+                        _currentStep == 1 ? l10n.completeYourProfile : l10n.whatsappVerificationTitle,
                         style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         _currentStep == 1
                             ? l10n.profileSetupSubtitle
-                            : 'Masukkan nomor telepon WhatsApp Anda untuk mengamankan akun.',
+                            : l10n.whatsappVerificationSubtitle,
                         style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
                       ),
                     ],
@@ -1223,8 +1223,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           Center(
                             child: Text(
                               _secondsRemaining > 0
-                                  ? 'Kirim ulang kode dalam ${_formatTimer(_secondsRemaining)}'
-                                  : 'Tidak menerima kode?',
+                                  ? l10n.resendCodeIn(_formatTimer(_secondsRemaining))
+                                  : l10n.didNotReceiveCode,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDark ? Colors.white70 : Colors.black54,
@@ -1237,7 +1237,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                               child: TextButton(
                                 onPressed: _isSendingOtp ? null : _sendOtp,
                                 child: Text(
-                                  'Kirim Ulang',
+                                  l10n.resendAction,
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.bold,

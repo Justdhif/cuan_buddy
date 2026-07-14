@@ -1022,6 +1022,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nameTooShortSetup => 'Name must be at least 2 characters';
   @override
   String get failedToSaveProfile => 'Failed to save profile';
+  @override
+  String get whatsappVerificationTitle => 'WhatsApp Verification';
+  @override
+  String get whatsappVerificationSubtitle => 'Enter your WhatsApp phone number to verify and secure your account.';
+  @override
+  String get fillFullNameAction => 'Fill Full Name';
+  @override
+  String get fillUsernameAction => 'Fill Username';
+  @override
+  String get verifyWhatsappFirst => 'Verify WhatsApp First';
+  @override
+  String get saveAndComplete => 'Save & Complete';
+  @override
+  String resendCodeIn(String time) => 'Resend code in $time';
+  @override
+  String get didNotReceiveCode => 'Didn\'t receive code?';
+  @override
+  String get resendAction => 'Resend';
+  @override
+  String get backToProfile => 'Back to Profile';
+  @override
+  String get cropAvatar => 'Crop Avatar';
 
   // ─── Common ───────────────────────────────────────────────────────────────────
   @override
