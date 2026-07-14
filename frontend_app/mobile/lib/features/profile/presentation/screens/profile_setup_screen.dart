@@ -621,7 +621,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  // ─── OTP / Phone Verification Logic ────────────────────────────────────────
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
@@ -644,31 +643,48 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
 
     setState(() => _isSendingOtp = true);
-    await Future.delayed(const Duration(seconds: 1));
 
-    if (mounted) {
-      setState(() {
-        _isSendingOtp = false;
-        _otpSent = true;
-      });
-      AppSnackbar.show(
-        context,
-        title: l10n.otpSentTitle,
-        message: l10n.otpSentMessage(phone),
-        type: SnackbarType.success,
-      );
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.post('/profiles/phone/send-otp', data: {'phone': phone});
+
+      if (mounted) {
+        setState(() {
+          _isSendingOtp = false;
+          _otpSent = true;
+        });
+        AppSnackbar.show(
+          context,
+          title: l10n.otpSentTitle,
+          message: l10n.otpSentMessage(phone),
+          type: SnackbarType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSendingOtp = false);
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Failed to send OTP: $e',
+          type: SnackbarType.error,
+        );
+      }
     }
   }
 
   Future<void> _verifyOtp() async {
     final code = _otpController.text;
     if (code.length != 6) return;
+    final phone = _phoneController.text.trim();
 
     setState(() => _isVerifying = true);
-    await Future.delayed(const Duration(milliseconds: 800));
 
-    if (mounted) {
-      if (code == '123456') {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.post('/profiles/phone/verify-otp', data: {'phone': phone, 'code': code});
+
+      if (mounted) {
         setState(() {
           _isPhoneVerified = true;
           _otpSent = false;
@@ -679,15 +695,20 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           message: l10n.otpSuccessMessage,
           type: SnackbarType.success,
         );
-      } else {
+      }
+    } catch (e) {
+      if (mounted) {
         AppSnackbar.show(
           context,
-          title: l10n.otpInvalidCodeTitle,
-          message: l10n.otpInvalidCodeMessage,
+          title: l10n.otpFailedTitle,
+          message: 'Failed to verify OTP: $e',
           type: SnackbarType.error,
         );
       }
-      setState(() => _isVerifying = false);
+    } finally {
+      if (mounted) {
+        setState(() => _isVerifying = false);
+      }
     }
   }
 

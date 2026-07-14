@@ -5,6 +5,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../providers/profile_provider.dart';
 
 class ChangePhoneScreen extends ConsumerStatefulWidget {
@@ -34,27 +35,41 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
     if (!_formKey.currentState!.validate()) return;
     
     final l10n = AppLocalizations.of(context);
+    final phone = _phoneController.text.trim();
 
     setState(() {
       _isSendingOtp = true;
     });
 
-    // Simulate OTP sending to WhatsApp
-    await Future.delayed(const Duration(milliseconds: 1500));
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.post('/profiles/phone/send-otp', data: {'phone': phone});
 
-    if (mounted) {
-      setState(() {
-        _isSendingOtp = false;
-        _otpSent = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isSendingOtp = false;
+          _otpSent = true;
+        });
 
-      final phoneNumber = _phoneController.text.trim();
-      AppSnackbar.show(
-        context,
-        title: l10n.otpSentTitle,
-        message: l10n.otpSentMessage(phoneNumber),
-        type: SnackbarType.success,
-      );
+        AppSnackbar.show(
+          context,
+          title: l10n.otpSentTitle,
+          message: l10n.otpSentMessage(phone),
+          type: SnackbarType.success,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSendingOtp = false;
+        });
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Failed to send OTP: $e',
+          type: SnackbarType.error,
+        );
+      }
     }
   }
 
@@ -63,52 +78,42 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
     if (code.length != 6) return;
     
     final l10n = AppLocalizations.of(context);
+    final phone = _phoneController.text.trim();
 
     setState(() {
       _isVerifying = true;
     });
 
-    // Simulate verification checking (code: 123456)
-    await Future.delayed(const Duration(milliseconds: 1200));
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.post('/profiles/phone/verify-otp', data: {'phone': phone, 'code': code});
+      
+      ref.invalidate(profileProvider);
 
-    if (mounted) {
-      if (code == '123456') {
-        try {
-          final repo = ref.read(profileRepositoryProvider);
-          await repo.updateProfile(phoneNumber: _phoneController.text.trim());
-          ref.invalidate(profileProvider);
-
-          if (mounted) {
-            AppSnackbar.show(
-              context,
-              title: l10n.otpSuccessTitle,
-              message: l10n.otpSuccessMessage,
-              type: SnackbarType.success,
-            );
-            Navigator.of(context).pop(); // Go back to account screen
-          }
-        } catch (e) {
-          if (mounted) {
-            AppSnackbar.show(
-              context,
-              title: l10n.otpFailedTitle,
-              message: 'Error updating phone: $e',
-              type: SnackbarType.error,
-            );
-          }
-        }
-      } else {
+      if (mounted) {
         AppSnackbar.show(
           context,
-          title: l10n.otpInvalidCodeTitle,
-          message: l10n.otpInvalidCodeMessage,
+          title: l10n.otpSuccessTitle,
+          message: l10n.otpSuccessMessage,
+          type: SnackbarType.success,
+        );
+        Navigator.of(context).pop(); // Go back to account screen
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackbar.show(
+          context,
+          title: l10n.otpFailedTitle,
+          message: 'Failed to verify OTP: $e',
           type: SnackbarType.error,
         );
       }
-
-      setState(() {
-        _isVerifying = false;
-      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isVerifying = false;
+        });
+      }
     }
   }
 

@@ -68,4 +68,21 @@ export class UserProfilesController {
       throw new BadRequestException(error.message || 'An unexpected error occurred during upload');
     }
   }
+
+  @Post('phone/send-otp')
+  sendOtp(@Req() req, @Body() body: { phone: string }) {
+    if (!body.phone) {
+      throw new BadRequestException('Phone number is required');
+    }
+    return this.userProfilesService.sendOtp(req.user.userId, body.phone);
+  }
+
+  @Post('phone/verify-otp')
+  verifyOtp(@Req() req, @Body() body: { phone: string; code: string }) {
+    if (!body.phone || !body.code) {
+      throw new BadRequestException('Phone and code are required');
+    }
+    return this.userProfilesService.verifyOtp(req.user.userId, body.phone, body.code);
+  }
 }
+
