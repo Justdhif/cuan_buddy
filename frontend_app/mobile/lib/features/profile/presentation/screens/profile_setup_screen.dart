@@ -952,17 +952,17 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: _currentStep == 2
-          ? AppBar(
-              leading: IconButton(
+      appBar: AppBar(
+        leading: _currentStep == 2
+            ? IconButton(
                 icon: const Icon(Icons.chevron_left_rounded, size: 28),
                 onPressed: () => setState(() => _currentStep = 1),
-              ),
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-            )
-          : null,
+              )
+            : null,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
       // ─── Premium Dynamic Bottom Navigation Bar ───
       bottomNavigationBar: GestureDetector(
         onTap: buttonAction,
