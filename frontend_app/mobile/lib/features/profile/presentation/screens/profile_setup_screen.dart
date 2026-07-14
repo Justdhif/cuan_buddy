@@ -56,11 +56,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  Future<void> _skip() async {
-    await ref.read(preferencesServiceProvider).setProfileComplete(true);
-    if (!mounted) return;
-    context.go('/wallet-setup');
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -140,12 +136,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       label: l10n.continueButton,
                       onPressed: _saveProfile,
                       isLoading: _isLoading,
-                    ),
-                    const SizedBox(height: 12),
-                    AppButton(
-                      label: l10n.skip,
-                      onPressed: _skip,
-                      type: AppButtonType.text,
                     ),
                   ],
                 ),

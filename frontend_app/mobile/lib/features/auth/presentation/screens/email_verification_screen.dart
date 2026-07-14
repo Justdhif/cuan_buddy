@@ -7,6 +7,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../providers/auth_provider.dart';
 
 class EmailVerificationScreen extends ConsumerStatefulWidget {
@@ -84,7 +85,14 @@ class _EmailVerificationScreenState
               type: SnackbarType.success,
             );
             _redirectTimer = Timer(const Duration(seconds: 2), () {
-              if (mounted) context.go('/profile-setup');
+              if (mounted) {
+                final prefs = ref.read(preferencesServiceProvider);
+                if (!prefs.profileComplete) {
+                  context.go('/profile-setup');
+                } else {
+                  context.go('/home/dashboard');
+                }
+              }
             });
             return;
           }
@@ -99,7 +107,14 @@ class _EmailVerificationScreenState
           type: SnackbarType.success,
         );
         _redirectTimer = Timer(const Duration(seconds: 3), () {
-          if (mounted) context.go('/login');
+          if (mounted) {
+            final prefs = ref.read(preferencesServiceProvider);
+            if (!prefs.profileComplete) {
+              context.go('/profile-setup');
+            } else {
+              context.go('/login');
+            }
+          }
         });
       } else {
         AppSnackbar.show(
@@ -282,7 +297,12 @@ class _EmailVerificationScreenState
                       password: widget.password!,
                     ).then((_) {
                       if (ref.read(authNotifierProvider) is AuthStateAuthenticated) {
-                        goRouter.go('/profile-setup');
+                        final prefs = ref.read(preferencesServiceProvider);
+                        if (!prefs.profileComplete) {
+                          goRouter.go('/profile-setup');
+                        } else {
+                          goRouter.go('/home/dashboard');
+                        }
                       } else {
                         goRouter.go('/login');
                       }

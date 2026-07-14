@@ -36,15 +36,18 @@ class AuthRepository {
   Future<String> register({
     required String email,
     required String password,
-    required String fullName,
   }) async {
     final response = await _dio.post('/auth/register', data: {
       'email': email,
       'password': password,
-      'fullName': fullName,
     });
     final data = response.data as Map<String, dynamic>;
     return data['message'] as String? ?? 'Registration successful!';
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    final response = await _dio.get('/profiles/me');
+    return response.data as Map<String, dynamic>;
   }
 
   Future<void> logout() async {

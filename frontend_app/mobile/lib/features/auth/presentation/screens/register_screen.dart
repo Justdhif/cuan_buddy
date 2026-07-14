@@ -17,7 +17,6 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -26,7 +25,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
-    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -39,7 +37,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final message = await ref.read(authNotifierProvider.notifier).register(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          fullName: _fullNameController.text.trim(),
         );
     setState(() => _isLoading = false);
     if (!mounted) return;
@@ -125,22 +122,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    _DarkTextField(
-                      controller: _fullNameController,
-                      label: l10n.fullName,
-                      hint: l10n.fullNameHint,
-                      icon: Icons.person_outline_rounded,
-                      keyboardType: TextInputType.name,
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return l10n.fullNameRequired;
-                        }
-                        if (value.trim().length < 2) return l10n.nameTooShort;
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
                     _DarkTextField(
                       controller: _emailController,
                       label: l10n.email,

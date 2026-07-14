@@ -22,15 +22,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> checkAuth() async {
     final hasToken = await _repository.hasToken();
-    state = hasToken
-        ? const AuthStateAuthenticated()
-        : const AuthStateUnauthenticated();
+    if (hasToken) {
+      try {
+        final profile = await _repository.getProfile();
+        final fullName = profile['fullName'] as String?;
+        if (fullName == null || fullName.trim().isEmpty) {
+          await _repository.preferencesService.setProfileComplete(false);
+        } else {
+          await _repository.preferencesService.setProfileComplete(true);
+        }
+        state = const AuthStateAuthenticated();
+      } catch (_) {
+        state = const AuthStateUnauthenticated();
+      }
+    } else {
+      state = const AuthStateUnauthenticated();
+    }
   }
 
   Future<void> login({required String email, required String password}) async {
     state = const AuthStateLoading();
     try {
       await _repository.login(email: email, password: password);
+      try {
+        final profile = await _repository.getProfile();
+        final fullName = profile['fullName'] as String?;
+        if (fullName == null || fullName.trim().isEmpty) {
+          await _repository.preferencesService.setProfileComplete(false);
+        } else {
+          await _repository.preferencesService.setProfileComplete(true);
+        }
+      } catch (_) {
+        await _repository.preferencesService.setProfileComplete(false);
+      }
       state = const AuthStateAuthenticated();
     } catch (e) {
       state = AuthStateError(_extractMessage(e));
@@ -40,14 +64,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<String?> register({
     required String email,
     required String password,
-    required String fullName,
   }) async {
     state = const AuthStateLoading();
     try {
       final message = await _repository.register(
         email: email,
         password: password,
-        fullName: fullName,
       );
       state = const AuthStateUnauthenticated();
       return message;

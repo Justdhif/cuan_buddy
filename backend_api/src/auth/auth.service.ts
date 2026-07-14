@@ -45,7 +45,6 @@ export class AuthService {
 
       await this.db.insert(userProfiles).values({
         userId: insertedUser.id,
-        fullName: registerDto.fullName,
         avatar: avatarValue,
       });
 

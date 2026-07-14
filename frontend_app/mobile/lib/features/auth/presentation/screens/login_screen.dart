@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/providers/core_providers.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -44,7 +45,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.listen<AuthState>(authNotifierProvider, (_, next) {
       switch (next) {
         case AuthStateAuthenticated():
-          context.go('/home/dashboard');
+          final prefs = ref.read(preferencesServiceProvider);
+          if (!prefs.profileComplete) {
+            context.go('/profile-setup');
+          } else {
+            context.go('/home/dashboard');
+          }
         case AuthStateError(:final message):
           AppSnackbar.show(
             context,
