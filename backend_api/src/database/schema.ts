@@ -30,6 +30,7 @@ export const userProfiles = pgTable('user_profiles', {
   birthDate: timestamp('birth_date'),
   gender: text('gender'),
   bio: text('bio'),
+  language: text('language').default('en'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

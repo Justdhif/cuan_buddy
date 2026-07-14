@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { notifications, users } from '../database/schema';
+import { notifications, users, userProfiles } from '../database/schema';
 import { formatPaginatedResponse, formatDate } from '../common/utils/formatter.util';
 import { NotificationsGateway } from './notifications.gateway';
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
@@ -91,60 +91,88 @@ export class NotificationsService {
       createdAtFormatted: formatDate(newNotification.createdAt),
     });
 
-    // 2. Fetch User to check for FCM Token
+    // 2. Fetch User and Profile to check for FCM Token and Language
     const userRecord = await this.db.query.users.findFirst({
       where: eq(users.id, userId),
     });
 
     if (userRecord?.fcmToken && getApps().length > 0) {
+      const profile = await this.db.query.userProfiles.findFirst({
+        where: eq(userProfiles.userId, userId),
+      });
+      const lang = profile?.language || 'en';
+
       let titleText = title;
       let bodyText = message;
 
       try {
+        const payload = JSON.parse(message);
+
         if (title === 'TRANSACTION_RECORDED') {
-          titleText = 'Transaksi Baru Recorded 💰';
-          const payload = JSON.parse(message);
-          const typeStr = payload.type === 'income' ? 'Pemasukan' : 'Pengeluaran';
-          const currencySymbol = payload.currency === 'USD' ? '$' : 'Rp';
-          const amtStr = new Intl.NumberFormat('id-ID', { 
+          const isId = lang === 'id';
+          titleText = isId ? 'Transaksi Baru 💰' : 'New Transaction Recorded 💰';
+          const typeStr = payload.type === 'income' 
+            ? (isId ? 'Pemasukan' : 'Income') 
+            : (isId ? 'Pengeluaran' : 'Expense');
+          const amtStr = new Intl.NumberFormat(isId ? 'id-ID' : 'en-US', { 
             style: 'currency', 
             currency: payload.currency || 'IDR', 
             maximumFractionDigits: 0 
           }).format(payload.amount);
-          bodyText = `${typeStr} baru tercatat: ${amtStr}`;
+          bodyText = isId 
+            ? `${typeStr} baru tercatat: ${amtStr}` 
+            : `New ${typeStr.toLowerCase()} recorded: ${amtStr}`;
         } else if (title === 'FRIEND_REQUEST') {
-          titleText = 'Permintaan Pertemanan 👋';
-          const payload = JSON.parse(message);
-          const sender = payload.senderName || payload.senderEmail || 'Seseorang';
-          bodyText = `${sender} ingin berteman dengan Anda`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Permintaan Pertemanan 👋' : 'Friend Request 👋';
+          const sender = payload.senderName || payload.senderEmail || (isId ? 'Seseorang' : 'Someone');
+          bodyText = isId 
+            ? `${sender} ingin berteman dengan Anda` 
+            : `${sender} wants to be friends with you`;
         } else if (title === 'FRIEND_REQUEST_ACCEPTED') {
-          titleText = 'Pertemanan Diterima 🎉';
-          const payload = JSON.parse(message);
-          const receiver = payload.receiverName || payload.receiverEmail || 'Seseorang';
-          bodyText = `${receiver} menerima permintaan pertemanan Anda`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Pertemanan Diterima 🎉' : 'Friend Request Accepted 🎉';
+          const receiver = payload.receiverName || payload.receiverEmail || (isId ? 'Seseorang' : 'Someone');
+          bodyText = isId 
+            ? `${receiver} menerima permintaan pertemanan Anda` 
+            : `${receiver} accepted your friend request`;
         } else if (title === 'FRIEND_REQUEST_DECLINED') {
-          titleText = 'Pertemanan Ditolak ❌';
-          const payload = JSON.parse(message);
-          const receiver = payload.receiverName || payload.receiverEmail || 'Seseorang';
-          bodyText = `${receiver} menolak permintaan pertemanan Anda`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Pertemanan Ditolak ❌' : 'Friend Request Declined ❌';
+          const receiver = payload.receiverName || payload.receiverEmail || (isId ? 'Seseorang' : 'Someone');
+          bodyText = isId 
+            ? `${receiver} menolak permintaan pertemanan Anda` 
+            : `${receiver} declined your friend request`;
         } else if (title === 'ROOM_INVITATION') {
-          titleText = 'Undangan Ruang 🏡';
-          const payload = JSON.parse(message);
-          const inviter = payload.inviterName || 'Seseorang';
-          const room = payload.roomName || 'Ruang';
-          bodyText = `${inviter} mengundang Anda ke ruang ${room}`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Undangan Ruang 🏡' : 'Room Invitation 🏡';
+          const inviter = payload.inviterName || (isId ? 'Seseorang' : 'Someone');
+          const room = payload.roomName || (isId ? 'Ruang' : 'Room');
+          bodyText = isId 
+            ? `${inviter} mengundang Anda ke ruang ${room}` 
+            : `${inviter} invited you to room ${room}`;
         } else if (title === 'BUDGET_EXCEEDED') {
-          titleText = 'Batas Anggaran Terlewati ⚠️';
-          const payload = JSON.parse(message);
-          bodyText = `Anggaran bulanan untuk ${payload.categoryName || 'kategori'} telah terlewati.`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Batas Anggaran Terlewati ⚠️' : 'Budget Exceeded ⚠️';
+          const category = payload.categoryName || (isId ? 'kategori' : 'category');
+          bodyText = isId 
+            ? `Anggaran bulanan untuk ${category} telah terlewati.` 
+            : `Monthly budget for ${category} has been exceeded.`;
         } else if (title === 'BUDGET_WARNING') {
-          titleText = 'Peringatan Anggaran ⚠️';
-          const payload = JSON.parse(message);
-          bodyText = `Penggunaan anggaran bulanan untuk ${payload.categoryName || 'kategori'} mencapai ${(payload.ratio * 100).toFixed(0)}%.`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Peringatan Anggaran ⚠️' : 'Budget Warning ⚠️';
+          const category = payload.categoryName || (isId ? 'kategori' : 'category');
+          const percentage = (payload.ratio * 100).toFixed(0);
+          bodyText = isId 
+            ? `Penggunaan anggaran bulanan untuk ${category} mencapai ${percentage}%.` 
+            : `Monthly budget usage for ${category} has reached ${percentage}%.`;
         } else if (title === 'BUDGET_PREDICTION_WARNING') {
-          titleText = 'Prediksi Batas Anggaran 📈';
-          const payload = JSON.parse(message);
-          bodyText = `Pengeluaran diprediksi melebihi anggaran untuk ${payload.categoryName || 'kategori'}.`;
+          const isId = lang === 'id';
+          titleText = isId ? 'Prediksi Batas Anggaran 📈' : 'Budget Limit Prediction 📈';
+          const category = payload.categoryName || (isId ? 'kategori' : 'category');
+          bodyText = isId 
+            ? `Pengeluaran diprediksi melebihi anggaran untuk ${category}.` 
+            : `Spending is predicted to exceed the budget for ${category}.`;
         }
       } catch (_) {
         // Fallback to raw values if parsing fails

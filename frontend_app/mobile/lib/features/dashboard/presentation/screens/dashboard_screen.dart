@@ -22,6 +22,7 @@ import '../../../shared/widgets/transaction_card.dart';
 import '../../../budgets/presentation/providers/budgets_provider.dart';
 import '../../../shared/widgets/budget_card.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/providers/language_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -63,6 +64,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         } catch (e) {
           debugPrint('Failed to upload FCM token to backend: $e');
         }
+
+        // Upload Language to backend for push notifications
+        try {
+          final lang = ref.read(languageProvider);
+          await ref.read(dioClientProvider).dio.patch('/profiles/me', data: {'language': lang});
+          debugPrint('Language setting synchronized to backend: $lang');
+        } catch (_) {}
 
         // Check for auto backup on launch
         ref.read(backupWorkerProvider).checkAndRunAutoBackup();
