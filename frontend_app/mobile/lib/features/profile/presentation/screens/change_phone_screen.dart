@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pinput/pinput.dart';
+import 'dart:async';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -24,11 +25,38 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
   bool _otpSent = false;
   bool _isVerifying = false;
 
+  // Countdown Timer
+  int _secondsRemaining = 0;
+  Timer? _timer;
+
   @override
   void dispose() {
     _phoneController.dispose();
     _otpController.dispose();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _secondsRemaining = 300; // 5 minutes
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  String _formatTimer(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   Future<void> _sendOtp() async {
@@ -50,6 +78,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
           _isSendingOtp = false;
           _otpSent = true;
         });
+        _startTimer();
 
         AppSnackbar.show(
           context,
@@ -257,17 +286,33 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
                     onCompleted: (_) => _verifyOtp(),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Center(
                   child: Text(
-                      l10n.useDemoCode,
+                    _secondsRemaining > 0
+                        ? 'Kirim ulang kode dalam ${_formatTimer(_secondsRemaining)}'
+                        : 'Tidak menerima kode?',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? Colors.white60 : Colors.black54,
-                      fontStyle: FontStyle.italic,
+                      fontSize: 14,
+                      color: isDark ? Colors.white70 : Colors.black54,
                     ),
                   ),
                 ),
+                if (_secondsRemaining == 0) ...[
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: _isSendingOtp ? null : _sendOtp,
+                      child: Text(
+                        'Kirim Ulang',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,

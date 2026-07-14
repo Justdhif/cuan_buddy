@@ -97,12 +97,6 @@ export class UserProfilesService {
   async verifyOtp(userId: string, phone: string, code: string) {
     const otpData = this.otpStore.get(phone);
     
-    // Allow demo/test bypass code '123456'
-    if (code === '123456') {
-      await this.updateProfile(userId, { phoneNumber: phone });
-      this.otpStore.delete(phone);
-      return { success: true, message: 'Phone number updated successfully' };
-    }
 
     if (!otpData) {
       throw new BadRequestException('OTP not found or has expired. Please request a new one.');

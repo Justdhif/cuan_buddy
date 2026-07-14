@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -74,11 +75,39 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _selectedAvatarUrl = _avatarOptions.first;
   }
 
+  // Countdown Timer
+  int _secondsRemaining = 0;
+  Timer? _timer;
+
   @override
   void dispose() {
     _phoneController.dispose();
     _otpController.dispose();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  // ─── Timer Logic ──────────────────────────────────────────────────────────
+  void _startTimer() {
+    _timer?.cancel();
+    setState(() {
+      _secondsRemaining = 300; // 5 minutes
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining > 0) {
+        setState(() {
+          _secondsRemaining--;
+        });
+      } else {
+        _timer?.cancel();
+      }
+    });
+  }
+
+  String _formatTimer(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   // ─── Avatar Bottom Sheet ───────────────────────────────────────────────────
@@ -653,6 +682,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           _isSendingOtp = false;
           _otpSent = true;
         });
+        _startTimer();
         AppSnackbar.show(
           context,
           title: l10n.otpSentTitle,
@@ -1058,7 +1088,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             SizedBox(
                               height: 52,
                               child: OutlinedButton(
-                                onPressed: _isSendingOtp ? null : _sendOtp,
+                                onPressed: (_isSendingOtp || _secondsRemaining > 0) ? null : _sendOtp,
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(color: AppColors.primary),
                                   shape: RoundedRectangleBorder(
@@ -1098,17 +1128,33 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                             onCompleted: (_) => _verifyOtp(),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         Center(
                           child: Text(
-                            l10n.useDemoCode,
+                            _secondsRemaining > 0
+                                ? 'Kirim ulang kode dalam ${_formatTimer(_secondsRemaining)}'
+                                : 'Tidak menerima kode?',
                             style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? Colors.white60 : Colors.black54,
-                              fontStyle: FontStyle.italic,
+                              fontSize: 14,
+                              color: isDark ? Colors.white70 : Colors.black54,
                             ),
                           ),
                         ),
+                        if (_secondsRemaining == 0) ...[
+                          const SizedBox(height: 8),
+                          Center(
+                            child: TextButton(
+                              onPressed: _isSendingOtp ? null : _sendOtp,
+                              child: Text(
+                                'Kirim Ulang',
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
