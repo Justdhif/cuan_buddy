@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import 'avatar_border_helper.dart';
 
 class ProfileSetupStep1 extends StatelessWidget {
   const ProfileSetupStep1({
@@ -84,50 +84,12 @@ class ProfileSetupStep1 extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: onAvatarEditTap,
-                child: SizedBox(
-                  width: 108,
-                  height: 108,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Positioned(
-                        top: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
-                        bottom: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
-                        left: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
-                        right: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                          ),
-                          child: ClipOval(
-                            child: selectedLocalFile != null
-                                ? Image.file(
-                                    selectedLocalFile!,
-                                    fit: BoxFit.cover,
-                                  )
-                                : (selectedAvatarUrl != null && selectedAvatarUrl!.isNotEmpty)
-                                    ? CachedNetworkImage(
-                                        imageUrl: selectedAvatarUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, __) => const Center(
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                        errorWidget: (_, __, ___) => const Icon(Icons.person, size: 50),
-                                      )
-                                    : const Icon(Icons.person, size: 50),
-                          ),
-                        ),
-                      ),
-                      if (selectedBorderAsset.isNotEmpty)
-                        Positioned.fill(
-                          child: Image.asset(
-                            selectedBorderAsset,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                    ],
-                  ),
+                child: AvatarWithBorder(
+                  size: 140,
+                  borderAsset: selectedBorderAsset,
+                  avatarUrl: selectedAvatarUrl,
+                  localFile: selectedLocalFile,
+                  fallbackName: fullName.isNotEmpty ? fullName : '?',
                 ),
               ),
               const SizedBox(height: 8),
