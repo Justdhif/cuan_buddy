@@ -1049,6 +1049,18 @@ class AppLocalizationsId extends AppLocalizations {
   String get backToProfile => 'Kembali ke Profil';
   @override
   String get cropAvatar => 'Potong Avatar';
+  @override
+  String get createMainWallet => 'Buat Dompet Utama';
+  @override
+  String get createMainWalletSubtitle => 'Siapkan dompet utama Anda. Ini juga akan menetapkan mata uang dasar Anda.';
+  @override
+  String get walletNameHint => 'contoh: Dompet Utama';
+  @override
+  String get walletTypeLabel => 'Jenis Dompet';
+  @override
+  String get initialBalanceLabel => 'Saldo Awal';
+  @override
+  String get saveAndFinishOnboarding => 'Simpan & Selesai';
 
   // ─── Common ───────────────────────────────────────────────────────────────────
   @override

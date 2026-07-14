@@ -1044,6 +1044,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backToProfile => 'Back to Profile';
   @override
   String get cropAvatar => 'Crop Avatar';
+  @override
+  String get createMainWallet => 'Create Main Wallet';
+  @override
+  String get createMainWalletSubtitle => 'Set up your primary wallet. This will also set your base currency.';
+  @override
+  String get walletNameHint => 'e.g. My Wallet';
+  @override
+  String get walletTypeLabel => 'Wallet Type';
+  @override
+  String get initialBalanceLabel => 'Initial Balance';
+  @override
+  String get saveAndFinishOnboarding => 'Save & Finish';
 
   // ─── Common ───────────────────────────────────────────────────────────────────
   @override

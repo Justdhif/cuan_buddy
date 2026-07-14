@@ -18,6 +18,14 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../presentation/providers/profile_provider.dart';
+import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
+import '../../../../core/widgets/color_picker_sheet.dart';
+import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
+import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/constants/app_constants.dart';
+import '../../../wallets/providers/wallet_provider.dart';
 
 const List<String> _avatarSeeds = [
   'alpha',
@@ -70,6 +78,24 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   bool _isSaving = false;
 
+  // Wallet state variables
+  final _walletNameController = TextEditingController(text: 'Main Wallet');
+  String _walletType = 'cash';
+  String _walletCurrency = 'IDR';
+  double _walletBalance = 0.0;
+  String _walletEmoji = '💼';
+  Color _walletColor = const Color(0xFF6C63FF);
+  int _walletDecimalPrecision = 2;
+
+  final List<Color> _walletPresetColors = [
+    const Color(0xFF6C63FF),
+    const Color(0xFF66BB6A),
+    const Color(0xFF26A69A),
+    const Color(0xFF26C6DA),
+    const Color(0xFF42A5F5),
+    const Color(0xFF7E57C2),
+  ];
+
   // Countdown Timer
   int _secondsRemaining = 0;
   Timer? _timer;
@@ -80,17 +106,24 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
     _selectedAvatarUrl = _avatarOptions.first;
     _otpController.addListener(_onOtpChanged);
+    _walletNameController.addListener(_onWalletNameChanged);
   }
 
   void _onOtpChanged() {
     setState(() {});
   }
 
+  void _onWalletNameChanged() {
+    setState(() {});
+  }
+
   @override
   void dispose() {
     _otpController.removeListener(_onOtpChanged);
+    _walletNameController.removeListener(_onWalletNameChanged);
     _phoneController.dispose();
     _otpController.dispose();
+    _walletNameController.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -800,11 +833,33 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         phoneNumber: _isPhoneVerified ? _phoneController.text.trim() : null,
       );
 
-      await ref.read(preferencesServiceProvider).setProfileComplete(true);
+      // Create Main Wallet
+      final walletName = _walletNameController.text.trim();
+      final colorCode = _colorToHex(_walletColor);
+      final walletNotifier = ref.read(walletsProvider.notifier);
+      final walletError = await walletNotifier.createWallet({
+        'name': walletName.isNotEmpty ? walletName : 'Main Wallet',
+        'type': _walletType,
+        'currency': _walletCurrency,
+        'isBaseCurrency': true,
+        'decimalPrecision': _walletDecimalPrecision,
+        'balance': _walletBalance,
+        'emojiIcon': _walletEmoji,
+        'colorCode': colorCode,
+      });
+
+      if (walletError != null) {
+        throw Exception(walletError);
+      }
+
+      // Save base currency in Preferences
+      final prefs = ref.read(preferencesServiceProvider);
+      await prefs.setCurrencyCode(_walletCurrency);
+      await prefs.setProfileComplete(true);
       ref.invalidate(profileProvider);
 
       if (!mounted) return;
-      context.go('/wallet-setup');
+      context.go('/backup-settings');
     } catch (e) {
       if (!mounted) return;
       AppSnackbar.show(
@@ -815,6 +870,83 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       );
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  String _colorToHex(Color color) {
+    return '#${color.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
+  }
+
+  void _showWalletEmojiPicker() {
+    CustomEmojiPickerSheet.show(
+      context: context,
+      onEmojiSelected: (emoji) {
+        setState(() {
+          _walletEmoji = emoji;
+        });
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Future<void> _showWalletColorPicker() async {
+    final newColor = await showCustomColorPicker(
+      context: context,
+      initialColor: _walletColor,
+    );
+    if (newColor != null) {
+      setState(() => _walletColor = newColor);
+    }
+  }
+
+  void _showWalletDecimalPrecisionSheet() {
+    AppBottomSheet.show(
+      context: context,
+      builder: (_) => _DecimalPrecisionSheet(
+        initialPrecision: _walletDecimalPrecision,
+        onSave: (val) {
+          setState(() {
+            _walletDecimalPrecision = val;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showWalletBalanceCalculatorSheet() {
+    AmountCalculatorSheet.show(
+      context,
+      initialAmount: _walletBalance,
+      initialCurrency: _walletCurrency,
+      decimalPrecision: _walletDecimalPrecision,
+      title: l10n.initialBalance,
+      description: l10n.languageCode == 'id'
+          ? 'Saldo awal untuk memulai pencatatan wallet'
+          : 'Initial balance to start tracking wallet',
+      onSave: (amount, currency) {
+        setState(() {
+          _walletBalance = amount;
+          _walletCurrency = currency;
+        });
+      },
+    );
+  }
+
+  String _formatPreviewAmount(double value) {
+    return CurrencyFormatter.formatAmount(value, decimalPrecision: _walletDecimalPrecision);
+  }
+
+  String _getCountryForCurrency(String code) {
+    switch (code) {
+      case 'IDR': return 'Indonesia';
+      case 'USD': return 'United States';
+      case 'EUR': return 'Euro Member';
+      case 'SGD': return 'Singapore';
+      case 'MYR': return 'Malaysia';
+      case 'GBP': return 'United Kingdom';
+      case 'JPY': return 'Japan';
+      case 'AUD': return 'Australia';
+      default: return '';
     }
   }
 
@@ -931,8 +1063,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         buttonAction = () => setState(() => _currentStep = 2);
         isButtonEnabled = true;
       }
-    } else {
-      // Step 2
+    } else if (_currentStep == 2) {
       if (!_isPhoneVerified) {
         if (!_otpSent) {
           buttonText = l10n.sendOtpCode;
@@ -944,10 +1075,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           isButtonEnabled = _otpController.text.length == 6;
         }
       } else {
-        buttonText = l10n.saveAndComplete;
-        buttonAction = _isSaving ? null : _saveProfile;
+        buttonText = l10n.continueButton;
+        buttonAction = () => setState(() => _currentStep = 3);
         isButtonEnabled = true;
       }
+    } else {
+      // Step 3
+      buttonText = l10n.saveAndFinishOnboarding;
+      buttonAction = _isSaving ? null : _saveProfile;
+      isButtonEnabled = _walletNameController.text.trim().isNotEmpty;
     }
 
     return Scaffold(
@@ -958,7 +1094,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 icon: const Icon(Icons.chevron_left_rounded, size: 28),
                 onPressed: () => setState(() => _currentStep = 1),
               )
-            : null,
+            : (_currentStep == 3
+                ? IconButton(
+                    icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                    onPressed: () => setState(() => _currentStep = 2),
+                  )
+                : null),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -1016,7 +1157,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     children: [
                       Expanded(
                         child: TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0.5, end: _currentStep == 1 ? 0.5 : 1.0),
+                          tween: Tween<double>(
+                            begin: 0.33,
+                            end: _currentStep == 1 ? 0.33 : (_currentStep == 2 ? 0.66 : 1.0),
+                          ),
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           builder: (context, value, child) {
@@ -1031,7 +1175,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        _currentStep == 1 ? 'Step 1/2' : 'Step 2/2',
+                        _currentStep == 1 ? 'Step 1/3' : (_currentStep == 2 ? 'Step 2/3' : 'Step 3/3'),
                         style: AppTypography.textTheme.labelSmall?.copyWith(color: hintColor),
                       ),
                     ],
@@ -1039,264 +1183,841 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Animated screen contents transition (cross-fade to prevent height-shifting overlap)
-                AnimatedCrossFade(
+                // Animated screen contents transition (cross-fade height via AnimatedSize)
+                AnimatedSize(
                   duration: const Duration(milliseconds: 300),
-                  firstCurve: Curves.easeInOut,
-                  secondCurve: Curves.easeInOut,
-                  sizeCurve: Curves.easeInOut,
-                  crossFadeState: _currentStep == 1
-                      ? CrossFadeState.showFirst
-                      : CrossFadeState.showSecond,
-                  firstChild: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title & Subtitle for Step 1
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.completeYourProfile,
-                              style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              l10n.profileSetupSubtitle,
-                              style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
+                  curve: Curves.easeInOut,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (Widget child, Animation<double> animation) {
+                      final stepKey = (child.key as ValueKey<int>).value;
+                      final offset = stepKey >= _currentStep
+                          ? const Offset(0.15, 0.0)
+                          : const Offset(-0.15, 0.0);
 
-                      // Interactive Avatar Editor
-                      Center(
-                        child: Column(
+                      return SlideTransition(
+                        position: Tween<Offset>(begin: offset, end: Offset.zero).animate(animation),
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: _buildStepContent(
+                      context,
+                      isDark,
+                      hintColor,
+                      fallback,
+                      birthdateDisplay,
+                      genderDisplay,
+                      defaultPinTheme,
+                      focusedPinTheme,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStepContent(
+    BuildContext context,
+    bool isDark,
+    Color hintColor,
+    String fallback,
+    String birthdateDisplay,
+    String genderDisplay,
+    PinTheme defaultPinTheme,
+    PinTheme focusedPinTheme,
+  ) {
+    final iconShape = ref.watch(categoryIconShapeProvider);
+
+    if (_currentStep == 1) {
+      return Column(
+        key: const ValueKey(1),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title & Subtitle for Step 1
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.completeYourProfile,
+                  style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.profileSetupSubtitle,
+                  style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Interactive Avatar Editor
+          Center(
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _showAvatarEditSheet,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    child: ClipOval(
+                      child: _selectedLocalFile != null
+                          ? Image.file(
+                              _selectedLocalFile!,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            )
+                          : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
+                              ? CachedNetworkImage(
+                                  imageUrl: _selectedAvatarUrl!,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => const Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  errorWidget: (_, __, ___) => const Icon(Icons.person, size: 50),
+                                )
+                              : const Icon(Icons.person, size: 50),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: _showAvatarEditSheet,
+                  child: Text(
+                    l10n.editPhoto,
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildInfoTile(
+            context: context,
+            icon: Icons.person_outline_rounded,
+            title: l10n.fullName,
+            subtitle: _fullName.isNotEmpty ? _fullName : fallback,
+            onTap: _showEditNameSheet,
+          ),
+          _buildInfoTile(
+            context: context,
+            icon: Icons.alternate_email_rounded,
+            title: 'Username',
+            subtitle: _username.isNotEmpty ? '@$_username' : fallback,
+            onTap: _showEditUsernameSheet,
+          ),
+          _buildInfoTile(
+            context: context,
+            icon: Icons.info_outline_rounded,
+            title: l10n.bioField,
+            subtitle: _bio.isNotEmpty ? _bio : fallback,
+            onTap: _showEditBioSheet,
+          ),
+          _buildInfoTile(
+            context: context,
+            icon: Icons.cake_outlined,
+            title: l10n.dateOfBirth,
+            subtitle: birthdateDisplay,
+            onTap: _pickDate,
+          ),
+          _buildInfoTile(
+            context: context,
+            icon: Icons.wc_outlined,
+            title: l10n.genderField,
+            subtitle: genderDisplay,
+            onTap: _showEditGenderSheet,
+          ),
+        ],
+      );
+    } else if (_currentStep == 2) {
+      return Column(
+        key: const ValueKey(2),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title & Subtitle for Step 2
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.whatsappVerificationTitle,
+                  style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.whatsappVerificationSubtitle,
+                  style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.whatsappPhoneNumber,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  enabled: !_otpSent && !_isPhoneVerified,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontSize: 15,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'e.g. +6282113285557',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.4) : AppColors.borderLight.withValues(alpha: 0.4)),
+                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    ),
+                    prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                    suffixIcon: _isPhoneVerified
+                        ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                        : null,
+                  ),
+                ),
+
+                // Inline OTP Pinput Area
+                if (_otpSent && !_isPhoneVerified) ...[
+                  const SizedBox(height: 20),
+                  Text(
+                    l10n.enterOtpTitle,
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: Pinput(
+                      controller: _otpController,
+                      length: 6,
+                      defaultPinTheme: defaultPinTheme,
+                      focusedPinTheme: focusedPinTheme,
+                      onCompleted: (_) => _verifyOtp(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Column(
+                      children: [
+                        Text(
+                          _secondsRemaining > 0
+                              ? l10n.resendCodeIn(_formatTimer(_secondsRemaining))
+                              : l10n.didNotReceiveCode,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            GestureDetector(
-                              onTap: _showAvatarEditSheet,
-                              child: CircleAvatar(
-                                radius: 50,
-                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                                child: ClipOval(
-                                  child: _selectedLocalFile != null
-                                      ? Image.file(
-                                          _selectedLocalFile!,
-                                          width: 100,
-                                          height: 100,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
-                                          ? CachedNetworkImage(
-                                              imageUrl: _selectedAvatarUrl!,
-                                              width: 100,
-                                              height: 100,
-                                              fit: BoxFit.cover,
-                                              placeholder: (_, __) => const Center(
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              ),
-                                              errorWidget: (_, __, ___) => const Icon(Icons.person, size: 50),
-                                            )
-                                          : const Icon(Icons.person, size: 50),
+                            if (_secondsRemaining == 0) ...[
+                              TextButton(
+                                onPressed: _isSendingOtp ? null : _sendOtp,
+                                child: Text(
+                                  l10n.resendAction,
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
+                              const SizedBox(width: 16),
+                            ],
                             TextButton(
-                              onPressed: _showAvatarEditSheet,
+                              onPressed: () => setState(() {
+                                _otpSent = false;
+                                _otpController.clear();
+                              }),
                               child: Text(
-                                l10n.editPhoto,
+                                l10n.changePhoneNumberLink,
                                 style: TextStyle(
                                   color: AppColors.primary,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Step 3: Create Main Wallet
+      return Column(
+        key: const ValueKey(3),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title & Subtitle for Step 3
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.createMainWallet,
+                  style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  l10n.createMainWalletSubtitle,
+                  style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
 
-                      _buildInfoTile(
-                        context: context,
-                        icon: Icons.person_outline_rounded,
-                        title: l10n.fullName,
-                        subtitle: _fullName.isNotEmpty ? _fullName : fallback,
-                        onTap: _showEditNameSheet,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Row: Emoji Icon & Name Field
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        FocusScope.of(context).unfocus();
+                        _showWalletEmojiPicker();
+                      },
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: ShapeDecoration(
+                          color: _walletColor,
+                          shape: iconShape.toShapeBorder(64),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _walletEmoji.isNotEmpty ? _walletEmoji : '💼',
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                        ),
                       ),
-                      _buildInfoTile(
-                        context: context,
-                        icon: Icons.alternate_email_rounded,
-                        title: 'Username',
-                        subtitle: _username.isNotEmpty ? '@$_username' : fallback,
-                        onTap: _showEditUsernameSheet,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: AppTextField(
+                        label: l10n.walletName,
+                        hint: l10n.walletNameHint,
+                        controller: _walletNameController,
                       ),
-                      _buildInfoTile(
-                        context: context,
-                        icon: Icons.info_outline_rounded,
-                        title: l10n.bioField,
-                        subtitle: _bio.isNotEmpty ? _bio : fallback,
-                        onTap: _showEditBioSheet,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Palette Colors Selection
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  clipBehavior: Clip.none,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          FocusScope.of(context).unfocus();
+                          _showWalletColorPicker();
+                        },
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          margin: const EdgeInsets.only(right: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFB3B9D6),
+                            shape: BoxShape.circle,
+                            border: !_walletPresetColors.contains(_walletColor)
+                                ? Border.all(
+                                    color: isDark ? Colors.white : AppColors.primary,
+                                    width: 3,
+                                  )
+                                : null,
+                          ),
+                          child: const Icon(
+                            Icons.palette_outlined,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ),
-                      _buildInfoTile(
-                        context: context,
-                        icon: Icons.cake_outlined,
-                        title: l10n.dateOfBirth,
-                        subtitle: birthdateDisplay,
-                        onTap: _pickDate,
-                      ),
-                      _buildInfoTile(
-                        context: context,
-                        icon: Icons.wc_outlined,
-                        title: l10n.genderField,
-                        subtitle: genderDisplay,
-                        onTap: _showEditGenderSheet,
-                      ),
+                      ..._walletPresetColors.map((color) {
+                        final isSelected = _walletColor == color;
+                        return GestureDetector(
+                          onTap: () {
+                            FocusScope.of(context).unfocus();
+                            setState(() => _walletColor = color);
+                          },
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                              border: isSelected
+                                  ? Border.all(
+                                      color: isDark ? Colors.white : AppColors.primary,
+                                      width: 3,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
-                  secondChild: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: 24),
+
+                // Wallet Type Dropdown
+                DropdownButtonFormField<String>(
+                  initialValue: _walletType,
+                  dropdownColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  decoration: InputDecoration(
+                    labelText: l10n.walletTypeLabel,
+                    labelStyle: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: AppColors.primary),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: 'cash', child: Text(l10n.walletTypeCash)),
+                    DropdownMenuItem(value: 'bank', child: Text(l10n.walletTypeBank)),
+                    DropdownMenuItem(value: 'e_wallet', child: Text(l10n.walletTypeEWallet)),
+                    DropdownMenuItem(value: 'crypto', child: Text(l10n.walletTypeCrypto)),
+                    DropdownMenuItem(value: 'other', child: Text(l10n.other)),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _walletType = val);
+                    }
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // Precision & Balance Stack Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+                  ),
+                  child: Column(
                     children: [
-                      // Title & Subtitle for Step 2
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.whatsappVerificationTitle,
-                              style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              l10n.whatsappVerificationSubtitle,
-                              style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
-                            ),
-                          ],
+                      // Precision
+                      InkWell(
+                        onTap: _showWalletDecimalPrecisionSheet,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  l10n.walletDecimalPrecision,
+                                  style: AppTypography.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  l10n.walletDecimalBadge(_walletDecimalPrecision),
+                                  style: AppTypography.textTheme.labelMedium?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.whatsappPhoneNumber,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            TextFormField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              enabled: !_otpSent && !_isPhoneVerified,
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontSize: 15,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'e.g. +6282113285557',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: AppColors.primary, width: 2),
-                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                ),
-                                disabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.4) : AppColors.borderLight.withValues(alpha: 0.4)),
-                                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                ),
-                                prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-                                suffixIcon: _isPhoneVerified
-                                    ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
-                                    : null,
-                              ),
-                            ),
-
-                            // Inline OTP Pinput Area
-                            if (_otpSent && !_isPhoneVerified) ...[
-                              const SizedBox(height: 20),
-                              Text(
-                                l10n.enterOtpTitle,
-                                style: AppTypography.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 12),
-                              Center(
-                                child: Pinput(
-                                  controller: _otpController,
-                                  length: 6,
-                                  defaultPinTheme: defaultPinTheme,
-                                  focusedPinTheme: focusedPinTheme,
-                                  onCompleted: (_) => _verifyOtp(),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Center(
+                      Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: isDark ? Colors.white10 : Colors.black12,
+                      ),
+                      // Balance Calculator
+                      InkWell(
+                        onTap: _showWalletBalanceCalculatorSheet,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          child: Row(
+                            children: [
+                              Expanded(
                                 child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _secondsRemaining > 0
-                                          ? l10n.resendCodeIn(_formatTimer(_secondsRemaining))
-                                          : l10n.didNotReceiveCode,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDark ? Colors.white70 : Colors.black54,
+                                      l10n.initialBalanceLabel,
+                                      style: AppTypography.textTheme.labelMedium?.copyWith(
+                                        color: isDark ? Colors.white54 : Colors.black45,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        if (_secondsRemaining == 0) ...[
-                                          TextButton(
-                                            onPressed: _isSendingOtp ? null : _sendOtp,
-                                            child: Text(
-                                              l10n.resendAction,
-                                              style: TextStyle(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                        ],
-                                        TextButton(
-                                          onPressed: () => setState(() {
-                                            _otpSent = false;
-                                            _otpController.clear();
-                                          }),
-                                          child: Text(
-                                            l10n.changePhoneNumberLink,
-                                            style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _formatPreviewAmount(_walletBalance),
+                                      style: AppTypography.textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? Colors.white : AppColors.primary,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
+                              Icon(Icons.chevron_right, color: isDark ? Colors.white30 : Colors.black26),
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 24),
+
+                // Supported Currencies Grid
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 0.95,
+                  ),
+                  itemCount: AppConstants.supportedCurrencies.length,
+                  itemBuilder: (context, index) {
+                    final c = AppConstants.supportedCurrencies[index];
+                    final code = c['code']!;
+                    final symbol = c['symbol']!;
+                    final name = c['name']!;
+                    final country = _getCountryForCurrency(code);
+                    final isSelected = _walletCurrency == code;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _walletCurrency = code;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primary.withValues(alpha: 0.1)
+                              : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? AppColors.primary : (isDark ? Colors.white10 : Colors.black12),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              code,
+                              style: AppTypography.textTheme.labelSmall?.copyWith(
+                                color: isDark ? Colors.white70 : Colors.black54,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              symbol,
+                              style: AppTypography.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              country.isNotEmpty ? country : name,
+                              style: AppTypography.textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                color: isDark ? Colors.white54 : Colors.black45,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
+            ),
+          ),
+        ],
+      );
+    }
+  }
+}
+
+class _DecimalPrecisionSheet extends StatefulWidget {
+  const _DecimalPrecisionSheet({
+    required this.initialPrecision,
+    required this.onSave,
+  });
+
+  final int initialPrecision;
+  final void Function(int precision) onSave;
+
+  @override
+  State<_DecimalPrecisionSheet> createState() => _DecimalPrecisionSheetState();
+}
+
+class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
+  String? _typedStr;
+  String? _pressedKey;
+
+  String get _displayStr => _typedStr ?? widget.initialPrecision.toString();
+
+  void _onKeyPress(String key) {
+    setState(() {
+      _pressedKey = key;
+      if (key == '⌫') {
+        if (_typedStr != null && _typedStr!.isNotEmpty) {
+          final next = _typedStr!.substring(0, _typedStr!.length - 1);
+          _typedStr = next.isEmpty ? null : next;
+        }
+      } else if (key == ',') {
+        // Precision is integer only, ignore
+      } else {
+        if (_typedStr == null) {
+          _typedStr = key == '0' ? '0' : key;
+        } else {
+          if (_typedStr == '0') {
+            _typedStr = key;
+          } else if (_typedStr!.length < 2) {
+            _typedStr = _typedStr! + key;
+          }
+        }
+      }
+    });
+
+    Future.delayed(const Duration(milliseconds: 130), () {
+      if (mounted) setState(() => _pressedKey = null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.walletDecimalPrecision,
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.walletDecimalPrecisionSheetDesc,
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          child: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Text(
+              _displayStr,
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w900,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _buildKey('1'),
+                  _buildKey('2'),
+                  _buildKey('3'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildKey('4'),
+                  _buildKey('5'),
+                  _buildKey('6'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildKey('7'),
+                  _buildKey('8'),
+                  _buildKey('9'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: const SizedBox()),
+                  _buildKey('0'),
+                  _buildKey('⌫'),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                final val = int.tryParse(_displayStr) ?? widget.initialPrecision;
+                widget.onSave(val);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                l10n.saveButton,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildKey(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isPressed = _pressedKey == label;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Material(
+          color: isPressed
+              ? AppColors.primary.withValues(alpha: 0.2)
+              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: () => _onKeyPress(label),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              height: 54,
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
             ),
           ),
         ),

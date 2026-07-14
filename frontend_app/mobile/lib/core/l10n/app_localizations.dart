@@ -545,6 +545,12 @@ abstract class AppLocalizations {
   String get resendAction;
   String get backToProfile;
   String get cropAvatar;
+  String get createMainWallet;
+  String get createMainWalletSubtitle;
+  String get walletNameHint;
+  String get walletTypeLabel;
+  String get initialBalanceLabel;
+  String get saveAndFinishOnboarding;
 
   // ─── Common ───────────────────────────────────────────────────────────────────
   String get retry;
