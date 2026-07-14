@@ -883,8 +883,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      const Text('🎉', style: TextStyle(fontSize: 48)),
-                      const SizedBox(height: 8),
                       Text(
                         l10n.completeYourProfile,
                         style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
@@ -947,7 +945,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Divider(height: 1, thickness: 0.5),
 
                 // ─── Input Fields Tiles (Styled exactly like EditProfile, opening Sheets) ───
                 _buildInfoTile(
@@ -985,7 +982,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   subtitle: genderDisplay,
                   onTap: _showEditGenderSheet,
                 ),
-                const Divider(height: 1, thickness: 0.5),
                 const SizedBox(height: 24),
 
                 // ─── WhatsApp Phone Number OTP Section (Remains direct/inline) ───
