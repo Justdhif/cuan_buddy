@@ -79,10 +79,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     super.initState();
     _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
     _selectedAvatarUrl = _avatarOptions.first;
+    _otpController.addListener(_onOtpChanged);
+  }
+
+  void _onOtpChanged() {
+    setState(() {});
   }
 
   @override
   void dispose() {
+    _otpController.removeListener(_onOtpChanged);
     _phoneController.dispose();
     _otpController.dispose();
     _timer?.cancel();
@@ -928,9 +934,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     } else {
       // Step 2
       if (!_isPhoneVerified) {
-        buttonText = l10n.verifyWhatsappFirst;
-        buttonAction = null;
-        isButtonEnabled = false;
+        if (!_otpSent) {
+          buttonText = l10n.sendOtpCode;
+          buttonAction = _isSendingOtp ? null : _sendOtp;
+          isButtonEnabled = true;
+        } else {
+          buttonText = l10n.verifyAndSave;
+          buttonAction = (_isVerifying || _otpController.text.length != 6) ? null : _verifyOtp;
+          isButtonEnabled = _otpController.text.length == 6;
+        }
       } else {
         buttonText = l10n.saveAndComplete;
         buttonAction = _isSaving ? null : _saveProfile;
@@ -1141,65 +1153,34 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                enabled: !_otpSent && !_isPhoneVerified,
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  fontSize: 15,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. +6282113285557',
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: AppColors.primary, width: 2),
-                                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-                                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                  ),
-                                  disabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.4) : AppColors.borderLight.withValues(alpha: 0.4)),
-                                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                                  ),
-                                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-                                  suffixIcon: _isPhoneVerified
-                                      ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
-                                      : null,
-                                ),
-                              ),
+                        TextFormField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          enabled: !_otpSent && !_isPhoneVerified,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                            fontSize: 15,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'e.g. +6282113285557',
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppColors.primary, width: 2),
+                              borderRadius: const BorderRadius.all(Radius.circular(12)),
                             ),
-                            if (!_isPhoneVerified) ...[
-                              const SizedBox(width: 8),
-                              SizedBox(
-                                height: 52,
-                                child: OutlinedButton(
-                                  onPressed: (_isSendingOtp || _secondsRemaining > 0) ? null : _sendOtp,
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: AppColors.primary),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: _isSendingOtp
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        )
-                                      : Text(
-                                          _otpSent ? 'Resend' : 'Send OTP',
-                                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-                                        ),
-                                ),
-                              ),
-                            ],
-                          ],
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                              borderRadius: const BorderRadius.all(Radius.circular(12)),
+                            ),
+                            disabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.4) : AppColors.borderLight.withValues(alpha: 0.4)),
+                              borderRadius: const BorderRadius.all(Radius.circular(12)),
+                            ),
+                            prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
+                            suffixIcon: _isPhoneVerified
+                                ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                                : null,
+                          ),
                         ),
 
                         // Inline OTP Pinput Area
@@ -1221,58 +1202,51 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           ),
                           const SizedBox(height: 16),
                           Center(
-                            child: Text(
-                              _secondsRemaining > 0
-                                  ? l10n.resendCodeIn(_formatTimer(_secondsRemaining))
-                                  : l10n.didNotReceiveCode,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: isDark ? Colors.white70 : Colors.black54,
-                              ),
-                            ),
-                          ),
-                          if (_secondsRemaining == 0) ...[
-                            const SizedBox(height: 8),
-                            Center(
-                              child: TextButton(
-                                onPressed: _isSendingOtp ? null : _sendOtp,
-                                child: Text(
-                                  l10n.resendAction,
+                            child: Column(
+                              children: [
+                                Text(
+                                  _secondsRemaining > 0
+                                      ? l10n.resendCodeIn(_formatTimer(_secondsRemaining))
+                                      : l10n.didNotReceiveCode,
                                   style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black54,
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (_secondsRemaining == 0) ...[
+                                      TextButton(
+                                        onPressed: _isSendingOtp ? null : _sendOtp,
+                                        child: Text(
+                                          l10n.resendAction,
+                                          style: TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                    ],
+                                    TextButton(
+                                      onPressed: () => setState(() {
+                                        _otpSent = false;
+                                        _otpController.clear();
+                                      }),
+                                      child: Text(
+                                        l10n.changePhoneNumberLink,
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              TextButton(
-                                onPressed: () => setState(() => _otpSent = false),
-                                child: Text(
-                                  l10n.changePhoneNumberLink,
-                                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: _isVerifying ? null : _verifyOtp,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: _isVerifying
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                      )
-                                    : Text(l10n.verifyAndSave),
-                              ),
-                            ],
                           ),
                         ],
                       ],
