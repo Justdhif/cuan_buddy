@@ -8,6 +8,7 @@ export const UpdateProfileSchema = z.object({
   birthDate: z.string().datetime().optional(),
   gender: z.string().optional(),
   bio: z.string().max(250).optional(),
+  avatarBorder: z.string().max(50).optional(),
   language: z.string().optional(),
 });
 

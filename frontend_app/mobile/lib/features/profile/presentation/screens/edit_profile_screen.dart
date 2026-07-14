@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:dio/dio.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/providers/core_providers.dart';
 import '../../../../core/utils/app_snackbar.dart';
@@ -14,6 +15,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/avatar_border_helper.dart';
 
 const List<String> _avatarSeeds = [
   'alpha',
@@ -29,6 +31,8 @@ const List<String> _avatarSeeds = [
 
 String _dicebearUrl(String seed) =>
     'https://api.dicebear.com/8.x/avataaars/png?seed=$seed';
+
+// Konfigurasi border dikelola terpusat di avatar_border_helper.dart
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key, required this.profile});
@@ -46,11 +50,62 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   File? _selectedLocalFile;
   late List<String> _avatarOptions;
 
+  // Border
+  String _selectedBorderId = 'none';
+  String _selectedBorderAsset = '';
+
   @override
   void initState() {
     super.initState();
     _selectedAvatarUrl = widget.profile['avatar'] as String?;
     _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
+    _initBorder();
+  }
+
+  /// Load border: prioritas dari data profil (backend), fallback ke SharedPreferences.
+  Future<void> _initBorder() async {
+    // Cek dulu apakah profile sudah punya border dari backend
+    final profileBorderId = widget.profile['avatarBorder'] as String?;
+    if (profileBorderId != null && profileBorderId.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _selectedBorderId = profileBorderId;
+          _selectedBorderAsset = borderAssetFromId(profileBorderId);
+        });
+      }
+      // Sync juga ke SharedPreferences sebagai cache
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(kBorderPrefKey, profileBorderId);
+      return;
+    }
+
+    // Fallback: baca dari SharedPreferences (cache lokal)
+    final prefs = await SharedPreferences.getInstance();
+    final savedId = prefs.getString(kBorderPrefKey) ?? 'none';
+    if (mounted) {
+      setState(() {
+        _selectedBorderId = savedId;
+        _selectedBorderAsset = borderAssetFromId(savedId);
+      });
+    }
+  }
+
+  /// Simpan border ke SharedPreferences (cache), backend, dan update UI.
+  Future<void> _saveBorder(String borderId, String borderAsset) async {
+    // Update UI dulu (optimistic)
+    setState(() {
+      _selectedBorderId = borderId;
+      _selectedBorderAsset = borderAsset;
+    });
+    // Cache lokal
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kBorderPrefKey, borderId);
+    // Simpan ke backend agar user lain bisa melihat
+    try {
+      await ref.read(profileRepositoryProvider).updateBorder(borderId: borderId);
+    } catch (_) {
+      // Gagal sync ke backend tidak menghalangi UX — tetap tersimpan lokal
+    }
   }
 
   Future<void> _pickAvatarAndCrop() async {
@@ -147,50 +202,78 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   void _showAvatarEditSheet() {
     bool isSavingInSheet = false;
+    // Ambil state border saat ini agar sheet bisa track perubahan sementara
+    String sheetBorderId = _selectedBorderId;
+    String sheetBorderAsset = _selectedBorderAsset;
+
     AppBottomSheet.show<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (sheetContext, setModalState) {
+            // Helper: widget preview avatar di dalam sheet
+            Widget buildSheetAvatarPreview() {
+              return SizedBox(
+                width: 128,
+                height: 128,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Lingkaran avatar
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                      ),
+                      child: ClipOval(
+                        child: _selectedLocalFile != null
+                            ? Image.file(_selectedLocalFile!, fit: BoxFit.cover)
+                            : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
+                                ? CachedNetworkImage(
+                                    imageUrl: _selectedAvatarUrl!,
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, __) => const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                    errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
+                                  )
+                                : const Icon(Icons.person, size: 60),
+                      ),
+                    ),
+                    // Border overlay (ditampilkan jika ada border dipilih)
+                    if (sheetBorderAsset.isNotEmpty)
+                      Positioned.fill(
+                        child: Image.asset(
+                          sheetBorderAsset,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }
 
             return SafeArea(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // ── Judul sheet ──
                     Text(
                       l10n.profilePhoto,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 24),
-                    Center(
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          border: Border.all(color: AppColors.primary, width: 2),
-                        ),
-                        child: ClipOval(
-                          child: _selectedLocalFile != null
-                              ? Image.file(_selectedLocalFile!, fit: BoxFit.cover)
-                              : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
-                                  ? CachedNetworkImage(
-                                      imageUrl: _selectedAvatarUrl!,
-                                      fit: BoxFit.cover,
-                                      placeholder: (_, __) => const Center(
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                      errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
-                                    )
-                                  : const Icon(Icons.person, size: 60),
-                        ),
-                      ),
-                    ),
+
+                    // ── Preview avatar + border ──
+                    Center(child: buildSheetAvatarPreview()),
                     const SizedBox(height: 24),
+
+                    // ── Section: Pilih Avatar ──
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -246,6 +329,82 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // ── Section: Pilih Border Avatar ──
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Avatar Border',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primary),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 72,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: kAvailableBorders.length,
+                        itemBuilder: (context, index) {
+                          final border = kAvailableBorders[index];
+                          final isNoBorder = border['id'] == 'none';
+                          final isSelected = border['id'] == sheetBorderId;
+
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                sheetBorderId = border['id']!;
+                                sheetBorderAsset = border['asset']!;
+                              });
+                              // Langsung simpan ke prefs & update parent state
+                              _saveBorder(border['id']!, border['asset']!);
+                            },
+                            child: Container(
+                              width: 60,
+                              height: 60,
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.transparent,
+                                  width: 3,
+                                ),
+                              ),
+                              child: isNoBorder
+                                  // Opsi "Tanpa Border" — tampilkan icon slash
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isSelected
+                                            ? AppColors.primary.withValues(alpha: 0.15)
+                                            : Colors.grey.withValues(alpha: 0.15),
+                                      ),
+                                      child: Icon(
+                                        Icons.block_rounded,
+                                        size: 28,
+                                        color: isSelected
+                                            ? AppColors.primary
+                                            : Colors.grey,
+                                      ),
+                                    )
+                                  // Opsi border dengan gambar asset
+                                  : ClipOval(
+                                      child: Image.asset(
+                                        border['asset']!,
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ── Tombol upload foto ──
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -271,6 +430,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
+
+                    // ── Tombol Simpan ──
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -427,29 +588,47 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         onTap: _showAvatarEditSheet,
                         child: Hero(
                           tag: 'avatar',
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                            child: ClipOval(
-                              child: _selectedLocalFile != null
-                                  ? Image.file(
-                                      _selectedLocalFile!,
-                                      width: 120,
-                                      height: 120,
+                          child: SizedBox(
+                            width: 128,
+                            height: 128,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Lingkaran avatar
+                                CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                  child: ClipOval(
+                                    child: _selectedLocalFile != null
+                                        ? Image.file(
+                                            _selectedLocalFile!,
+                                            width: 120,
+                                            height: 120,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
+                                            ? CachedNetworkImage(
+                                                imageUrl: _selectedAvatarUrl!,
+                                                width: 120,
+                                                height: 120,
+                                                fit: BoxFit.cover,
+                                                placeholder: (_, __) => const Center(
+                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                ),
+                                                errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
+                                              )
+                                            : const Icon(Icons.person, size: 60),
+                                  ),
+                                ),
+                                // Border overlay
+                                if (_selectedBorderAsset.isNotEmpty)
+                                  Positioned.fill(
+                                    child: Image.asset(
+                                      _selectedBorderAsset,
                                       fit: BoxFit.cover,
-                                    )
-                                  : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
-                                      ? CachedNetworkImage(
-                                          imageUrl: _selectedAvatarUrl!,
-                                          width: 120,
-                                          height: 120,
-                                          fit: BoxFit.cover,
-                                          placeholder: (_, __) => const Center(
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          ),
-                                          errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
-                                        )
-                                      : const Icon(Icons.person, size: 60),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                         ),

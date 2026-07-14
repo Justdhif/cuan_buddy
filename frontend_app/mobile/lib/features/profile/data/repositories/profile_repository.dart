@@ -45,6 +45,11 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
+  /// Menyimpan pilihan border avatar ke server agar bisa dilihat user lain.
+  Future<void> updateBorder({required String borderId}) async {
+    await _dio.patch('/profiles/me', data: {'avatarBorder': borderId});
+  }
+
   Future<Map<String, dynamic>> getBackupSettings() async {
     final response = await _dio.get('/backup/settings');
     return response.data as Map<String, dynamic>;

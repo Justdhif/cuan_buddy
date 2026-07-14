@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
+import '../widgets/avatar_border_helper.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -243,6 +244,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l10n = AppLocalizations.of(context);
     final name = profile['fullName'] as String? ?? l10n.you;
     final avatar = profile['avatar'] as String?;
+    final avatarBorderId = profile['avatarBorder'] as String?;
+    final borderAsset = borderAssetFromId(avatarBorderId);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final username = profile['username'] as String?;
     final bio = profile['bio'] as String?;
@@ -259,36 +262,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Hero(
                   tag: 'avatar',
-                  child: CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                    child: avatar != null
-                        ? ClipOval(
-                            child: CachedNetworkImage(
-                              imageUrl: avatar,
-                              width: 72,
-                              height: 72,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) =>
-                                  const CircularProgressIndicator(strokeWidth: 3),
-                              errorWidget: (context, url, error) => Text(
-                                name[0].toUpperCase(),
-                                style: TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 28,
+                  child: SizedBox(
+                    width: 78,
+                    height: 78,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                          child: avatar != null
+                              ? ClipOval(
+                                  child: CachedNetworkImage(
+                                    imageUrl: avatar,
+                                    width: 72,
+                                    height: 72,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const CircularProgressIndicator(strokeWidth: 3),
+                                    errorWidget: (context, url, error) => Text(
+                                      name[0].toUpperCase(),
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 28,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  name[0].toUpperCase(),
+                                  style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 28,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          )
-                        : Text(
-                            name[0].toUpperCase(),
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 28,
+                        ),
+                        if (borderAsset.isNotEmpty)
+                          Positioned.fill(
+                            child: Image.asset(
+                              borderAsset,
+                              fit: BoxFit.cover,
                             ),
                           ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
