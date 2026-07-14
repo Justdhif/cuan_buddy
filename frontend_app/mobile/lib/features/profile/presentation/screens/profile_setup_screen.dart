@@ -1190,17 +1190,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     transitionBuilder: (Widget child, Animation<double> animation) {
-                      final stepKey = (child.key as ValueKey<int>).value;
-                      final offset = stepKey >= _currentStep
-                          ? const Offset(0.15, 0.0)
-                          : const Offset(-0.15, 0.0);
-
-                      return SlideTransition(
-                        position: Tween<Offset>(begin: offset, end: Offset.zero).animate(animation),
-                        child: FadeTransition(
-                          opacity: animation,
-                          child: child,
-                        ),
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
                       );
                     },
                     child: _buildStepContent(
