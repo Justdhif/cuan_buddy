@@ -90,33 +90,33 @@ class ProfileSetupStep1 extends StatelessWidget {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                        ),
-                        child: ClipOval(
-                          child: selectedLocalFile != null
-                              ? Image.file(
-                                  selectedLocalFile!,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                )
-                              : (selectedAvatarUrl != null && selectedAvatarUrl!.isNotEmpty)
-                                  ? CachedNetworkImage(
-                                      imageUrl: selectedAvatarUrl!,
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.cover,
-                                      placeholder: (_, __) => const Center(
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                      errorWidget: (_, __, ___) => const Icon(Icons.person, size: 50),
-                                    )
-                                  : const Icon(Icons.person, size: 50),
+                      Positioned(
+                        top: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
+                        bottom: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
+                        left: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
+                        right: selectedBorderAsset.isNotEmpty ? 6.5 : 4,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                          ),
+                          child: ClipOval(
+                            child: selectedLocalFile != null
+                                ? Image.file(
+                                    selectedLocalFile!,
+                                    fit: BoxFit.cover,
+                                  )
+                                : (selectedAvatarUrl != null && selectedAvatarUrl!.isNotEmpty)
+                                    ? CachedNetworkImage(
+                                        imageUrl: selectedAvatarUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder: (_, __) => const Center(
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                        errorWidget: (_, __, ___) => const Icon(Icons.person, size: 50),
+                                      )
+                                    : const Icon(Icons.person, size: 50),
+                          ),
                         ),
                       ),
                       if (selectedBorderAsset.isNotEmpty)

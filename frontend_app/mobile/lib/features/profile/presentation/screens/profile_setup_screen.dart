@@ -246,35 +246,40 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
           builder: (sheetContext, setModalState) {
             // Helper: widget preview avatar + border
             Widget buildAvatarPreview() {
+              final hasBorder = sheetBorderAsset.isNotEmpty;
               return SizedBox(
                 width: 128,
                 height: 128,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                      ),
-                      child: ClipOval(
-                        child: _selectedLocalFile != null
-                            ? Image.file(_selectedLocalFile!, fit: BoxFit.cover)
-                            : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
-                                ? CachedNetworkImage(
-                                    imageUrl: _selectedAvatarUrl!,
-                                    fit: BoxFit.cover,
-                                    placeholder: (_, __) => const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                    errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
-                                  )
-                                : const Icon(Icons.person, size: 60),
+                    Positioned(
+                      top: hasBorder ? 7.5 : 4,
+                      bottom: hasBorder ? 7.5 : 4,
+                      left: hasBorder ? 7.5 : 4,
+                      right: hasBorder ? 7.5 : 4,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                        ),
+                        child: ClipOval(
+                          child: _selectedLocalFile != null
+                              ? Image.file(_selectedLocalFile!, fit: BoxFit.cover)
+                              : (_selectedAvatarUrl != null && _selectedAvatarUrl!.isNotEmpty)
+                                  ? CachedNetworkImage(
+                                      imageUrl: _selectedAvatarUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (_, __) => const Center(
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                      errorWidget: (_, __, ___) => const Icon(Icons.person, size: 60),
+                                    )
+                                  : const Icon(Icons.person, size: 60),
+                        ),
                       ),
                     ),
-                    if (sheetBorderAsset.isNotEmpty)
+                    if (hasBorder)
                       Positioned.fill(
                         child: Image.asset(
                           sheetBorderAsset,

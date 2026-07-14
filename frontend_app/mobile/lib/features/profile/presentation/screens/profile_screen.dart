@@ -268,36 +268,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        CircleAvatar(
-                          radius: 36,
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.2),
-                          child: avatar != null
-                              ? ClipOval(
-                                  child: CachedNetworkImage(
-                                    imageUrl: avatar,
-                                    width: 72,
-                                    height: 72,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) =>
-                                        const CircularProgressIndicator(strokeWidth: 3),
-                                    errorWidget: (context, url, error) => Text(
-                                      name[0].toUpperCase(),
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 28,
+                        Positioned(
+                          top: borderAsset.isNotEmpty ? 4.5 : 3,
+                          bottom: borderAsset.isNotEmpty ? 4.5 : 3,
+                          left: borderAsset.isNotEmpty ? 4.5 : 3,
+                          right: borderAsset.isNotEmpty ? 4.5 : 3,
+                          child: CircleAvatar(
+                            radius: 36,
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
+                            child: avatar != null
+                                ? ClipOval(
+                                    child: CachedNetworkImage(
+                                      imageUrl: avatar,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) =>
+                                          const CircularProgressIndicator(strokeWidth: 3),
+                                      errorWidget: (context, url, error) => Text(
+                                        name[0].toUpperCase(),
+                                        style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 28,
+                                        ),
                                       ),
                                     ),
+                                  )
+                                : Text(
+                                    name[0].toUpperCase(),
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 28,
+                                    ),
                                   ),
-                                )
-                              : Text(
-                                  name[0].toUpperCase(),
-                                  style: TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 28,
-                                  ),
-                                ),
+                          ),
                         ),
                         if (borderAsset.isNotEmpty)
                           Positioned.fill(
