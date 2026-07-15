@@ -61,44 +61,39 @@ class AvatarWithBorder extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasBorder = borderAsset.isNotEmpty;
 
-    // Perbesar rasio avatar menjadi 76% agar menutupi celah bagian dalam ring emas dengan pas.
-    final double avatarSize = hasBorder ? size * 0.76 : size;
+    // Ukuran avatar selalu konsisten sebesar `size` (baik saat pakai border maupun tidak).
+    final double avatarSize = size;
+    
+    // Jika ada border, total container border (Stack) harus lebih besar (size / 0.76) 
+    // agar lubang di dalam border pas dengan ukuran avatar.
+    final double totalSize = hasBorder ? size / 0.76 : size;
 
     return SizedBox(
-      width: size,
-      height: size,
+      width: totalSize,
+      height: totalSize,
       child: Stack(
-        clipBehavior: Clip.none, // dekorasi border boleh meluber keluar stack
+        clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
           // ── Avatar ──
-          if (hasBorder)
-            Positioned(
-              // Posisikan di tengah secara vertikal (tanpa offset tambahan) agar simetris
-              top: (size - avatarSize) / 2,
-              child: SizedBox(
-                width: avatarSize,
-                height: avatarSize,
-                child: ClipOval(
-                  child: _buildAvatarContent(avatarSize),
-                ),
-              ),
-            )
-          else
-            SizedBox(
-              width: avatarSize,
-              height: avatarSize,
-              child: ClipOval(
-                child: _buildAvatarContent(avatarSize),
-              ),
+          SizedBox(
+            width: avatarSize,
+            height: avatarSize,
+            child: ClipOval(
+              child: _buildAvatarContent(avatarSize),
             ),
+          ),
 
           // ── Border overlay ──
           if (hasBorder)
-            Positioned.fill(
-              child: Image.asset(
-                borderAsset,
-                fit: BoxFit.fill,
+            Positioned(
+              width: totalSize,
+              height: totalSize,
+              child: IgnorePointer(
+                child: Image.asset(
+                  borderAsset,
+                  fit: BoxFit.fill,
+                ),
               ),
             ),
         ],
