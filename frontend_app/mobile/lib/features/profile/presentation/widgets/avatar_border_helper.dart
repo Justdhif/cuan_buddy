@@ -61,8 +61,8 @@ class AvatarWithBorder extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasBorder = borderAsset.isNotEmpty;
 
-    // Perkecil sedikit rasio avatar agar aman di dalam lingkaran (65% dari total size).
-    final double avatarSize = hasBorder ? size * 0.65 : size;
+    // Perbesar rasio avatar menjadi 76% agar menutupi celah bagian dalam ring emas dengan pas.
+    final double avatarSize = hasBorder ? size * 0.76 : size;
 
     return SizedBox(
       width: size,
@@ -74,8 +74,8 @@ class AvatarWithBorder extends StatelessWidget {
           // ── Avatar ──
           if (hasBorder)
             Positioned(
-              // Geser sedikit ke bawah (top offset) karena lubang di border agak ke bawah.
-              top: (size - avatarSize) / 2 + (size * 0.02),
+              // Posisikan di tengah secara vertikal (tanpa offset tambahan) agar simetris
+              top: (size - avatarSize) / 2,
               child: SizedBox(
                 width: avatarSize,
                 height: avatarSize,
