@@ -11,6 +11,7 @@ import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../providers/shared_provider.dart';
+import '../../../profile/presentation/widgets/avatar_border_helper.dart';
 
 class RoomFormScreen extends ConsumerStatefulWidget {
   const RoomFormScreen({super.key});
@@ -87,7 +88,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final name = _nameController.text.trim();
     final emoji = _emojiController.text.trim();
     final description = _descriptionController.text.trim();
@@ -97,7 +98,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
     final l10n = AppLocalizations.of(context);
     final notifier = ref.read(sharedNotifierProvider.notifier);
-    
+
     final error = await notifier.createRoom(
       name,
       _selectedFriendIds,
@@ -179,6 +180,15 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
               child: Column(
                 children: [
                   _buildCustomHeader(isDark, l10n),
+                  if (_selectedFriendIds.isNotEmpty) ...[
+                    _buildSelectedUsersHorizontalList(state, isDark),
+                    Container(
+                      height: 0.5,
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
+                      margin: const EdgeInsets.only(top: 8, bottom: 4),
+                    ),
+                  ],
                   Expanded(
                     child: _buildStep1Members(state, isDark, l10n),
                   ),
@@ -222,7 +232,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
                 child: SafeArea(
                   top: false,
@@ -242,7 +253,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                         : Center(
                             child: Text(
                               l10n.createRoomButton,
-                              style: AppTypography.textTheme.titleMedium?.copyWith(
+                              style:
+                                  AppTypography.textTheme.titleMedium?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -278,10 +290,11 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: Localizations.localeOf(context).languageCode == 'id'
-                    ? 'Nama, nama pengguna, atau email'
+                    ? 'Nama, nomor, nama pengguna'
                     : 'Name, username, or email',
                 hintStyle: TextStyle(
-                  color: isDark ? AppColors.textHintDark : AppColors.textHintLight,
+                  color:
+                      isDark ? AppColors.textHintDark : AppColors.textHintLight,
                   fontSize: 15,
                 ),
                 border: InputBorder.none,
@@ -293,7 +306,9 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: TextStyle(
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
                 fontSize: 15,
               ),
               onChanged: (val) {
@@ -301,13 +316,108 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
               },
             ),
           ),
-          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(Icons.dialpad_rounded),
+            onPressed: () {},
+          ),
+          const SizedBox(width: 8),
         ],
       ),
     );
   }
 
-  Widget _buildStep1Members(SharedState state, bool isDark, AppLocalizations l10n) {
+  Widget _buildSelectedUsersHorizontalList(SharedState state, bool isDark) {
+    final selectedFriends = state.friends.where((friend) {
+      return _selectedFriendIds.contains(friend['userId']);
+    }).toList();
+
+    return Container(
+      height: 90,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: selectedFriends.length,
+        itemBuilder: (context, index) {
+          final friend = selectedFriends[index];
+          final friendId = friend['userId'];
+          final name =
+              friend['fullName'] ?? friend['username'] ?? friend['email'] ?? '';
+          final avatarUrl = friend['avatar'];
+          final avatarBorderId = friend['avatarBorder'] as String?;
+          final borderAsset = borderAssetFromId(avatarBorderId);
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: SizedBox(
+              width: 60,
+              child: Column(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      AvatarWithBorder(
+                        size: 56,
+                        borderAsset: borderAsset,
+                        avatarUrl: avatarUrl,
+                        fallbackName: name,
+                      ),
+                      Positioned(
+                        right: -4,
+                        bottom: -4,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedFriendIds.remove(friendId);
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color:
+                                  isDark ? Colors.grey[800] : Colors.grey[400],
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.backgroundDark
+                                    : Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildStep1Members(
+      SharedState state, bool isDark, AppLocalizations l10n) {
     if (state.friends.isEmpty) {
       return AppEmptyState(
         icon: Icons.people_outline_rounded,
@@ -317,14 +427,19 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
 
     final query = _searchController.text.trim().toLowerCase();
     final filtered = state.friends.where((friend) {
-      final name = (friend['fullName'] ?? friend['username'] ?? friend['email'] ?? '').toString().toLowerCase();
+      final name =
+          (friend['fullName'] ?? friend['username'] ?? friend['email'] ?? '')
+              .toString()
+              .toLowerCase();
       return name.contains(query);
     }).toList();
 
     if (filtered.isEmpty) {
       return AppEmptyState(
         icon: Icons.search_off_rounded,
-        title: Localizations.localeOf(context).languageCode == 'id' ? 'Tidak ada teman ditemukan' : 'No friends found',
+        title: Localizations.localeOf(context).languageCode == 'id'
+            ? 'Tidak ada teman ditemukan'
+            : 'No friends found',
         subtitle: Localizations.localeOf(context).languageCode == 'id'
             ? 'Coba cari dengan kata kunci lain'
             : 'Try searching with another keyword',
@@ -332,53 +447,99 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.only(top: 8, left: 16, right: 16, bottom: 88),
+      padding: const EdgeInsets.only(top: 8, bottom: 88),
       itemCount: filtered.length,
       itemBuilder: (context, index) {
         final friend = filtered[index];
         final String friendId = friend['userId'];
-        final String name = friend['fullName'] ?? friend['username'] ?? friend['email'];
+        final String name =
+            friend['fullName'] ?? friend['username'] ?? friend['email'];
         final bool isSelected = _selectedFriendIds.contains(friendId);
+        final avatarUrl = friend['avatar'];
+        final avatarBorderId = friend['avatarBorder'] as String?;
+        final borderAsset = borderAssetFromId(avatarBorderId);
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 0,
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-          ),
-          child: CheckboxListTile(
-            title: Text(name, style: AppTypography.textTheme.labelLarge),
-            subtitle: Text(friend['email'] ?? '', style: AppTypography.textTheme.bodySmall),
-            value: isSelected,
-            onChanged: (val) {
-              setState(() {
-                if (val == true) {
-                  _selectedFriendIds.add(friendId);
-                } else {
-                  _selectedFriendIds.remove(friendId);
-                }
-              });
-            },
-            secondary: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.person_outline_rounded, color: AppColors.primary),
+        return InkWell(
+          onTap: () {
+            setState(() {
+              if (isSelected) {
+                _selectedFriendIds.remove(friendId);
+              } else {
+                _selectedFriendIds.add(friendId);
+              }
+            });
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                AvatarWithBorder(
+                  size: 52,
+                  borderAsset: borderAsset,
+                  avatarUrl: avatarUrl,
+                  fallbackName: name,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: AppTypography.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                      if (friend['email'] != null &&
+                          (friend['email'] as String).isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          friend['email'],
+                          style: AppTypography.textTheme.bodySmall?.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: isSelected
+                      ? const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        )
+                      : BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.white30 : Colors.black26,
+                            width: 2,
+                          ),
+                        ),
+                  child: isSelected
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        )
+                      : null,
+                ),
+              ],
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            activeColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         );
       },
     );
   }
 
-  Widget _buildStep2Details(bool isDark, AppLocalizations l10n, CategoryIconShape iconShape) {
+  Widget _buildStep2Details(
+      bool isDark, AppLocalizations l10n, CategoryIconShape iconShape) {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -404,7 +565,9 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        _emojiController.text.isNotEmpty ? _emojiController.text : '📁',
+                        _emojiController.text.isNotEmpty
+                            ? _emojiController.text
+                            : '📁',
                         style: const TextStyle(fontSize: 32),
                       ),
                     ),
@@ -456,7 +619,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                         shape: BoxShape.circle,
                         border: !_presetColors.contains(_selectedColor)
                             ? Border.all(
-                                color: isDark ? Colors.white : AppColors.primary,
+                                color:
+                                    isDark ? Colors.white : AppColors.primary,
                                 width: 3,
                               )
                             : null,
@@ -483,7 +647,8 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen> {
                           shape: BoxShape.circle,
                           border: isSelected
                               ? Border.all(
-                                  color: isDark ? Colors.white : AppColors.primary,
+                                  color:
+                                      isDark ? Colors.white : AppColors.primary,
                                   width: 3,
                                 )
                               : null,

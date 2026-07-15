@@ -208,6 +208,7 @@ export class FriendshipsService {
         username: profile?.username || null,
         fullName: profile?.fullName || null,
         avatar: profile?.avatar || null,
+        avatarBorder: profile?.avatarBorder || null,
       });
     }
 
@@ -238,6 +239,7 @@ export class FriendshipsService {
         username: profile?.username || null,
         fullName: profile?.fullName || null,
         avatar: profile?.avatar || null,
+        avatarBorder: profile?.avatarBorder || null,
         createdAt: item.createdAt,
       });
     }
@@ -284,6 +286,7 @@ export class FriendshipsService {
         username: p.username,
         fullName: p.fullName,
         avatar: p.avatar,
+        avatarBorder: p.avatarBorder || null,
         friendshipStatus: relation ? relation.status : 'none',
         friendshipId: relation ? relation.id : null,
         isSender: relation ? relation.senderId === currentUserId : false,
@@ -319,6 +322,7 @@ export class FriendshipsService {
         username: profile?.username || null,
         fullName: profile?.fullName || null,
         avatar: profile?.avatar || null,
+        avatarBorder: profile?.avatarBorder || null,
         friendshipStatus: relation ? relation.status : 'none',
         friendshipId: relation ? relation.id : null,
         isSender: relation ? relation.senderId === currentUserId : false,

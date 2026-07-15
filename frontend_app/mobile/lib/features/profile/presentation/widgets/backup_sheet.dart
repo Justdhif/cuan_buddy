@@ -29,7 +29,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
   bool? _backupEnabled;
   String _interval = '7d';
   bool _initialised = false;
-  bool _isSaving = false;
   bool _isBackingUp = false;
 
   late final AnimationController _freqController;
@@ -76,7 +75,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
   }
 
   Future<void> _saveSettings() async {
-    setState(() => _isSaving = true);
     try {
       await ref.read(profileRepositoryProvider).updateBackupSettings(
             isEnabled: _backupEnabled ?? false,
@@ -94,8 +92,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
           title: l10n.info,
           message: '${l10n.failedToSaveSettings}: $e',
           type: SnackbarType.error);
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -107,7 +103,8 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
 
       // Add entry to the state list
       final now = DateTime.now();
-      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_'
+      final dateStr =
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_'
           '${now.hour.toString().padLeft(2, '0')}-${now.minute.toString().padLeft(2, '0')}-${now.second.toString().padLeft(2, '0')}';
       final newFile = BackupFile(
         id: now.millisecondsSinceEpoch.toString(),
@@ -141,9 +138,7 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
     } catch (e) {
       if (mounted) {
         AppSnackbar.show(context,
-            title: l10n.info,
-            message: '$e',
-            type: SnackbarType.error);
+            title: l10n.info, message: '$e', type: SnackbarType.error);
       }
     } finally {
       ref.read(backupFilesProvider.notifier).setDownloading(file.id, false);
@@ -333,9 +328,8 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
 
               // ── Manual Backup Button ────────────────────────────────
               AppButton(
-                label: _isBackingUp
-                    ? l10n.backupInProgress
-                    : l10n.backupManualNow,
+                label:
+                    _isBackingUp ? l10n.backupInProgress : l10n.backupManualNow,
                 onPressed: _isBackingUp ? null : _doManualBackup,
                 isLoading: _isBackingUp,
                 icon: _isBackingUp
@@ -351,7 +345,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
     );
   }
 }
-
 
 // ─── Toggle Card ──────────────────────────────────────────────────────────────
 class _ToggleCard extends StatelessWidget {
@@ -718,7 +711,9 @@ class _EmptyBackupList extends StatelessWidget {
           Icon(
             Icons.folder_off_outlined,
             size: 48,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
           ),
           const SizedBox(height: 12),
           Text(

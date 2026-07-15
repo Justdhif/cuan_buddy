@@ -61,9 +61,8 @@ class AvatarWithBorder extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasBorder = borderAsset.isNotEmpty;
 
-    // Avatar menempati 72% dari total size agar pas di dalam lubang border.
-    // Sisa 28% dipakai oleh frame + dekorasi di sekeliling avatar.
-    final double avatarSize = hasBorder ? size * 0.72 : size;
+    // Perkecil sedikit rasio avatar agar aman di dalam lingkaran (65% dari total size).
+    final double avatarSize = hasBorder ? size * 0.65 : size;
 
     return SizedBox(
       width: size,
@@ -73,13 +72,26 @@ class AvatarWithBorder extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           // ── Avatar ──
-          SizedBox(
-            width: avatarSize,
-            height: avatarSize,
-            child: ClipOval(
-              child: _buildAvatarContent(avatarSize),
+          if (hasBorder)
+            Positioned(
+              // Geser sedikit ke bawah (top offset) karena lubang di border agak ke bawah.
+              top: (size - avatarSize) / 2 + (size * 0.02),
+              child: SizedBox(
+                width: avatarSize,
+                height: avatarSize,
+                child: ClipOval(
+                  child: _buildAvatarContent(avatarSize),
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              width: avatarSize,
+              height: avatarSize,
+              child: ClipOval(
+                child: _buildAvatarContent(avatarSize),
+              ),
             ),
-          ),
 
           // ── Border overlay ──
           if (hasBorder)
