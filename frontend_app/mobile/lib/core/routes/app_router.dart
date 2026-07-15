@@ -17,7 +17,6 @@ import '../../features/auth/presentation/screens/onboarding_screen.dart';
 
 // Profile Setup
 import '../../features/profile/presentation/screens/profile_setup_screen.dart';
-import '../../features/profile/presentation/screens/backup_settings_screen.dart';
 import '../../features/profile/presentation/screens/backup_restore_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/change_password_screen.dart';
@@ -122,23 +121,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) =>
             _buildPage(state, const ProfileSetupScreen()),
         redirect: (context, state) {
-          if (prefsService.profileComplete) return '/wallet-setup';
+          if (prefsService.profileComplete) return '/home/dashboard';
           return null;
         },
       ),
       GoRoute(
         path: '/wallet-setup',
-        pageBuilder: (context, state) =>
-            _buildPage(state, const ManageWalletsScreen(isOnboarding: true)),
+        redirect: (context, state) => '/home/dashboard',
       ),
       GoRoute(
         path: '/backup-settings',
-        pageBuilder: (context, state) =>
-            _buildPage(state, const BackupSettingsScreen(isOnboarding: true)),
-        redirect: (context, state) {
-          if (prefsService.backupSetupComplete) return '/home/dashboard';
-          return null;
-        },
+        redirect: (context, state) => '/home/dashboard',
       ),
       GoRoute(
         path: '/profile/backup',

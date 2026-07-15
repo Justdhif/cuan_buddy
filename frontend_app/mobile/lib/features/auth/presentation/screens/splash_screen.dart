@@ -57,8 +57,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           final prefs = ref.read(preferencesServiceProvider);
           if (!prefs.profileComplete) {
             context.go('/profile-setup');
-          } else if (!prefs.backupSetupComplete) {
-            context.go('/backup-settings');
           } else {
             context.go('/home/dashboard');
           }

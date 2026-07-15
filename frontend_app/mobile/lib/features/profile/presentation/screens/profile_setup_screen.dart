@@ -972,7 +972,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ref.invalidate(profileProvider);
 
       if (!mounted) return;
-      context.go('/backup-settings');
+      context.go('/home/dashboard');
     } catch (e) {
       if (!mounted) return;
       AppSnackbar.show(
