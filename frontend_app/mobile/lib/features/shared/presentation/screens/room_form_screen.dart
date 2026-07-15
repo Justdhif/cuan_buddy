@@ -3,15 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import '../../../../core/widgets/app_text_field.dart';
-import '../../../../core/utils/app_snackbar.dart';
-import '../../../../core/theme/category_icon_shape.dart';
-import '../../../../core/providers/category_icon_shape_provider.dart';
-import '../../../../core/widgets/color_picker_sheet.dart';
-import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../../profile/presentation/widgets/avatar_border_helper.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/selected_users_chip_row.dart';
 
 class RoomFormScreen extends ConsumerStatefulWidget {
   const RoomFormScreen({super.key});
@@ -22,8 +19,6 @@ class RoomFormScreen extends ConsumerStatefulWidget {
 
 class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     with TickerProviderStateMixin {
-  int _currentStep = 1;
-
   // Step 1 states
   // Ordered list: newest selection is at index 0 (shown leftmost)
   List<String> _selectedFriendIds = [];
@@ -33,28 +28,9 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
   late final AnimationController _sectionCtrl;
   late final Animation<double> _sectionFade;
 
-  // Step 2 states
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _emojiController = TextEditingController(text: '📁');
-
-  final List<Color> _presetColors = [
-    const Color(0xFF66BB6A),
-    const Color(0xFF26A69A),
-    const Color(0xFF26C6DA),
-    const Color(0xFF42A5F5),
-    const Color(0xFF3949AB),
-    const Color(0xFF7E57C2),
-  ];
-
-  late Color _selectedColor;
-  bool _isSaving = false;
-
   @override
   void initState() {
     super.initState();
-    _selectedColor = _presetColors.first;
     _sectionCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 320),
@@ -70,94 +46,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
   void dispose() {
     _sectionCtrl.dispose();
     _searchController.dispose();
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _emojiController.dispose();
     super.dispose();
-  }
-
-  String _colorToHex(Color color) {
-    return '#${color.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
-  }
-
-  void _showEmojiPicker() {
-    CustomEmojiPickerSheet.show(
-      context: context,
-      onEmojiSelected: (emoji) {
-        setState(() {
-          _emojiController.text = emoji;
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  Future<void> _showColorPicker() async {
-    final newColor = await showCustomColorPicker(
-      context: context,
-      initialColor: _selectedColor,
-    );
-    if (newColor != null) {
-      setState(() => _selectedColor = newColor);
-    }
-  }
-
-  void _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final name = _nameController.text.trim();
-    final emoji = _emojiController.text.trim();
-    final description = _descriptionController.text.trim();
-    final colorCode = _colorToHex(_selectedColor);
-
-    setState(() => _isSaving = true);
-
-    final l10n = AppLocalizations.of(context);
-    final notifier = ref.read(sharedNotifierProvider.notifier);
-
-    final error = await notifier.createRoom(
-      name,
-      _selectedFriendIds,
-      emojiIcon: emoji,
-      colorCode: colorCode,
-      description: description.isNotEmpty ? description : null,
-    );
-
-    if (mounted) {
-      setState(() => _isSaving = false);
-      if (error != null) {
-        AppSnackbar.show(
-          context,
-          title: l10n.error,
-          message: error,
-          type: SnackbarType.error,
-        );
-      } else {
-        AppSnackbar.show(
-          context,
-          title: l10n.success,
-          message: l10n.createRoomSuccess,
-          type: SnackbarType.success,
-        );
-        Navigator.pop(context);
-      }
-    }
-  }
-
-  void _goToStep2() {
-    if (_selectedFriendIds.isEmpty) {
-      final l10n = AppLocalizations.of(context);
-      AppSnackbar.show(
-        context,
-        title: l10n.info,
-        message: l10n.noFriendsInvite,
-        type: SnackbarType.warning,
-      );
-      return;
-    }
-    setState(() {
-      _currentStep = 2;
-    });
   }
 
   /// Called whenever selection changes to animate the section in/out.
@@ -170,13 +59,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
   }
 
   void _goBack() {
-    if (_currentStep == 2) {
-      setState(() {
-        _currentStep = 1;
-      });
-    } else {
-      Navigator.pop(context);
-    }
+    Navigator.pop(context);
   }
 
   @override
@@ -184,70 +67,53 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(sharedNotifierProvider);
     final l10n = AppLocalizations.of(context);
-    final iconShape = ref.watch(categoryIconShapeProvider);
+    final accentColor = ref.watch(accentColorProvider);
 
     return Scaffold(
-      resizeToAvoidBottomInset: _currentStep == 2,
-      appBar: _currentStep == 2
-          ? AppBar(
-              title: Text(
-                l10n.createRoom,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildCustomHeader(isDark, l10n),
+            // ── Animated selected-users section ──────────────────────
+            AnimatedSize(
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: FadeTransition(
+                opacity: _sectionFade,
+                child: _selectedFriendIds.isEmpty
+                    ? const SizedBox.shrink()
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSelectedUsersHorizontalList(state, isDark, accentColor),
+                          Container(
+                            height: 0.5,
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
+                            margin: const EdgeInsets.only(
+                                top: 6, bottom: 2),
+                          ),
+                        ],
+                      ),
               ),
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: _goBack,
-              ),
-            )
-          : null,
-      body: _currentStep == 1
-          ? SafeArea(
-              child: Column(
-                children: [
-                  _buildCustomHeader(isDark, l10n),
-                  // ── Animated selected-users section ──────────────────────
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 320),
-                    curve: Curves.easeInOutCubic,
-                    alignment: Alignment.topCenter,
-                    child: FadeTransition(
-                      opacity: _sectionFade,
-                      child: _selectedFriendIds.isEmpty
-                          ? const SizedBox.shrink()
-                          : Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildSelectedUsersHorizontalList(
-                                    state, isDark),
-                                Container(
-                                  height: 0.5,
-                                  color: isDark
-                                      ? AppColors.borderDark
-                                      : AppColors.borderLight,
-                                  margin: const EdgeInsets.only(
-                                      top: 6, bottom: 2),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildStep1Members(state, isDark, l10n),
-                  ),
-                ],
-              ),
-            )
-          : _buildStep2Details(isDark, l10n, iconShape),
-      floatingActionButton: _currentStep == 1
-          ? FloatingActionButton(
-              onPressed: _goToStep2,
-              backgroundColor: AppColors.primary,
-              shape: const CircleBorder(),
-              elevation: 4,
+            ),
+            Expanded(
+              child: _buildStep1Members(state, isDark, l10n),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: _selectedFriendIds.isEmpty
+          ? null
+          : GestureDetector(
+              onTap: () {
+                context.push('/shared/room-details', extra: _selectedFriendIds);
+              },
               child: Container(
-                width: 56,
-                height: 56,
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primary,
@@ -263,51 +129,10 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
                 child: const Icon(
                   Icons.arrow_forward_rounded,
                   color: Colors.white,
-                  size: 28,
+                  size: 32,
                 ),
               ),
-            )
-          : null,
-      bottomNavigationBar: _currentStep == 2
-          ? GestureDetector(
-              onTap: _isSaving ? null : _submit,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    height: 64,
-                    child: _isSaving
-                        ? const Center(
-                            child: SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2.5,
-                              ),
-                            ),
-                          )
-                        : Center(
-                            child: Text(
-                              l10n.createRoomButton,
-                              style:
-                                  AppTypography.textTheme.titleMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                  ),
-                ),
-              ),
-            )
-          : null,
+            ),
     );
   }
 
@@ -332,9 +157,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: Localizations.localeOf(context).languageCode == 'id'
-                    ? 'Nama atau nama pengguna'
-                    : 'Name or username',
+                hintText: l10n.nameOrUsername,
                 hintStyle: TextStyle(
                   color:
                       isDark ? AppColors.textHintDark : AppColors.textHintLight,
@@ -365,14 +188,15 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     );
   }
 
-  Widget _buildSelectedUsersHorizontalList(SharedState state, bool isDark) {
+  Widget _buildSelectedUsersHorizontalList(SharedState state, bool isDark, Color? accentColor) {
     final friendMap = <String, dynamic>{
       for (final f in state.friends) f['userId'] as String: f,
     };
-    return _ChipRow(
+    return SelectedUsersChipRow(
       selectedIds: _selectedFriendIds,
       friendMap: friendMap,
       isDark: isDark,
+      accentColor: accentColor,
       onRemove: _removeSelectedFriend,
     );
   }
@@ -381,12 +205,10 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
       SharedState state, bool isDark, AppLocalizations l10n) {
     final isLoading = state.isLoading && state.friends.isEmpty;
 
-    // ── Skeleton while loading ───────────────────────────────────────────────
     if (isLoading) {
       return _FriendListSkeleton(isDark: isDark);
     }
 
-    // ── True empty (data already fetched, list is genuinely empty) ───────────
     if (state.friends.isEmpty) {
       return AppEmptyState(
         icon: Icons.people_outline_rounded,
@@ -394,7 +216,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
       );
     }
 
-    // ── Filter by fullName + username only ────────────────────────────────────
     final query = _searchController.text.trim().toLowerCase();
     final filtered = state.friends.where((friend) {
       final fullName =
@@ -404,7 +225,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
       return fullName.contains(query) || username.contains(query);
     }).toList();
 
-    // ── No search results ────────────────────────────────────────────────────
     if (filtered.isEmpty) {
       return AppEmptyState(
         icon: Icons.search_off_rounded,
@@ -417,13 +237,12 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
       );
     }
 
-    // ── Animated list ────────────────────────────────────────────────────────
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
       child: ListView.builder(
-        key: ValueKey(query), // re-animate when query changes
+        key: ValueKey(query),
         padding: const EdgeInsets.only(top: 8, bottom: 88),
         itemCount: filtered.length,
         itemBuilder: (context, index) {
@@ -459,7 +278,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     );
   }
 
-  /// Adds a friend to the selection (newest appears leftmost).
   void _addSelectedFriend(String friendId) {
     setState(() {
       _selectedFriendIds = [friendId, ..._selectedFriendIds];
@@ -467,7 +285,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     _updateSectionVisibility();
   }
 
-  /// Removes a friend from the selection.
   void _removeSelectedFriend(String friendId) {
     setState(() {
       _selectedFriendIds =
@@ -475,355 +292,11 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     });
     _updateSectionVisibility();
   }
-
-  Widget _buildStep2Details(
-      bool isDark, AppLocalizations l10n, CategoryIconShape iconShape) {
-    return Form(
-      key: _formKey,
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    FocusScope.of(context).unfocus();
-                    _showEmojiPicker();
-                  },
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: ShapeDecoration(
-                      color: _selectedColor,
-                      shape: iconShape.toShapeBorder(64),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _emojiController.text.isNotEmpty
-                            ? _emojiController.text
-                            : '📁',
-                        style: const TextStyle(fontSize: 32),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: AppTextField(
-                    label: l10n.roomName,
-                    hint: l10n.roomNameHint,
-                    controller: _nameController,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return l10n.roomNameRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            AppTextField(
-              label: 'Deskripsi',
-              hint: 'Masukkan deskripsi ruang...',
-              controller: _descriptionController,
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
-            if (_selectedFriendIds.isNotEmpty) ...[
-              Text('Anggota Terpilih', style: AppTypography.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              _ChipRow(
-                selectedIds: _selectedFriendIds,
-                friendMap: {for (var f in ref.watch(sharedNotifierProvider).friends) f['userId'] as String: f},
-                isDark: isDark,
-                onRemove: _removeSelectedFriend,
-              ),
-              const SizedBox(height: 24),
-            ],
-            SingleChildScrollView(
-              clipBehavior: Clip.none,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      FocusScope.of(context).unfocus();
-                      _showColorPicker();
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      margin: const EdgeInsets.only(right: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFB3B9D6),
-                        shape: BoxShape.circle,
-                        border: !_presetColors.contains(_selectedColor)
-                            ? Border.all(
-                                color:
-                                    isDark ? Colors.white : AppColors.primary,
-                                width: 3,
-                              )
-                            : null,
-                      ),
-                      child: const Icon(
-                        Icons.palette_outlined,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                  ..._presetColors.map((color) {
-                    final isSelected = _selectedColor == color;
-                    return GestureDetector(
-                      onTap: () {
-                        FocusScope.of(context).unfocus();
-                        setState(() => _selectedColor = color);
-                      },
-                      child: Container(
-                        width: 50,
-                        height: 50,
-                        margin: const EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: isSelected
-                              ? Border.all(
-                                  color:
-                                      isDark ? Colors.white : AppColors.primary,
-                                  width: 3,
-                                )
-                              : null,
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
-// ─── Chip Row ─────────────────────────────────────────────────────────────────
-/// Horizontal scrollable row of selected-user chips.
-/// Each chip uses SizeTransition(axis: horizontal) + FadeTransition so that
-/// when a new chip grows in at the left, ALL existing chips slide right
-/// naturally via the Row layout — giving every chip a smooth animation.
-class _ChipRow extends StatefulWidget {
-  const _ChipRow({
-    required this.selectedIds,
-    required this.friendMap,
-    required this.isDark,
-    required this.onRemove,
-  });
 
-  final List<String> selectedIds;
-  final Map<String, dynamic> friendMap;
-  final bool isDark;
-  final void Function(String id) onRemove;
 
-  @override
-  State<_ChipRow> createState() => _ChipRowState();
-}
 
-class _ChipRowState extends State<_ChipRow> with TickerProviderStateMixin {
-  // Per-chip animation controllers (also tracks chips animating out)
-  final Map<String, AnimationController> _ctrls = {};
-  // Render list: includes chips currently animating out
-  final List<String> _renderIds = [];
-
-  @override
-  void initState() {
-    super.initState();
-    // Pre-populate without animation (screen opens with 0 selected usually)
-    for (final id in widget.selectedIds) {
-      final ctrl = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 320),
-        value: 1.0, // already visible
-      );
-      _ctrls[id] = ctrl;
-      _renderIds.add(id);
-    }
-  }
-
-  @override
-  void didUpdateWidget(_ChipRow old) {
-    super.didUpdateWidget(old);
-
-    final oldSet = old.selectedIds.toSet();
-    final newSet = widget.selectedIds.toSet();
-
-    // ── Added chips ──────────────────────────────────────────────────────────
-    for (final id in widget.selectedIds) {
-      if (!oldSet.contains(id)) {
-        final ctrl = AnimationController(
-          vsync: this,
-          duration: const Duration(milliseconds: 320),
-        );
-        _ctrls[id] = ctrl;
-        // Insert at front to match parent ordering
-        setState(() => _renderIds.insert(0, id));
-        ctrl.forward();
-      }
-    }
-
-    // ── Removed chips ────────────────────────────────────────────────────────
-    for (final id in old.selectedIds) {
-      if (!newSet.contains(id)) {
-        _ctrls[id]?.reverse().then((_) {
-          if (mounted) {
-            setState(() {
-              _renderIds.remove(id);
-              _ctrls.remove(id)?.dispose();
-            });
-          }
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    for (final c in _ctrls.values) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 108, // Increased slightly to prevent any vertical scroll clipping
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 10,
-          bottom: 4,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _renderIds.map((id) {
-            final ctrl = _ctrls[id]!;
-            final friend =
-                widget.friendMap[id] as Map<String, dynamic>? ?? {};
-            final name = (friend['fullName'] ??
-                    friend['username'] ??
-                    friend['email'] ??
-                    '') as String;
-            final avatarUrl = friend['avatar'] as String?;
-            final avatarBorderId = friend['avatarBorder'] as String?;
-            final borderAsset = borderAssetFromId(avatarBorderId);
-
-            // SizeTransition grows width 0→full (pushes siblings right)
-            // FadeTransition fades the content in/out simultaneously
-            return SizeTransition(
-              sizeFactor: CurvedAnimation(
-                parent: ctrl,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              ),
-              axis: Axis.horizontal,
-              alignment: Alignment.centerLeft, // anchor to the left edge
-              child: FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: ctrl,
-                  curve: Curves.easeOut,
-                  reverseCurve: Curves.easeIn,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: SizedBox(
-                    width: 72,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 68,
-                          height: 68,
-                          child: Stack(
-                            children: [
-                              Align(
-                                alignment: Alignment.topCenter,
-                                child: AvatarWithBorder(
-                                  size: 56,
-                                  borderAsset: borderAsset,
-                                  avatarUrl: avatarUrl,
-                                  fallbackName: name,
-                                ),
-                              ),
-                              // X badge — placed within bounds to avoid SizeTransition clipping
-                              Align(
-                                alignment: Alignment.bottomRight,
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => widget.onRemove(id),
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                        bottom: 2, right: 2, top: 8, left: 8),
-                                    child: Container(
-                                      width: 18,
-                                      height: 18,
-                                      decoration: BoxDecoration(
-                                        color: widget.isDark
-                                            ? Colors.grey[700]
-                                            : Colors.grey[500],
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: widget.isDark
-                                              ? AppColors.backgroundDark
-                                              : Colors.white,
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.close_rounded,
-                                        size: 12,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: widget.isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── Friend List Item (animated) ──────────────────────────────────────────────
 /// Individual friend row with a staggered fade+slide-up entrance animation.

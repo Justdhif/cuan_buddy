@@ -1361,7 +1361,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get roomNameHint => 'e.g. Shared House Finance, Vacation Plan';
   @override
-  String get roomNameRequired => 'Room name cannot be empty';
+  String get roomNameRequired => 'Room name is required';
+  @override
+  String get selectedMembers => 'Selected Members';
+  @override
+  String get nameOrUsername => 'Name or username';
   @override
   String get inviteFriends => 'Invite Friends';
   @override
@@ -1418,4 +1422,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get limitAmountLabel => 'Limit';
   @override
   String get friend => 'Friend';
+  @override
+  String get addMember => 'Add Member';
+  @override
+  String get allFriendsAlreadyInRoom => 'All friends are already members of this room.';
+  @override
+  String get inviteFriendToRoom => 'Invite Friend to Room';
 }

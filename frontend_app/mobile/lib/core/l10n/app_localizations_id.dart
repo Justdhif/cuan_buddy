@@ -1369,6 +1369,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get roomNameRequired => 'Nama room tidak boleh kosong';
   @override
+  String get selectedMembers => 'Anggota Terpilih';
+  @override
+  String get nameOrUsername => 'Nama atau nama pengguna';
+  @override
   String get inviteFriends => 'Undang Teman';
   @override
   String get noFriendsInvite => 'Belum memiliki teman';
@@ -1424,4 +1428,10 @@ class AppLocalizationsId extends AppLocalizations {
   String get limitAmountLabel => 'Limit';
   @override
   String get friend => 'Teman';
+  @override
+  String get addMember => 'Tambah Anggota';
+  @override
+  String get allFriendsAlreadyInRoom => 'Semua teman sudah menjadi anggota room ini.';
+  @override
+  String get inviteFriendToRoom => 'Undang Teman ke Room';
 }

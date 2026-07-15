@@ -9,6 +9,8 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
+import '../../../profile/presentation/widgets/avatar_border_helper.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 
 class SharedRoomDashboardScreen extends ConsumerStatefulWidget {
   final String roomId;
@@ -31,6 +33,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(widget.roomId);
+      ref.read(sharedNotifierProvider.notifier).fetchFriends(silent: true);
     });
   }
 
@@ -150,6 +153,9 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
 
     final String roomName = room['name'] ?? 'Room';
     final List members = room['members'] ?? [];
+    for (var m in members) {
+      debugPrint('MEMBER DEBUG: ${m['username']} - avatarBorder: ${m['avatarBorder']}');
+    }
     final Map<String, dynamic> summary = room['summary'] ?? {};
     final double balance = summary['balance'] is num ? (summary['balance'] as num).toDouble() : 0.0;
 
@@ -223,46 +229,30 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          SizedBox(
-                            height: 28,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              shrinkWrap: true,
-                              itemCount: members.length > 5 ? 5 : members.length,
-                              itemBuilder: (context, idx) {
-                                final m = members[idx];
-                                final String avatar = m['avatar'] ?? '';
-                                final String init = (m['fullName'] ?? m['email']).substring(0, 1).toUpperCase();
-                                return Align(
-                                  widthFactor: 0.7,
-                                  child: CircleAvatar(
-                                    radius: 14,
-                                    backgroundColor: AppColors.secondary,
-                                    backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-                                    child: avatar.isEmpty
-                                        ? Text(
-                                            init,
-                                            style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
-                                          )
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          if (members.length > 5) ...[
-                            const SizedBox(width: 12),
-                            Text(
-                              l10n.othersCount(members.length - 5),
-                              style: textTheme.bodySmall?.copyWith(color: Colors.white70),
-                            ),
-                          ]
-                        ],
-                      )
                     ],
                   ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Container(
+                color: isDark ? AppColors.surfaceDark : Colors.white,
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.members,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildMemberChips(members, state, l10n, isDark, profile?['userId'] ?? ''),
+                    const SizedBox(height: 20),
+                    _buildSummaryCards(state, l10n, isDark, baseCurrency),
+                  ],
                 ),
               ),
             ),
@@ -476,6 +466,552 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMemberChips(List<dynamic> members, SharedState state, AppLocalizations l10n, bool isDark, String currentUserId) {
+    if (state.isRoomLoading) {
+      return _MemberChipSkeleton(isDark: isDark);
+    }
+
+    final profile = ref.read(profileProvider).value;
+
+    // Order members: Put "you" (currentUserId) first among the member chips
+    final orderedMembers = List<dynamic>.from(members);
+    final youIndex = orderedMembers.indexWhere((m) => m['userId'] == currentUserId);
+    dynamic youMember;
+    if (youIndex != -1) {
+      youMember = orderedMembers.removeAt(youIndex);
+    }
+
+    return SizedBox(
+      height: 100,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        children: [
+          // 1. Add Member Chip
+          _buildAddMemberChip(l10n, isDark),
+          
+          // 2. You Chip
+          if (youMember != null)
+            _buildMemberChip(
+              name: l10n.you,
+              avatarUrl: profile?['avatar'] ?? youMember['avatar'],
+              borderAsset: borderAssetFromId(profile?['avatarBorder'] ?? youMember['avatarBorder']),
+              isDark: isDark,
+            ),
+            
+          // 3. Other Members Chips
+          ...orderedMembers.map((m) {
+            final String? username = m['username'];
+            final String name = (username != null && username.isNotEmpty)
+                ? '@$username'
+                : (m['fullName'] ?? m['email'] ?? '');
+            return _buildMemberChip(
+              name: name,
+              avatarUrl: m['avatar'],
+              borderAsset: borderAssetFromId(m['avatarBorder']),
+              isDark: isDark,
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddMemberChip(AppLocalizations l10n, bool isDark) {
+    return GestureDetector(
+      onTap: _showInviteMemberBottomSheet,
+      child: Container(
+        width: 76,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              alignment: Alignment.center,
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : AppColors.primary.withValues(alpha: 0.08),
+                  border: Border.all(
+                    color: isDark ? Colors.grey[700]! : AppColors.primary.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(
+                  Icons.person_add_outlined,
+                  color: isDark ? Colors.white70 : AppColors.primary,
+                  size: 24,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.addMember,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberChip({
+    required String name,
+    required String? avatarUrl,
+    required String borderAsset,
+    required bool isDark,
+  }) {
+    return Container(
+      width: 76,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AvatarWithBorder(
+            size: 68,
+            borderAsset: borderAsset,
+            avatarUrl: avatarUrl,
+            fallbackName: name,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showInviteMemberBottomSheet() {
+    final state = ref.read(sharedNotifierProvider);
+    final room = state.activeRoom;
+    if (room == null) return;
+
+    final List members = room['members'] ?? [];
+    final memberUserIds = members.map((m) => m['userId'] as String).toSet();
+
+    // Friends who are not yet members
+    final inviteableFriends = state.friends
+        .where((f) => !memberUserIds.contains(f['userId'] as String))
+        .toList();
+
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    AppBottomSheet.show(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.inviteFriendToRoom,
+                    style: AppTypography.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (inviteableFriends.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 32),
+                      child: Text(
+                        l10n.allFriendsAlreadyInRoom,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: inviteableFriends.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, idx) {
+                          final friend = inviteableFriends[idx];
+                          final String friendId = friend['userId'];
+                          final String name = friend['fullName'] ?? friend['username'] ?? friend['email'];
+                          final String? username = friend['username'];
+                          final avatarUrl = friend['avatar'];
+                          final avatarBorderId = friend['avatarBorder'] as String?;
+                          final borderAsset = borderAssetFromId(avatarBorderId);
+
+                          return Row(
+                            children: [
+                              AvatarWithBorder(
+                                size: 44,
+                                borderAsset: borderAsset,
+                                avatarUrl: avatarUrl,
+                                fallbackName: name,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (username != null && username.isNotEmpty) ...[
+                                      Text(
+                                        '@$username',
+                                        style: AppTypography.textTheme.bodySmall?.copyWith(
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                    ],
+                                    Text(
+                                      name,
+                                      style: AppTypography.textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                ),
+                                onPressed: () async {
+                                  final messenger = ScaffoldMessenger.of(context);
+                                  final localizations = Localizations.localeOf(context);
+                                  Navigator.pop(context);
+                                  
+                                  final error = await ref
+                                      .read(sharedNotifierProvider.notifier)
+                                      .inviteMember(widget.roomId, friendId);
+
+                                  if (!mounted) return;
+                                  if (error != null) {
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(error),
+                                        backgroundColor: AppColors.danger,
+                                      ),
+                                    );
+                                  } else {
+                                    messenger.showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          localizations.languageCode == 'id'
+                                              ? 'Berhasil mengundang $name'
+                                              : 'Successfully invited $name',
+                                        ),
+                                        backgroundColor: AppColors.success,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  l10n.invite,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryCards(SharedState state, AppLocalizations l10n, bool isDark, String baseCurrency) {
+    final txCount = state.roomTransactions.length;
+
+    double totalBudgetLimit = 0;
+    double totalBudgetSpent = 0;
+    for (var b in state.roomBudgets) {
+      final limit = b['limitAmount'] is num ? (b['limitAmount'] as num).toDouble() : double.tryParse(b['limitAmount']?.toString() ?? '0') ?? 0.0;
+      final spent = b['spentAmount'] is num ? (b['spentAmount'] as num).toDouble() : double.tryParse(b['spentAmount']?.toString() ?? '0') ?? 0.0;
+      totalBudgetLimit += limit;
+      totalBudgetSpent += spent;
+    }
+    final budgetPercent = totalBudgetLimit > 0 ? (totalBudgetSpent / totalBudgetLimit).clamp(0.0, 1.0) : 0.0;
+
+    double totalSavingTarget = 0;
+    double totalSavingCurrent = 0;
+    for (var s in state.roomSavings) {
+      final target = s['targetAmount'] is num ? (s['targetAmount'] as num).toDouble() : double.tryParse(s['targetAmount']?.toString() ?? '0') ?? 0.0;
+      final current = s['currentAmount'] is num ? (s['currentAmount'] as num).toDouble() : double.tryParse(s['currentAmount']?.toString() ?? '0') ?? 0.0;
+      totalSavingTarget += target;
+      totalSavingCurrent += current;
+    }
+    final savingPercent = totalSavingTarget > 0 ? (totalSavingCurrent / totalSavingTarget).clamp(0.0, 1.0) : 0.0;
+
+    final symbol = AppConstants.getCurrencySymbol(baseCurrency);
+    final isId = Localizations.localeOf(context).languageCode == 'id';
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSummaryCard(
+            title: isId ? 'Transaksi' : 'Transactions',
+            value: '$txCount',
+            subLabel: isId ? 'Transaksi' : 'Transactions',
+            icon: Icons.receipt_long_outlined,
+            bgColor: isDark ? const Color(0xFF27213C) : const Color(0xFFF3E8FF),
+            textColor: isDark ? const Color(0xFFD8B4FE) : const Color(0xFF7E22CE),
+            iconBgColor: isDark ? const Color(0xFF3B2F5F) : const Color(0xFFE9D5FF),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildSummaryCard(
+            title: 'Budget',
+            value: CurrencyFormatter.formatAmount(totalBudgetSpent, symbol: symbol),
+            subLabel: l10n.of_(CurrencyFormatter.formatAmount(totalBudgetLimit, symbol: symbol)),
+            icon: Icons.pie_chart_outline_rounded,
+            bgColor: isDark ? const Color(0xFF1B2E24) : const Color(0xFFECFDF5),
+            textColor: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857),
+            iconBgColor: isDark ? const Color(0xFF244432) : const Color(0xFFD1FAE5),
+            progress: budgetPercent,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildSummaryCard(
+            title: isId ? 'Tabungan' : 'Savings',
+            value: CurrencyFormatter.formatAmount(totalSavingCurrent, symbol: symbol),
+            subLabel: l10n.of_(CurrencyFormatter.formatAmount(totalSavingTarget, symbol: symbol)),
+            icon: Icons.savings_outlined,
+            bgColor: isDark ? const Color(0xFF2E2216) : const Color(0xFFFFF7ED),
+            textColor: isDark ? const Color(0xFFFDBA74) : const Color(0xFFC2410C),
+            iconBgColor: isDark ? const Color(0xFF43301F) : const Color(0xFFFFEDD5),
+            progress: savingPercent,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required String title,
+    required String value,
+    required String subLabel,
+    required IconData icon,
+    required Color bgColor,
+    required Color textColor,
+    required Color iconBgColor,
+    double? progress,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: iconBgColor,
+            ),
+            child: Icon(
+              icon,
+              color: textColor,
+              size: 16,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: textColor.withValues(alpha: 0.8),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontSize: 9,
+            ),
+          ),
+          if (progress != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: iconBgColor,
+                      valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                      minHeight: 4,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${(progress * 100).toInt()}%',
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black54,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MemberChipSkeleton extends StatefulWidget {
+  const _MemberChipSkeleton({required this.isDark});
+  final bool isDark;
+
+  @override
+  State<_MemberChipSkeleton> createState() => _MemberChipSkeletonState();
+}
+
+class _MemberChipSkeletonState extends State<_MemberChipSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shimmerCtrl;
+  late final Animation<double> _shimmer;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+
+    _shimmer = Tween<double>(begin: 0.3, end: 0.9).animate(
+      CurvedAnimation(parent: _shimmerCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _shimmerCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = widget.isDark
+        ? const Color(0xFF2C2C2E)
+        : const Color(0xFFE5E7EB);
+
+    return AnimatedBuilder(
+      animation: _shimmer,
+      builder: (context, _) {
+        final shimmerColor = Color.lerp(
+          base,
+          widget.isDark ? const Color(0xFF3A3A3C) : const Color(0xFFF3F4F6),
+          _shimmer.value,
+        )!;
+
+        return SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 4,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: SizedBox(
+                  width: 76,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 68,
+                        height: 68,
+                        decoration: BoxDecoration(
+                          color: shimmerColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 10,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: shimmerColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

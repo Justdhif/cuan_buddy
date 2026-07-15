@@ -143,6 +143,7 @@ export class RoomsService {
         username: profile?.username || null,
         fullName: profile?.fullName || null,
         avatar: profile?.avatar || null,
+        avatarBorder: profile?.avatarBorder || null,
       });
     }
 

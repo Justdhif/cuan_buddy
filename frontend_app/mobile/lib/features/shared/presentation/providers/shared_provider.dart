@@ -254,6 +254,21 @@ class SharedNotifier extends StateNotifier<SharedState> {
     }
   }
 
+  Future<String?> inviteMember(String roomId, String inviteeId) async {
+    try {
+      final res = await _dioClient.dio.post('/rooms/$roomId/invite', data: {
+        'userId': inviteeId,
+      });
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchRoomDetails(roomId);
+        return null;
+      }
+      return res.data['message'] ?? 'Failed to invite member';
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   void clearActiveRoom() {
     state = state.copyWith(clearActiveRoom: true, roomTransactions: [], roomBudgets: [], roomSavings: []);
   }

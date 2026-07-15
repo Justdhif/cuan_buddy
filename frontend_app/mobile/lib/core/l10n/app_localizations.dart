@@ -693,6 +693,8 @@ abstract class AppLocalizations {
   String get roomName;
   String get roomNameHint;
   String get roomNameRequired;
+  String get selectedMembers;
+  String get nameOrUsername;
   String get inviteFriends;
   String get noFriendsInvite;
   String get searchFriendsAction;
@@ -721,6 +723,9 @@ abstract class AppLocalizations {
   String get targetAmountLabel;
   String get limitAmountLabel;
   String get friend;
+  String get addMember;
+  String get allFriendsAlreadyInRoom;
+  String get inviteFriendToRoom;
 }
 
 class AppLocalizationsScope extends InheritedWidget {
