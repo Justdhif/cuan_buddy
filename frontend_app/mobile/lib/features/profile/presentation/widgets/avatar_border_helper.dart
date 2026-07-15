@@ -68,30 +68,37 @@ class AvatarWithBorder extends StatelessWidget {
     return SizedBox(
       width: size,
       height: size,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          // ── Avatar ──
-          SizedBox(
-            width: avatarSize,
-            height: avatarSize,
-            child: ClipOval(
-              child: _buildAvatarContent(avatarSize),
-            ),
-          ),
-
-          // ── Border overlay ──
-          if (hasBorder)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Image.asset(
-                  borderAsset,
-                  fit: BoxFit.fill,
+      child: FittedBox(
+        fit: BoxFit.contain, // Memastikan seluruh isi di-scale secara proporsional selama animasi Hero
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              // ── Avatar ──
+              SizedBox(
+                width: avatarSize,
+                height: avatarSize,
+                child: ClipOval(
+                  child: _buildAvatarContent(avatarSize),
                 ),
               ),
-            ),
-        ],
+
+              // ── Border overlay ──
+              if (hasBorder)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      borderAsset,
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
