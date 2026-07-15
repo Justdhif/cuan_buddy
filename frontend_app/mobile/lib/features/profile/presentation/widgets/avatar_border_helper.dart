@@ -61,16 +61,13 @@ class AvatarWithBorder extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasBorder = borderAsset.isNotEmpty;
 
-    // Ukuran avatar selalu konsisten sebesar `size` (baik saat pakai border maupun tidak).
-    final double avatarSize = size;
-    
-    // Jika ada border, total container border (Stack) harus lebih besar (size / 0.76) 
-    // agar lubang di dalam border pas dengan ukuran avatar.
-    final double totalSize = hasBorder ? size / 0.76 : size;
+    // Ukuran avatar selalu konstan (76% dari total size) baik saat ada border maupun tidak.
+    // Hal ini agar posisi dan ukuran wajah tidak berubah atau membesar/mengecil.
+    final double avatarSize = size * 0.76;
 
     return SizedBox(
-      width: totalSize,
-      height: totalSize,
+      width: size,
+      height: size,
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.center,
@@ -86,9 +83,7 @@ class AvatarWithBorder extends StatelessWidget {
 
           // ── Border overlay ──
           if (hasBorder)
-            Positioned(
-              width: totalSize,
-              height: totalSize,
+            Positioned.fill(
               child: IgnorePointer(
                 child: Image.asset(
                   borderAsset,
