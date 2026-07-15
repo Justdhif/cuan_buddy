@@ -293,42 +293,6 @@ export class FriendshipsService {
       });
     }
 
-    // Also search users by email directly if they don't match username/fullName but match email
-    const usersByEmail = await this.db.query.users.findMany({
-      where: and(
-        ne(users.id, currentUserId),
-        ilike(users.email, `%${query}%`)
-      ),
-      limit: 10,
-    });
-
-    for (const u of usersByEmail) {
-      if (matchedUsers.some(m => m.userId === u.id)) continue;
-
-      const profile = await this.db.query.userProfiles.findFirst({
-        where: eq(userProfiles.userId, u.id),
-      });
-
-      const relation = await this.db.query.friendships.findFirst({
-        where: or(
-          and(eq(friendships.senderId, currentUserId), eq(friendships.receiverId, u.id)),
-          and(eq(friendships.senderId, u.id), eq(friendships.receiverId, currentUserId))
-        ),
-      });
-
-      matchedUsers.push({
-        userId: u.id,
-        email: u.email,
-        username: profile?.username || null,
-        fullName: profile?.fullName || null,
-        avatar: profile?.avatar || null,
-        avatarBorder: profile?.avatarBorder || null,
-        friendshipStatus: relation ? relation.status : 'none',
-        friendshipId: relation ? relation.id : null,
-        isSender: relation ? relation.senderId === currentUserId : false,
-      });
-    }
-
     return matchedUsers;
   }
 }
