@@ -31,7 +31,7 @@ export async function sendWhatsAppMessage({
   const messageText = `*${title}*\n${description}\n\n${appFooter}`;
 
   // Standard fallback image URL (financial workspace)
-  const finalImageUrl = imageUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=500&fm=jpg';
+  const finalImageUrl = imageUrl || 'https://picsum.photos/500/300.jpg';
 
   try {
     const params = new URLSearchParams();
