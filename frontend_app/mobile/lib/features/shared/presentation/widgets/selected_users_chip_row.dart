@@ -150,7 +150,7 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
                             children: [
                               Align(
                                 alignment: Alignment.topCenter,
-                                child: AvatarWithBorder(
+                                child: UserAvatar(
                                   size: 64,
                                   borderAsset: borderAsset,
                                   avatarUrl: avatarUrl,

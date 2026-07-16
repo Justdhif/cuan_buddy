@@ -375,7 +375,7 @@ class _FriendListItemState extends State<_FriendListItem>
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             child: Row(
               children: [
-                AvatarWithBorder(
+                UserAvatar(
                   size: 52,
                   borderAsset: widget.borderAsset,
                   avatarUrl: widget.avatarUrl,

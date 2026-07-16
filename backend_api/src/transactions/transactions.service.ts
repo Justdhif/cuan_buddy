@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { eq, and, or, gte, lte, desc, ilike, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, budgets, categories, savingsGoals, wallets, roomMembers } from '../database/schema';
+import { transactions, budgets, categories, savingsGoals, wallets, roomMembers, userProfiles } from '../database/schema';
 import {
   CreateTransactionDto,
   UpdateTransactionDto,
@@ -103,6 +103,9 @@ export class TransactionsService {
     if (newTransaction.type === 'expense' && newTransaction.categoryId) {
       void this.checkBudgetThreshold(userId, newTransaction.categoryId, newTransaction.date, newTransaction.walletId);
     }
+
+    // Fire-and-forget: update recording streak for achievements
+    void this.updateRecordingStreak(userId);
 
     return newTransaction;
   }
@@ -439,5 +442,48 @@ export class TransactionsService {
       type: row.type,
       count: Number(row.count),
     }));
+  }
+
+  private async updateRecordingStreak(userId: string) {
+    try {
+      const profile = await this.db.query.userProfiles.findFirst({
+        where: eq(userProfiles.userId, userId),
+      });
+      if (!profile) return;
+
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const lastDate = profile.lastRecordedAt ? new Date(profile.lastRecordedAt) : null;
+
+      if (lastDate) {
+        const lastDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+        const diffDays = Math.floor((today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+          return; // Already recorded today
+        } else if (diffDays === 1) {
+          // Increment streak
+          await this.db.update(userProfiles)
+            .set({
+              recordingStreakCount: (profile.recordingStreakCount ?? 0) + 1,
+              lastRecordedAt: now,
+              updatedAt: now,
+            })
+            .where(eq(userProfiles.userId, userId));
+        } else {
+          // Reset streak to 1
+          await this.db.update(userProfiles)
+            .set({ recordingStreakCount: 1, lastRecordedAt: now, updatedAt: now })
+            .where(eq(userProfiles.userId, userId));
+        }
+      } else {
+        // First record
+        await this.db.update(userProfiles)
+          .set({ recordingStreakCount: 1, lastRecordedAt: now, updatedAt: now })
+          .where(eq(userProfiles.userId, userId));
+      }
+    } catch (err) {
+      console.error('Failed to update recording streak:', err);
+    }
   }
 }

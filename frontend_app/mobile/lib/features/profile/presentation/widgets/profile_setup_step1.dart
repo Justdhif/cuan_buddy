@@ -84,7 +84,7 @@ class ProfileSetupStep1 extends StatelessWidget {
             children: [
               GestureDetector(
                 onTap: onAvatarEditTap,
-                child: AvatarWithBorder(
+                child: UserAvatar(
                   size: 140,
                   borderAsset: selectedBorderAsset,
                   avatarUrl: selectedAvatarUrl,

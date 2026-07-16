@@ -1,9 +1,24 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count, sum, sql } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { userProfiles, wallets, users } from '../database/schema';
+import { userProfiles, wallets, users, savingsGoals, transactions, roomMembers } from '../database/schema';
 import { UpdateProfileDto, UpdateAvatarDto } from './dto/update-profile.dto';
 import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
+
+// ─── Border Achievement Definitions ───────────────────────────────────────────
+// Daftar semua border achievement dan kondisi unlock-nya.
+// Kondisi dicek server-side untuk keamanan.
+const ACHIEVEMENT_BORDERS = [
+  { id: 'border-rookie',       label: 'Cuan Rookie',           tier: 'bronze'   },
+  { id: 'border-first-goal',   label: 'Goal Achiever',         tier: 'silver'   },
+  { id: 'border-master-saver', label: 'Master Penabung',       tier: 'gold'     },
+  { id: 'border-cuan-planner', label: 'Cuan Planner',          tier: 'silver'   },
+  { id: 'border-cuan-emperor', label: 'Cuan Emperor',          tier: 'platinum' },
+  { id: 'border-cuan-partner', label: 'Cuan Partner',          tier: 'silver'   },
+  { id: 'border-tracker-pro',  label: 'Financial Tracker Pro', tier: 'gold'     },
+  { id: 'border-budget-master',label: 'Budget Master',         tier: 'gold'     },
+  { id: 'border-consistency',  label: 'Disiplin Cuan',         tier: 'gold'     },
+];
 
 @Injectable()
 export class UserProfilesService {
@@ -100,5 +115,166 @@ export class UserProfilesService {
     this.otpStore.delete(phone);
 
     return { success: true, message: 'Phone number updated successfully' };
+  }
+
+  // ─── Achievement: Get Unlocked Borders ───────────────────────────────────────
+  async getUnlockedBorders(userId: string): Promise<string[]> {
+    const profile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId),
+    });
+    if (!profile) throw new NotFoundException('Profile not found');
+    const stored = profile.unlockedBorders;
+    return Array.isArray(stored) ? stored : [];
+  }
+
+  // ─── Achievement: Check & Unlock Borders ─────────────────────────────────────
+  /// Evaluasi semua kondisi achievement secara server-side.
+  /// Border yang memenuhi syarat dan belum terbuka akan ditambahkan ke DB secara permanen.
+  async checkAndUnlockBorders(userId: string): Promise<{ unlocked: string[]; newlyUnlocked: string[] }> {
+    const profile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId),
+    });
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    // ── Ambil data statistik yang diperlukan ──
+    // 1. Saving goals milik user (personal, bukan room)
+    const personalGoals = await this.db.query.savingsGoals.findMany({
+      where: and(eq(savingsGoals.userId, userId), sql`${savingsGoals.roomId} IS NULL`),
+    });
+    const completedPersonalGoals = personalGoals.filter(g => g.status === 'completed');
+    const activePersonalGoals    = personalGoals.filter(g => g.status === 'in_progress');
+    const totalSaved             = personalGoals.reduce((sum, g) => sum + Number(g.currentAmount ?? 0), 0);
+
+    // 2. Saving goals dari shared room yang diselesaikan
+    const completedRoomGoals = await this.db.query.savingsGoals.findMany({
+      where: and(
+        eq(savingsGoals.userId, userId),
+        eq(savingsGoals.status, 'completed'),
+        sql`${savingsGoals.roomId} IS NOT NULL`,
+      ),
+    });
+
+    // 3. Umur akun
+    const accountAgeMonths = profile.createdAt
+      ? Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
+      : 0;
+
+    // 4. Streak pencatatan
+    const streakCount = profile.recordingStreakCount ?? 0;
+
+    // ── Evaluasi Kondisi Tiap Border ──
+    const conditionsMet = new Set<string>();
+
+    // Bronze — Cuan Rookie: Selalu terbuka untuk semua akun
+    conditionsMet.add('border-rookie');
+
+    // Silver — Goal Achiever: Selesaikan 1 saving goal personal
+    if (completedPersonalGoals.length >= 1) {
+      conditionsMet.add('border-first-goal');
+    }
+
+    // Gold — Master Penabung: Total tabungan terkumpul >= 10.000.000
+    if (totalSaved >= 10_000_000) {
+      conditionsMet.add('border-master-saver');
+    }
+
+    // Silver — Cuan Planner: Punya minimal 3 saving goals aktif
+    if (activePersonalGoals.length >= 3) {
+      conditionsMet.add('border-cuan-planner');
+    }
+
+    // Platinum — Cuan Emperor: 5+ goals selesai DAN 3+ goals aktif
+    if (completedPersonalGoals.length >= 5 && activePersonalGoals.length >= 3) {
+      conditionsMet.add('border-cuan-emperor');
+    }
+
+    // Silver — Cuan Partner: Selesaikan 1 tabungan bersama di Shared Room
+    if (completedRoomGoals.length >= 1) {
+      conditionsMet.add('border-cuan-partner');
+    }
+
+    // Gold — Financial Tracker Pro: Akun berumur >= 6 bulan
+    if (accountAgeMonths >= 6) {
+      conditionsMet.add('border-tracker-pro');
+    }
+
+    // Gold — Disiplin Cuan: Streak pencatatan 30+ hari berturut-turut
+    if (streakCount >= 30) {
+      conditionsMet.add('border-consistency');
+    }
+
+    // Catatan: border-budget-master membutuhkan data budget history yang lebih kompleks.
+    // Untuk MVP, ini akan di-unlock manual atau dengan kondisi sederhana di masa depan.
+    // conditionsMet.add('border-budget-master') — TODO
+
+    // ── Gabungkan dengan yang sudah tersimpan (permanent) ──
+    const currentUnlocked: string[] = Array.isArray(profile.unlockedBorders)
+      ? profile.unlockedBorders
+      : [];
+    const currentSet   = new Set(currentUnlocked);
+    const newlyUnlocked: string[] = [];
+
+    for (const borderId of conditionsMet) {
+      if (!currentSet.has(borderId)) {
+        newlyUnlocked.push(borderId);
+        currentSet.add(borderId);
+      }
+    }
+
+    // ── Simpan ke DB jika ada yang baru terbuka ──
+    const finalList = Array.from(currentSet);
+    if (newlyUnlocked.length > 0) {
+      await this.db.update(userProfiles)
+        .set({ unlockedBorders: finalList, updatedAt: new Date() })
+        .where(eq(userProfiles.userId, userId));
+    }
+
+    return { unlocked: finalList, newlyUnlocked };
+  }
+
+  // ─── Achievement: Update Recording Streak ────────────────────────────────────
+  /// Dipanggil setiap kali user mencatat transaksi.
+  /// Streak increment jika hari ini belum pernah mencatat, reset jika skip 1+ hari.
+  async updateRecordingStreak(userId: string): Promise<void> {
+    const profile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId),
+    });
+    if (!profile) return;
+
+    const now      = new Date();
+    const today    = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const lastDate = profile.lastRecordedAt ? new Date(profile.lastRecordedAt) : null;
+
+    if (lastDate) {
+      const lastDay        = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+      const diffDays       = Math.floor((today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        // Sudah mencatat hari ini, tidak perlu update streak
+        return;
+      } else if (diffDays === 1) {
+        // Hari berturut-turut: increment streak
+        await this.db.update(userProfiles)
+          .set({
+            recordingStreakCount: (profile.recordingStreakCount ?? 0) + 1,
+            lastRecordedAt: now,
+            updatedAt: new Date(),
+          })
+          .where(eq(userProfiles.userId, userId));
+      } else {
+        // Skip 1+ hari: reset streak ke 1
+        await this.db.update(userProfiles)
+          .set({ recordingStreakCount: 1, lastRecordedAt: now, updatedAt: new Date() })
+          .where(eq(userProfiles.userId, userId));
+      }
+    } else {
+      // Pertama kali mencatat: mulai streak dari 1
+      await this.db.update(userProfiles)
+        .set({ recordingStreakCount: 1, lastRecordedAt: now, updatedAt: new Date() })
+        .where(eq(userProfiles.userId, userId));
+    }
+
+    // Cek apakah ada achievement baru setelah update streak
+    await this.checkAndUnlockBorders(userId);
   }
 }

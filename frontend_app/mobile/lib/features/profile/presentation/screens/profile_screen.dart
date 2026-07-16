@@ -261,7 +261,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Hero(
                   tag: 'avatar',
-                  child: AvatarWithBorder(
+                  child: UserAvatar(
                     size: 90,
                     borderAsset: borderAsset,
                     avatarUrl: avatar,

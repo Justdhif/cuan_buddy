@@ -195,7 +195,7 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 child: Row(
                                   children: [
-                                    AvatarWithBorder(
+                                    UserAvatar(
                                       size: 52,
                                       borderAsset: borderAsset,
                                       avatarUrl: avatarUrl,

@@ -50,6 +50,21 @@ class ProfileRepository {
     await _dio.patch('/profiles/me', data: {'avatarBorder': borderId});
   }
 
+  /// Mengambil list ID border yang telah di-unlock secara permanen oleh user dari server.
+  Future<List<String>> getUnlockedBorders() async {
+    final response = await _dio.get('/profiles/unlocked-borders');
+    if (response.data is List) {
+      return List<String>.from(response.data);
+    }
+    return [];
+  }
+
+  /// Meminta server untuk mengevaluasi ulang pencapaian user dan meng-unlock border baru.
+  Future<Map<String, dynamic>> checkAchievements() async {
+    final response = await _dio.post('/profiles/check-achievements');
+    return response.data as Map<String, dynamic>;
+  }
+
   Future<Map<String, dynamic>> getBackupSettings() async {
     final response = await _dio.get('/backup/settings');
     return response.data as Map<String, dynamic>;

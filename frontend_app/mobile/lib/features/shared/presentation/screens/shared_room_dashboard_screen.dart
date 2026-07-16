@@ -911,7 +911,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AvatarWithBorder(
+          UserAvatar(
             size: 68,
             borderAsset: borderAsset,
             avatarUrl: avatarUrl,
@@ -999,7 +999,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
 
                           return Row(
                             children: [
-                              AvatarWithBorder(
+                              UserAvatar(
                                 size: 44,
                                 borderAsset: borderAsset,
                                 avatarUrl: avatarUrl,

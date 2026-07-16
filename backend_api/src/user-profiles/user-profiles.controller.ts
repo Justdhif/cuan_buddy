@@ -14,8 +14,11 @@ export class UserProfilesController {
   ) {}
 
   @Get('me')
-  getProfile(@Req() req) {
-    return this.userProfilesService.getProfile(req.user.userId);
+  async getProfile(@Req() req) {
+    const profile = await this.userProfilesService.getProfile(req.user.userId);
+    // Evaluasi achievement setiap kali user load profil (fire-and-forget, tidak blok response)
+    this.userProfilesService.checkAndUnlockBorders(req.user.userId).catch(() => {});
+    return profile;
   }
 
   @Patch('me')
@@ -69,6 +72,21 @@ export class UserProfilesController {
     }
   }
 
+  // ─── Achievement Endpoints ─────────────────────────────────────────────────
+
+  /// Kembalikan list border ID yang sudah di-unlock oleh user ini secara permanen.
+  @Get('unlocked-borders')
+  getUnlockedBorders(@Req() req) {
+    return this.userProfilesService.getUnlockedBorders(req.user.userId);
+  }
+
+  /// Evaluasi ulang semua kondisi achievement dan unlock border baru jika ada.
+  /// Kembalikan { unlocked: string[], newlyUnlocked: string[] }
+  @Post('check-achievements')
+  checkAchievements(@Req() req) {
+    return this.userProfilesService.checkAndUnlockBorders(req.user.userId);
+  }
+
   @Post('phone/send-otp')
   sendOtp(@Req() req, @Body() body: { phone: string }) {
     if (!body.phone) {
@@ -85,4 +103,3 @@ export class UserProfilesController {
     return this.userProfilesService.verifyOtp(req.user.userId, body.phone, body.code);
   }
 }
-
