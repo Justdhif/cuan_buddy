@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import '../constants/app_constants.dart';
@@ -46,17 +47,42 @@ class AuthInterceptor extends Interceptor {
   final AuthService authService;
   final Dio dio;
   final PreferencesService prefs;
+
+  // ─── Refresh State ─────────────────────────────────────────────────────────
+  // Completer dipakai agar multiple request yang expired secara bersamaan
+  // hanya trigger satu refresh — yang lain menunggu hasilnya (seperti antrian).
   bool _isRefreshing = false;
+  Completer<bool>? _refreshCompleter;
 
   @override
   Future<void> onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await authService.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
+    // Lewati interceptor untuk endpoint refresh itu sendiri (pakai refresh token manual)
+    if (options.path.endsWith('/auth/refresh')) {
+      handler.next(options);
+      return;
     }
+
+    final accessToken = await authService.getAccessToken();
+
+    if (accessToken != null && accessToken.isNotEmpty) {
+      // Proactive refresh: jika access token expired/hampir expired, refresh dulu
+      if (authService.isTokenExpired(accessToken)) {
+        final refreshed = await _doRefresh();
+        if (refreshed) {
+          final newToken = await authService.getAccessToken();
+          if (newToken != null) {
+            options.headers['Authorization'] = 'Bearer $newToken';
+          }
+        }
+        // Tetap lanjut request (akan kena 401 jika refresh gagal → ditangani onError)
+      } else {
+        options.headers['Authorization'] = 'Bearer $accessToken';
+      }
+    }
+
     handler.next(options);
   }
 
@@ -65,53 +91,98 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401 && !_isRefreshing) {
-      _isRefreshing = true;
-      try {
-        final refreshToken = await authService.getRefreshToken();
-        if (refreshToken == null) {
-          _isRefreshing = false;
-          await authService.clearTokens();
-          handler.reject(_convertToAppException(err));
+    // 401 dari endpoint selain /auth/refresh → coba refresh lalu retry
+    if (err.response?.statusCode == 401 &&
+        !err.requestOptions.path.endsWith('/auth/refresh')) {
+      final refreshed = await _doRefresh();
+      if (refreshed) {
+        try {
+          final newToken = await authService.getAccessToken();
+          final retryOptions = err.requestOptions.copyWith(
+            headers: {
+              ...err.requestOptions.headers,
+              'Authorization': 'Bearer $newToken',
+            },
+          );
+          final retryResponse = await dio.fetch(retryOptions);
+          handler.resolve(retryResponse);
           return;
+        } catch (_) {
+          // Retry gagal — lanjut ke error handling di bawah
         }
+      }
+      // Refresh gagal → hapus token agar user diarahkan ke login
+      await authService.clearTokens();
+    }
 
-        // Call refresh endpoint with current access token
-        final refreshResponse = await dio.post(
+    handler.reject(_convertToAppException(err));
+  }
+
+  // ─── Core Refresh Logic ────────────────────────────────────────────────────
+  /// Refresh access token menggunakan refresh token yang tersimpan.
+  /// Jika sudah ada refresh yang sedang berjalan, request lain menunggu
+  /// hasilnya via Completer (tidak ada race condition / double refresh).
+  Future<bool> _doRefresh() async {
+    // Jika ada refresh yang sedang berjalan, tunggu hasilnya
+    if (_isRefreshing) {
+      return _refreshCompleter!.future;
+    }
+
+    _isRefreshing = true;
+    _refreshCompleter = Completer<bool>();
+    bool success = false;
+
+    try {
+      final refreshToken = await authService.getRefreshToken();
+
+      // Kalau refresh token tidak ada atau sudah expired → tidak bisa refresh
+      if (refreshToken == null ||
+          refreshToken.isEmpty ||
+          authService.isTokenExpired(refreshToken)) {
+        await authService.clearTokens();
+      } else {
+        // Gunakan Dio instance terpisah (tanpa interceptor) untuk menghindari loop
+        final refreshDio = Dio(
+          BaseOptions(
+            baseUrl: dio.options.baseUrl,
+            connectTimeout: dio.options.connectTimeout,
+            receiveTimeout: dio.options.receiveTimeout,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          ),
+        );
+
+        final response = await refreshDio.post(
           '/auth/refresh',
           options: Options(
             headers: {'Authorization': 'Bearer $refreshToken'},
           ),
         );
 
-        final newAccessToken = refreshResponse.data['accessToken'] as String?;
-        final newRefreshToken = refreshResponse.data['refreshToken'] as String?;
+        final newAccessToken = response.data['accessToken'] as String?;
+        final newRefreshToken = response.data['refreshToken'] as String?;
 
         if (newAccessToken != null && newRefreshToken != null) {
           await authService.saveTokens(
             accessToken: newAccessToken,
             refreshToken: newRefreshToken,
           );
-
-          // Retry original request
-          final retryOptions = err.requestOptions.copyWith(
-            headers: {
-              ...err.requestOptions.headers,
-              'Authorization': 'Bearer $newAccessToken',
-            },
-          );
-          final retryResponse = await dio.fetch(retryOptions);
-          _isRefreshing = false;
-          handler.resolve(retryResponse);
-          return;
+          success = true;
+        } else {
+          await authService.clearTokens();
         }
-      } catch (_) {
-        await authService.clearTokens();
       }
+    } catch (_) {
+      await authService.clearTokens();
+    } finally {
+      // Selesaikan semua request yang menunggu, reset state
+      _refreshCompleter!.complete(success);
       _isRefreshing = false;
     }
 
-    handler.reject(_convertToAppException(err));
+    return success;
   }
 
   DioException _convertToAppException(DioException err) {
@@ -177,3 +248,4 @@ extension RequestOptionsExtension on RequestOptions {
     );
   }
 }
+

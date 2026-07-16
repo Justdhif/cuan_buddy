@@ -27,6 +27,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emojiController = TextEditingController(text: '📁');
+  final ScrollController _scrollController = ScrollController();
 
   final List<Color> _presetColors = [
     const Color(0xFF66BB6A),
@@ -50,6 +51,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
   void dispose() {
     _nameController.dispose();
     _emojiController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -131,16 +133,30 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          l10n.createRoom,
-          style: AppTypography.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
+        titleSpacing: Navigator.of(context).canPop() ? 0 : 24,
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
+        title: GestureDetector(
+          onTap: () {
+            _scrollController.animateTo(
+              0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          },
+          child: Text(
+            l10n.createRoom,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
         elevation: 0,
-        centerTitle: false,
-        titleSpacing: 0,
       ),
       body: Column(
         children: [
@@ -148,6 +164,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
             child: Form(
               key: _formKey,
               child: SingleChildScrollView(
+                controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.all(24.0),
                 child: Column(

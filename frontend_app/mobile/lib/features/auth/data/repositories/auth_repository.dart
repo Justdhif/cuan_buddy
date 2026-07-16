@@ -59,6 +59,51 @@ class AuthRepository {
     await preferencesService.setBackupSetupComplete(false);
   }
 
+  /// Refresh access token secara eksplisit menggunakan refresh token.
+  /// Dipakai saat splash screen untuk memastikan token valid sebelum
+  /// mencoba load data. Menggunakan Dio instance baru (tanpa interceptor)
+  /// agar tidak terjadi loop.
+  Future<bool> refreshTokens() async {
+    try {
+      final refreshToken = await authService.getRefreshToken();
+      if (refreshToken == null ||
+          refreshToken.isEmpty ||
+          authService.isTokenExpired(refreshToken)) {
+        return false;
+      }
+
+      // Gunakan Dio instance terpisah untuk menghindari interceptor loop
+      final refreshDio = Dio(
+        BaseOptions(
+          baseUrl: dioClient.dio.options.baseUrl,
+          connectTimeout: dioClient.dio.options.connectTimeout,
+          receiveTimeout: dioClient.dio.options.receiveTimeout,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      final response = await refreshDio.post(
+        '/auth/refresh',
+        options: Options(
+          headers: {'Authorization': 'Bearer $refreshToken'},
+        ),
+      );
+
+      final tokens =
+          AuthTokens.fromJson(response.data as Map<String, dynamic>);
+      await authService.saveTokens(
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String> sendVerificationEmail(String email) async {
     final response =
         await _dio.post('/auth/send-verification', data: {'email': email});

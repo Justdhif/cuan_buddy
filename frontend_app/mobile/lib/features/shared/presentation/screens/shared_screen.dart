@@ -420,24 +420,25 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
       top: currentY,
       left: 24.0,
       right: 120.0,
-      child: Row(
-        children: [
-          Expanded(
-            child: IgnorePointer(
-              child: Text(
-                l10n.sharedSpace,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: currentSize,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: AppTypography.textTheme.headlineMedium?.fontFamily,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                ),
-              ),
-            ),
+      child: GestureDetector(
+        onTap: () {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        },
+        child: Text(
+          l10n.sharedSpace,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: currentSize,
+            fontWeight: FontWeight.bold,
+            fontFamily: AppTypography.textTheme.headlineMedium?.fontFamily,
+            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
           ),
-        ],
+        ),
       ),
     );
   }

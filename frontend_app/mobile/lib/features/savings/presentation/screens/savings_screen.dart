@@ -110,7 +110,14 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       top: currentY,
       left: 24.0,
       right: 120.0,
-      child: IgnorePointer(
+      child: GestureDetector(
+        onTap: () {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        },
         child: Text(
           l10n.savingsGoals,
           maxLines: 1,

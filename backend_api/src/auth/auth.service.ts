@@ -7,6 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import { DATABASE_CONNECTION } from '../database/database.module';
@@ -24,6 +25,7 @@ export class AuthService {
     @Inject(DATABASE_CONNECTION) private readonly db: any,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -138,6 +140,8 @@ export class AuthService {
   }
 
   async refresh(userId: string, email: string) {
+    // "Rolling refresh" — issue sepasang token baru setiap kali refresh
+    // Ini membuat session user terus aktif selama mereka pakai app
     return this.generateTokens(userId, email);
   }
 
@@ -323,13 +327,19 @@ export class AuthService {
   }
 
   private generateTokens(userId: string, email: string) {
-    // We embed isActive: true in the token because if they reached here, they are active.
-    // The JwtStrategy will check this payload.
-    const payload = { sub: userId, email, isActive: true };
+    // Access token: short-lived (JWT_EXPIRES_IN=15m), diverifikasi dengan JWT_SECRET
+    const accessPayload = { sub: userId, email, isActive: true, tokenType: 'access' };
+
+    // Refresh token: long-lived (JWT_REFRESH_EXPIRES_IN=30d), diverifikasi dengan JWT_REFRESH_SECRET
+    // tokenType: 'refresh' dipakai oleh RefreshJwtStrategy untuk membedakan dari access token
+    const refreshPayload = { sub: userId, email, tokenType: 'refresh' };
 
     return {
-      accessToken: this.jwtService.sign(payload),
-      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
+      accessToken: this.jwtService.sign(accessPayload),
+      refreshToken: this.jwtService.sign(refreshPayload, {
+        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+        expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '30d') as any,
+      }),
     };
   }
 }

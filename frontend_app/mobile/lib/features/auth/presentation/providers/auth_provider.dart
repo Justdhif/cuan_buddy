@@ -21,21 +21,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
   Future<void> checkAuth() async {
-    final hasToken = await _repository.hasToken();
-    if (hasToken) {
-      try {
-        final profile = await _repository.getProfile();
-        final fullName = profile['fullName'] as String?;
-        if (fullName == null || fullName.trim().isEmpty) {
-          await _repository.preferencesService.setProfileComplete(false);
-        } else {
-          await _repository.preferencesService.setProfileComplete(true);
-        }
-        state = const AuthStateAuthenticated();
-      } catch (_) {
+    // Langkah 1: Cek apakah refresh token ada dan masih valid
+    final hasRefreshToken = await _repository.authService.hasValidRefreshToken();
+    if (!hasRefreshToken) {
+      // Tidak ada refresh token atau sudah expired → harus login ulang
+      state = const AuthStateUnauthenticated();
+      return;
+    }
+
+    // Langkah 2: Cek apakah access token perlu di-refresh
+    final accessToken = await _repository.authService.getAccessToken();
+    final needsRefresh = accessToken == null ||
+        accessToken.isEmpty ||
+        _repository.authService.isTokenExpired(accessToken);
+
+    if (needsRefresh) {
+      // Access token expired tapi refresh token masih valid → refresh dulu
+      final refreshed = await _repository.refreshTokens();
+      if (!refreshed) {
+        // Refresh gagal (misal server down, token dicabut) → harus login ulang
         state = const AuthStateUnauthenticated();
+        return;
       }
-    } else {
+    }
+
+    // Langkah 3: Load profile untuk verifikasi session masih valid
+    try {
+      final profile = await _repository.getProfile();
+      final fullName = profile['fullName'] as String?;
+      if (fullName == null || fullName.trim().isEmpty) {
+        await _repository.preferencesService.setProfileComplete(false);
+      } else {
+        await _repository.preferencesService.setProfileComplete(true);
+      }
+      state = const AuthStateAuthenticated();
+    } catch (_) {
       state = const AuthStateUnauthenticated();
     }
   }

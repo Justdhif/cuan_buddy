@@ -7,6 +7,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -69,8 +70,10 @@ export class AuthController {
     return this.authService.changePassword(req.user.userId, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(RefreshJwtAuthGuard)
   @Post('refresh')
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiResponse({ status: 200, description: 'Returns new access token and refresh token (rolling refresh)' })
   async refresh(@Req() req) {
     return this.authService.refresh(req.user.userId, req.user.email);
   }

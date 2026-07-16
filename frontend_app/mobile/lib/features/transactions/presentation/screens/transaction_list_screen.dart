@@ -173,9 +173,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
             const SliverToBoxAdapter(
               child: TransactionCalendar(),
             ),
-            const SliverToBoxAdapter(
-              child: _FilterRow(),
-            ),
             if (transactionsAsync.isLoading && !transactionsAsync.hasValue)
               const SliverToBoxAdapter(child: SkeletonList(itemCount: 8))
             else if (transactionsAsync.hasError)
@@ -396,7 +393,14 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
       top: currentY,
       left: 24.0,
       right: 120.0,
-      child: IgnorePointer(
+      child: GestureDetector(
+        onTap: () {
+          _scrollController.animateTo(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        },
         child: Text(
           l10n.transactions,
           maxLines: 1,
@@ -548,128 +552,7 @@ class _TransactionHeroHeader extends StatelessWidget {
   }
 }
 
-class _FilterRow extends ConsumerWidget {
-  const _FilterRow();
 
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Category Filter
-        Consumer(
-          builder: (context, ref, _) {
-            final categoriesAsync = ref.watch(categoriesProvider);
-            final filterState = ref.watch(transactionFilterProvider);
-
-            return SizedBox(
-              height: 40,
-              child: categoriesAsync.when(
-                data: (categories) {
-                  return ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    children: [
-                      _buildCategoryChip(
-                        context: context,
-                        isSelected: filterState.categoryId == null,
-                        label: l10n.allCategories,
-                        color: AppColors.primary,
-                        onTap: () {
-                          ref
-                              .read(transactionFilterProvider.notifier)
-                              .setCategory(null);
-                          ref
-                              .read(transactionFilterProvider.notifier)
-                              .setType(null);
-                        },
-                      ),
-                      ...categories.map((cat) {
-                        final isSelected =
-                            filterState.categoryId == cat['id']?.toString();
-                        final defaultTypeColor = cat['type'] == 'income'
-                            ? AppColors.success
-                            : (cat['type'] == 'expense'
-                                ? AppColors.danger
-                                : AppColors.primary);
-                        final catColor = AppColors.colorFromHex(
-                            cat['colorCode'] as String?,
-                            fallback: defaultTypeColor);
-                        return Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: _buildCategoryChip(
-                            context: context,
-                            isSelected: isSelected,
-                            label:
-                                '${cat['emojiIcon'] ?? cat['emoji'] ?? '📁'} ${cat['name'] ?? 'Unknown'}',
-                            color: catColor,
-                            onTap: () {
-                              ref
-                                  .read(transactionFilterProvider.notifier)
-                                  .setCategory(cat['id']?.toString());
-                              ref
-                                  .read(transactionFilterProvider.notifier)
-                                  .setType(null);
-                            },
-                          ),
-                        );
-                      }),
-                    ],
-                  );
-                },
-                loading: () => const _CategoryFilterSkeleton(),
-                error: (_, __) => const SizedBox(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 6),
-      ],
-    );
-  }
-
-  Widget _buildCategoryChip({
-    required BuildContext context,
-    required bool isSelected,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? color
-              : (isDark
-                  ? AppColors.surfaceDark
-                  : AppColors.borderLight.withValues(alpha: 0.5)),
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? null
-              : Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: AppTypography.textTheme.labelMedium?.copyWith(
-            color: isSelected
-                ? Colors.white
-                : (isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight),
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 
 class _BottomCashflowSummary extends ConsumerWidget {
@@ -729,30 +612,4 @@ class _BottomCashflowSummary extends ConsumerWidget {
   }
 }
 
-class _CategoryFilterSkeleton extends StatelessWidget {
-  const _CategoryFilterSkeleton();
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Shimmer.fromColors(
-      baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
-      highlightColor:
-          isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: 5,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, __) => Container(
-          width: 90,
-          height: 36,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-      ),
-    );
-  }
-}

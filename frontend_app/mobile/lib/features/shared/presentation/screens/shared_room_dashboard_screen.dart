@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
@@ -23,6 +25,8 @@ class SharedRoomDashboardScreen extends ConsumerStatefulWidget {
 class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late PageController _summaryPageController;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -31,6 +35,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     _tabController.addListener(() {
       setState(() {}); // Rebuild to update FAB action
     });
+    _summaryPageController = PageController(viewportFraction: 0.92);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(widget.roomId);
       ref.read(sharedNotifierProvider.notifier).fetchFriends(silent: true);
@@ -40,6 +45,8 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
   @override
   void dispose() {
     _tabController.dispose();
+    _summaryPageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -156,21 +163,47 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     for (var m in members) {
       debugPrint('MEMBER DEBUG: ${m['username']} - avatarBorder: ${m['avatarBorder']}');
     }
-    final Map<String, dynamic> summary = room['summary'] ?? {};
-    final double balance = summary['balance'] is num ? (summary['balance'] as num).toDouble() : 0.0;
+
 
     final profile = ref.watch(profileProvider).valueOrNull;
     final baseCurrency = profile?['currency'] as String? ?? AppConstants.defaultCurrency;
+    final iconShape = ref.watch(categoryIconShapeProvider);
+
+
+    final roomColor = AppColors.colorFromHex(room['colorCode'], fallback: AppColors.primary);
+    final isId = Localizations.localeOf(context).languageCode == 'id';
 
     return Scaffold(
       body: NestedScrollView(
+        controller: _scrollController,
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
             SliverAppBar(
-              expandedHeight: 220,
               floating: false,
               pinned: true,
-              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.dividerLight,
+              titleSpacing: Navigator.of(context).canPop() ? 0 : 24,
+              leading: Navigator.of(context).canPop()
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: () => Navigator.of(context).pop(),
+                    )
+                  : null,
+              title: GestureDetector(
+                onTap: () {
+                  _scrollController.animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
+                },
+                child: Text(
+                  roomName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              surfaceTintColor: Colors.transparent,
+              scrolledUnderElevation: 0,
               elevation: 0,
               actions: [
                 PopupMenuButton<String>(
@@ -194,63 +227,141 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                   ],
                 ),
               ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  padding: const EdgeInsets.fromLTRB(24, 76, 24, 16),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.balanceGradient,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        roomName,
-                        style: textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.totalRoomBalance,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        CurrencyFormatter.formatAmount(balance, symbol: AppConstants.getCurrencySymbol(baseCurrency)),
-                        style: textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              ),
             ),
             SliverToBoxAdapter(
               child: Container(
                 color: isDark ? AppColors.surfaceDark : Colors.white,
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.members,
-                      style: textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    // Room Info Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              roomColor.withValues(alpha: isDark ? 0.25 : 0.15),
+                              roomColor.withValues(alpha: isDark ? 0.08 : 0.03),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: roomColor.withValues(alpha: isDark ? 0.35 : 0.2),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            // Room emoji with shape from profile setting
+                            Container(
+                              width: 64,
+                              height: 64,
+                              alignment: Alignment.center,
+                              decoration: ShapeDecoration(
+                                color: roomColor.withValues(alpha: 0.2),
+                                shape: iconShape.toShapeBorder(64),
+                              ),
+                              child: Text(
+                                room['emojiIcon'] ?? '📁',
+                                style: const TextStyle(fontSize: 28),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          roomName,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: isDark ? Colors.white : Colors.black87,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      GestureDetector(
+                                        onTap: () {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                isId
+                                                    ? 'Fitur edit nama room segera hadir!'
+                                                    : 'Edit room name feature is coming soon!',
+                                              ),
+                                              backgroundColor: AppColors.primary,
+                                            ),
+                                          );
+                                        },
+                                        child: Icon(
+                                          Icons.edit_outlined,
+                                          size: 16,
+                                          color: isDark ? Colors.white70 : AppColors.primary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  // Pill showing only the number of members
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.group_outlined,
+                                          size: 12,
+                                          color: isDark ? Colors.white70 : Colors.black54,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${members.length} ${l10n.members}',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark ? Colors.white70 : AppColors.textSecondaryLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        l10n.members,
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
                     _buildMemberChips(members, state, l10n, isDark, profile?['userId'] ?? ''),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     _buildSummaryCards(state, l10n, isDark, baseCurrency),
                   ],
                 ),
@@ -489,6 +600,8 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        clipBehavior: Clip.none,
         children: [
           // 1. Add Member Chip
           _buildAddMemberChip(l10n, isDark),
@@ -785,46 +898,56 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     final symbol = AppConstants.getCurrencySymbol(baseCurrency);
     final isId = Localizations.localeOf(context).languageCode == 'id';
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSummaryCard(
-            title: isId ? 'Transaksi' : 'Transactions',
-            value: '$txCount',
-            subLabel: isId ? 'Transaksi' : 'Transactions',
-            icon: Icons.receipt_long_outlined,
-            bgColor: isDark ? const Color(0xFF27213C) : const Color(0xFFF3E8FF),
-            textColor: isDark ? const Color(0xFFD8B4FE) : const Color(0xFF7E22CE),
-            iconBgColor: isDark ? const Color(0xFF3B2F5F) : const Color(0xFFE9D5FF),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildSummaryCard(
-            title: 'Budget',
-            value: CurrencyFormatter.formatAmount(totalBudgetSpent, symbol: symbol),
-            subLabel: l10n.of_(CurrencyFormatter.formatAmount(totalBudgetLimit, symbol: symbol)),
-            icon: Icons.pie_chart_outline_rounded,
-            bgColor: isDark ? const Color(0xFF1B2E24) : const Color(0xFFECFDF5),
-            textColor: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857),
-            iconBgColor: isDark ? const Color(0xFF244432) : const Color(0xFFD1FAE5),
-            progress: budgetPercent,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildSummaryCard(
-            title: isId ? 'Tabungan' : 'Savings',
-            value: CurrencyFormatter.formatAmount(totalSavingCurrent, symbol: symbol),
-            subLabel: l10n.of_(CurrencyFormatter.formatAmount(totalSavingTarget, symbol: symbol)),
-            icon: Icons.savings_outlined,
-            bgColor: isDark ? const Color(0xFF2E2216) : const Color(0xFFFFF7ED),
-            textColor: isDark ? const Color(0xFFFDBA74) : const Color(0xFFC2410C),
-            iconBgColor: isDark ? const Color(0xFF43301F) : const Color(0xFFFFEDD5),
-            progress: savingPercent,
-          ),
-        ),
-      ],
+    return SizedBox(
+      height: 160,
+      child: PageView.builder(
+        controller: _summaryPageController,
+        physics: const BouncingScrollPhysics(),
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          Widget card;
+          if (index == 0) {
+            card = _buildSummaryCard(
+              title: isId ? 'Transaksi' : 'Transactions',
+              value: '$txCount',
+              subLabel: isId ? 'Transaksi' : 'Transactions',
+              icon: Icons.receipt_long_outlined,
+              bgColor: isDark ? const Color(0xFF27213C) : const Color(0xFFF3E8FF),
+              textColor: isDark ? const Color(0xFFD8B4FE) : const Color(0xFF7E22CE),
+              iconBgColor: isDark ? const Color(0xFF3B2F5F) : const Color(0xFFE9D5FF),
+            );
+          } else if (index == 1) {
+            card = _buildSummaryCard(
+              title: 'Budget',
+              value: CurrencyFormatter.formatAmount(totalBudgetSpent, symbol: symbol),
+              subLabel: l10n.of_(CurrencyFormatter.formatAmount(totalBudgetLimit, symbol: symbol)),
+              icon: Icons.pie_chart_outline_rounded,
+              bgColor: isDark ? const Color(0xFF1B2E24) : const Color(0xFFECFDF5),
+              textColor: isDark ? const Color(0xFF6EE7B7) : const Color(0xFF047857),
+              iconBgColor: isDark ? const Color(0xFF244432) : const Color(0xFFD1FAE5),
+              progress: budgetPercent,
+            );
+          } else {
+            card = _buildSummaryCard(
+              title: isId ? 'Tabungan' : 'Savings',
+              value: CurrencyFormatter.formatAmount(totalSavingCurrent, symbol: symbol),
+              subLabel: l10n.of_(CurrencyFormatter.formatAmount(totalSavingTarget, symbol: symbol)),
+              icon: Icons.savings_outlined,
+              bgColor: isDark ? const Color(0xFF2E2216) : const Color(0xFFFFF7ED),
+              textColor: isDark ? const Color(0xFFFDBA74) : const Color(0xFFC2410C),
+              iconBgColor: isDark ? const Color(0xFF43301F) : const Color(0xFFFFEDD5),
+              progress: savingPercent,
+            );
+          }
+          return Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: card,
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -840,58 +963,67 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      height: 160,
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: iconBgColor,
-            ),
-            child: Icon(
-              icon,
-              color: textColor,
-              size: 16,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: iconBgColor,
+                ),
+                child: Icon(
+                  icon,
+                  color: textColor,
+                  size: 20,
+                ),
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  color: textColor.withValues(alpha: 0.8),
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: textColor.withValues(alpha: 0.8),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subLabel,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-              fontSize: 9,
-            ),
+          const SizedBox(height: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
           if (progress != null) ...[
             const SizedBox(height: 8),
@@ -899,26 +1031,28 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
               children: [
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(3),
                     child: LinearProgressIndicator(
                       value: progress,
                       backgroundColor: iconBgColor,
                       valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                      minHeight: 4,
+                      minHeight: 5,
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
                 Text(
                   '${(progress * 100).toInt()}%',
                   style: TextStyle(
                     color: isDark ? Colors.white70 : Colors.black54,
-                    fontSize: 8,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
+          ] else ...[
+            const SizedBox(height: 13),
           ],
         ],
       ),
