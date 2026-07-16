@@ -118,6 +118,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _otpController.addListener(_onOtpChanged);
     _walletNameController.addListener(_onWalletNameChanged);
     _loadSavedBorder();
+    
+    // Paksa refresh data unlocked borders dari server saat setup profil dibuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(unlockedBordersProvider);
+    });
   }
 
   Future<void> _loadSavedBorder() async {
@@ -235,6 +240,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   void _showAvatarEditSheet() {
+    // Refresh data unlocked borders dari server sesaat sebelum bottom sheet dibuka
+    ref.invalidate(unlockedBordersProvider);
+    
     // Ambil state border saat ini agar bisa di-track di dalam sheet
     String sheetBorderId = _selectedBorderId;
     String sheetBorderAsset = _selectedBorderAsset;
@@ -343,118 +351,128 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                       height: 72,
                       child: Builder(
                         builder: (context) {
-                          final unlockedBorders = ref.watch(unlockedBordersProvider).valueOrNull ?? [];
+                          final unlockedBordersAsync = ref.watch(unlockedBordersProvider);
                           final borders = kAllBorders;
 
-                          return ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: borders.length,
-                            itemBuilder: (context, index) {
-                              final border = borders[index];
-                              final isNoBorder = border.isNone;
-                              final isSelected = border.id == sheetBorderId;
-                              final isUnlocked = border.isGlobal || unlockedBorders.contains(border.id);
+                          return unlockedBordersAsync.when(
+                            data: (unlockedBorders) {
+                              return ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: borders.length,
+                                itemBuilder: (context, index) {
+                                  final border = borders[index];
+                                  final isNoBorder = border.isNone;
+                                  final isSelected = border.id == sheetBorderId;
+                                  final isUnlocked = border.isGlobal || unlockedBorders.contains(border.id);
 
-                              return GestureDetector(
-                                onTap: () {
-                                  if (!isUnlocked) {
-                                    showDialog<void>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: Row(
-                                          children: [
-                                            Icon(border.tier.icon, color: border.tier.color),
-                                            const SizedBox(width: 8),
-                                            Text(border.label),
-                                          ],
+                                  return GestureDetector(
+                                    onTap: () {
+                                      if (!isUnlocked) {
+                                        showDialog<void>(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Row(
+                                              children: [
+                                                Icon(border.tier.icon, color: border.tier.color),
+                                                const SizedBox(width: 8),
+                                                Text(border.label),
+                                              ],
+                                            ),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Tier: ${border.tier.label}',
+                                                  style: TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: border.tier.color,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(border.requirementDescription),
+                                              ],
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(context),
+                                                child: const Text('Tutup'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        return;
+                                      }
+
+                                      setModalState(() {
+                                        sheetBorderId = border.id;
+                                        sheetBorderAsset = border.asset;
+                                      });
+                                      _setSelectedBorder(border.id, border.asset);
+                                    },
+                                    child: Container(
+                                      width: 60,
+                                      height: 60,
+                                      margin: const EdgeInsets.only(right: 12),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: isSelected ? AppColors.primary : Colors.transparent,
+                                          width: 3,
                                         ),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Tier: ${border.tier.label}',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: border.tier.color,
+                                      ),
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          isNoBorder
+                                              ? Container(
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color: isSelected
+                                                        ? AppColors.primary.withValues(alpha: 0.15)
+                                                        : Colors.grey.withValues(alpha: 0.15),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.block_rounded,
+                                                    size: 28,
+                                                    color: isSelected ? AppColors.primary : Colors.grey,
+                                                  ),
+                                                )
+                                              : ClipOval(
+                                                  child: Image.asset(
+                                                    border.asset,
+                                                    width: 60,
+                                                    height: 60,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                          if (!isUnlocked)
+                                            Container(
+                                              decoration: const BoxDecoration(
+                                                color: Colors.black54,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Center(
+                                                child: Icon(
+                                                  Icons.lock_rounded,
+                                                  color: Colors.white,
+                                                  size: 20,
+                                                ),
                                               ),
                                             ),
-                                            const SizedBox(height: 8),
-                                            Text(border.requirementDescription),
-                                          ],
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('Tutup'),
-                                          ),
                                         ],
                                       ),
-                                    );
-                                    return;
-                                  }
-
-                                  setModalState(() {
-                                    sheetBorderId = border.id;
-                                    sheetBorderAsset = border.asset;
-                                  });
-                                  _setSelectedBorder(border.id, border.asset);
-                                },
-                                child: Container(
-                                  width: 60,
-                                  height: 60,
-                                  margin: const EdgeInsets.only(right: 12),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: isSelected ? AppColors.primary : Colors.transparent,
-                                      width: 3,
                                     ),
-                                  ),
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      isNoBorder
-                                          ? Container(
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                color: isSelected
-                                                    ? AppColors.primary.withValues(alpha: 0.15)
-                                                    : Colors.grey.withValues(alpha: 0.15),
-                                              ),
-                                              child: Icon(
-                                                Icons.block_rounded,
-                                                size: 28,
-                                                color: isSelected ? AppColors.primary : Colors.grey,
-                                              ),
-                                            )
-                                          : ClipOval(
-                                              child: Image.asset(
-                                                border.asset,
-                                                width: 60,
-                                                height: 60,
-                                                fit: BoxFit.cover,
-                                              ),
-                                            ),
-                                      if (!isUnlocked)
-                                        Container(
-                                          decoration: const BoxDecoration(
-                                            color: Colors.black54,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons.lock_rounded,
-                                              color: Colors.white,
-                                              size: 20,
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
+                                  );
+                                },
                               );
                             },
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            error: (err, _) => Center(
+                              child: Text('Gagal memuat border: $err'),
+                            ),
                           );
                         }
                       ),
@@ -1187,6 +1205,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hintColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     final fallback = l10n.notSet;
+    
+    // Eagerly watch unlocked borders provider
+    ref.watch(unlockedBordersProvider);
 
     // Formatting date display
     String birthdateDisplay = fallback;

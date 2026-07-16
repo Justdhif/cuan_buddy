@@ -203,9 +203,9 @@ export class UserProfilesService {
       conditionsMet.add('border-consistency');
     }
 
-    // Catatan: border-budget-master membutuhkan data budget history yang lebih kompleks.
-    // Untuk MVP, ini akan di-unlock manual atau dengan kondisi sederhana di masa depan.
-    // conditionsMet.add('border-budget-master') — TODO
+    // Gold — Budget Master: Jaga pengeluaran di bawah batas anggaran selama 3 bulan berturut-turut.
+    // Di-unlock untuk pengujian/MVP.
+    conditionsMet.add('border-budget-master');
 
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──
     const currentUnlocked: string[] = Array.isArray(profile.unlockedBorders)

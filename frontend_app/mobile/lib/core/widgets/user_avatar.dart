@@ -83,9 +83,9 @@ class UserAvatar extends StatelessWidget {
   Widget _buildCore() {
     final hasBorder = borderAsset.isNotEmpty;
 
-    // Avatar berukuran 76% dari total sehingga bingkai yang dekoratif
-    // tidak menutupi wajah meski memiliki ornamen yang menonjol.
-    final double avatarSize = size * 0.76;
+    // Avatar berukuran 53% jika ada border agar pas di lubang bingkai standar,
+    // dan 76% jika tanpa border agar wajah terlihat penuh.
+    final double avatarSize = hasBorder ? size * 0.53 : size * 0.76;
 
     return SizedBox(
       width: size,
