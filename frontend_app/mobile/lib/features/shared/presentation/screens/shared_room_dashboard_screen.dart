@@ -13,6 +13,10 @@ import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
 import '../../../profile/presentation/widgets/avatar_border_helper.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
+import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/widgets/color_picker_sheet.dart';
+import '../../../../core/widgets/custom_emoji_picker_sheet.dart';
 
 class SharedRoomDashboardScreen extends ConsumerStatefulWidget {
   final String roomId;
@@ -99,6 +103,230 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     );
   }
 
+  void _showEditRoomBottomSheet() {
+    final activeRoom = ref.read(sharedNotifierProvider).activeRoom;
+    if (activeRoom == null) return;
+
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (activeRoom['role'] != 'owner') {
+      AppSnackbar.show(
+        context,
+        title: l10n.error,
+        message: isDark
+            ? 'Only the owner can edit room details'
+            : 'Hanya pemilik yang dapat mengubah detail ruangan',
+        type: SnackbarType.error,
+      );
+      return;
+    }
+
+    final nameCtrl = TextEditingController(text: activeRoom['name'] ?? '');
+    final emojiCtrl = TextEditingController(text: activeRoom['emojiIcon'] ?? '📁');
+    Color selectedColor = AppColors.colorFromHex(activeRoom['colorCode'], fallback: AppColors.primary);
+    final iconShape = ref.read(categoryIconShapeProvider);
+
+    final presetColors = [
+      const Color(0xFF66BB6A),
+      const Color(0xFF26A69A),
+      const Color(0xFF26C6DA),
+      const Color(0xFF42A5F5),
+      const Color(0xFF3949AB),
+      const Color(0xFF7E57C2),
+    ];
+
+    AppBottomSheet.show(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        isDark ? 'Edit Room Details' : 'Ubah Detail Ruangan',
+                        style: AppTypography.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              CustomEmojiPickerSheet.show(
+                                context: context,
+                                onEmojiSelected: (emoji) {
+                                  setModalState(() {
+                                    emojiCtrl.text = emoji;
+                                  });
+                                  Navigator.pop(context);
+                                },
+                              );
+                            },
+                            child: Container(
+                              width: 64,
+                              height: 64,
+                              decoration: ShapeDecoration(
+                                color: selectedColor,
+                                shape: iconShape.toShapeBorder(64),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  emojiCtrl.text,
+                                  style: const TextStyle(fontSize: 32),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: AppTextField(
+                              label: l10n.roomName,
+                              hint: l10n.roomNameHint,
+                              controller: nameCtrl,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        physics: const BouncingScrollPhysics(),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () async {
+                                final newColor = await showCustomColorPicker(
+                                  context: context,
+                                  initialColor: selectedColor,
+                                );
+                                if (newColor != null) {
+                                  setModalState(() => selectedColor = newColor);
+                                }
+                              },
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFB3B9D6),
+                                  shape: BoxShape.circle,
+                                  border: !presetColors.contains(selectedColor)
+                                      ? Border.all(
+                                          color: isDark ? Colors.white : AppColors.primary,
+                                          width: 3,
+                                        )
+                                      : null,
+                                ),
+                                child: const Icon(
+                                  Icons.palette_outlined,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            ...presetColors.map((color) {
+                              final isSelected = selectedColor == color;
+                              return GestureDetector(
+                                onTap: () {
+                                  setModalState(() => selectedColor = color);
+                                },
+                                child: Container(
+                                  width: 50,
+                                  height: 50,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    shape: BoxShape.circle,
+                                    border: isSelected
+                                        ? Border.all(
+                                            color: isDark ? Colors.white : AppColors.primary,
+                                            width: 3,
+                                          )
+                                        : null,
+                                  ),
+                                  child: isSelected
+                                      ? const Icon(Icons.check, color: Colors.white)
+                                      : null,
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          final String newName = nameCtrl.text.trim();
+                          if (newName.isEmpty) return;
+
+                          final String hexColor = '#${selectedColor.toARGB32().toRadixString(16).substring(2, 8).toUpperCase()}';
+
+                          final error = await ref.read(sharedNotifierProvider.notifier).updateRoom(
+                            activeRoom['id'],
+                            name: newName,
+                            emojiIcon: emojiCtrl.text,
+                            colorCode: hexColor,
+                          );
+
+                          if (context.mounted) {
+                            if (error != null) {
+                              AppSnackbar.show(
+                                context,
+                                title: l10n.error,
+                                message: error,
+                                type: SnackbarType.error,
+                              );
+                            } else {
+                              AppSnackbar.show(
+                                context,
+                                title: l10n.success,
+                                message: isDark
+                                    ? 'Room updated successfully'
+                                    : 'Detail ruangan berhasil diperbarui',
+                                type: SnackbarType.success,
+                              );
+                              Navigator.pop(ctx);
+                            }
+                          }
+                        },
+                        child: Text(
+                          isDark ? 'Save Changes' : 'Simpan Perubahan',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _onFabPressed() {
     final activeRoom = ref.read(sharedNotifierProvider).activeRoom;
     if (activeRoom == null) return;
@@ -171,7 +399,6 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
 
 
     final roomColor = AppColors.colorFromHex(room['colorCode'], fallback: AppColors.primary);
-    final isId = Localizations.localeOf(context).languageCode == 'id';
 
     return Scaffold(
       body: NestedScrollView(
@@ -230,7 +457,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
             ),
             SliverToBoxAdapter(
               child: Container(
-                color: isDark ? AppColors.surfaceDark : Colors.white,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 padding: const EdgeInsets.fromLTRB(0, 16, 0, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -293,18 +520,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                                       ),
                                       const SizedBox(width: 8),
                                       GestureDetector(
-                                        onTap: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                isId
-                                                    ? 'Fitur edit nama room segera hadir!'
-                                                    : 'Edit room name feature is coming soon!',
-                                              ),
-                                              backgroundColor: AppColors.primary,
-                                            ),
-                                          );
-                                        },
+                                        onTap: _showEditRoomBottomSheet,
                                         child: Icon(
                                           Icons.edit_outlined,
                                           size: 16,
@@ -375,6 +591,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                   labelColor: AppColors.primary,
                   unselectedLabelColor: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                   indicatorColor: AppColors.primary,
+                  dividerColor: Colors.transparent,
                   tabs: [
                     Tab(text: l10n.transactions),
                     Tab(text: l10n.budgets),
@@ -1112,6 +1329,7 @@ class _MemberChipSkeletonState extends State<_MemberChipSkeleton>
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: 4,
             itemBuilder: (context, index) {
               return Padding(
@@ -1162,9 +1380,8 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: _tabBar,
     );
   }

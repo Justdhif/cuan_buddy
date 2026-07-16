@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, UseGuards, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Req, UseGuards, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -20,6 +20,15 @@ export class RoomsController {
   @Get(':id')
   getRoomDetail(@Req() req: any, @Param('id', ParseUUIDPipe) id: string) {
     return this.roomsService.getRoomDetail(req.user.userId, id);
+  }
+
+  @Patch(':id')
+  updateRoom(
+    @Req() req: any,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string }
+  ) {
+    return this.roomsService.updateRoom(req.user.userId, id, body);
   }
 
   @Post(':id/invite')

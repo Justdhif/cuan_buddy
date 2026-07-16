@@ -265,4 +265,38 @@ export class RoomsService {
 
     return newMember;
   }
+
+  async updateRoom(userId: string, roomId: string, body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string }) {
+    // 1. Verify user is owner of the room
+    const membership = await this.db.query.roomMembers.findFirst({
+      where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this room');
+    }
+
+    if (membership.role !== 'owner') {
+      throw new ForbiddenException('Only the owner can update room details');
+    }
+
+    const { name, emojiIcon, colorCode, description } = body;
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (emojiIcon !== undefined) updateData.emojiIcon = emojiIcon;
+    if (colorCode !== undefined) updateData.colorCode = colorCode;
+    if (description !== undefined) updateData.description = description;
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException('No fields to update');
+    }
+
+    const [updatedRoom] = await this.db.update(rooms)
+      .set(updateData)
+      .where(eq(rooms.id, roomId))
+      .returning();
+
+    return updatedRoom;
+  }
 }

@@ -199,6 +199,31 @@ class SharedNotifier extends StateNotifier<SharedState> {
     }
   }
 
+  Future<String?> updateRoom(
+    String roomId, {
+    String? name,
+    String? emojiIcon,
+    String? colorCode,
+    String? description,
+  }) async {
+    try {
+      final res = await _dioClient.dio.patch('/rooms/$roomId', data: {
+        if (name != null) 'name': name,
+        if (emojiIcon != null) 'emojiIcon': emojiIcon,
+        if (colorCode != null) 'colorCode': colorCode,
+        if (description != null) 'description': description,
+      });
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchRoomDetails(roomId);
+        await fetchRooms(silent: true);
+        return null; // Success
+      }
+      return res.data['message'] ?? 'Failed to update room details';
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   Future<void> fetchRoomDetails(String roomId) async {
     state = state.copyWith(isRoomLoading: true, error: null);
     try {
