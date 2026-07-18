@@ -25,6 +25,9 @@ class ProfileRepository {
     String? birthDate,
     String? gender,
     String? bio,
+    String? bannerType,
+    String? bannerColor,
+    String? bannerImage,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['fullName'] = fullName;
@@ -34,6 +37,9 @@ class ProfileRepository {
     if (birthDate != null) body['birthDate'] = birthDate;
     if (gender != null) body['gender'] = gender;
     if (bio != null) body['bio'] = bio;
+    if (bannerType != null) body['bannerType'] = bannerType;
+    if (bannerColor != null) body['bannerColor'] = bannerColor;
+    if (bannerImage != null) body['bannerImage'] = bannerImage;
 
     final response = await _dio.patch('/profiles/me', data: body);
     return response.data as Map<String, dynamic>;

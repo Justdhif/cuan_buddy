@@ -96,89 +96,17 @@ const List<AvatarBorderInfo> kGlobalBorders = [
     requirementDescription: '',
     isGlobal: true,
   ),
-  AvatarBorderInfo(
-    id: 'border-1',
-    label: 'Border 1',
-    asset: 'assets/borders/border-1.png',
-    tier: BorderTier.none,
-    requirementDescription: '',
-    isGlobal: true,
-  ),
-  AvatarBorderInfo(
-    id: 'border-2',
-    label: 'Border 2',
-    asset: 'assets/borders/border-2.png',
-    tier: BorderTier.none,
-    requirementDescription: '',
-    isGlobal: true,
-  ),
 ];
 
 // ─── Daftar Border Achievement (Harus Di-unlock) ──────────────────────────────
 
 const List<AvatarBorderInfo> kAchievementBorders = [
   AvatarBorderInfo(
-    id: 'border-rookie',
-    label: 'Cuan Rookie',
-    asset: 'assets/borders/border-rookie.png',
-    tier: BorderTier.bronze,
-    requirementDescription: 'Dibuka otomatis untuk semua pengguna Cuan Buddy. Selamat datang!',
-  ),
-  AvatarBorderInfo(
-    id: 'border-first-goal',
-    label: 'Goal Achiever',
-    asset: 'assets/borders/border-first-goal.png',
-    tier: BorderTier.silver,
-    requirementDescription: 'Selesaikan 1 saving goal pertamamu.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-cuan-planner',
-    label: 'Cuan Planner',
-    asset: 'assets/borders/border-cuan-planner.png',
-    tier: BorderTier.silver,
-    requirementDescription: 'Miliki minimal 3 saving goals aktif secara bersamaan.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-cuan-partner',
-    label: 'Cuan Partner',
-    asset: 'assets/borders/border-cuan-partner.png',
-    tier: BorderTier.silver,
-    requirementDescription: 'Selesaikan 1 tabungan bersama di Shared Room bersama teman.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-master-saver',
-    label: 'Master Penabung',
-    asset: 'assets/borders/border-master-saver.png',
-    tier: BorderTier.gold,
-    requirementDescription: 'Kumpulkan total tabungan ≥ Rp10.000.000 di seluruh saving goals.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-budget-master',
-    label: 'Budget Master',
-    asset: 'assets/borders/border-budget-master.png',
-    tier: BorderTier.gold,
-    requirementDescription: 'Jaga pengeluaran di bawah batas anggaran selama 3 bulan berturut-turut.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-tracker-pro',
-    label: 'Financial Tracker Pro',
-    asset: 'assets/borders/border-tracker-pro.png',
-    tier: BorderTier.gold,
-    requirementDescription: 'Gunakan Cuan Buddy aktif selama 6 bulan sejak bergabung.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-consistency',
-    label: 'Disiplin Cuan',
-    asset: 'assets/borders/border-consistency.png',
-    tier: BorderTier.gold,
-    requirementDescription: 'Catat transaksi setiap hari tanpa putus selama 30 hari berturut-turut.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-cuan-emperor',
-    label: 'Cuan Emperor',
-    asset: 'assets/borders/border-cuan-emperor.png',
+    id: 'border-legend',
+    label: 'Cuan Legend',
+    asset: 'assets/borders/border-legend.png',
     tier: BorderTier.platinum,
-    requirementDescription: 'Selesaikan 5+ saving goals DAN miliki 3+ saving goals aktif.',
+    requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
 ];
 

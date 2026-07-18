@@ -83,9 +83,13 @@ class UserAvatar extends StatelessWidget {
   Widget _buildCore() {
     final hasBorder = borderAsset.isNotEmpty;
 
-    // Avatar berukuran 53% jika ada border agar pas di lubang bingkai standar,
-    // dan 76% jika tanpa border agar wajah terlihat penuh.
-    final double avatarSize = hasBorder ? size * 0.53 : size * 0.76;
+    // ── Desain sistem avatar + border ──────────────────────────────────────
+    // Border PNG dirender 100% ukuran widget (Positioned.fill).
+    // Lubang transparan di tengah border ≈ 60% dari ukuran border PNG.
+    // Avatar diset 65% dari widget agar tepat di dalam/di tepi lubang border.
+    // Rasio ini konsisten — avatar tidak berubah ukuran meski border diaktifkan.
+    const double avatarRatio = 0.65;
+    final double avatarSize = size * avatarRatio;
 
     return SizedBox(
       width: size,
@@ -99,7 +103,7 @@ class UserAvatar extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              // ── Foto avatar (bulat) ──────────────────────────────────────
+              // ── Foto avatar (bulat) — ukuran selalu sama ─────────────────
               SizedBox(
                 width: avatarSize,
                 height: avatarSize,
@@ -108,7 +112,9 @@ class UserAvatar extends StatelessWidget {
                 ),
               ),
 
-              // ── Overlay bingkai PNG ──────────────────────────────────────
+              // ── Border PNG overlay — ukuran natural (100% widget) ─────────
+              // Ring border PNG dirancang agar lubang transparan di tengahnya
+              // tepat menampung avatar dengan sedikit overlap di tepi (natural frame).
               if (hasBorder)
                 Positioned.fill(
                   child: IgnorePointer(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -249,9 +250,106 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final username = profile['username'] as String?;
     final bio = profile['bio'] as String?;
 
+    final bannerType = profile['bannerType'] as String? ?? 'color';
+    final bannerColor = profile['bannerColor'] as String? ?? '#6C63FF';
+    final bannerImage = profile['bannerImage'] as String?;
+
+    Color parsedBannerColor;
+    try {
+      final cleanHex = bannerColor.replaceAll('#', '').trim();
+      if (cleanHex.length == 6) {
+        parsedBannerColor = Color(int.parse('FF$cleanHex', radix: 16));
+      } else if (cleanHex.length == 8) {
+        parsedBannerColor = Color(int.parse(cleanHex, radix: 16));
+      } else {
+        parsedBannerColor = const Color(0xFF6C63FF);
+      }
+    } catch (_) {
+      parsedBannerColor = const Color(0xFF6C63FF);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        GestureDetector(
+          onTap: () => context.push('/profile/edit-banner', extra: profile),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: double.infinity,
+                height: 130,
+                decoration: BoxDecoration(
+                  color: parsedBannerColor,
+                ),
+                child: bannerType == 'image' && bannerImage != null && bannerImage.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: bannerImage,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 130,
+                        placeholder: (_, __) => const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        ),
+                        errorWidget: (_, __, ___) => Container(color: parsedBannerColor),
+                      )
+                    : null,
+              ),
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                      SizedBox(width: 4),
+                      Text(
+                        'Edit Banner',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -45,
+                left: 24,
+                child: GestureDetector(
+                  onTap: () => context.push('/profile/edit-photo', extra: profile),
+                  child: Hero(
+                    tag: 'avatar',
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).scaffoldBackgroundColor,
+                          width: 4,
+                        ),
+                      ),
+                      child: UserAvatar(
+                        size: 90,
+                        borderAsset: borderAsset,
+                        avatarUrl: avatar,
+                        fallbackName: name,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 54),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: GestureDetector(
@@ -259,16 +357,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                Hero(
-                  tag: 'avatar',
-                  child: UserAvatar(
-                    size: 90,
-                    borderAsset: borderAsset,
-                    avatarUrl: avatar,
-                    fallbackName: name,
-                  ),
-                ),
-                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,6 +378,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ],
                   ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: isDarkMode ? Colors.white30 : Colors.black26,
                 ),
               ],
             ),
@@ -334,7 +426,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(0, 24, 0, 120),
+      padding: const EdgeInsets.fromLTRB(0, 0, 0, 120),
       child: Column(
         children: [
           profileAsync.when(

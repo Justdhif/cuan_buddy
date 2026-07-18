@@ -118,11 +118,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     _otpController.addListener(_onOtpChanged);
     _walletNameController.addListener(_onWalletNameChanged);
     _loadSavedBorder();
-    
-    // Paksa refresh data unlocked borders dari server saat setup profil dibuka
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.invalidate(unlockedBordersProvider);
-    });
   }
 
   Future<void> _loadSavedBorder() async {
@@ -240,9 +235,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   }
 
   void _showAvatarEditSheet() {
-    // Refresh data unlocked borders dari server sesaat sebelum bottom sheet dibuka
-    ref.invalidate(unlockedBordersProvider);
-    
     // Ambil state border saat ini agar bisa di-track di dalam sheet
     String sheetBorderId = _selectedBorderId;
     String sheetBorderAsset = _selectedBorderAsset;

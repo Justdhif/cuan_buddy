@@ -72,6 +72,40 @@ export class UserProfilesController {
     }
   }
 
+  @Post('banner/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadBanner(@Req() req, @UploadedFile() file: Express.Multer.File) {
+    try {
+      if (!file) {
+        throw new BadRequestException('File is required');
+      }
+      
+      const result = await this.cloudinaryService.uploadImage(file).catch((err) => {
+        console.error('Cloudinary Upload Error:', err);
+        throw new BadRequestException('Failed to upload image to Cloudinary');
+      });
+      
+      const secureUrl = result.secure_url;
+      if (!secureUrl) {
+        throw new Error('Cloudinary response missing secure_url');
+      }
+      
+      // Update the database
+      await this.userProfilesService.updateProfile(req.user.userId, {
+        bannerImage: secureUrl,
+        bannerType: 'image',
+      });
+      
+      return { bannerImage: secureUrl };
+    } catch (error) {
+      console.error('Banner Upload Exception:', error);
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(error.message || 'An unexpected error occurred during upload');
+    }
+  }
+
   // ─── Achievement Endpoints ─────────────────────────────────────────────────
 
   /// Kembalikan list border ID yang sudah di-unlock oleh user ini secara permanen.

@@ -9,8 +9,7 @@ dotenv.config();
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
-// UUID user yang sudah ada dan akan dijadikan teman
-const TARGET_USER_ID = '1d6057af-1469-40ca-83a9-397d01b89bda';
+
 
 const dummyUsers = [
   {
@@ -20,7 +19,7 @@ const dummyUsers = [
     bio: 'Suka ngopi dan coding di sore hari ☕',
     gender: 'male',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=budi',
-    avatarBorder: 'border-1',
+    avatarBorder: null,
   },
   {
     email: 'siti.rahayu@example.com',
@@ -29,7 +28,7 @@ const dummyUsers = [
     bio: 'Traveler dan food blogger 🌍',
     gender: 'female',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=siti',
-    avatarBorder: 'border-2',
+    avatarBorder: null,
   },
   {
     email: 'agus.wirawan@example.com',
@@ -47,7 +46,7 @@ const dummyUsers = [
     bio: 'Designer grafis freelance dan pecinta seni 🎨',
     gender: 'female',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=dewi',
-    avatarBorder: 'border-1',
+    avatarBorder: null,
   },
   {
     email: 'eko.prasetyo@example.com',
@@ -56,7 +55,7 @@ const dummyUsers = [
     bio: 'Backend developer yang gemar bersepeda 🚴',
     gender: 'male',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=eko',
-    avatarBorder: 'border-2',
+    avatarBorder: null,
   },
   {
     email: 'fitri.handayani@example.com',
@@ -74,7 +73,7 @@ const dummyUsers = [
     bio: 'Startup founder dan mentor UMKM 🚀',
     gender: 'male',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=galih',
-    avatarBorder: 'border-1',
+    avatarBorder: null,
   },
   {
     email: 'hana.pertiwi@example.com',
@@ -83,7 +82,7 @@ const dummyUsers = [
     bio: 'Content creator lifestyle dan kecantikan ✨',
     gender: 'female',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=hana',
-    avatarBorder: 'border-2',
+    avatarBorder: null,
   },
   {
     email: 'irfan.maulana@example.com',
@@ -101,7 +100,7 @@ const dummyUsers = [
     bio: 'Dokter muda yang hobi masak dan berkebun 🌿',
     gender: 'female',
     avatar: 'https://api.dicebear.com/8.x/avataaars/png?seed=julia',
-    avatarBorder: 'border-1',
+    avatarBorder: null,
   },
 ];
 
@@ -121,15 +120,16 @@ async function seedFriends() {
   console.log('🔍 Memeriksa target user...');
 
   const targetUser = await db.query.users.findFirst({
-    where: (u, { eq }) => eq(u.id, TARGET_USER_ID),
+    where: (u, { eq }) => eq(u.email, 'justdhif418@gmail.com'),
   });
 
   if (!targetUser) {
-    console.error(`❌ Target user dengan ID ${TARGET_USER_ID} tidak ditemukan!`);
+    console.error(`❌ Target user dengan email justdhif418@gmail.com tidak ditemukan!`);
     process.exit(1);
   }
 
-  console.log(`✅ Target user ditemukan: ${targetUser.email}`);
+  const TARGET_USER_ID = targetUser.id;
+  console.log(`✅ Target user ditemukan: ${targetUser.email} (ID: ${TARGET_USER_ID})`);
 
   const passwordHash = await bcrypt.hash('Password123!', 10);
 

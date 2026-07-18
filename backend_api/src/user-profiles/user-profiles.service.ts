@@ -9,15 +9,7 @@ import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 // Daftar semua border achievement dan kondisi unlock-nya.
 // Kondisi dicek server-side untuk keamanan.
 const ACHIEVEMENT_BORDERS = [
-  { id: 'border-rookie',       label: 'Cuan Rookie',           tier: 'bronze'   },
-  { id: 'border-first-goal',   label: 'Goal Achiever',         tier: 'silver'   },
-  { id: 'border-master-saver', label: 'Master Penabung',       tier: 'gold'     },
-  { id: 'border-cuan-planner', label: 'Cuan Planner',          tier: 'silver'   },
-  { id: 'border-cuan-emperor', label: 'Cuan Emperor',          tier: 'platinum' },
-  { id: 'border-cuan-partner', label: 'Cuan Partner',          tier: 'silver'   },
-  { id: 'border-tracker-pro',  label: 'Financial Tracker Pro', tier: 'gold'     },
-  { id: 'border-budget-master',label: 'Budget Master',         tier: 'gold'     },
-  { id: 'border-consistency',  label: 'Disiplin Cuan',         tier: 'gold'     },
+  { id: 'border-legend',       label: 'Cuan Legend',           tier: 'platinum' },
 ];
 
 @Injectable()
@@ -137,75 +129,17 @@ export class UserProfilesService {
     if (!profile) throw new NotFoundException('Profile not found');
 
     // ── Ambil data statistik yang diperlukan ──
-    // 1. Saving goals milik user (personal, bukan room)
-    const personalGoals = await this.db.query.savingsGoals.findMany({
-      where: and(eq(savingsGoals.userId, userId), sql`${savingsGoals.roomId} IS NULL`),
-    });
-    const completedPersonalGoals = personalGoals.filter(g => g.status === 'completed');
-    const activePersonalGoals    = personalGoals.filter(g => g.status === 'in_progress');
-    const totalSaved             = personalGoals.reduce((sum, g) => sum + Number(g.currentAmount ?? 0), 0);
-
-    // 2. Saving goals dari shared room yang diselesaikan
-    const completedRoomGoals = await this.db.query.savingsGoals.findMany({
-      where: and(
-        eq(savingsGoals.userId, userId),
-        eq(savingsGoals.status, 'completed'),
-        sql`${savingsGoals.roomId} IS NOT NULL`,
-      ),
-    });
-
-    // 3. Umur akun
-    const accountAgeMonths = profile.createdAt
-      ? Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30))
+    // Legend border: Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung (365 hari).
+    const accountAgeDays = profile.createdAt
+      ? Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
-
-    // 4. Streak pencatatan
-    const streakCount = profile.recordingStreakCount ?? 0;
 
     // ── Evaluasi Kondisi Tiap Border ──
     const conditionsMet = new Set<string>();
 
-    // Bronze — Cuan Rookie: Selalu terbuka untuk semua akun
-    conditionsMet.add('border-rookie');
-
-    // Silver — Goal Achiever: Selesaikan 1 saving goal personal
-    if (completedPersonalGoals.length >= 1) {
-      conditionsMet.add('border-first-goal');
+    if (accountAgeDays >= 365) {
+      conditionsMet.add('border-legend');
     }
-
-    // Gold — Master Penabung: Total tabungan terkumpul >= 10.000.000
-    if (totalSaved >= 10_000_000) {
-      conditionsMet.add('border-master-saver');
-    }
-
-    // Silver — Cuan Planner: Punya minimal 3 saving goals aktif
-    if (activePersonalGoals.length >= 3) {
-      conditionsMet.add('border-cuan-planner');
-    }
-
-    // Platinum — Cuan Emperor: 5+ goals selesai DAN 3+ goals aktif
-    if (completedPersonalGoals.length >= 5 && activePersonalGoals.length >= 3) {
-      conditionsMet.add('border-cuan-emperor');
-    }
-
-    // Silver — Cuan Partner: Selesaikan 1 tabungan bersama di Shared Room
-    if (completedRoomGoals.length >= 1) {
-      conditionsMet.add('border-cuan-partner');
-    }
-
-    // Gold — Financial Tracker Pro: Akun berumur >= 6 bulan
-    if (accountAgeMonths >= 6) {
-      conditionsMet.add('border-tracker-pro');
-    }
-
-    // Gold — Disiplin Cuan: Streak pencatatan 30+ hari berturut-turut
-    if (streakCount >= 30) {
-      conditionsMet.add('border-consistency');
-    }
-
-    // Gold — Budget Master: Jaga pengeluaran di bawah batas anggaran selama 3 bulan berturut-turut.
-    // Di-unlock untuk pengujian/MVP.
-    conditionsMet.add('border-budget-master');
 
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──
     const currentUnlocked: string[] = Array.isArray(profile.unlockedBorders)

@@ -35,6 +35,9 @@ export const userProfiles = pgTable('user_profiles', {
   recordingStreakCount: integer('recording_streak_count').default(0).notNull(),
   lastRecordedAt: timestamp('last_recorded_at'),
   language: text('language').default('en'),
+  bannerType: text('banner_type').default('color').notNull(),
+  bannerColor: text('banner_color').default('#6C63FF').notNull(),
+  bannerImage: text('banner_image'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

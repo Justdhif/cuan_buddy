@@ -14,17 +14,7 @@ const rawPassword = 'admin123';
 
 const allBorderIds = [
   'none',
-  'border-1',
-  'border-2',
-  'border-rookie',
-  'border-first-goal',
-  'border-cuan-planner',
-  'border-cuan-partner',
-  'border-master-saver',
-  'border-budget-master',
-  'border-tracker-pro',
-  'border-consistency',
-  'border-cuan-emperor'
+  'border-legend'
 ];
 
 async function seedTestUser() {
