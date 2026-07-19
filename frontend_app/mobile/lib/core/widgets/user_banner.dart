@@ -34,7 +34,7 @@ class UserBanner extends StatelessWidget {
     final parsedBannerColor = _parseHexColor(bannerColor);
 
     return AspectRatio(
-      aspectRatio: borderAsset.isNotEmpty ? 1.5 : 2.5,
+      aspectRatio: 2.5,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -55,16 +55,41 @@ class UserBanner extends StatelessWidget {
           if (borderAsset.isNotEmpty)
             Positioned.fill(
               child: IgnorePointer(
-                child: borderAsset.startsWith('http')
-                    ? CachedNetworkImage(
-                        imageUrl: borderAsset,
-                        fit: BoxFit.fill,
-                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                      )
-                    : Image.asset(
-                        borderAsset,
-                        fit: BoxFit.fill,
-                      ),
+                // ClipRect agar kelebihan tinggi gambar terpotong rapi di atas/bawah
+                child: ClipRect(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Tampilkan gambar border dengan lebar penuh banner
+                      // tapi pertahankan rasio asli 1.5 (1536x1024)
+                      // sehingga golden frame kiri/kanan pas di tepi banner
+                      const double imageNativeRatio = 1536 / 1024; // 1.5
+                      final double displayWidth  = constraints.maxWidth;
+                      final double displayHeight = displayWidth / imageNativeRatio;
+                      return OverflowBox(
+                        minWidth:  displayWidth,
+                        maxWidth:  displayWidth,
+                        minHeight: displayHeight,
+                        maxHeight: displayHeight,
+                        alignment: Alignment.center,
+                        child: borderAsset.startsWith('http')
+                            ? CachedNetworkImage(
+                                imageUrl: borderAsset,
+                                width:    displayWidth,
+                                height:   displayHeight,
+                                fit:      BoxFit.fill,
+                                errorWidget: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              )
+                            : Image.asset(
+                                borderAsset,
+                                width:  displayWidth,
+                                height: displayHeight,
+                                fit:    BoxFit.fill,
+                              ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
         ],
