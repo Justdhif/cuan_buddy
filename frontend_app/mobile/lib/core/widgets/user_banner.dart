@@ -39,7 +39,7 @@ class UserBanner extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            top: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            top: borderAsset.isNotEmpty ? (borderAsset.contains('millionaire') ? 3.0 : 8.0) : 0.0,
             bottom: borderAsset.isNotEmpty ? 5.0 : 0.0,
             left: borderAsset.isNotEmpty ? 8.0 : 0.0,
             right: borderAsset.isNotEmpty ? 5.0 : 0.0,

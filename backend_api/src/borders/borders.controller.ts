@@ -78,7 +78,7 @@ export class BordersController {
       {
         id: 'border-millionaire',
         label: 'Cuan Millionaire (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-millionaire.png`,
+        asset: `${baseUrl}/assets/banners/banner-millionaire.png?v=3`,
         tier: 'platinum',
         requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
         isGlobal: false,
