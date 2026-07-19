@@ -262,63 +262,61 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        height: 130,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          color: _parseHexColor(_selectedBannerColor),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: _tabController.index == 1
-                            ? (_selectedLocalFile != null
-                                ? Image.file(
-                                    _selectedLocalFile!,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  )
-                                : (_selectedBannerImage != null &&
-                                        _selectedBannerImage!.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: _selectedBannerImage!,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        placeholder: (_, __) => const Center(
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                        errorWidget: (_, __, ___) => Container(
-                                          color: _parseHexColor(_selectedBannerColor),
-                                        ),
-                                      )
-                                    : Container(
-                                        color: _parseHexColor(_selectedBannerColor),
-                                        child: const Center(
-                                          child: Text(
-                                            'No Image Selected',
-                                            style: TextStyle(color: Colors.white70),
+                  AspectRatio(
+                    aspectRatio: 2.5,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: _parseHexColor(_selectedBannerColor),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: _tabController.index == 1
+                              ? (_selectedLocalFile != null
+                                  ? Image.file(
+                                      _selectedLocalFile!,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    )
+                                  : (_selectedBannerImage != null &&
+                                          _selectedBannerImage!.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: _selectedBannerImage!,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          placeholder: (_, __) => const Center(
+                                            child: CircularProgressIndicator(strokeWidth: 2),
                                           ),
-                                        ),
-                                      )))
-                            : null,
-                      ),
-                      if (_selectedBorderAsset.isNotEmpty)
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: 130,
+                                          errorWidget: (_, __, ___) => Container(
+                                            color: _parseHexColor(_selectedBannerColor),
+                                          ),
+                                        )
+                                      : Container(
+                                          color: _parseHexColor(_selectedBannerColor),
+                                          child: const Center(
+                                            child: Text(
+                                              'No Image Selected',
+                                              style: TextStyle(color: Colors.white70),
+                                            ),
+                                          ),
+                                        )))
+                              : null,
+                        ),
+                        if (_selectedBorderAsset.isNotEmpty)
+                          Positioned.fill(
                             child: IgnorePointer(
                               child: _selectedBorderAsset.startsWith('http')
                                   ? CachedNetworkImage(
@@ -332,7 +330,8 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                     ),
                             ),
                           ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
