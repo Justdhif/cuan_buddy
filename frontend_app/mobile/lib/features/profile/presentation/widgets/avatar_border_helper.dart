@@ -116,6 +116,13 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     tier: BorderTier.gold,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
+  AvatarBorderInfo(
+    id: 'border-millionaire',
+    label: 'Cuan Millionaire',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-millionaire.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
+  ),
 ];
 
 /// Semua border digabung: global + achievement.

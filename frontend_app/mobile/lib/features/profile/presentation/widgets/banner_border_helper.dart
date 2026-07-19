@@ -50,6 +50,13 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
     tier: BorderTier.gold,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
+  BannerBorderInfo(
+    id: 'border-millionaire',
+    label: 'Cuan Millionaire (Banner)',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-millionaire.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
+  ),
 ];
 
 List<BannerBorderInfo> get kAllBannerBorders => [...kGlobalBannerBorders, ...kAchievementBannerBorders];
@@ -109,6 +116,13 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-500-tx.png',
     tier: BorderTier.gold,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
+  ),
+  BannerWallpaperInfo(
+    id: 'border-millionaire',
+    label: 'Cuan Millionaire (Wallpaper)',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-millionaire.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
   ),
 ];
 

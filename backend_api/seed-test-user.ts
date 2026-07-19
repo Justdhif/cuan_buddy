@@ -15,7 +15,8 @@ const rawPassword = 'admin123';
 const allBorderIds = [
   'none',
   'border-legend',
-  'border-500-tx'
+  'border-500-tx',
+  'border-millionaire'
 ];
 
 async function seedTestUser() {

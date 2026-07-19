@@ -53,13 +53,11 @@ class UserBanner extends StatelessWidget {
             ),
           ),
           if (borderAsset.isNotEmpty)
-            // Taruh border di pojok kanan atas, tinggi = tinggi banner,
-            // lebar otomatis dari rasio asli gambar (1536x1024 = 1.5:1).
-            // Tidak ada BoxFit stretching — gambar ditampilkan apa adanya.
+            // Taruh border di pojok kanan atas, disesuaikan agar pas di pinggir banner.
             Positioned(
-              top: 0,
-              right: 0,
-              bottom: 0,
+              top: -12.0,
+              right: -12.0,
+              bottom: -12.0,
               child: IgnorePointer(
                 child: AspectRatio(
                   aspectRatio: 1536 / 1024, // rasio asli banner-legend.png

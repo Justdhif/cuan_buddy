@@ -593,9 +593,10 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
               ),
             ),
           )
-        : GestureDetector(
+          : GestureDetector(
             onTap: _pickBannerAndCrop,
             child: Container(
+              width: double.infinity,
               height: 140,
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
