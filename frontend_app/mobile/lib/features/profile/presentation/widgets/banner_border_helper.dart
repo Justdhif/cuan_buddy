@@ -43,6 +43,13 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
+  BannerBorderInfo(
+    id: 'border-500-tx',
+    label: 'Cuan Master (Banner)',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-500-tx.png',
+    tier: BorderTier.gold,
+    requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
+  ),
 ];
 
 List<BannerBorderInfo> get kAllBannerBorders => [...kGlobalBannerBorders, ...kAchievementBannerBorders];
@@ -95,6 +102,13 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
+  ),
+  BannerWallpaperInfo(
+    id: 'border-500-tx',
+    label: 'Cuan Master (Wallpaper)',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-500-tx.png',
+    tier: BorderTier.gold,
+    requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
 ];
 

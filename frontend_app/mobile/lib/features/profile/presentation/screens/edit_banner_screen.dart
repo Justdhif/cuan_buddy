@@ -57,7 +57,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -66,23 +66,6 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
     _selectedBannerColor = widget.profile['bannerColor'] as String? ?? '#6C63FF';
     _selectedBannerImage = widget.profile['bannerImage'] as String?;
     _hexController.text = _selectedBannerColor;
-
-    // Check if current image matches any wallpaper asset
-    bool isWallpaper = false;
-    if (_selectedBannerType == 'image' && _selectedBannerImage != null) {
-      for (final wp in kAllWallpapers) {
-        if (wp.asset == _selectedBannerImage) {
-          isWallpaper = true;
-          break;
-        }
-      }
-    }
-
-    if (_selectedBannerType == 'image' && !isWallpaper) {
-      _tabController.index = 0; // Background tab
-    } else if (isWallpaper) {
-      _tabController.index = 1; // Wallpaper tab
-    }
     
     _initBorder();
   }
@@ -305,7 +288,6 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                   indicatorSize: TabBarIndicatorSize.tab,
                   tabs: const [
                     Tab(text: 'Background'),
-                    Tab(text: 'Wallpaper'),
                     Tab(text: 'Border'),
                   ],
                 ),
@@ -317,13 +299,14 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // Tab 1: Background (Color & Upload)
+                  // Tab 1: Background (Color, Upload & Wallpaper)
                   SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // ── Upload Image Section ──
                         Text(
                           'Upload Image',
                           style: AppTypography.textTheme.titleSmall?.copyWith(
@@ -331,77 +314,21 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                           ),
                         ),
                         const SizedBox(height: 12),
-                        GestureDetector(
-                          onTap: _pickBannerAndCrop,
-                          child: Container(
-                            height: 140,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: _selectedBannerType == 'image' && _selectedLocalFile != null
-                                    ? AppColors.primary 
-                                    : AppColors.primary.withValues(alpha: 0.3),
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add_photo_alternate_outlined,
-                                  size: 44,
-                                  color: AppColors.primary,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Select Photo from Gallery',
-                                  style: AppTypography.textTheme.titleSmall?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Recommended Aspect Ratio: 3:1',
-                                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                                    color: isDark ? Colors.white38 : Colors.black38,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        _buildUploadBox(isDark),
+                        const SizedBox(height: 32),
+
+                        // ── Preset Wallpapers Section ──
+                        Text(
+                          'Preset Wallpapers',
+                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        if (_selectedLocalFile != null ||
-                            (_selectedBannerType == 'image' &&
-                             _selectedBannerImage != null &&
-                             _selectedBannerImage!.isNotEmpty && 
-                             !kAllWallpapers.any((w) => w.asset == _selectedBannerImage))) ...[
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                setState(() {
-                                  _selectedLocalFile = null;
-                                  _selectedBannerImage = null;
-                                  _selectedBannerType = 'color';
-                                });
-                              },
-                              icon: const Icon(Icons.delete_outline_rounded),
-                              label: const Text('Remove Image'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.danger,
-                                side: const BorderSide(color: AppColors.danger),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        const SizedBox(height: 12),
+                        _buildWallpaperGrid(unlockedBordersAsync, isDark),
                         const SizedBox(height: 32),
+
+                        // ── Preset Colors Section ──
                         Text(
                           'Preset Colors',
                           style: AppTypography.textTheme.titleSmall?.copyWith(
@@ -432,6 +359,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                   _hexController.text = colorHex;
                                   _selectedBannerType = 'color';
                                   _selectedLocalFile = null;
+                                  _selectedBannerImage = null; // Clear wallpaper
                                 });
                               },
                               child: Container(
@@ -464,6 +392,8 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                           },
                         ),
                         const SizedBox(height: 24),
+
+                        // ── Custom Hex Code Section ──
                         Text(
                           'Custom Hex Code',
                           style: AppTypography.textTheme.titleSmall?.copyWith(
@@ -512,6 +442,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                       _selectedBannerColor = value;
                                       _selectedBannerType = 'color';
                                       _selectedLocalFile = null;
+                                      _selectedBannerImage = null;
                                     });
                                   } else if (!value.startsWith('#') &&
                                       (value.length == 6 || value.length == 8)) {
@@ -519,6 +450,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                       _selectedBannerColor = '#$value';
                                       _selectedBannerType = 'color';
                                       _selectedLocalFile = null;
+                                      _selectedBannerImage = null;
                                     });
                                   }
                                 },
@@ -526,6 +458,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                   setState(() {
                                     _selectedBannerType = 'color';
                                     _selectedLocalFile = null;
+                                    _selectedBannerImage = null;
                                   });
                                 },
                               ),
@@ -536,15 +469,10 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     ),
                   ),
 
-                  // Tab 2: Wallpaper Selection
+                  // Tab 2: Border Selection
                   SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    child: _buildWallpaperGrid(unlockedBordersAsync, isDark),
-                  ),
-
-                  // Tab 3: Border Selection
-                  SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(24),
                     child: _buildBorderGrid(unlockedBordersAsync, bordersAsync, isDark),
                   ),
                 ],
@@ -590,6 +518,120 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildUploadBox(bool isDark) {
+    final hasUploadedImage = _selectedLocalFile != null || 
+        (_selectedBannerType == 'image' &&
+         _selectedBannerImage != null &&
+         _selectedBannerImage!.isNotEmpty &&
+         !kAllWallpapers.any((w) => w.asset == _selectedBannerImage));
+
+    return hasUploadedImage
+        ? Container(
+            height: 140,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primary,
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: _selectedLocalFile != null
+                        ? Image.file(
+                            _selectedLocalFile!,
+                            fit: BoxFit.cover,
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: _selectedBannerImage!,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+                          ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          radius: 18,
+                          child: IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.white, size: 16),
+                            onPressed: _pickBannerAndCrop,
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          radius: 18,
+                          child: IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 16),
+                            onPressed: () {
+                              setState(() {
+                                _selectedLocalFile = null;
+                                _selectedBannerImage = null;
+                                _selectedBannerType = 'color';
+                              });
+                            },
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : GestureDetector(
+            onTap: _pickBannerAndCrop,
+            child: Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_photo_alternate_outlined,
+                    size: 44,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Select Photo from Gallery',
+                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Recommended Aspect Ratio: 3:1',
+                    style: AppTypography.textTheme.bodySmall?.copyWith(
+                      color: isDark ? Colors.white38 : Colors.black38,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
   }
 
   Widget _buildBorderGrid(AsyncValue<List<String>> unlockedBordersAsync, AsyncValue<List<dynamic>> bordersAsync, bool isDark) {

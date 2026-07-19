@@ -14,7 +14,8 @@ const rawPassword = 'admin123';
 
 const allBorderIds = [
   'none',
-  'border-legend'
+  'border-legend',
+  'border-500-tx'
 ];
 
 async function seedTestUser() {
@@ -31,6 +32,7 @@ async function seedTestUser() {
     const [newUser] = await db
       .insert(schema.users)
       .values({
+        id: '1d6057af-1469-40ca-83a9-397d01b89bda',
         email: targetEmail,
         passwordHash,
         isActive: true,

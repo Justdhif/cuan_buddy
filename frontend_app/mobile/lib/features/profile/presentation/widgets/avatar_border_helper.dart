@@ -109,6 +109,13 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
+  AvatarBorderInfo(
+    id: 'border-500-tx',
+    label: 'Cuan Master',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-500-tx.png',
+    tier: BorderTier.gold,
+    requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
+  ),
 ];
 
 /// Semua border digabung: global + achievement.

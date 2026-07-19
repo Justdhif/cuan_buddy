@@ -10,6 +10,7 @@ import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 // Kondisi dicek server-side untuk keamanan.
 const ACHIEVEMENT_BORDERS = [
   { id: 'border-legend',       label: 'Cuan Legend',           tier: 'platinum' },
+  { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'gold' },
 ];
 
 @Injectable()
@@ -134,11 +135,22 @@ export class UserProfilesService {
       ? Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / (1000 * 60 * 60 * 24))
       : 0;
 
+    // Cuan Master: Mencatat minimal 500 transaksi
+    const txCountResult = await this.db
+      .select({ count: count() })
+      .from(transactions)
+      .where(eq(transactions.userId, userId));
+    const txCount = txCountResult[0]?.count ?? 0;
+
     // ── Evaluasi Kondisi Tiap Border ──
     const conditionsMet = new Set<string>();
 
     if (accountAgeDays >= 365) {
       conditionsMet.add('border-legend');
+    }
+
+    if (txCount >= 500) {
+      conditionsMet.add('border-500-tx');
     }
 
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──

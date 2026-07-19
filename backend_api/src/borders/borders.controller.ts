@@ -27,6 +27,14 @@ export class BordersController {
         tier: 'platinum',
         requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
         isGlobal: false,
+      },
+      {
+        id: 'border-500-tx',
+        label: 'Cuan Master',
+        asset: `${baseUrl}/assets/borders/border-500-tx.png`,
+        tier: 'gold',
+        requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
+        isGlobal: false,
       }
     ];
   }
@@ -49,6 +57,14 @@ export class BordersController {
         asset: `${baseUrl}/assets/banners/banner-legend.png`,
         tier: 'platinum',
         requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
+        isGlobal: false,
+      },
+      {
+        id: 'border-500-tx',
+        label: 'Cuan Master (Banner)',
+        asset: `${baseUrl}/assets/banners/banner-500-tx.png`,
+        tier: 'gold',
+        requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
         isGlobal: false,
       }
     ];
