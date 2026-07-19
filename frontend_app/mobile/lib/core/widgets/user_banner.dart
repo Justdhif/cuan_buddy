@@ -34,7 +34,7 @@ class UserBanner extends StatelessWidget {
     final parsedBannerColor = _parseHexColor(bannerColor);
 
     return AspectRatio(
-      aspectRatio: 2.5,
+      aspectRatio: borderAsset.isNotEmpty ? 1.5 : 2.5,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -58,12 +58,12 @@ class UserBanner extends StatelessWidget {
                 child: borderAsset.startsWith('http')
                     ? CachedNetworkImage(
                         imageUrl: borderAsset,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
                         errorWidget: (_, __, ___) => const SizedBox.shrink(),
                       )
                     : Image.asset(
                         borderAsset,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
                       ),
               ),
             ),
