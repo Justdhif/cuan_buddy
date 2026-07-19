@@ -38,32 +38,33 @@ class UserBanner extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: parsedBannerColor,
-              borderRadius: BorderRadius.circular(16),
+          Positioned(
+            top: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            bottom: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            left: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            right: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: parsedBannerColor,
+                borderRadius: BorderRadius.circular(borderAsset.isNotEmpty ? 8.0 : 16.0),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _buildBannerContent(parsedBannerColor),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: _buildBannerContent(parsedBannerColor),
           ),
           if (borderAsset.isNotEmpty)
             Positioned.fill(
-              child: Transform.scale(
-                scale: 1.05, // Perbesar skala bingkai 5% agar meluap ke luar dan menimpa tepi banner
-                child: IgnorePointer(
-                  child: borderAsset.startsWith('http')
-                      ? CachedNetworkImage(
-                          imageUrl: borderAsset,
-                          fit: BoxFit.fill,
-                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                        )
-                      : Image.asset(
-                          borderAsset,
-                          fit: BoxFit.fill,
-                        ),
-                ),
+              child: IgnorePointer(
+                child: borderAsset.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: borderAsset,
+                        fit: BoxFit.fill,
+                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                      )
+                    : Image.asset(
+                        borderAsset,
+                        fit: BoxFit.fill,
+                      ),
               ),
             ),
         ],
