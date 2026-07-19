@@ -40,13 +40,13 @@ class UserBanner extends StatelessWidget {
         children: [
           Positioned(
             top: borderAsset.isNotEmpty ? 8.0 : 0.0,
-            bottom: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            bottom: borderAsset.isNotEmpty ? 3.0 : 0.0,
             left: borderAsset.isNotEmpty ? 8.0 : 0.0,
-            right: borderAsset.isNotEmpty ? 8.0 : 0.0,
+            right: borderAsset.isNotEmpty ? 3.0 : 0.0,
             child: Container(
               decoration: BoxDecoration(
                 color: parsedBannerColor,
-                borderRadius: BorderRadius.circular(borderAsset.isNotEmpty ? 8.0 : 16.0),
+                borderRadius: BorderRadius.circular(20.0),
               ),
               clipBehavior: Clip.antiAlias,
               child: _buildBannerContent(parsedBannerColor),
