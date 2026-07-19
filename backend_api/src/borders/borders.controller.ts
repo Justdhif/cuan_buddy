@@ -35,6 +35,14 @@ export class BordersController {
         tier: 'gold',
         requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
         isGlobal: false,
+      },
+      {
+        id: 'border-millionaire',
+        label: 'Cuan Millionaire',
+        asset: `${baseUrl}/assets/borders/border-millionaire.png`,
+        tier: 'platinum',
+        requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
+        isGlobal: false,
       }
     ];
   }
@@ -65,6 +73,14 @@ export class BordersController {
         asset: `${baseUrl}/assets/banners/banner-500-tx.png`,
         tier: 'gold',
         requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
+        isGlobal: false,
+      },
+      {
+        id: 'border-millionaire',
+        label: 'Cuan Millionaire (Banner)',
+        asset: `${baseUrl}/assets/banners/banner-millionaire.png`,
+        tier: 'platinum',
+        requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
         isGlobal: false,
       }
     ];
