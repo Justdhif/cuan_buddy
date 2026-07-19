@@ -38,32 +38,32 @@ class UserBanner extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Padding(
-            padding: EdgeInsets.all(borderAsset.isNotEmpty ? 6.0 : 0.0),
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: BoxDecoration(
-                color: parsedBannerColor,
-                borderRadius: BorderRadius.circular(borderAsset.isNotEmpty ? 12 : 16),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: _buildBannerContent(parsedBannerColor),
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: parsedBannerColor,
+              borderRadius: BorderRadius.circular(16),
             ),
+            clipBehavior: Clip.antiAlias,
+            child: _buildBannerContent(parsedBannerColor),
           ),
           if (borderAsset.isNotEmpty)
             Positioned.fill(
-              child: IgnorePointer(
-                child: borderAsset.startsWith('http')
-                    ? CachedNetworkImage(
-                        imageUrl: borderAsset,
-                        fit: BoxFit.fill,
-                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                      )
-                    : Image.asset(
-                        borderAsset,
-                        fit: BoxFit.fill,
-                      ),
+              child: Transform.scale(
+                scale: 1.05, // Perbesar skala bingkai 5% agar meluap ke luar dan menimpa tepi banner
+                child: IgnorePointer(
+                  child: borderAsset.startsWith('http')
+                      ? CachedNetworkImage(
+                          imageUrl: borderAsset,
+                          fit: BoxFit.fill,
+                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                        )
+                      : Image.asset(
+                          borderAsset,
+                          fit: BoxFit.fill,
+                        ),
+                ),
               ),
             ),
         ],
