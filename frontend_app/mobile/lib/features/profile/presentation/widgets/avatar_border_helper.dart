@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 // Widget avatar dipindahkan ke core/widgets/user_avatar.dart sebagai komponen reusable.
 // Di-export dari sini agar semua file yang meng-import avatar_border_helper.dart
 // otomatis mendapat akses ke UserAvatar dan AvatarWithBorder tanpa perubahan import.
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/user_avatar.dart';
 export '../../../../core/widgets/user_avatar.dart' show UserAvatar;
 
@@ -100,11 +101,11 @@ const List<AvatarBorderInfo> kGlobalBorders = [
 
 // ─── Daftar Border Achievement (Harus Di-unlock) ──────────────────────────────
 
-const List<AvatarBorderInfo> kAchievementBorders = [
+final List<AvatarBorderInfo> kAchievementBorders = [
   AvatarBorderInfo(
     id: 'border-legend',
     label: 'Cuan Legend',
-    asset: 'https://cuan-buddy-api.vercel.app/assets/borders/border-legend.png',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),

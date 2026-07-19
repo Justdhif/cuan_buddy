@@ -67,8 +67,21 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
     _selectedBannerImage = widget.profile['bannerImage'] as String?;
     _hexController.text = _selectedBannerColor;
 
-    if (_selectedBannerType == 'image') {
-      _tabController.index = 1;
+    // Check if current image matches any wallpaper asset
+    bool isWallpaper = false;
+    if (_selectedBannerType == 'image' && _selectedBannerImage != null) {
+      for (final wp in kAllWallpapers) {
+        if (wp.asset == _selectedBannerImage) {
+          isWallpaper = true;
+          break;
+        }
+      }
+    }
+
+    if (_selectedBannerType == 'image' && !isWallpaper) {
+      _tabController.index = 0; // Background tab
+    } else if (isWallpaper) {
+      _tabController.index = 1; // Wallpaper tab
     }
     
     _initBorder();
@@ -158,11 +171,10 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
 
     try {
       String? finalBannerImage = _selectedBannerImage;
-      final isImageTab = _tabController.index == 1;
-      final finalBannerType = isImageTab ? 'image' : 'color';
+      final finalBannerType = _selectedBannerType;
 
-      // 1. If image tab and local file picked, upload to Cloudinary
-      if (isImageTab && _selectedLocalFile != null) {
+      // 1. If local file picked, upload to Cloudinary
+      if (_selectedLocalFile != null && finalBannerType == 'image') {
         final dio = ref.read(dioClientProvider).dio;
         final Uint8List rawBytes = await _selectedLocalFile!.readAsBytes();
         final ext = _selectedLocalFile!.path.split('.').last.toLowerCase();
@@ -261,7 +273,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                   const SizedBox(height: 8),
                   UserBanner(
                     bannerColor: _selectedBannerColor,
-                    bannerType: _tabController.index == 1 ? 'image' : 'color',
+                    bannerType: _selectedBannerType,
                     bannerImage: _selectedBannerImage,
                     borderAsset: _selectedBorderAsset,
                     localFile: _selectedLocalFile,
@@ -292,8 +304,8 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                   dividerColor: Colors.transparent,
                   indicatorSize: TabBarIndicatorSize.tab,
                   tabs: const [
-                    Tab(text: 'Solid Color'),
-                    Tab(text: 'Upload Image'),
+                    Tab(text: 'Background'),
+                    Tab(text: 'Wallpaper'),
                     Tab(text: 'Border'),
                   ],
                 ),
@@ -305,13 +317,91 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  // Tab 1: Solid Color Selection
+                  // Tab 1: Background (Color & Upload)
                   SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          'Upload Image',
+                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: _pickBannerAndCrop,
+                          child: Container(
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _selectedBannerType == 'image' && _selectedLocalFile != null
+                                    ? AppColors.primary 
+                                    : AppColors.primary.withValues(alpha: 0.3),
+                                width: 2,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  size: 44,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Select Photo from Gallery',
+                                  style: AppTypography.textTheme.titleSmall?.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Recommended Aspect Ratio: 3:1',
+                                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                                    color: isDark ? Colors.white38 : Colors.black38,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (_selectedLocalFile != null ||
+                            (_selectedBannerType == 'image' &&
+                             _selectedBannerImage != null &&
+                             _selectedBannerImage!.isNotEmpty && 
+                             !kAllWallpapers.any((w) => w.asset == _selectedBannerImage))) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedLocalFile = null;
+                                  _selectedBannerImage = null;
+                                  _selectedBannerType = 'color';
+                                });
+                              },
+                              icon: const Icon(Icons.delete_outline_rounded),
+                              label: const Text('Remove Image'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.danger,
+                                side: const BorderSide(color: AppColors.danger),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 32),
                         Text(
                           'Preset Colors',
                           style: AppTypography.textTheme.titleSmall?.copyWith(
@@ -332,13 +422,16 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                           itemBuilder: (context, index) {
                             final colorHex = _premiumColors[index];
                             final colorVal = _parseHexColor(colorHex);
-                            final isSelected = _selectedBannerColor.toLowerCase() == colorHex.toLowerCase();
+                            final isSelected = _selectedBannerType == 'color' && 
+                                _selectedBannerColor.toLowerCase() == colorHex.toLowerCase();
 
                             return GestureDetector(
                               onTap: () {
                                 setState(() {
                                   _selectedBannerColor = colorHex;
                                   _hexController.text = colorHex;
+                                  _selectedBannerType = 'color';
+                                  _selectedLocalFile = null;
                                 });
                               },
                               child: Container(
@@ -417,13 +510,23 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                       (value.length == 7 || value.length == 9)) {
                                     setState(() {
                                       _selectedBannerColor = value;
+                                      _selectedBannerType = 'color';
+                                      _selectedLocalFile = null;
                                     });
                                   } else if (!value.startsWith('#') &&
                                       (value.length == 6 || value.length == 8)) {
                                     setState(() {
                                       _selectedBannerColor = '#$value';
+                                      _selectedBannerType = 'color';
+                                      _selectedLocalFile = null;
                                     });
                                   }
+                                },
+                                onTap: () {
+                                  setState(() {
+                                    _selectedBannerType = 'color';
+                                    _selectedLocalFile = null;
+                                  });
                                 },
                               ),
                             ),
@@ -433,79 +536,10 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     ),
                   ),
 
-                  // Tab 2: Upload Image Selection
+                  // Tab 2: Wallpaper Selection
                   SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: 16),
-                        GestureDetector(
-                          onTap: _pickBannerAndCrop,
-                          child: Container(
-                            height: 140,
-                            decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                                width: 2,
-                                style: BorderStyle.none, // We can use decoration border
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add_photo_alternate_outlined,
-                                  size: 44,
-                                  color: AppColors.primary,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Select Photo from Gallery',
-                                  style: AppTypography.textTheme.titleSmall?.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Recommended Aspect Ratio: 3:1',
-                                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                                    color: isDark ? Colors.white38 : Colors.black38,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_selectedLocalFile != null ||
-                            (_selectedBannerImage != null &&
-                                _selectedBannerImage!.isNotEmpty)) ...[
-                          const SizedBox(height: 24),
-                          OutlinedButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _selectedLocalFile = null;
-                                _selectedBannerImage = null;
-                              });
-                            },
-                            icon: const Icon(Icons.delete_outline_rounded),
-                            label: const Text('Remove Image'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.danger,
-                              side: const BorderSide(color: AppColors.danger),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                    child: _buildWallpaperGrid(unlockedBordersAsync, isDark),
                   ),
 
                   // Tab 3: Border Selection
@@ -735,6 +769,147 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(child: Text('Error: $error')),
+    );
+  }
+
+  Widget _buildWallpaperGrid(AsyncValue<List<String>> unlockedBordersAsync, bool isDark) {
+    return unlockedBordersAsync.when(
+      data: (unlockedBorders) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 2.5,
+            ),
+            itemCount: kAllWallpapers.length,
+            itemBuilder: (context, index) {
+              final wp = kAllWallpapers[index];
+              final isNoWallpaper = wp.id == 'none';
+              final isSelected = (!isNoWallpaper && _selectedBannerType == 'image' && _selectedBannerImage == wp.asset) ||
+                                 (isNoWallpaper && _selectedBannerType == 'image' && (_selectedBannerImage == null || _selectedBannerImage!.isEmpty) && _selectedLocalFile == null);
+              final isUnlocked = wp.isGlobal || unlockedBorders.contains(wp.id);
+              
+              return GestureDetector(
+                onTap: () {
+                  if (!isUnlocked) {
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: Row(
+                          children: [
+                            const Icon(Icons.lock, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(wp.label),
+                          ],
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tier: ${wp.tier.name.toUpperCase()}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(wp.requirementDescription),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Tutup'),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+
+                  setState(() {
+                    if (isNoWallpaper) {
+                      _selectedBannerType = 'color';
+                      _selectedLocalFile = null;
+                      _selectedBannerImage = null;
+                    } else {
+                      _selectedBannerType = 'image';
+                      _selectedBannerImage = wp.asset;
+                      _selectedLocalFile = null;
+                    }
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.transparent,
+                      width: 3.0,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      isNoWallpaper
+                          ? Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: isDark ? Colors.white10 : Colors.black12,
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.block, size: 24, color: Colors.grey),
+                              ),
+                            )
+                          : wp.asset.startsWith('http')
+                              ? CachedNetworkImage(
+                                  imageUrl: wp.asset,
+                                  fit: BoxFit.cover, // Banner image is cover or fill
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+                                )
+                              : Image.asset(
+                                  wp.asset,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                      if (!isUnlocked)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.lock_outline_rounded,
+                                color: Colors.white70, size: 24),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Gagal memuat wallpaper: $error')),
     );
   }
 }
