@@ -58,12 +58,12 @@ class UserBanner extends StatelessWidget {
                 child: borderAsset.startsWith('http')
                     ? CachedNetworkImage(
                         imageUrl: borderAsset,
-                        fit: BoxFit.fill,
+                        fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => const SizedBox.shrink(),
                       )
                     : Image.asset(
                         borderAsset,
-                        fit: BoxFit.fill,
+                        fit: BoxFit.cover,
                       ),
               ),
             ),
