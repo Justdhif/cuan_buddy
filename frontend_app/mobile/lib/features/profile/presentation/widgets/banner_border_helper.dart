@@ -47,7 +47,7 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
     id: 'border-500-tx',
     label: 'Cuan Master (Banner)',
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-500-tx.png',
-    tier: BorderTier.gold,
+    tier: BorderTier.platinum,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
   BannerBorderInfo(
@@ -114,7 +114,7 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
     id: 'border-500-tx',
     label: 'Cuan Master (Wallpaper)',
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-500-tx.png',
-    tier: BorderTier.gold,
+    tier: BorderTier.platinum,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
   BannerWallpaperInfo(

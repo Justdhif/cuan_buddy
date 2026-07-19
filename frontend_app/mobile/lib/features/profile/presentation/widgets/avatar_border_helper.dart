@@ -113,7 +113,7 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     id: 'border-500-tx',
     label: 'Cuan Master',
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-500-tx.png',
-    tier: BorderTier.gold,
+    tier: BorderTier.platinum,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
   AvatarBorderInfo(
