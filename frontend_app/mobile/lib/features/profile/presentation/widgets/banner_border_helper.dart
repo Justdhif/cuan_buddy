@@ -36,9 +36,9 @@ const List<BannerBorderInfo> kGlobalBannerBorders = [
 
 const List<BannerBorderInfo> kAchievementBannerBorders = [
   BannerBorderInfo(
-    id: 'border-legend', // Menggunakan ID yang sama agar terbuka bersamaan dengan avatar
+    id: 'border-legend',
     label: 'Cuan Legend (Banner)',
-    asset: 'assets/banners/banner-legend.png',
+    asset: 'https://cuan-buddy-api.vercel.app/assets/banners/banner-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),

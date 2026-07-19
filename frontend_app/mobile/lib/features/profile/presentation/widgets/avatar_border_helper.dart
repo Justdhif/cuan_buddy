@@ -1,8 +1,8 @@
 /// Shared config & utilities untuk sistem avatar border dengan achievement.
 ///
 /// Untuk menambah border baru:
-///   1. Taruh file PNG di `assets/borders/`
-///   2. Tambah entry di [kAchievementBorders] dengan kondisi yang sesuai
+///   1. Upload file PNG ke backend di folder `public/assets/borders/`
+///   2. Tambah entry di [kAchievementBorders] dengan URL backend sebagai asset
 library;
 
 import 'package:flutter/material.dart';
@@ -69,7 +69,7 @@ class AvatarBorderInfo {
   /// Nama display border.
   final String label;
 
-  /// Path asset PNG, kosong jika tidak ada border.
+  /// URL asset PNG (dari backend), kosong jika tidak ada border.
   final String asset;
 
   /// Tier pencapaian border.
@@ -104,7 +104,7 @@ const List<AvatarBorderInfo> kAchievementBorders = [
   AvatarBorderInfo(
     id: 'border-legend',
     label: 'Cuan Legend',
-    asset: 'assets/borders/border-legend.png',
+    asset: 'https://cuan-buddy-api.vercel.app/assets/borders/border-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
