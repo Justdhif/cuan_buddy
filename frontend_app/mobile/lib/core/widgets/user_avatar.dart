@@ -119,27 +119,33 @@ class UserAvatar extends StatelessWidget {
       return SizedBox(
         width: size,
         height: size,
-        child: Center(
-          child: CustomPaint(
-            size: Size(ringWidget, ringWidget),
-            painter: _GradientRingPainter(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.primaryLight, AppColors.primary, AppColors.primaryDark],
-              ),
-              strokeWidth: ringStroke,
-            ),
-            child: Center(
-              child: ClipOval(
-                child: SizedBox(
-                  width: avatarSize,
-                  height: avatarSize,
-                  child: _buildImage(avatarSize),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // 1. Cincin gradient (dibingkai ketat sebesar ringWidget)
+            SizedBox(
+              width: ringWidget,
+              height: ringWidget,
+              child: CustomPaint(
+                painter: _GradientRingPainter(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [AppColors.primaryLight, AppColors.primary, AppColors.primaryDark],
+                  ),
+                  strokeWidth: ringStroke,
                 ),
               ),
             ),
-          ),
+            // 2. Foto avatar (dibingkai ketat sebesar avatarSize)
+            SizedBox(
+              width: avatarSize,
+              height: avatarSize,
+              child: ClipOval(
+                child: _buildImage(avatarSize),
+              ),
+            ),
+          ],
         ),
       );
     }
