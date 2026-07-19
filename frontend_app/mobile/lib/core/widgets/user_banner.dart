@@ -38,15 +38,18 @@ class UserBanner extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: parsedBannerColor,
-              borderRadius: BorderRadius.circular(16),
+          Padding(
+            padding: EdgeInsets.all(borderAsset.isNotEmpty ? 6.0 : 0.0),
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                color: parsedBannerColor,
+                borderRadius: BorderRadius.circular(borderAsset.isNotEmpty ? 12 : 16),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _buildBannerContent(parsedBannerColor),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: _buildBannerContent(parsedBannerColor),
           ),
           if (borderAsset.isNotEmpty)
             Positioned.fill(
