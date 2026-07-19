@@ -13,6 +13,16 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
+  Future<List<dynamic>> getAvatarBorders() async {
+    final response = await _dio.get('/borders/avatars');
+    return response.data as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getBannerBorders() async {
+    final response = await _dio.get('/borders/banners');
+    return response.data as List<dynamic>;
+  }
+
   Future<void> submitFeedback(String message) async {
     await _dio.post('/feedback', data: {'message': message});
   }
@@ -28,6 +38,7 @@ class ProfileRepository {
     String? bannerType,
     String? bannerColor,
     String? bannerImage,
+    String? bannerBorder,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['fullName'] = fullName;
@@ -40,6 +51,7 @@ class ProfileRepository {
     if (bannerType != null) body['bannerType'] = bannerType;
     if (bannerColor != null) body['bannerColor'] = bannerColor;
     if (bannerImage != null) body['bannerImage'] = bannerImage;
+    if (bannerBorder != null) body['bannerBorder'] = bannerBorder;
 
     final response = await _dio.patch('/profiles/me', data: body);
     return response.data as Map<String, dynamic>;
@@ -54,6 +66,11 @@ class ProfileRepository {
   /// Menyimpan pilihan border avatar ke server agar bisa dilihat user lain.
   Future<void> updateBorder({required String borderId}) async {
     await _dio.patch('/profiles/me', data: {'avatarBorder': borderId});
+  }
+
+  /// Menyimpan pilihan border banner ke server agar bisa dilihat user lain.
+  Future<void> updateBannerBorder({required String borderId}) async {
+    await _dio.patch('/profiles/me', data: {'bannerBorder': borderId});
   }
 
   /// Mengambil list ID border yang telah di-unlock secara permanen oleh user dari server.

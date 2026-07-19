@@ -17,6 +17,16 @@ final backupSettingsProvider =
 });
 
 // ─── Backup File Model ─────────────────────────────────────────────────────────
+final avatarBordersProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final repo = ref.watch(profileRepositoryProvider);
+  return repo.getAvatarBorders();
+});
+
+final bannerBordersProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final repo = ref.watch(profileRepositoryProvider);
+  return repo.getBannerBorders();
+});
+
 class BackupFile {
   const BackupFile({
     required this.id,

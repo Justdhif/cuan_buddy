@@ -20,10 +20,17 @@ import { BackupModule } from './backup/backup.module';
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FriendshipsModule } from './friendships/friendships.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { RoomsModule } from './rooms/rooms.module';
+import { BordersModule } from './borders/borders.module';
 
 @Module({
   imports: [
+    BordersModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
     ConfigModule.forRoot({ isGlobal: true }),
     // Rate limiting: max 60 requests per 60s per IP to prevent compute abuse
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),

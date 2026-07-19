@@ -830,6 +830,9 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
               avatarUrl: profile?['avatar'] ?? youMember['avatar'],
               borderAsset: borderAssetFromId(profile?['avatarBorder'] ?? youMember['avatarBorder']),
               isDark: isDark,
+              onTap: () {
+                context.push('/shared/public-profile', extra: youMember);
+              },
             ),
             
           // 3. Other Members Chips
@@ -843,6 +846,9 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
               avatarUrl: m['avatar'],
               borderAsset: borderAssetFromId(m['avatarBorder']),
               isDark: isDark,
+              onTap: () {
+                context.push('/shared/public-profile', extra: m);
+              },
             );
           }),
         ],
@@ -904,32 +910,36 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     required String? avatarUrl,
     required String borderAsset,
     required bool isDark,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: 76,
-      margin: const EdgeInsets.only(right: 12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          UserAvatar(
-            size: 68,
-            borderAsset: borderAsset,
-            avatarUrl: avatarUrl,
-            fallbackName: name,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 76,
+        margin: const EdgeInsets.only(right: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            UserAvatar(
+              size: 68,
+              borderAsset: borderAsset,
+              avatarUrl: avatarUrl,
+              fallbackName: name,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

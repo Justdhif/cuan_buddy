@@ -9,6 +9,7 @@ export const UpdateProfileSchema = z.object({
   gender: z.string().optional(),
   bio: z.string().max(250).optional(),
   avatarBorder: z.string().max(50).optional(),
+  bannerBorder: z.string().max(50).optional(),
   language: z.string().optional(),
   bannerType: z.enum(['color', 'image']).optional(),
   bannerColor: z.string().max(50).optional(),

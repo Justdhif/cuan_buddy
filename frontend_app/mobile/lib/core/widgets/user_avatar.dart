@@ -84,13 +84,67 @@ class UserAvatar extends StatelessWidget {
     final hasBorder = borderAsset.isNotEmpty;
 
     // ── Desain sistem avatar + border ──────────────────────────────────────
-    // Border PNG dirender 100% ukuran widget (Positioned.fill).
-    // Lubang transparan di tengah border ≈ 60% dari ukuran border PNG.
-    // Avatar diset 65% dari widget agar tepat di dalam/di tepi lubang border.
-    // Rasio ini konsisten — avatar tidak berubah ukuran meski border diaktifkan.
-    const double avatarRatio = 0.65;
+    // Border PNG dirender 100% ukuran widget.
+    // Lubang transparan di tengah border (dianalisis dari piksel PNG):
+    //   - Lubang: x=261–762 (49.2% lebar), y=336–726 (38.1% tinggi) dari 1024×1024px
+    //   - Lubang berbentuk oval: lebih lebar daripada tinggi
+    //   - Pusat lubang: (511.5, 531.5) → 1.9% DI BAWAH pusat PNG
+    //
+    // avatarRatio = 504/1024 ≈ 0.492:
+    //   Dihitung dari LEBAR lubang (504px) — diameter sesungguhnya frame lingkaran.
+    //   Tepi kiri/kanan avatar sejajar dengan tepi lubang (Δ < 0.1%).
+    //   Dekorasi mahkota (atas) dan permata (bawah) secara natural menutupi
+    //   tepi atas/bawah avatar — efek "portrait dalam frame" yang benar.
+    //
+    // _kBorderYOffset = 19.5/1024 ≈ 0.019:
+    //   Menggeser border ke atas agar pusat lubang tepat di tengah widget.
+    const double avatarRatio = 600 / 1024; // Diperbesar sesuai permintaan
+    const double kBorderYOffset = 19.5 / 1024; 
     final double avatarSize = size * avatarRatio;
+    final double borderOffset = size * kBorderYOffset;
 
+    // ── Mode tanpa border PNG ───────────────────────────────────────────
+    // Jika tidak ada border PNG, tampilkan gradient ring tipis
+    // menggunakan warna accent/primary dari settingan tema pengguna.
+    // photoSize = avatarSize (sama persis dengan mode border PNG)
+    // sehingga ukuran foto terlihat identik di kedua mode.
+    if (!hasBorder) {
+      // Ring stroke ≈ 5% dari avatarSize — tidak terlalu tebal/tipis.
+      // Gap kecil antara foto dan ring agar terlihat lebih clean.
+      final double ringStroke = (avatarSize * 0.05).clamp(1.5, 3.5);
+      final double ringGap    = (avatarSize * 0.02).clamp(1.0, 2.5);
+      // Total ukuran widget ring = foto + gap + stroke (di setiap sisi)
+      final double ringWidget = avatarSize + (ringGap + ringStroke) * 2;
+
+      return SizedBox(
+        width: size,
+        height: size,
+        child: Center(
+          child: CustomPaint(
+            size: Size(ringWidget, ringWidget),
+            painter: _GradientRingPainter(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primaryLight, AppColors.primary, AppColors.primaryDark],
+              ),
+              strokeWidth: ringStroke,
+            ),
+            child: Center(
+              child: ClipOval(
+                child: SizedBox(
+                  width: avatarSize,
+                  height: avatarSize,
+                  child: _buildImage(avatarSize),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // ── Mode dengan border PNG ───────────────────────────────────────────
     return SizedBox(
       width: size,
       height: size,
@@ -112,18 +166,29 @@ class UserAvatar extends StatelessWidget {
                 ),
               ),
 
-              // ── Border PNG overlay — ukuran natural (100% widget) ─────────
-              // Ring border PNG dirancang agar lubang transparan di tengahnya
-              // tepat menampung avatar dengan sedikit overlap di tepi (natural frame).
-              if (hasBorder)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Image.asset(
-                      borderAsset,
-                      fit: BoxFit.fill,
-                    ),
-                  ),
+              // ── Border PNG overlay — digeser ke atas agar lubang sejajar ──
+              // PNG border memiliki lubang yang pusatnya 1.9% di bawah pusat
+              // gambar. Dengan menggeser ke atas sebesar borderOffset, pusat
+              // lubang tepat jatuh di tengah widget sehingga border terlihat
+              // sejajar dengan foto avatar.
+              Positioned(
+                top: -borderOffset,
+                left: 0,
+                right: 0,
+                bottom: borderOffset,
+                child: IgnorePointer(
+                  child: borderAsset.startsWith('http')
+                      ? CachedNetworkImage(
+                          imageUrl: borderAsset,
+                          fit: BoxFit.fill,
+                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                        )
+                      : Image.asset(
+                          borderAsset,
+                          fit: BoxFit.fill,
+                        ),
                 ),
+              ),
             ],
           ),
         ),
@@ -210,4 +275,36 @@ class UserAvatar extends StatelessWidget {
       ),
     );
   }
+}
+
+// ─── Gradient Ring Painter ───────────────────────────────────────────────────────────────────
+/// Melukis lingkaran ring dengan gradient warna tema.
+/// Digunakan saat avatar tidak menggunakan border PNG dekoratif.
+class _GradientRingPainter extends CustomPainter {
+  const _GradientRingPainter({
+    required this.gradient,
+    required this.strokeWidth,
+  });
+
+  final LinearGradient gradient;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect   = Offset.zero & size;
+    final center = rect.center;
+    final radius = (size.shortestSide - strokeWidth) / 2;
+
+    final paint = Paint()
+      ..style       = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap   = StrokeCap.round
+      ..shader      = gradient.createShader(rect);
+
+    canvas.drawCircle(center, radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(_GradientRingPainter old) =>
+      old.gradient != gradient || old.strokeWidth != strokeWidth;
 }

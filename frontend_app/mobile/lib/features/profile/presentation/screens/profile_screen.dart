@@ -11,6 +11,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/avatar_border_helper.dart';
+import '../widgets/banner_border_helper.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -253,6 +254,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final bannerType = profile['bannerType'] as String? ?? 'color';
     final bannerColor = profile['bannerColor'] as String? ?? '#6C63FF';
     final bannerImage = profile['bannerImage'] as String?;
+    final bannerBorderId = profile['bannerBorder'] as String? ?? 'none';
+    final bannerBorderAsset = bannerBorderAssetFromId(bannerBorderId);
 
     Color parsedBannerColor;
     try {
@@ -271,8 +274,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: () => context.push('/profile/edit-banner', extra: profile),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -281,7 +284,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 height: 130,
                 decoration: BoxDecoration(
                   color: parsedBannerColor,
+                  borderRadius: BorderRadius.circular(16),
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: bannerType == 'image' && bannerImage != null && bannerImage.isNotEmpty
                     ? CachedNetworkImage(
                         imageUrl: bannerImage,
@@ -295,53 +300,37 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       )
                     : null,
               ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.edit_rounded, color: Colors.white, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        'Edit Banner',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+              if (bannerBorderAsset.isNotEmpty)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 130,
+                  child: IgnorePointer(
+                    child: bannerBorderAsset.startsWith('http')
+                        ? CachedNetworkImage(
+                            imageUrl: bannerBorderAsset,
+                            fit: BoxFit.fill,
+                            errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                          )
+                        : Image.asset(
+                            bannerBorderAsset,
+                            fit: BoxFit.fill,
+                          ),
                   ),
                 ),
-              ),
               Positioned(
-                bottom: -45,
-                left: 24,
+                bottom: -80,
+                left: 16,
                 child: GestureDetector(
                   onTap: () => context.push('/profile/edit-photo', extra: profile),
                   child: Hero(
                     tag: 'avatar',
-                    child: Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          width: 4,
-                        ),
-                      ),
-                      child: UserAvatar(
-                        size: 90,
-                        borderAsset: borderAsset,
-                        avatarUrl: avatar,
-                        fallbackName: name,
-                      ),
+                    child: UserAvatar(
+                      size: 160,
+                      borderAsset: borderAsset,
+                      avatarUrl: avatar,
+                      fallbackName: name,
                     ),
                   ),
                 ),
@@ -349,7 +338,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 54),
+        const SizedBox(height: 90),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: GestureDetector(

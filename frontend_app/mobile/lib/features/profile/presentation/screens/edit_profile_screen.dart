@@ -208,20 +208,41 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () {
-                          if (profileAsync.hasValue) {
-                            context.push('/profile/edit-photo', extra: profileAsync.value);
-                          }
-                        },
-                        child: Text(
-                          l10n.editPhoto,
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              if (profileAsync.hasValue) {
+                                context.push('/profile/edit-photo', extra: profileAsync.value);
+                              }
+                            },
+                            child: Text(
+                              l10n.editPhoto,
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 16),
+                          TextButton(
+                            onPressed: () {
+                              if (profileAsync.hasValue) {
+                                context.push('/profile/edit-banner', extra: profileAsync.value);
+                              }
+                            },
+                            child: Text(
+                              'Edit Banner',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

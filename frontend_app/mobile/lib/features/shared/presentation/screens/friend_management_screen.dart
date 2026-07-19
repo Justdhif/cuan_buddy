@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -191,43 +192,51 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                                 );
                               }
 
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    UserAvatar(
-                                      size: 52,
-                                      borderAsset: borderAsset,
-                                      avatarUrl: avatarUrl,
-                                      fallbackName: name,
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          if (rawUsername != null && rawUsername.isNotEmpty) ...[
+                              return InkWell(
+                                onTap: () {
+                                  context.push('/shared/public-profile', extra: match);
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  child: Row(
+                                    children: [
+                                      Hero(
+                                        tag: 'avatar_${match['email'] ?? match['id'] ?? rawUsername}',
+                                        child: UserAvatar(
+                                          size: 52,
+                                          borderAsset: borderAsset,
+                                          avatarUrl: avatarUrl,
+                                          fallbackName: name,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (rawUsername != null && rawUsername.isNotEmpty) ...[
+                                              Text(
+                                                '@$rawUsername',
+                                                style: textTheme.bodySmall?.copyWith(
+                                                  color: AppColors.primary,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                            ],
                                             Text(
-                                              '@$rawUsername',
-                                              style: textTheme.bodySmall?.copyWith(
-                                                color: AppColors.primary,
+                                              name,
+                                              style: textTheme.labelLarge?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16,
                                               ),
                                             ),
-                                            const SizedBox(height: 2),
                                           ],
-                                          Text(
-                                            name,
-                                            style: textTheme.labelLarge?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    actionBtn,
-                                  ],
+                                      const SizedBox(width: 12),
+                                      actionBtn,
+                                    ],
+                                  ),
                                 ),
                               );
                             },

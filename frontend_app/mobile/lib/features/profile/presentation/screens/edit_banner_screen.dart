@@ -13,6 +13,9 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/profile_provider.dart';
+import '../providers/achievement_provider.dart';
+import '../widgets/banner_border_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final List<String> _premiumColors = [
   '#6C63FF', // Primary Indigo
@@ -44,12 +47,16 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   String _selectedBannerColor = '#6C63FF';
   String? _selectedBannerImage;
   File? _selectedLocalFile;
+  
+  String _selectedBorderId = 'none';
+  String _selectedBorderAsset = '';
+  
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -61,6 +68,28 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
 
     if (_selectedBannerType == 'image') {
       _tabController.index = 1;
+    }
+    
+    _initBorder();
+  }
+
+  Future<void> _initBorder() async {
+    final profileBorderId = widget.profile['bannerBorder'] as String?;
+    
+    String targetId = 'none';
+    if (profileBorderId != null && profileBorderId.isNotEmpty) {
+      targetId = profileBorderId;
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      targetId = prefs.getString(kBannerBorderPrefKey) ?? 'none';
+    }
+
+    final validBorder = bannerBorderInfoFromId(targetId);
+    if (mounted) {
+      setState(() {
+        _selectedBorderId = validBorder.id;
+        _selectedBorderAsset = validBorder.asset;
+      });
     }
   }
 
@@ -157,6 +186,15 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
         bannerColor: _selectedBannerColor,
         bannerImage: finalBannerType == 'image' ? finalBannerImage : null,
       );
+      
+      // 3. Save border to cache and backend
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(kBannerBorderPrefKey, _selectedBorderId);
+      try {
+        await rep.updateBannerBorder(borderId: _selectedBorderId);
+      } catch (_) {
+        // Backend failure for border sync does not prevent success
+      }
 
       ref.invalidate(profileProvider);
 
@@ -189,6 +227,8 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final unlockedBordersAsync = ref.watch(unlockedBordersProvider);
+    final bordersAsync = ref.watch(bannerBordersProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -222,53 +262,77 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: _parseHexColor(_selectedBannerColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 130,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: _parseHexColor(_selectedBannerColor),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: _tabController.index == 1
-                        ? (_selectedLocalFile != null
-                            ? Image.file(
-                                _selectedLocalFile!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                              )
-                            : (_selectedBannerImage != null &&
-                                    _selectedBannerImage!.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: _selectedBannerImage!,
+                        clipBehavior: Clip.antiAlias,
+                        child: _tabController.index == 1
+                            ? (_selectedLocalFile != null
+                                ? Image.file(
+                                    _selectedLocalFile!,
                                     fit: BoxFit.cover,
                                     width: double.infinity,
                                     height: double.infinity,
-                                    placeholder: (_, __) => const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                    errorWidget: (_, __, ___) => Container(
-                                      color: _parseHexColor(_selectedBannerColor),
-                                    ),
                                   )
-                                : Container(
-                                    color: _parseHexColor(_selectedBannerColor),
-                                    child: const Center(
-                                      child: Text(
-                                        'No Image Selected',
-                                        style: TextStyle(color: Colors.white70),
-                                      ),
+                                : (_selectedBannerImage != null &&
+                                        _selectedBannerImage!.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: _selectedBannerImage!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        placeholder: (_, __) => const Center(
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                        errorWidget: (_, __, ___) => Container(
+                                          color: _parseHexColor(_selectedBannerColor),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: _parseHexColor(_selectedBannerColor),
+                                        child: const Center(
+                                          child: Text(
+                                            'No Image Selected',
+                                            style: TextStyle(color: Colors.white70),
+                                          ),
+                                        ),
+                                      )))
+                            : null,
+                      ),
+                      if (_selectedBorderAsset.isNotEmpty)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: 130,
+                            child: IgnorePointer(
+                              child: _selectedBorderAsset.startsWith('http')
+                                  ? CachedNetworkImage(
+                                      imageUrl: _selectedBorderAsset,
+                                      fit: BoxFit.fill,
+                                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                                    )
+                                  : Image.asset(
+                                      _selectedBorderAsset,
+                                      fit: BoxFit.fill,
                                     ),
-                                  )))
-                        : null,
+                            ),
+                          ),
+                    ],
                   ),
                 ],
               ),
@@ -298,6 +362,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                   tabs: const [
                     Tab(text: 'Solid Color'),
                     Tab(text: 'Upload Image'),
+                    Tab(text: 'Border'),
                   ],
                 ),
               ),
@@ -510,6 +575,12 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                       ],
                     ),
                   ),
+
+                  // Tab 3: Border Selection
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: _buildBorderGrid(unlockedBordersAsync, bordersAsync, isDark),
+                  ),
                 ],
               ),
             ),
@@ -552,6 +623,186 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildBorderGrid(AsyncValue<List<String>> unlockedBordersAsync, AsyncValue<List<dynamic>> bordersAsync, bool isDark) {
+    return bordersAsync.when(
+      data: (bordersData) {
+        final List<dynamic> allBorders = bordersData;
+        final globalBorders = allBorders.where((b) => b['isGlobal'] == true).toList();
+        final bronzeBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'bronze').toList();
+        final silverBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'silver').toList();
+        final goldBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'gold').toList();
+        final platinumBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'platinum').toList();
+
+        Widget buildCategorySection(String title, List<dynamic> categoryBorders) {
+          if (categoryBorders.isEmpty) return const SizedBox.shrink();
+
+          return unlockedBordersAsync.when(
+            data: (unlockedBorders) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 12),
+                    child: Text(
+                      title,
+                      style: AppTypography.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                  ),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 2.5,
+                    ),
+                    itemCount: categoryBorders.length,
+                    itemBuilder: (context, index) {
+                      final border = categoryBorders[index];
+                      final isNoBorder = border['id'] == 'none';
+                      final isSelected = border['id'] == _selectedBorderId;
+                      final isUnlocked = border['isGlobal'] == true || unlockedBorders.contains(border['id']);
+                      final tierColor = border['tier'] == 'platinum' ? const Color(0xFFE5E4E2) :
+                                        border['tier'] == 'gold' ? const Color(0xFFFFD700) :
+                                        border['tier'] == 'silver' ? const Color(0xFFC0C0C0) :
+                                        border['tier'] == 'bronze' ? const Color(0xFFCD7F32) : Colors.grey;
+
+                      return GestureDetector(
+                        onTap: () {
+                          if (!isUnlocked) {
+                            showDialog<void>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                title: Row(
+                                  children: [
+                                    Icon(Icons.lock, color: tierColor),
+                                    const SizedBox(width: 8),
+                                    Text(border['label']),
+                                  ],
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tier: ${border['tier']}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: tierColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(border['requirementDescription'] ?? ''),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Tutup'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() {
+                            _selectedBorderId = border['id'];
+                            _selectedBorderAsset = border['asset'];
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : Colors.transparent,
+                              width: 3.0,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(alpha: 0.2),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              isNoBorder
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: isDark ? Colors.white10 : Colors.black12,
+                                      ),
+                                      child: const Center(
+                                        child: Icon(Icons.block, size: 24, color: Colors.grey),
+                                      ),
+                                    )
+                                  : border['asset'].toString().startsWith('http')
+                                      ? CachedNetworkImage(
+                                          imageUrl: border['asset'],
+                                          fit: BoxFit.fill,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                          errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+                                        )
+                                      : Image.asset(
+                                          border['asset'],
+                                          fit: BoxFit.fill,
+                                          width: double.infinity,
+                                          height: double.infinity,
+                                        ),
+                              if (!isUnlocked)
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.lock_outline_rounded,
+                                        color: Colors.white70, size: 24),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(child: Text('Gagal memuat border: $error')),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            buildCategorySection('Biasa', globalBorders),
+            buildCategorySection('Platinum', platinumBorders),
+            buildCategorySection('Gold', goldBorders),
+            buildCategorySection('Silver', silverBorders),
+            buildCategorySection('Bronze', bronzeBorders),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
     );
   }
 }

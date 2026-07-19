@@ -80,7 +80,6 @@ flutter:
   assets:
     - assets/animations/
     - assets/icon/
-    - assets/borders/
 
 dependency_overrides:
   flutter_svg: ^2.2.3

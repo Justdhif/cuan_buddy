@@ -49,6 +49,7 @@ import '../../features/categories/presentation/screens/category_list_screen.dart
 import '../../features/categories/presentation/widgets/category_form_sheet.dart';
 import '../../features/shared/presentation/screens/shared_screen.dart';
 import '../../features/shared/presentation/screens/friend_management_screen.dart';
+import '../../features/shared/presentation/screens/public_profile_screen.dart';
 import '../../features/shared/presentation/screens/shared_room_dashboard_screen.dart';
 import '../../features/shared/presentation/screens/room_form_screen.dart';
 import '../../features/shared/presentation/screens/room_details_screen.dart';
@@ -298,11 +299,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/budgets',
         pageBuilder: (context, state) =>
             _buildPage(state, const BudgetsScreen()),
-      ),
+),
       GoRoute(
         path: '/shared/friends',
         pageBuilder: (context, state) =>
             _buildPage(state, const FriendManagementScreen()),
+      ),
+      GoRoute(
+        path: '/shared/public-profile',
+        pageBuilder: (context, state) {
+          final user = state.extra as Map<String, dynamic>? ?? {};
+          return _buildPage(state, PublicProfileScreen(user: user));
+        },
       ),
       GoRoute(
         path: '/shared/room-form',
