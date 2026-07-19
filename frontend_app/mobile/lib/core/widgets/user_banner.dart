@@ -55,21 +55,16 @@ class UserBanner extends StatelessWidget {
           if (borderAsset.isNotEmpty)
             Positioned.fill(
               child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.red, width: 6),
-                  ),
-                  child: borderAsset.startsWith('http')
-                      ? CachedNetworkImage(
-                          imageUrl: borderAsset,
-                          fit: BoxFit.fill,
-                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                        )
-                      : Image.asset(
-                          borderAsset,
-                          fit: BoxFit.fill,
-                        ),
-                ),
+                child: borderAsset.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: borderAsset,
+                        fit: BoxFit.fill,
+                        errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                      )
+                    : Image.asset(
+                        borderAsset,
+                        fit: BoxFit.fill,
+                      ),
               ),
             ),
         ],

@@ -265,18 +265,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('DEBUG - Border ID: $bannerBorderId', style: TextStyle(color: Colors.red)),
-                  Text('DEBUG - Border Asset: $bannerBorderAsset', style: TextStyle(color: Colors.red)),
-                  UserBanner(
-                    bannerColor: bannerColor,
-                    bannerType: bannerType,
-                    bannerImage: bannerImage,
-                    borderAsset: bannerBorderAsset,
-                  ),
-                ],
+              UserBanner(
+                bannerColor: bannerColor,
+                bannerType: bannerType,
+                bannerImage: bannerImage,
+                borderAsset: bannerBorderAsset,
               ),
               Positioned(
                 bottom: -80,
