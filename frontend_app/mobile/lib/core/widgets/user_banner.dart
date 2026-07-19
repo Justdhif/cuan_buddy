@@ -40,9 +40,9 @@ class UserBanner extends StatelessWidget {
         children: [
           Positioned(
             top: borderAsset.isNotEmpty ? 8.0 : 0.0,
-            bottom: borderAsset.isNotEmpty ? 3.0 : 0.0,
+            bottom: borderAsset.isNotEmpty ? 5.0 : 0.0,
             left: borderAsset.isNotEmpty ? 8.0 : 0.0,
-            right: borderAsset.isNotEmpty ? 3.0 : 0.0,
+            right: borderAsset.isNotEmpty ? 5.0 : 0.0,
             child: Container(
               decoration: BoxDecoration(
                 color: parsedBannerColor,
