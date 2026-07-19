@@ -53,42 +53,27 @@ class UserBanner extends StatelessWidget {
             ),
           ),
           if (borderAsset.isNotEmpty)
-            Positioned.fill(
+            // Taruh border di pojok kanan atas, tinggi = tinggi banner,
+            // lebar otomatis dari rasio asli gambar (1536x1024 = 1.5:1).
+            // Tidak ada BoxFit stretching — gambar ditampilkan apa adanya.
+            Positioned(
+              top: 0,
+              right: 0,
+              bottom: 0,
               child: IgnorePointer(
-                // ClipRect agar kelebihan tinggi gambar terpotong rapi di atas/bawah
-                child: ClipRect(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      // Tampilkan gambar border dengan lebar penuh banner
-                      // tapi pertahankan rasio asli 1.5 (1536x1024)
-                      // sehingga golden frame kiri/kanan pas di tepi banner
-                      const double imageNativeRatio = 1536 / 1024; // 1.5
-                      final double displayWidth  = constraints.maxWidth;
-                      final double displayHeight = displayWidth / imageNativeRatio;
-                      return OverflowBox(
-                        minWidth:  displayWidth,
-                        maxWidth:  displayWidth,
-                        minHeight: displayHeight,
-                        maxHeight: displayHeight,
-                        alignment: Alignment.center,
-                        child: borderAsset.startsWith('http')
-                            ? CachedNetworkImage(
-                                imageUrl: borderAsset,
-                                width:    displayWidth,
-                                height:   displayHeight,
-                                fit:      BoxFit.fill,
-                                errorWidget: (_, __, ___) =>
-                                    const SizedBox.shrink(),
-                              )
-                            : Image.asset(
-                                borderAsset,
-                                width:  displayWidth,
-                                height: displayHeight,
-                                fit:    BoxFit.fill,
-                              ),
-                      );
-                    },
-                  ),
+                child: AspectRatio(
+                  aspectRatio: 1536 / 1024, // rasio asli banner-legend.png
+                  child: borderAsset.startsWith('http')
+                      ? CachedNetworkImage(
+                          imageUrl: borderAsset,
+                          fit: BoxFit.fill,
+                          errorWidget: (_, __, ___) =>
+                              const SizedBox.shrink(),
+                        )
+                      : Image.asset(
+                          borderAsset,
+                          fit: BoxFit.fill,
+                        ),
                 ),
               ),
             ),
