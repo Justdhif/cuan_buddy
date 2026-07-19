@@ -186,16 +186,12 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
         bannerType: finalBannerType,
         bannerColor: _selectedBannerColor,
         bannerImage: finalBannerType == 'image' ? finalBannerImage : null,
+        bannerBorder: _selectedBorderId,
       );
       
-      // 3. Save border to cache and backend
+      // 3. Save border to cache
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(kBannerBorderPrefKey, _selectedBorderId);
-      try {
-        await rep.updateBannerBorder(borderId: _selectedBorderId);
-      } catch (_) {
-        // Backend failure for border sync does not prevent success
-      }
 
       ref.invalidate(profileProvider);
 
