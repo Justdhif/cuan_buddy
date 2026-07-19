@@ -138,12 +138,15 @@ class UserAvatar extends StatelessWidget {
               ),
             ),
             // 2. Foto avatar (dibingkai ketat sebesar avatarSize)
-            SizedBox(
+            Container(
               width: avatarSize,
               height: avatarSize,
-              child: ClipOval(
-                child: _buildImage(avatarSize),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F5F9), // Light background for transparent avatars
+                shape: BoxShape.circle,
               ),
+              clipBehavior: Clip.antiAlias,
+              child: _buildImage(avatarSize),
             ),
           ],
         ),
@@ -164,12 +167,15 @@ class UserAvatar extends StatelessWidget {
             alignment: Alignment.center,
             children: [
               // ── Foto avatar (bulat) — ukuran selalu sama ─────────────────
-              SizedBox(
+              Container(
                 width: avatarSize,
                 height: avatarSize,
-                child: ClipOval(
-                  child: _buildImage(avatarSize),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF1F5F9), // Light background for transparent avatars
+                  shape: BoxShape.circle,
                 ),
+                clipBehavior: Clip.antiAlias,
+                child: _buildImage(avatarSize),
               ),
 
               // ── Border PNG overlay — digeser ke atas agar lubang sejajar ──

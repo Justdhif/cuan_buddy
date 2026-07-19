@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../profile/presentation/widgets/avatar_border_helper.dart';
 import '../../../profile/presentation/widgets/banner_border_helper.dart';
+import '../../../../core/widgets/user_banner.dart';
 
 class PublicProfileScreen extends StatelessWidget {
   const PublicProfileScreen({super.key, required this.user});
@@ -25,20 +25,6 @@ class PublicProfileScreen extends StatelessWidget {
     final bannerImage = user['bannerImage'] as String?;
     final bannerBorderId = user['bannerBorder'] as String? ?? 'none';
     final bannerBorderAsset = bannerBorderAssetFromId(bannerBorderId);
-
-    Color parsedBannerColor;
-    try {
-      final cleanHex = bannerColor.replaceAll('#', '').trim();
-      if (cleanHex.length == 6) {
-        parsedBannerColor = Color(int.parse('FF$cleanHex', radix: 16));
-      } else if (cleanHex.length == 8) {
-        parsedBannerColor = Color(int.parse(cleanHex, radix: 16));
-      } else {
-        parsedBannerColor = const Color(0xFF6C63FF);
-      }
-    } catch (_) {
-      parsedBannerColor = const Color(0xFF6C63FF);
-    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -62,49 +48,11 @@ class PublicProfileScreen extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  AspectRatio(
-                    aspectRatio: 2.5,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          decoration: BoxDecoration(
-                            color: parsedBannerColor,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: bannerType == 'image' && bannerImage != null && bannerImage.isNotEmpty
-                              ? CachedNetworkImage(
-                                  imageUrl: bannerImage,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  placeholder: (_, __) => const Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  ),
-                                  errorWidget: (_, __, ___) => Container(color: parsedBannerColor),
-                                )
-                              : null,
-                        ),
-                        if (bannerBorderAsset.isNotEmpty)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: bannerBorderAsset.startsWith('http')
-                                  ? CachedNetworkImage(
-                                      imageUrl: bannerBorderAsset,
-                                      fit: BoxFit.fill,
-                                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                                    )
-                                  : Image.asset(
-                                      bannerBorderAsset,
-                                      fit: BoxFit.fill,
-                                    ),
-                            ),
-                          ),
-                      ],
-                    ),
+                  UserBanner(
+                    bannerColor: bannerColor,
+                    bannerType: bannerType,
+                    bannerImage: bannerImage,
+                    borderAsset: bannerBorderAsset,
                   ),
                   Positioned(
                     bottom: -80,

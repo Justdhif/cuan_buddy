@@ -16,6 +16,7 @@ import '../providers/profile_provider.dart';
 import '../providers/achievement_provider.dart';
 import '../widgets/banner_border_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/widgets/user_banner.dart';
 
 final List<String> _premiumColors = [
   '#6C63FF', // Primary Indigo
@@ -262,76 +263,12 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     ),
                   ),
                   const SizedBox(height: 8),
-                  AspectRatio(
-                    aspectRatio: 2.5,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: _parseHexColor(_selectedBannerColor),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: _tabController.index == 1
-                              ? (_selectedLocalFile != null
-                                  ? Image.file(
-                                      _selectedLocalFile!,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                    )
-                                  : (_selectedBannerImage != null &&
-                                          _selectedBannerImage!.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: _selectedBannerImage!,
-                                          fit: BoxFit.cover,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          placeholder: (_, __) => const Center(
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          ),
-                                          errorWidget: (_, __, ___) => Container(
-                                            color: _parseHexColor(_selectedBannerColor),
-                                          ),
-                                        )
-                                      : Container(
-                                          color: _parseHexColor(_selectedBannerColor),
-                                          child: const Center(
-                                            child: Text(
-                                              'No Image Selected',
-                                              style: TextStyle(color: Colors.white70),
-                                            ),
-                                          ),
-                                        )))
-                              : null,
-                        ),
-                        if (_selectedBorderAsset.isNotEmpty)
-                          Positioned.fill(
-                            child: IgnorePointer(
-                              child: _selectedBorderAsset.startsWith('http')
-                                  ? CachedNetworkImage(
-                                      imageUrl: _selectedBorderAsset,
-                                      fit: BoxFit.fill,
-                                      errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                                    )
-                                  : Image.asset(
-                                      _selectedBorderAsset,
-                                      fit: BoxFit.fill,
-                                    ),
-                            ),
-                          ),
-                      ],
-                    ),
+                  UserBanner(
+                    bannerColor: _selectedBannerColor,
+                    bannerType: _tabController.index == 1 ? 'image' : 'color',
+                    bannerImage: _selectedBannerImage,
+                    borderAsset: _selectedBorderAsset,
+                    localFile: _selectedLocalFile,
                   ),
                 ],
               ),
