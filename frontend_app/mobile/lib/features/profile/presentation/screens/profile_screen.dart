@@ -136,22 +136,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Shimmer.fromColors(
       baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
       highlightColor: isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+                AspectRatio(
+                  aspectRatio: 2.5,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                Positioned(
+                  bottom: -60,
+                  left: 16,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 70),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +187,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        height: 20,
+                        height: 24,
                         width: 180,
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -176,10 +197,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ],
                   ),
                 ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.white,
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            Container(
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
               height: 14,
               width: 220,
               decoration: BoxDecoration(
@@ -187,8 +215,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 borderRadius: BorderRadius.circular(7),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -272,14 +300,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 borderAsset: bannerBorderAsset,
               ),
               Positioned(
-                bottom: -80,
+                bottom: -60,
                 left: 16,
                 child: GestureDetector(
                   onTap: () => context.push('/profile/edit-photo', extra: profile),
                   child: Hero(
                     tag: 'avatar',
                     child: UserAvatar(
-                      size: 160,
+                      size: 120,
                       borderAsset: borderAsset,
                       avatarUrl: avatar,
                       fallbackName: name,
@@ -290,7 +318,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 90),
+        const SizedBox(height: 70),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: GestureDetector(

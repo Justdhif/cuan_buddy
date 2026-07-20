@@ -39,7 +39,7 @@ class UserBanner extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            top: borderAsset.isNotEmpty ? (borderAsset.contains('millionaire') ? 3.0 : 8.0) : 0.0,
+            top: borderAsset.isNotEmpty ? 8.0 : 0.0,
             bottom: borderAsset.isNotEmpty ? 5.0 : 0.0,
             left: borderAsset.isNotEmpty ? 8.0 : 0.0,
             right: borderAsset.isNotEmpty ? 5.0 : 0.0,
@@ -55,9 +55,9 @@ class UserBanner extends StatelessWidget {
           if (borderAsset.isNotEmpty)
             // Taruh border di pojok kanan atas, disesuaikan agar pas di pinggir banner.
             Positioned(
-              top: -12.0,
+              top: -20.0,
               right: -12.0,
-              bottom: -12.0,
+              bottom: -4.0,
               child: IgnorePointer(
                 child: AspectRatio(
                   aspectRatio: 1536 / 1024, // rasio asli banner-legend.png
