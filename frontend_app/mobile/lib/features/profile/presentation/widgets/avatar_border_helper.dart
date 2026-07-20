@@ -130,6 +130,13 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
+  AvatarBorderInfo(
+    id: 'border-streak',
+    label: 'Streak Master',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-streak.png',
+    tier: BorderTier.gold,
+    requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
+  ),
 ];
 
 /// Semua border digabung: global + achievement.

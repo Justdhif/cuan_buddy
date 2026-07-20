@@ -13,6 +13,7 @@ const ACHIEVEMENT_BORDERS = [
   { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'platinum' },
   { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
   { id: 'border-billionaire',  label: 'Cuan Billionaire',      tier: 'platinum' },
+  { id: 'border-streak',       label: 'Streak Master',         tier: 'gold' },
 ];
 
 @Injectable()
@@ -169,6 +170,11 @@ export class UserProfilesService {
     // Cuan Billionaire: Total saldo semua wallet >= Rp 1.000.000.000
     if (totalBalance >= 1_000_000_000) {
       conditionsMet.add('border-billionaire');
+    }
+
+    // Streak Master: Mencapai recording streak minimal 30 hari berturut-turut
+    if ((profile.recordingStreakCount ?? 0) >= 30) {
+      conditionsMet.add('border-streak');
     }
 
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──
