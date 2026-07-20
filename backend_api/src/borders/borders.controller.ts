@@ -51,6 +51,14 @@ export class BordersController {
         tier: 'platinum',
         requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
         isGlobal: false,
+      },
+      {
+        id: 'border-streak',
+        label: 'Streak Master',
+        asset: `${baseUrl}/assets/borders/border-streak.png`,
+        tier: 'platinum',
+        requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
+        isGlobal: false,
       }
     ];
   }
@@ -97,6 +105,14 @@ export class BordersController {
         asset: `${baseUrl}/assets/banners/banner-billionaire.png?v=1`,
         tier: 'platinum',
         requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
+        isGlobal: false,
+      },
+      {
+        id: 'border-streak',
+        label: 'Streak Master (Banner)',
+        asset: `${baseUrl}/assets/banners/banner-streak.png`,
+        tier: 'platinum',
+        requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
         isGlobal: false,
       }
     ];

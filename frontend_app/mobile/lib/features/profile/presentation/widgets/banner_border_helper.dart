@@ -68,7 +68,7 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
     id: 'border-streak',
     label: 'Streak Master (Banner)',
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-streak.png',
-    tier: BorderTier.gold,
+    tier: BorderTier.platinum,
     requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
   ),
 ];
@@ -149,7 +149,7 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
     id: 'border-streak',
     label: 'Streak Master (Wallpaper)',
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-streak.png',
-    tier: BorderTier.gold,
+    tier: BorderTier.platinum,
     requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
   ),
 ];

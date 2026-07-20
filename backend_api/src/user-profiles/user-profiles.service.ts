@@ -13,7 +13,7 @@ const ACHIEVEMENT_BORDERS = [
   { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'platinum' },
   { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
   { id: 'border-billionaire',  label: 'Cuan Billionaire',      tier: 'platinum' },
-  { id: 'border-streak',       label: 'Streak Master',         tier: 'gold' },
+  { id: 'border-streak',       label: 'Streak Master',         tier: 'platinum' },
 ];
 
 @Injectable()

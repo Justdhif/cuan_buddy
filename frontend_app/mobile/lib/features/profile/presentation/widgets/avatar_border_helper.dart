@@ -134,7 +134,7 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     id: 'border-streak',
     label: 'Streak Master',
     asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-streak.png',
-    tier: BorderTier.gold,
+    tier: BorderTier.platinum,
     requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
   ),
 ];
