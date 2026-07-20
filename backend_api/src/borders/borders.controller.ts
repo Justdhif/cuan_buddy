@@ -43,6 +43,14 @@ export class BordersController {
         tier: 'platinum',
         requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
         isGlobal: false,
+      },
+      {
+        id: 'border-billionaire',
+        label: 'Cuan Billionaire',
+        asset: `${baseUrl}/assets/borders/border-billionaire.png`,
+        tier: 'platinum',
+        requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
+        isGlobal: false,
       }
     ];
   }
@@ -81,6 +89,14 @@ export class BordersController {
         asset: `${baseUrl}/assets/banners/banner-millionaire.png?v=3`,
         tier: 'platinum',
         requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
+        isGlobal: false,
+      },
+      {
+        id: 'border-billionaire',
+        label: 'Cuan Billionaire (Banner)',
+        asset: `${baseUrl}/assets/banners/banner-billionaire.png?v=1`,
+        tier: 'platinum',
+        requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
         isGlobal: false,
       }
     ];

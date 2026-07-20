@@ -12,6 +12,7 @@ const ACHIEVEMENT_BORDERS = [
   { id: 'border-legend',       label: 'Cuan Legend',           tier: 'platinum' },
   { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'platinum' },
   { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
+  { id: 'border-billionaire',  label: 'Cuan Billionaire',      tier: 'platinum' },
 ];
 
 @Injectable()
@@ -163,6 +164,11 @@ export class UserProfilesService {
 
     if (totalBalance >= 1_000_000) {
       conditionsMet.add('border-millionaire');
+    }
+
+    // Cuan Billionaire: Total saldo semua wallet >= Rp 1.000.000.000
+    if (totalBalance >= 1_000_000_000) {
+      conditionsMet.add('border-billionaire');
     }
 
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──

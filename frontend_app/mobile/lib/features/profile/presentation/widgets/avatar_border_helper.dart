@@ -123,6 +123,13 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
   ),
+  AvatarBorderInfo(
+    id: 'border-billionaire',
+    label: 'Cuan Billionaire',
+    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-billionaire.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
+  ),
 ];
 
 /// Semua border digabung: global + achievement.
