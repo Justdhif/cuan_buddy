@@ -10,7 +10,8 @@ import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 // Kondisi dicek server-side untuk keamanan.
 const ACHIEVEMENT_BORDERS = [
   { id: 'border-legend',       label: 'Cuan Legend',           tier: 'platinum' },
-  { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'gold' },
+  { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'platinum' },
+  { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
 ];
 
 @Injectable()
@@ -142,6 +143,13 @@ export class UserProfilesService {
       .where(eq(transactions.userId, userId));
     const txCount = txCountResult[0]?.count ?? 0;
 
+    // Cuan Millionaire: Total saldo semua wallet >= Rp 1.000.000
+    const walletBalanceResult = await this.db
+      .select({ total: sum(wallets.balance) })
+      .from(wallets)
+      .where(eq(wallets.userId, userId));
+    const totalBalance = parseFloat(walletBalanceResult[0]?.total ?? '0');
+
     // ── Evaluasi Kondisi Tiap Border ──
     const conditionsMet = new Set<string>();
 
@@ -151,6 +159,10 @@ export class UserProfilesService {
 
     if (txCount >= 500) {
       conditionsMet.add('border-500-tx');
+    }
+
+    if (totalBalance >= 1_000_000) {
+      conditionsMet.add('border-millionaire');
     }
 
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──
