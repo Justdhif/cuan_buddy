@@ -102,7 +102,7 @@ export class BordersController {
       {
         id: 'border-billionaire',
         label: 'Cuan Billionaire (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-billionaire.png?v=1`,
+        asset: `${baseUrl}/assets/banners/banner-billionaire.png?v=2`,
         tier: 'platinum',
         requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
         isGlobal: false,
@@ -118,3 +118,4 @@ export class BordersController {
     ];
   }
 }
+

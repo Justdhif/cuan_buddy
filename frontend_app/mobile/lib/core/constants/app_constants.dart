@@ -3,6 +3,7 @@ class AppConstants {
 
   // ─── API ─────────────────────────────────────────────────────────────────────
   static const String baseUrl = 'https://cuan-buddy-api.vercel.app/api';
+  static const String assetCacheVersion = '2';
   static const String verifyEmailBaseUrl =
       'https://cuan-buddy-verify-email.vercel.app';
   static const Duration connectTimeout = Duration(seconds: 30);
