@@ -23,7 +23,7 @@ export class BordersController {
       {
         id: 'border-legend',
         label: 'Cuan Legend',
-        asset: `${baseUrl}/assets/borders/border-legend.png`,
+        asset: `assets/borders/border-legend.png`,
         tier: 'platinum',
         requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
         isGlobal: false,
@@ -31,7 +31,7 @@ export class BordersController {
       {
         id: 'border-500-tx',
         label: 'Cuan Master',
-        asset: `${baseUrl}/assets/borders/border-500-tx.png`,
+        asset: `assets/borders/border-500-tx.png`,
         tier: 'platinum',
         requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
         isGlobal: false,
@@ -39,7 +39,7 @@ export class BordersController {
       {
         id: 'border-millionaire',
         label: 'Cuan Millionaire',
-        asset: `${baseUrl}/assets/borders/border-millionaire.png`,
+        asset: `assets/borders/border-millionaire.png`,
         tier: 'platinum',
         requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
         isGlobal: false,
@@ -47,7 +47,7 @@ export class BordersController {
       {
         id: 'border-billionaire',
         label: 'Cuan Billionaire',
-        asset: `${baseUrl}/assets/borders/border-billionaire.png`,
+        asset: `assets/borders/border-billionaire.png`,
         tier: 'platinum',
         requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
         isGlobal: false,
@@ -55,7 +55,7 @@ export class BordersController {
       {
         id: 'border-streak',
         label: 'Streak Master',
-        asset: `${baseUrl}/assets/borders/border-streak.png`,
+        asset: `assets/borders/border-streak.png`,
         tier: 'platinum',
         requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
         isGlobal: false,
@@ -78,7 +78,7 @@ export class BordersController {
       {
         id: 'border-legend',
         label: 'Cuan Legend (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-legend.png`,
+        asset: `assets/banners/banner-legend.png`,
         tier: 'platinum',
         requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
         isGlobal: false,
@@ -86,7 +86,7 @@ export class BordersController {
       {
         id: 'border-500-tx',
         label: 'Cuan Master (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-500-tx.png`,
+        asset: `assets/banners/banner-500-tx.png`,
         tier: 'platinum',
         requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
         isGlobal: false,
@@ -94,7 +94,7 @@ export class BordersController {
       {
         id: 'border-millionaire',
         label: 'Cuan Millionaire (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-millionaire.png?v=3`,
+        asset: `assets/banners/banner-millionaire.png`,
         tier: 'platinum',
         requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
         isGlobal: false,
@@ -102,7 +102,7 @@ export class BordersController {
       {
         id: 'border-billionaire',
         label: 'Cuan Billionaire (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-billionaire.png?v=2`,
+        asset: `assets/banners/banner-billionaire.png`,
         tier: 'platinum',
         requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
         isGlobal: false,
@@ -110,7 +110,7 @@ export class BordersController {
       {
         id: 'border-streak',
         label: 'Streak Master (Banner)',
-        asset: `${baseUrl}/assets/banners/banner-streak.png`,
+        asset: `assets/banners/banner-streak.png`,
         tier: 'platinum',
         requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
         isGlobal: false,
@@ -118,4 +118,8 @@ export class BordersController {
     ];
   }
 }
+
+
+
+
 

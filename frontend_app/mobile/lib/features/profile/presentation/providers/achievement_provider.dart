@@ -3,8 +3,9 @@ import './profile_provider.dart';
 
 /// Provider untuk mengambil list border yang sudah terbuka (unlocked) dari server.
 final unlockedBordersProvider = FutureProvider<List<String>>((ref) async {
-  final repo = ref.watch(profileRepositoryProvider);
-  return repo.getUnlockedBorders();
+  final profile = await ref.watch(profileProvider.future);
+  final unlocked = profile['unlockedBorders'] as List<dynamic>? ?? [];
+  return unlocked.map((e) => e.toString()).toList();
 });
 
 /// State notifier atau provider untuk memicu evaluasi achievement dan mendeteksi border baru.

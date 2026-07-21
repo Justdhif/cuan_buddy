@@ -1,4 +1,3 @@
-import '../../../../core/constants/app_constants.dart';
 import 'avatar_border_helper.dart' show BorderTier;
 
 const String kBannerBorderPrefKey = 'selected_banner_border';
@@ -39,35 +38,35 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
   BannerBorderInfo(
     id: 'border-legend',
     label: 'Cuan Legend (Banner)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-legend.png',
+    asset: 'assets/banners/banner-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
   BannerBorderInfo(
     id: 'border-500-tx',
     label: 'Cuan Master (Banner)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-500-tx.png',
+    asset: 'assets/banners/banner-500-tx.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
   BannerBorderInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire (Banner)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-millionaire.png?v=3',
+    asset: 'assets/banners/banner-millionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
   ),
   BannerBorderInfo(
     id: 'border-billionaire',
     label: 'Cuan Billionaire (Banner)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-billionaire.png?v=1',
+    asset: 'assets/banners/banner-billionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
   BannerBorderInfo(
     id: 'border-streak',
     label: 'Streak Master (Banner)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/banners/banner-streak.png',
+    asset: 'assets/banners/banner-streak.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
   ),
@@ -120,38 +119,40 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
   BannerWallpaperInfo(
     id: 'border-legend',
     label: 'Cuan Legend (Wallpaper)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-legend.png',
+    asset: 'assets/wallpapers/banners/wallpaper-banner-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
   BannerWallpaperInfo(
     id: 'border-500-tx',
     label: 'Cuan Master (Wallpaper)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-500-tx.png',
+    asset: 'assets/wallpapers/banners/wallpaper-banner-500-tx.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
   BannerWallpaperInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire (Wallpaper)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-millionaire.png?v=3',
+    asset: 'assets/wallpapers/banners/wallpaper-banner-millionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
   ),
   BannerWallpaperInfo(
     id: 'border-billionaire',
     label: 'Cuan Billionaire (Wallpaper)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-billionaire.png',
+    asset: 'assets/wallpapers/banners/wallpaper-banner-billionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
   BannerWallpaperInfo(
     id: 'border-streak',
     label: 'Streak Master (Wallpaper)',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/wallpapers/banners/wallpaper-banner-streak.png',
+    asset: 'assets/wallpapers/banners/wallpaper-banner-streak.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
   ),
 ];
 
 List<BannerWallpaperInfo> get kAllWallpapers => [...kGlobalWallpapers, ...kAchievementWallpapers];
+
+

@@ -1,3 +1,5 @@
+import '../widgets/avatar_border_helper.dart';
+import '../widgets/banner_border_helper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/profile_repository.dart';
@@ -17,14 +19,27 @@ final backupSettingsProvider =
 });
 
 // ─── Backup File Model ─────────────────────────────────────────────────────────
+
 final avatarBordersProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
-  final repo = ref.watch(profileRepositoryProvider);
-  return repo.getAvatarBorders();
+  return kAllBorders.map((b) => {
+    'id': b.id,
+    'label': b.label,
+    'asset': b.asset,
+    'tier': b.tier.name, // BorderTier enum to string
+    'requirementDescription': b.requirementDescription,
+    'isGlobal': b.isGlobal,
+  }).toList();
 });
 
 final bannerBordersProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
-  final repo = ref.watch(profileRepositoryProvider);
-  return repo.getBannerBorders();
+  return kAllBannerBorders.map((b) => {
+    'id': b.id,
+    'label': b.label,
+    'asset': b.asset,
+    'tier': b.tier.name,
+    'requirementDescription': b.requirementDescription,
+    'isGlobal': b.isGlobal,
+  }).toList();
 });
 
 class BackupFile {

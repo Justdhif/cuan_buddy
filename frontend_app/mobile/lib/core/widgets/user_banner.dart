@@ -53,11 +53,11 @@ class UserBanner extends StatelessWidget {
             ),
           ),
           if (borderAsset.isNotEmpty)
-            // Taruh border di pojok kanan atas, disesuaikan agar pas di pinggir banner.
+            // Taruh border di pojok kanan bawah, disesuaikan agar pas di pinggir banner.
             Positioned(
-              top: -20.0,
+              top: 16.0,
               right: -12.0,
-              bottom: -4.0,
+              bottom: -20.0,
               child: IgnorePointer(
                 child: AspectRatio(
                   aspectRatio: 1536 / 1024, // rasio asli banner-legend.png

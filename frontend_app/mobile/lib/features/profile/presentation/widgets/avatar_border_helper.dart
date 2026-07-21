@@ -1,16 +1,6 @@
-/// Shared config & utilities untuk sistem avatar border dengan achievement.
-///
-/// Untuk menambah border baru:
-///   1. Upload file PNG ke backend di folder `public/assets/borders/`
-///   2. Tambah entry di [kAchievementBorders] dengan URL backend sebagai asset
 library;
 
 import 'package:flutter/material.dart';
-
-// Widget avatar dipindahkan ke core/widgets/user_avatar.dart sebagai komponen reusable.
-// Di-export dari sini agar semua file yang meng-import avatar_border_helper.dart
-// otomatis mendapat akses ke UserAvatar dan AvatarWithBorder tanpa perubahan import.
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/user_avatar.dart';
 export '../../../../core/widgets/user_avatar.dart' show UserAvatar;
 
@@ -105,35 +95,35 @@ final List<AvatarBorderInfo> kAchievementBorders = [
   AvatarBorderInfo(
     id: 'border-legend',
     label: 'Cuan Legend',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-legend.png',
+    asset: 'assets/borders/border-legend.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
   ),
   AvatarBorderInfo(
     id: 'border-500-tx',
     label: 'Cuan Master',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-500-tx.png',
+    asset: 'assets/borders/border-500-tx.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
   ),
   AvatarBorderInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-millionaire.png',
+    asset: 'assets/borders/border-millionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai status Cuan Millionaire di aplikasi Cuan Buddy.',
   ),
   AvatarBorderInfo(
     id: 'border-billionaire',
     label: 'Cuan Billionaire',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-billionaire.png',
+    asset: 'assets/borders/border-billionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
   AvatarBorderInfo(
     id: 'border-streak',
     label: 'Streak Master',
-    asset: '${AppConstants.baseUrl.replaceAll('/api', '')}/assets/borders/border-streak.png',
+    asset: 'assets/borders/border-streak.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
   ),
@@ -159,3 +149,6 @@ String borderAssetFromId(String? id) => borderInfoFromId(id).asset;
 // ─── Alias backward-compatibility ────────────────────────────────────────────
 /// [AvatarWithBorder] adalah alias lama. Gunakan [UserAvatar] untuk kode baru.
 typedef AvatarWithBorder = UserAvatar;
+
+
+
