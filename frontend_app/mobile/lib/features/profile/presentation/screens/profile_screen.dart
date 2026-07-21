@@ -395,7 +395,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 120),
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 120),
       child: Column(
         children: [
           profileAsync.when(
