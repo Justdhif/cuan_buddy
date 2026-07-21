@@ -92,20 +92,8 @@ const List<AvatarBorderInfo> kGlobalBorders = [
 // ─── Daftar Border Achievement (Harus Di-unlock) ──────────────────────────────
 
 final List<AvatarBorderInfo> kAchievementBorders = [
-  AvatarBorderInfo(
-    id: 'border-legend',
-    label: 'Cuan Legend',
-    asset: 'assets/borders/border-legend.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
-  ),
-  AvatarBorderInfo(
-    id: 'border-500-tx',
-    label: 'Cuan Master',
-    asset: 'assets/borders/border-500-tx.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
-  ),
+
+
   AvatarBorderInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire',
@@ -142,6 +130,7 @@ String borderAssetFromId(String? id) => borderInfoFromId(id).asset;
 // ─── Alias backward-compatibility ────────────────────────────────────────────
 /// [AvatarWithBorder] adalah alias lama. Gunakan [UserAvatar] untuk kode baru.
 typedef AvatarWithBorder = UserAvatar;
+
 
 
 

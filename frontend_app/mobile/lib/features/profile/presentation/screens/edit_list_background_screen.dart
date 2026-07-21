@@ -192,10 +192,10 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+            crossAxisCount: 1,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
-            childAspectRatio: 2.5,
+            childAspectRatio: 3.5,
           ),
           itemCount: kAllWallpapers.length,
           itemBuilder: (context, index) {

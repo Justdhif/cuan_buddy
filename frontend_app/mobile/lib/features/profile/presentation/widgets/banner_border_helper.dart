@@ -35,20 +35,8 @@ const List<BannerBorderInfo> kGlobalBannerBorders = [
 ];
 
 final List<BannerBorderInfo> kAchievementBannerBorders = [
-  BannerBorderInfo(
-    id: 'border-legend',
-    label: 'Cuan Legend (Banner)',
-    asset: 'assets/banners/banner-legend.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
-  ),
-  BannerBorderInfo(
-    id: 'border-500-tx',
-    label: 'Cuan Master (Banner)',
-    asset: 'assets/banners/banner-500-tx.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
-  ),
+
+
   BannerBorderInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire (Banner)',
@@ -109,20 +97,8 @@ const List<BannerWallpaperInfo> kGlobalWallpapers = [
 ];
 
 final List<BannerWallpaperInfo> kAchievementWallpapers = [
-  BannerWallpaperInfo(
-    id: 'border-legend',
-    label: 'Cuan Legend (Wallpaper)',
-    asset: 'assets/wallpapers/banners/wallpaper-banner-legend.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
-  ),
-  BannerWallpaperInfo(
-    id: 'border-500-tx',
-    label: 'Cuan Master (Wallpaper)',
-    asset: 'assets/wallpapers/banners/wallpaper-banner-500-tx.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
-  ),
+
+
   BannerWallpaperInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire (Wallpaper)',
@@ -140,4 +116,5 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
 ];
 
 List<BannerWallpaperInfo> get kAllWallpapers => [...kGlobalWallpapers, ...kAchievementWallpapers];
+
 

@@ -660,9 +660,9 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 2.5,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 1.8,
                     ),
                     itemCount: categoryBorders.length,
                     itemBuilder: (context, index) {
@@ -808,4 +808,5 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   }
 
 }
+
 
