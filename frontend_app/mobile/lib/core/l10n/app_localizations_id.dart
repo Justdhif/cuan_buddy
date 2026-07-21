@@ -850,6 +850,16 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get editPhoto => 'Edit Foto';
   @override
+  String get profilePhotoSubtitle => 'Atur foto & bingkai';
+  @override
+  String get profileBanner => 'Banner Profil';
+  @override
+  String get profileBannerSubtitle => 'Ubah latar profil';
+  @override
+  String get listBackground => 'List Background';
+  @override
+  String get listBackgroundSubtitle => 'Wallpaper daftar kontak';
+  @override
   String get bioField => 'Bio';
 
   @override
@@ -1435,3 +1445,4 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get inviteFriendToRoom => 'Undang Teman ke Room';
 }
+

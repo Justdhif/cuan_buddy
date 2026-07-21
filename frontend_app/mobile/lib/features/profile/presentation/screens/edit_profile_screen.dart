@@ -217,8 +217,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 _buildInfoTile(
                   context: context,
                   icon: Icons.image_outlined,
-                  title: 'Profile Photo',
-                  subtitle: 'Update your avatar and border',
+                  title: l10n.profilePhoto,
+                  subtitle: l10n.profilePhotoSubtitle,
                   onTap: () {
                     if (profileAsync.hasValue) {
                       context.push('/profile/edit-photo', extra: profileAsync.value);
@@ -228,8 +228,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 _buildInfoTile(
                   context: context,
                   icon: Icons.panorama_outlined,
-                  title: 'Profile Banner',
-                  subtitle: 'Customize your profile background',
+                  title: l10n.profileBanner,
+                  subtitle: l10n.profileBannerSubtitle,
                   onTap: () {
                     if (profileAsync.hasValue) {
                       context.push('/profile/edit-banner', extra: profileAsync.value);
@@ -239,8 +239,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 _buildInfoTile(
                   context: context,
                   icon: Icons.wallpaper_outlined,
-                  title: 'List Background',
-                  subtitle: 'Change wallpaper for user lists',
+                  title: l10n.listBackground,
+                  subtitle: l10n.listBackgroundSubtitle,
                   onTap: () {
                     if (profileAsync.hasValue) {
                       context.push('/profile/edit-list-background', extra: profileAsync.value);

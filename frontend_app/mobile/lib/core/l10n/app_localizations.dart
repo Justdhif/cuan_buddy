@@ -455,6 +455,11 @@ abstract class AppLocalizations {
   String get profileTitle;
   String get notSet;
   String get editPhoto;
+  String get profilePhotoSubtitle;
+  String get profileBanner;
+  String get profileBannerSubtitle;
+  String get listBackground;
+  String get listBackgroundSubtitle;
   String get bioField;
 
   String get accountMenu;
@@ -749,3 +754,4 @@ class AppLocalizationsScope extends InheritedWidget {
     return localizations.languageCode != oldWidget.localizations.languageCode;
   }
 }
+

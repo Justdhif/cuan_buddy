@@ -845,6 +845,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get editPhoto => 'Edit Photo';
   @override
+  String get profilePhotoSubtitle => 'Edit photo & frame';
+  @override
+  String get profileBanner => 'Profile Banner';
+  @override
+  String get profileBannerSubtitle => 'Change profile background';
+  @override
+  String get listBackground => 'List Background';
+  @override
+  String get listBackgroundSubtitle => 'Contact list wallpaper';
+  @override
   String get bioField => 'Bio';
 
   @override
@@ -1429,3 +1439,4 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get inviteFriendToRoom => 'Invite Friend to Room';
 }
+
