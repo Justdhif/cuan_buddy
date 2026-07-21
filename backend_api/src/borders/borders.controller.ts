@@ -21,22 +21,6 @@ export class BordersController {
         isGlobal: true,
       },
       {
-        id: 'border-legend',
-        label: 'Cuan Legend',
-        asset: `assets/borders/border-legend.png`,
-        tier: 'platinum',
-        requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
-        isGlobal: false,
-      },
-      {
-        id: 'border-500-tx',
-        label: 'Cuan Master',
-        asset: `assets/borders/border-500-tx.png`,
-        tier: 'platinum',
-        requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
-        isGlobal: false,
-      },
-      {
         id: 'border-millionaire',
         label: 'Cuan Millionaire',
         asset: `assets/borders/border-millionaire.png`,
@@ -76,22 +60,6 @@ export class BordersController {
         isGlobal: true,
       },
       {
-        id: 'border-legend',
-        label: 'Cuan Legend (Banner)',
-        asset: `assets/banners/banner-legend.png`,
-        tier: 'platinum',
-        requirementDescription: 'Aktif menggunakan Cuan Buddy selama 1 tahun penuh sejak bergabung.',
-        isGlobal: false,
-      },
-      {
-        id: 'border-500-tx',
-        label: 'Cuan Master (Banner)',
-        asset: `assets/banners/banner-500-tx.png`,
-        tier: 'platinum',
-        requirementDescription: 'Mencatat minimal 500 transaksi di Cuan Buddy.',
-        isGlobal: false,
-      },
-      {
         id: 'border-millionaire',
         label: 'Cuan Millionaire (Banner)',
         asset: `assets/banners/banner-millionaire.png`,
@@ -118,6 +86,8 @@ export class BordersController {
     ];
   }
 }
+
+
 
 
 

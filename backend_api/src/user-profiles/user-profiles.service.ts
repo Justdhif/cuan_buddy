@@ -9,11 +9,8 @@ import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 // Daftar semua border achievement dan kondisi unlock-nya.
 // Kondisi dicek server-side untuk keamanan.
 const ACHIEVEMENT_BORDERS = [
-  { id: 'border-legend',       label: 'Cuan Legend',           tier: 'platinum' },
-  { id: 'border-500-tx',       label: 'Cuan Master',           tier: 'platinum' },
   { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
   { id: 'border-billionaire',  label: 'Cuan Billionaire',      tier: 'platinum' },
-  { id: 'border-streak',       label: 'Streak Master',         tier: 'platinum' },
 ];
 
 @Injectable()
@@ -172,11 +169,6 @@ export class UserProfilesService {
       conditionsMet.add('border-billionaire');
     }
 
-    // Streak Master: Mencapai recording streak minimal 30 hari berturut-turut
-    if ((profile.recordingStreakCount ?? 0) >= 30) {
-      conditionsMet.add('border-streak');
-    }
-
     // ── Gabungkan dengan yang sudah tersimpan (permanent) ──
     const currentUnlocked: string[] = Array.isArray(profile.unlockedBorders)
       ? profile.unlockedBorders
@@ -248,3 +240,5 @@ export class UserProfilesService {
     await this.checkAndUnlockBorders(userId);
   }
 }
+
+

@@ -39,6 +39,7 @@ class ProfileRepository {
     String? bannerColor,
     String? bannerImage,
     String? bannerBorder,
+    String? listBackground,
   }) async {
     final body = <String, dynamic>{};
     if (fullName != null) body['fullName'] = fullName;
@@ -52,6 +53,7 @@ class ProfileRepository {
     if (bannerColor != null) body['bannerColor'] = bannerColor;
     if (bannerImage != null) body['bannerImage'] = bannerImage;
     if (bannerBorder != null) body['bannerBorder'] = bannerBorder;
+    if (listBackground != null) body['listBackground'] = listBackground;
 
     final response = await _dio.patch('/profiles/me', data: body);
     return response.data as Map<String, dynamic>;
@@ -139,3 +141,4 @@ class ProfileRepository {
     );
   }
 }
+

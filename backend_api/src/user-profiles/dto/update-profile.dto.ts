@@ -14,6 +14,7 @@ export const UpdateProfileSchema = z.object({
   bannerType: z.enum(['color', 'image']).optional(),
   bannerColor: z.string().max(50).optional(),
   bannerImage: z.string().optional().nullable(),
+  listBackground: z.string().optional().nullable(),
 });
 
 export const UpdateAvatarSchema = z.object({

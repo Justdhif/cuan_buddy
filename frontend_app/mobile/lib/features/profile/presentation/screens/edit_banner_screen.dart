@@ -47,6 +47,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   String _selectedBannerType = 'color';
   String _selectedBannerColor = '#6C63FF';
   String? _selectedBannerImage;
+  String? _selectedListBackground;
   File? _selectedLocalFile;
   
   String _selectedBorderId = 'none';
@@ -57,7 +58,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -65,6 +66,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
     _selectedBannerType = widget.profile['bannerType'] as String? ?? 'color';
     _selectedBannerColor = widget.profile['bannerColor'] as String? ?? '#6C63FF';
     _selectedBannerImage = widget.profile['bannerImage'] as String?;
+    _selectedListBackground = widget.profile['listBackground'] as String?;
     _hexController.text = _selectedBannerColor;
     
     _initBorder();
@@ -182,6 +184,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
         bannerColor: _selectedBannerColor,
         bannerImage: finalBannerType == 'image' ? finalBannerImage : null,
         bannerBorder: _selectedBorderId,
+        listBackground: _selectedListBackground,
       );
       
       // 3. Save border to cache
@@ -289,6 +292,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                   tabs: const [
                     Tab(text: 'Background'),
                     Tab(text: 'Border'),
+                    Tab(text: 'List Background'),
                   ],
                 ),
               ),
@@ -317,16 +321,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                         _buildUploadBox(isDark),
                         const SizedBox(height: 32),
 
-                        // ── Preset Wallpapers Section ──
-                        Text(
-                          'Preset Wallpapers',
-                          style: AppTypography.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildWallpaperGrid(unlockedBordersAsync, isDark),
-                        const SizedBox(height: 32),
+
 
                         // ── Preset Colors Section ──
                         Text(
@@ -359,7 +354,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                                   _hexController.text = colorHex;
                                   _selectedBannerType = 'color';
                                   _selectedLocalFile = null;
-                                  _selectedBannerImage = null; // Clear wallpaper
+                                  _selectedBannerImage = null;
                                 });
                               },
                               child: Container(
@@ -474,6 +469,32 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.all(24),
                     child: _buildBorderGrid(unlockedBordersAsync, bordersAsync, isDark),
+                  ),
+
+                  // Tab 3: List Background Selection
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Background for User List',
+                          style: AppTypography.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'This wallpaper will be displayed as the background card when you appear in the user lists (e.g., search results, room members).',
+                          style: AppTypography.textTheme.bodySmall?.copyWith(
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildWallpaperGrid(unlockedBordersAsync, isDark),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -833,8 +854,8 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
             itemBuilder: (context, index) {
               final wp = kAllWallpapers[index];
               final isNoWallpaper = wp.id == 'none';
-              final isSelected = (!isNoWallpaper && _selectedBannerType == 'image' && _selectedBannerImage == wp.asset) ||
-                                 (isNoWallpaper && _selectedBannerType == 'image' && (_selectedBannerImage == null || _selectedBannerImage!.isEmpty) && _selectedLocalFile == null);
+              final isSelected = !isNoWallpaper && _selectedListBackground == wp.asset || 
+                                 isNoWallpaper && (_selectedListBackground == null || _selectedListBackground!.isEmpty);
               final isUnlocked = wp.isGlobal || unlockedBorders.contains(wp.id);
               
               return GestureDetector(
@@ -878,13 +899,9 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
 
                   setState(() {
                     if (isNoWallpaper) {
-                      _selectedBannerType = 'color';
-                      _selectedLocalFile = null;
-                      _selectedBannerImage = null;
+                      _selectedListBackground = null;
                     } else {
-                      _selectedBannerType = 'image';
-                      _selectedBannerImage = wp.asset;
-                      _selectedLocalFile = null;
+                      _selectedListBackground = wp.asset;
                     }
                   });
                 },

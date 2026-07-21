@@ -120,13 +120,6 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
-  AvatarBorderInfo(
-    id: 'border-streak',
-    label: 'Streak Master',
-    asset: 'assets/borders/border-streak.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
-  ),
 ];
 
 /// Semua border digabung: global + achievement.
@@ -149,6 +142,7 @@ String borderAssetFromId(String? id) => borderInfoFromId(id).asset;
 // ─── Alias backward-compatibility ────────────────────────────────────────────
 /// [AvatarWithBorder] adalah alias lama. Gunakan [UserAvatar] untuk kode baru.
 typedef AvatarWithBorder = UserAvatar;
+
 
 
 

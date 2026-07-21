@@ -63,13 +63,6 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
-  BannerBorderInfo(
-    id: 'border-streak',
-    label: 'Streak Master (Banner)',
-    asset: 'assets/banners/banner-streak.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
-  ),
 ];
 
 List<BannerBorderInfo> get kAllBannerBorders => [...kGlobalBannerBorders, ...kAchievementBannerBorders];
@@ -144,15 +137,7 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
-  BannerWallpaperInfo(
-    id: 'border-streak',
-    label: 'Streak Master (Wallpaper)',
-    asset: 'assets/wallpapers/banners/wallpaper-banner-streak.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Mencatat transaksi berturut-turut selama minimal 30 hari.',
-  ),
 ];
 
 List<BannerWallpaperInfo> get kAllWallpapers => [...kGlobalWallpapers, ...kAchievementWallpapers];
-
 

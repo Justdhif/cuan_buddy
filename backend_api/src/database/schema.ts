@@ -39,6 +39,7 @@ export const userProfiles = pgTable('user_profiles', {
   bannerType: text('banner_type').default('color').notNull(),
   bannerColor: text('banner_color').default('#6C63FF').notNull(),
   bannerImage: text('banner_image'),
+  listBackground: text('list_background'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

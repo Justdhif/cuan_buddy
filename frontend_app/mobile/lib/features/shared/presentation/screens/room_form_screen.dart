@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/widgets/user_list_tile.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -263,6 +264,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
             username: friend['username'] as String?,
             avatarUrl: avatarUrl,
             borderAsset: borderAsset,
+            listBackground: friend['listBackground'] as String?,
             isSelected: isSelected,
             isDark: isDark,
             onTap: () {
@@ -309,6 +311,7 @@ class _FriendListItem extends StatefulWidget {
     required this.username,
     required this.avatarUrl,
     required this.borderAsset,
+    required this.listBackground,
     required this.isSelected,
     required this.isDark,
     required this.onTap,
@@ -320,6 +323,7 @@ class _FriendListItem extends StatefulWidget {
   final String? username;
   final String? avatarUrl;
   final String borderAsset;
+  final String? listBackground;
   final bool isSelected;
   final bool isDark;
   final VoidCallback onTap;
@@ -368,76 +372,34 @@ class _FriendListItemState extends State<_FriendListItem>
       opacity: _fade,
       child: SlideTransition(
         position: _slide,
-        child: InkWell(
-          onTap: widget.onTap,
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                UserAvatar(
-                  size: 52,
-                  borderAsset: widget.borderAsset,
-                  avatarUrl: widget.avatarUrl,
-                  fallbackName: widget.name,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: UserListTile(
+            name: widget.name,
+            username: widget.username,
+            avatarUrl: widget.avatarUrl,
+            avatarBorderAsset: widget.borderAsset,
+            listBackground: widget.listBackground,
+            isDark: widget.isDark,
+            onTap: widget.onTap,
+            actionWidget: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: widget.isSelected ? AppColors.primary : Colors.transparent,
+                border: Border.all(
+                  color: widget.isSelected
+                      ? AppColors.primary
+                      : (widget.isDark ? Colors.white38 : Colors.black26),
+                  width: 2,
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Username on top with @ prefix, accent color
-                      if (widget.username != null &&
-                          widget.username!.isNotEmpty) ...[
-                        Text(
-                          '@${widget.username}',
-                          style: AppTypography.textTheme.bodySmall?.copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                      ],
-                      // Full name below
-                      Text(
-                        widget.name,
-                        style:
-                            AppTypography.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
-                  width: 24,
-                  height: 24,
-                  decoration: widget.isSelected
-                      ? BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        )
-                      : BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: widget.isDark
-                                ? Colors.white30
-                                : Colors.black26,
-                            width: 2,
-                          ),
-                        ),
-                  child: widget.isSelected
-                      ? const Icon(
-                          Icons.check_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        )
-                      : null,
-                ),
-              ],
+              ),
+              child: widget.isSelected
+                  ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  : null,
             ),
           ),
         ),
@@ -562,3 +524,4 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
     );
   }
 }
+
