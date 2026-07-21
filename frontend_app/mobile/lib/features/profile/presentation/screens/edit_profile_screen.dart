@@ -207,50 +207,49 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              if (profileAsync.hasValue) {
-                                context.push('/profile/edit-photo', extra: profileAsync.value);
-                              }
-                            },
-                            child: Text(
-                              l10n.editPhoto,
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          TextButton(
-                            onPressed: () {
-                              if (profileAsync.hasValue) {
-                                context.push('/profile/edit-banner', extra: profileAsync.value);
-                              }
-                            },
-                            child: Text(
-                              'Edit Banner',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
                 const Divider(height: 1, thickness: 0.5),
 
-                // 2. Info Fields List
+                // 2. Media & Customization Fields List
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.image_outlined,
+                  title: 'Profile Photo',
+                  subtitle: 'Update your avatar and border',
+                  onTap: () {
+                    if (profileAsync.hasValue) {
+                      context.push('/profile/edit-photo', extra: profileAsync.value);
+                    }
+                  },
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.panorama_outlined,
+                  title: 'Profile Banner',
+                  subtitle: 'Customize your profile background',
+                  onTap: () {
+                    if (profileAsync.hasValue) {
+                      context.push('/profile/edit-banner', extra: profileAsync.value);
+                    }
+                  },
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.wallpaper_outlined,
+                  title: 'List Background',
+                  subtitle: 'Change wallpaper for user lists',
+                  onTap: () {
+                    if (profileAsync.hasValue) {
+                      context.push('/profile/edit-list-background', extra: profileAsync.value);
+                    }
+                  },
+                ),
+                const Divider(height: 1, thickness: 0.5),
+
+                // 3. Info Fields List
                 _buildInfoTile(
                   context: context,
                   icon: Icons.person_outline_rounded,

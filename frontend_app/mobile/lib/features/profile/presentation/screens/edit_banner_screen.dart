@@ -47,8 +47,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   String _selectedBannerType = 'color';
   String _selectedBannerColor = '#6C63FF';
   String? _selectedBannerImage;
-  String? _selectedListBackground;
-  File? _selectedLocalFile;
+    File? _selectedLocalFile;
   
   String _selectedBorderId = 'none';
   String _selectedBorderAsset = '';
@@ -58,7 +57,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -66,8 +65,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
     _selectedBannerType = widget.profile['bannerType'] as String? ?? 'color';
     _selectedBannerColor = widget.profile['bannerColor'] as String? ?? '#6C63FF';
     _selectedBannerImage = widget.profile['bannerImage'] as String?;
-    _selectedListBackground = widget.profile['listBackground'] as String?;
-    _hexController.text = _selectedBannerColor;
+        _hexController.text = _selectedBannerColor;
     
     _initBorder();
   }
@@ -184,8 +182,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
         bannerColor: _selectedBannerColor,
         bannerImage: finalBannerType == 'image' ? finalBannerImage : null,
         bannerBorder: _selectedBorderId,
-        listBackground: _selectedListBackground,
-      );
+              );
       
       // 3. Save border to cache
       final prefs = await SharedPreferences.getInstance();
@@ -292,8 +289,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                   tabs: const [
                     Tab(text: 'Background'),
                     Tab(text: 'Border'),
-                    Tab(text: 'List Background'),
-                  ],
+                                      ],
                 ),
               ),
             ),
@@ -471,31 +467,6 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
                     child: _buildBorderGrid(unlockedBordersAsync, bordersAsync, isDark),
                   ),
 
-                  // Tab 3: List Background Selection
-                  SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Background for User List',
-                          style: AppTypography.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'This wallpaper will be displayed as the background card when you appear in the user lists (e.g., search results, room members).',
-                          style: AppTypography.textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.white60 : Colors.black54,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildWallpaperGrid(unlockedBordersAsync, isDark),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -836,140 +807,5 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen>
     );
   }
 
-  Widget _buildWallpaperGrid(AsyncValue<List<String>> unlockedBordersAsync, bool isDark) {
-    return unlockedBordersAsync.when(
-      data: (unlockedBorders) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 2.5,
-            ),
-            itemCount: kAllWallpapers.length,
-            itemBuilder: (context, index) {
-              final wp = kAllWallpapers[index];
-              final isNoWallpaper = wp.id == 'none';
-              final isSelected = !isNoWallpaper && _selectedListBackground == wp.asset || 
-                                 isNoWallpaper && (_selectedListBackground == null || _selectedListBackground!.isEmpty);
-              final isUnlocked = wp.isGlobal || unlockedBorders.contains(wp.id);
-              
-              return GestureDetector(
-                onTap: () {
-                  if (!isUnlocked) {
-                    showDialog<void>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        title: Row(
-                          children: [
-                            const Icon(Icons.lock, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Text(wp.label),
-                          ],
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Tier: ${wp.tier.name.toUpperCase()}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(wp.requirementDescription),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Tutup'),
-                          ),
-                        ],
-                      ),
-                    );
-                    return;
-                  }
-
-                  setState(() {
-                    if (isNoWallpaper) {
-                      _selectedListBackground = null;
-                    } else {
-                      _selectedListBackground = wp.asset;
-                    }
-                  });
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.transparent,
-                      width: 3.0,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              spreadRadius: 1,
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      isNoWallpaper
-                          ? Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: isDark ? Colors.white10 : Colors.black12,
-                              ),
-                              child: const Center(
-                                child: Icon(Icons.block, size: 24, color: Colors.grey),
-                              ),
-                            )
-                          : wp.asset.startsWith('http')
-                              ? CachedNetworkImage(
-                                  imageUrl: wp.asset,
-                                  fit: BoxFit.cover, // Banner image is cover or fill
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
-                                )
-                              : Image.asset(
-                                  wp.asset,
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                ),
-                      if (!isUnlocked)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.lock_outline_rounded,
-                                color: Colors.white70, size: 24),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Gagal memuat wallpaper: $error')),
-    );
-  }
 }
+

@@ -32,6 +32,7 @@ import '../../features/profile/presentation/screens/edit_birthdate_screen.dart';
 import '../../features/profile/presentation/screens/edit_gender_screen.dart';
 import '../../features/profile/presentation/screens/edit_avatar_screen.dart';
 import '../../features/profile/presentation/screens/edit_banner_screen.dart';
+import '../../features/profile/presentation/screens/edit_list_background_screen.dart';
 
 // Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
@@ -163,6 +164,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           return _buildPage(state, EditBannerScreen(profile: profile));
         },
       ),
+        GoRoute(
+          path: '/profile/edit-list-background',
+          pageBuilder: (context, state) {
+            final profile = state.extra as Map<String, dynamic>;
+            return _buildPage(state, EditListBackgroundScreen(profile: profile));
+          },
+        ),
+
       GoRoute(
         path: '/profile/widgets',
         pageBuilder: (context, state) =>
@@ -420,3 +429,4 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
