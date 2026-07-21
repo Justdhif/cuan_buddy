@@ -21,6 +21,14 @@ export class BordersController {
         isGlobal: true,
       },
       {
+        id: 'border-profile-completed',
+        label: 'Bronze: Profile Completed',
+        asset: `assets/borders/border-profile-completed.png`,
+        tier: 'bronze',
+        requirementDescription: 'Telah melengkapi semua data profil.',
+        isGlobal: false,
+      },
+      {
         id: 'border-millionaire',
         label: 'Cuan Millionaire',
         asset: `assets/borders/border-millionaire.png`,

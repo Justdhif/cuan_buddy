@@ -16,6 +16,7 @@ const allBorderIds = [
   'none',
   'border-millionaire',
   'border-billionaire',
+  'border-profile-completed',
 ];
 
 async function seedTestUser() {

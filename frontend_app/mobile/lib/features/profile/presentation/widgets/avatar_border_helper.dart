@@ -92,8 +92,13 @@ const List<AvatarBorderInfo> kGlobalBorders = [
 // ─── Daftar Border Achievement (Harus Di-unlock) ──────────────────────────────
 
 final List<AvatarBorderInfo> kAchievementBorders = [
-
-
+  AvatarBorderInfo(
+    id: 'border-profile-completed',
+    label: 'Bronze: Profile Completed',
+    asset: 'assets/borders/border-profile-completed.png',
+    tier: BorderTier.bronze,
+    requirementDescription: 'Telah melengkapi semua data profil.',
+  ),
   AvatarBorderInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire',
