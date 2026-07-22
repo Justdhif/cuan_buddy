@@ -134,15 +134,7 @@ final List<AvatarBorderInfo> kAchievementBorders = [
 ];
 
 /// Semua border digabung: global + achievement.
-List<AvatarBorderInfo> get kAllBorders => [...kGlobalBorders, ...kAchievementBorders  AvatarBorderInfo(
-    id: 'border-all-completed',
-    label: 'The Completionist',
-    asset: 'assets/borders/border-all-completed.png',
-    backAsset: 'assets/borders/wings.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Membuka semua medali yang ada.',
-  ),
-];
+List<AvatarBorderInfo> get kAllBorders => [...kGlobalBorders, ...kAchievementBorders];
 
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 
