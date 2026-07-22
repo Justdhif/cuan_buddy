@@ -477,183 +477,151 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
     return bordersAsync.when(
       data: (bordersData) {
         final List<dynamic> allBorders = bordersData;
-        final globalBorders = allBorders.where((b) => b['isGlobal'] == true).toList();
-        final bronzeBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'bronze').toList();
-        final silverBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'silver').toList();
-        final goldBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'gold').toList();
-        final platinumBorders = allBorders.where((b) => b['isGlobal'] == false && b['tier'] == 'platinum').toList();
 
-        Widget buildCategorySection(String title, List<dynamic> categoryBorders) {
-          if (categoryBorders.isEmpty) return const SizedBox.shrink();
+        return unlockedBordersAsync.when(
+          data: (unlockedBorders) {
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.0,
+              ),
+              itemCount: allBorders.length,
+              itemBuilder: (context, index) {
+                final border = allBorders[index];
+                final isNoBorder = border['id'] == 'none';
+                final isSelected = border['id'] == _selectedBorderId;
+                final isUnlocked = border['isGlobal'] == true || unlockedBorders.contains(border['id']);
+                final tierColor = border['tier'] == 'platinum' ? const Color(0xFFE5E4E2) :
+                                  border['tier'] == 'gold' ? const Color(0xFFFFD700) :
+                                  border['tier'] == 'silver' ? const Color(0xFFC0C0C0) :
+                                  border['tier'] == 'bronze' ? const Color(0xFFCD7F32) : Colors.grey;
 
-          return unlockedBordersAsync.when(
-            data: (unlockedBorders) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, bottom: 12),
-                    child: Text(
-                      title,
-                      style: AppTypography.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white70 : Colors.black87,
-                      ),
-                    ),
-                  ),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: categoryBorders.length,
-                    itemBuilder: (context, index) {
-                      final border = categoryBorders[index];
-                      final isNoBorder = border['id'] == 'none';
-                      final isSelected = border['id'] == _selectedBorderId;
-                      final isUnlocked = border['isGlobal'] == true || unlockedBorders.contains(border['id']);
-                      final tierColor = border['tier'] == 'platinum' ? const Color(0xFFE5E4E2) :
-                                        border['tier'] == 'gold' ? const Color(0xFFFFD700) :
-                                        border['tier'] == 'silver' ? const Color(0xFFC0C0C0) :
-                                        border['tier'] == 'bronze' ? const Color(0xFFCD7F32) : Colors.grey;
-
-                      return GestureDetector(
-                        onTap: () {
-                          if (!isUnlocked) {
-                            showDialog<void>(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                title: Row(
-                                  children: [
-                                    Icon(Icons.lock, color: tierColor),
-                                    const SizedBox(width: 8),
-                                    Text(border['label']),
-                                  ],
-                                ),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Tier: ${border['tier']}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: tierColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(border['requirementDescription'] ?? ''),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Tutup'),
-                                  ),
-                                ],
-                              ),
-                            );
-                            return;
-                          }
-
-                          setState(() {
-                            _selectedBorderId = border['id'];
-                            _selectedBorderAsset = border['asset'];
-                          });
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected ? AppColors.primary : Colors.transparent,
-                              width: 3.0,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(alpha: 0.2),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
-                                    )
-                                  ]
-                                : null,
+                return GestureDetector(
+                  onTap: () {
+                    if (!isUnlocked) {
+                      showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          child: Stack(
-                            alignment: Alignment.center,
+                          title: Row(
                             children: [
-                              isNoBorder
-                                  ? Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isDark ? Colors.white10 : Colors.black12,
-                                      ),
-                                      child: const Center(
-                                        child: Icon(Icons.block, size: 24, color: Colors.grey),
-                                      ),
-                                    )
-                                  : border['asset'].toString().startsWith('http')
-                                      ? CachedNetworkImage(
-                                          imageUrl: border['asset'],
-                                          fit: BoxFit.fill,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
-                                        )
-                                      : Image.asset(
-                                          border['asset'],
-                                          fit: BoxFit.fill,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                        ),
-                              if (!isUnlocked)
-                                Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Center(
-                                    child: Icon(
-                                      Icons.lock_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
+                              Icon(Icons.lock, color: tierColor),
+                              const SizedBox(width: 8),
+                              Text(border['label']),
                             ],
                           ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tier: ${border['tier']}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: tierColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(border['requirementDescription'] ?? ''),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Tutup'),
+                            ),
+                          ],
                         ),
                       );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              );
-            },
-            loading: () => const Center(
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            error: (err, _) => Center(
-              child: Text('Gagal memuat border: $err'),
-            ),
-          );
-        }
+                      return;
+                    }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            buildCategorySection('Biasa', globalBorders),
-            buildCategorySection('Platinum', platinumBorders),
-            buildCategorySection('Gold', goldBorders),
-            buildCategorySection('Silver', silverBorders),
-            buildCategorySection('Bronze', bronzeBorders),
-          ],
+                    setState(() {
+                      _selectedBorderId = border['id'];
+                      _selectedBorderAsset = border['asset'];
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : Colors.transparent,
+                        width: 3.0,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.2),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        isNoBorder
+                            ? Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isDark ? Colors.white10 : Colors.black12,
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.block, size: 24, color: Colors.grey),
+                                ),
+                              )
+                            : border['asset'].toString().startsWith('http')
+                                ? ClipOval(
+                                    child: CachedNetworkImage(
+                                      imageUrl: border['asset'],
+                                      fit: BoxFit.fill,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+                                    ),
+                                  )
+                                : ClipOval(
+                                    child: Image.asset(
+                                      border['asset'],
+                                      fit: BoxFit.fill,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                    ),
+                                  ),
+                        if (!isUnlocked)
+                          Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.lock_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          error: (err, _) => Center(
+            child: Text('Gagal memuat border: $err'),
+          ),
         );
       },
       loading: () => const Center(

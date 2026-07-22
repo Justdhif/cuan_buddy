@@ -95,13 +95,6 @@ const List<AvatarBorderInfo> kGlobalBorders = [
 
 final List<AvatarBorderInfo> kAchievementBorders = [
   AvatarBorderInfo(
-    id: 'border-profile-completed',
-    label: 'Bronze: Profile Completed',
-    asset: 'assets/borders/border-profile-completed.png',
-    tier: BorderTier.bronze,
-    requirementDescription: 'Telah melengkapi semua data profil.',
-  ),
-  AvatarBorderInfo(
     id: 'border-millionaire',
     label: 'Cuan Millionaire',
     asset: 'assets/borders/border-millionaire.png',
