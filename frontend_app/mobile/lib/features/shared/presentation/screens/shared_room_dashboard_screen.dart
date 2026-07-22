@@ -829,6 +829,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
               name: l10n.you,
               avatarUrl: profile?['avatar'] ?? youMember['avatar'],
               borderAsset: borderAssetFromId(profile?['avatarBorder'] ?? youMember['avatarBorder']),
+                    backAsset: borderInfoFromId(profile?['avatarBorder'] ?? youMember['avatarBorder']).backAsset,
               isDark: isDark,
               onTap: () {
                 context.push('/shared/public-profile', extra: youMember);
@@ -845,6 +846,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
               name: name,
               avatarUrl: m['avatar'],
               borderAsset: borderAssetFromId(m['avatarBorder']),
+                    backAsset: borderInfoFromId(m['avatarBorder']).backAsset,
               isDark: isDark,
               onTap: () {
                 context.push('/shared/public-profile', extra: m);
@@ -909,6 +911,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     required String name,
     required String? avatarUrl,
     required String borderAsset,
+    String? backAsset,
     required bool isDark,
     VoidCallback? onTap,
   }) {

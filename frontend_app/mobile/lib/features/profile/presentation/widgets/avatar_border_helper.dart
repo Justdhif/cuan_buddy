@@ -89,14 +89,6 @@ const List<AvatarBorderInfo> kGlobalBorders = [
     requirementDescription: '',
     isGlobal: true,
   ),
-  AvatarBorderInfo(
-    id: 'border-all-completed',
-    label: 'The Completionist',
-    asset: 'assets/borders/border-all-completed.png',
-    backAsset: 'assets/borders/wings.png',
-    tier: BorderTier.platinum,
-    requirementDescription: 'Membuka semua medali yang ada.',
-  ),
 ];
 
 // ─── Daftar Border Achievement (Harus Di-unlock) ──────────────────────────────

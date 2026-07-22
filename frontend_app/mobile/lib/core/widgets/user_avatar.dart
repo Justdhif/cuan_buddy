@@ -40,6 +40,7 @@ class UserAvatar extends StatelessWidget {
     this.localFile,
     this.fallbackName = '?',
     this.borderAsset = '',
+    this.backAsset,
     this.onTap,
     this.heroTag,
   });
@@ -58,6 +59,7 @@ class UserAvatar extends StatelessWidget {
 
   /// Path asset PNG bingkai overlay. Kosongkan ('') jika tidak ingin bingkai.
   final String borderAsset;
+  final String? backAsset;
 
   /// Callback ketika widget ditekan. Jika null, widget tidak interaktif.
   final VoidCallback? onTap;
@@ -166,6 +168,27 @@ class UserAvatar extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
+              // Back Layer (e.g. wings)
+              if (backAsset != null && backAsset!.isNotEmpty)
+                Positioned(
+                  top: -borderOffset,
+                  left: 0,
+                  right: 0,
+                  bottom: borderOffset,
+                  child: IgnorePointer(
+                    child: backAsset!.startsWith('http')
+                        ? CachedNetworkImage(
+                            imageUrl: backAsset!,
+                            fit: BoxFit.fill,
+                            errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                          )
+                        : Image.asset(
+                            backAsset!,
+                            fit: BoxFit.fill,
+                          ),
+                  ),
+                ),
+
               // ── Foto avatar (bulat) — ukuran selalu sama ─────────────────
               Container(
                 width: avatarSize,

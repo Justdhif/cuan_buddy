@@ -201,6 +201,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: UserAvatar(
                             size: 160,
                             borderAsset: _selectedBorderAsset,
+                            backAsset: borderInfoFromId(_selectedBorderId).backAsset,
                             avatarUrl: _selectedAvatarUrl,
                             localFile: _selectedLocalFile,
                             fallbackName: '?',
