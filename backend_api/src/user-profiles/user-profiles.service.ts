@@ -9,7 +9,7 @@ import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 // Daftar semua border achievement dan kondisi unlock-nya.
 // Kondisi dicek server-side untuk keamanan.
 const ACHIEVEMENT_BORDERS = [
-  { id: 'border-profile-completed', label: 'Bronze: Profile Completed', tier: 'bronze' },
+  { id: 'border-all-completed', label: 'The Completionist', tier: 'platinum' },
   { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
   { id: 'border-billionaire',  label: 'Cuan Billionaire',      tier: 'platinum' },
 ];
@@ -155,11 +155,6 @@ export class UserProfilesService {
 
     if (accountAgeDays >= 365) {
       conditionsMet.add('border-legend');
-    }
-
-    // Profile Completed: FullName and Avatar are set (and maybe Bio)
-    if (profile.fullName && profile.avatar) {
-      conditionsMet.add('border-profile-completed');
     }
 
     if (txCount >= 500) {

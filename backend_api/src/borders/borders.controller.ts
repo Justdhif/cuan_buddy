@@ -21,11 +21,11 @@ export class BordersController {
         isGlobal: true,
       },
       {
-        id: 'border-profile-completed',
-        label: 'Bronze: Profile Completed',
-        asset: `assets/borders/border-profile-completed.png`,
-        tier: 'bronze',
-        requirementDescription: 'Telah melengkapi semua data profil.',
+        id: 'border-all-completed',
+        label: 'The Completionist',
+        asset: `assets/borders/border-all-completed.png`,
+        tier: 'platinum',
+        requirementDescription: 'Membuka semua medali yang ada di Cuan Buddy.',
         isGlobal: false,
       },
       {

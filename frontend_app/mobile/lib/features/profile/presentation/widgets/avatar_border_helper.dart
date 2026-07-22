@@ -49,6 +49,7 @@ class AvatarBorderInfo {
     required this.id,
     required this.label,
     required this.asset,
+    this.backAsset,
     required this.tier,
     required this.requirementDescription,
     this.isGlobal = false,
@@ -62,6 +63,7 @@ class AvatarBorderInfo {
 
   /// URL asset PNG (dari backend), kosong jika tidak ada border.
   final String asset;
+  final String? backAsset;
 
   /// Tier pencapaian border.
   final BorderTier tier;
@@ -86,6 +88,14 @@ const List<AvatarBorderInfo> kGlobalBorders = [
     tier: BorderTier.none,
     requirementDescription: '',
     isGlobal: true,
+  ),
+  AvatarBorderInfo(
+    id: 'border-all-completed',
+    label: 'The Completionist',
+    asset: 'assets/borders/border-all-completed.png',
+    backAsset: 'assets/borders/wings.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Membuka semua medali yang ada.',
   ),
 ];
 
@@ -113,10 +123,26 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
+  AvatarBorderInfo(
+    id: 'border-all-completed',
+    label: 'The Completionist',
+    asset: 'assets/borders/border-all-completed.png',
+    backAsset: 'assets/borders/wings.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Membuka semua medali yang ada.',
+  ),
 ];
 
 /// Semua border digabung: global + achievement.
-List<AvatarBorderInfo> get kAllBorders => [...kGlobalBorders, ...kAchievementBorders];
+List<AvatarBorderInfo> get kAllBorders => [...kGlobalBorders, ...kAchievementBorders  AvatarBorderInfo(
+    id: 'border-all-completed',
+    label: 'The Completionist',
+    asset: 'assets/borders/border-all-completed.png',
+    backAsset: 'assets/borders/wings.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Membuka semua medali yang ada.',
+  ),
+];
 
 // ─── Helper Functions ─────────────────────────────────────────────────────────
 

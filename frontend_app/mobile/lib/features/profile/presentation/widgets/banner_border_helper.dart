@@ -51,6 +51,13 @@ final List<BannerBorderInfo> kAchievementBannerBorders = [
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
   ),
+  BannerBorderInfo(
+    id: 'border-all-completed',
+    label: 'All Completed (Banner)',
+    asset: 'assets/banners/banner-all-completed.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Menyelesaikan semua pencapaian di Cuan Buddy.',
+  ),
 ];
 
 List<BannerBorderInfo> get kAllBannerBorders => [...kGlobalBannerBorders, ...kAchievementBannerBorders];
@@ -112,6 +119,13 @@ final List<BannerWallpaperInfo> kAchievementWallpapers = [
     asset: 'assets/wallpapers/banners/wallpaper-banner-billionaire.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Mencapai total saldo Rp 1.000.000.000 di Cuan Buddy.',
+  ),
+  BannerWallpaperInfo(
+    id: 'border-all-completed',
+    label: 'All Completed (Wallpaper)',
+    asset: 'assets/wallpapers/banners/wallpaper-banner-all-completed.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Menyelesaikan semua pencapaian di Cuan Buddy.',
   ),
 ];
 
