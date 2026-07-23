@@ -275,6 +275,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final avatar = profile['avatar'] as String?;
     final avatarBorderId = profile['avatarBorder'] as String?;
     final borderAsset = borderAssetFromId(avatarBorderId);
+    final avatarWingsId = profile['avatarWings'] as String?;
+    final wingsAsset = wingsAssetFromId(avatarWingsId);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final username = profile['username'] as String?;
     final bio = profile['bio'] as String?;
@@ -309,6 +311,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: UserAvatar(
                       size: 120,
                       borderAsset: borderAsset,
+                      wingsAsset: wingsAsset,
                       avatarUrl: avatar,
                       fallbackName: name,
                     ),

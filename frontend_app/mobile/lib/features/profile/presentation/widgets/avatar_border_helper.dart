@@ -5,6 +5,7 @@ import '../../../../core/widgets/user_avatar.dart';
 export '../../../../core/widgets/user_avatar.dart' show UserAvatar;
 
 const String kBorderPrefKey = 'selected_avatar_border';
+const String kWingsPrefKey = 'selected_avatar_wings';
 
 // ─── Tier System ─────────────────────────────────────────────────────────────
 
@@ -112,7 +113,6 @@ final List<AvatarBorderInfo> kAchievementBorders = [
     id: 'border-all-completed',
     label: 'The Completionist',
     asset: 'assets/borders/border-all-completed.png',
-    backAsset: 'assets/borders/wings.png',
     tier: BorderTier.platinum,
     requirementDescription: 'Membuka semua medali yang ada.',
   ),
@@ -121,7 +121,7 @@ final List<AvatarBorderInfo> kAchievementBorders = [
 /// Semua border digabung: global + achievement.
 List<AvatarBorderInfo> get kAllBorders => [...kGlobalBorders, ...kAchievementBorders];
 
-// ─── Helper Functions ─────────────────────────────────────────────────────────
+// ─── Helper Functions Border ──────────────────────────────────────────────────
 
 /// Mengembalikan AvatarBorderInfo berdasarkan ID.
 AvatarBorderInfo borderInfoFromId(String? id) {
@@ -134,6 +134,58 @@ AvatarBorderInfo borderInfoFromId(String? id) {
 
 /// Mengembalikan asset path dari border ID.
 String borderAssetFromId(String? id) => borderInfoFromId(id).asset;
+
+// ─── Wings Model & Helpers ────────────────────────────────────────────────────
+
+class AvatarWingsInfo {
+  const AvatarWingsInfo({
+    required this.id,
+    required this.label,
+    required this.asset,
+    required this.tier,
+    required this.requirementDescription,
+    this.isGlobal = false,
+  });
+
+  final String id;
+  final String label;
+  final String asset;
+  final BorderTier tier;
+  final String requirementDescription;
+  final bool isGlobal;
+
+  bool get hasAsset => asset.isNotEmpty;
+  bool get isNone   => id == 'none';
+}
+
+const List<AvatarWingsInfo> kWingsOptions = [
+  AvatarWingsInfo(
+    id: 'none',
+    label: 'Tanpa Sayap',
+    asset: '',
+    tier: BorderTier.none,
+    requirementDescription: '',
+    isGlobal: true,
+  ),
+  AvatarWingsInfo(
+    id: 'wings-all-completed',
+    label: 'Wings of Glory',
+    asset: 'assets/borders/wings.png',
+    tier: BorderTier.platinum,
+    requirementDescription: 'Membuka semua medali yang ada di Cuan Buddy.',
+    isGlobal: false,
+  ),
+];
+
+AvatarWingsInfo wingsInfoFromId(String? id) {
+  if (id == null || id.isEmpty) return kWingsOptions.first;
+  return kWingsOptions.firstWhere(
+    (w) => w.id == id,
+    orElse: () => kWingsOptions.first,
+  );
+}
+
+String wingsAssetFromId(String? id) => wingsInfoFromId(id).asset;
 
 // ─── Alias backward-compatibility ────────────────────────────────────────────
 /// [AvatarWithBorder] adalah alias lama. Gunakan [UserAvatar] untuk kode baru.

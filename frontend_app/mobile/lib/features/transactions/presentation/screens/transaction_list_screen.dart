@@ -13,6 +13,7 @@ import '../providers/transaction_provider.dart';
 import '../widgets/ai_voice_sheet.dart';
 import '../widgets/ai_scan_sheet.dart';
 import '../widgets/transaction_calendar.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../shared/widgets/transaction_card.dart';
 
 class TransactionListScreen extends ConsumerStatefulWidget {
@@ -566,6 +567,7 @@ class _BottomCashflowSummary extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currencyCode =
         ref.watch(profileProvider).valueOrNull?['currency'] as String? ??
             AppConstants.defaultCurrency;
@@ -575,37 +577,41 @@ class _BottomCashflowSummary extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
-        children: [
-          const Divider(height: 1),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                l10n.totalCashflow,
-                style: AppTypography.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+      child: AppCard(
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n.totalCashflow,
+                  style: AppTypography.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              Text(
-                fmt.format(balance),
-                style: AppTypography.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: balance >= 0 ? AppColors.success : AppColors.danger,
+                Text(
+                  fmt.format(balance),
+                  style: AppTypography.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: balance >= 0 ? AppColors.success : AppColors.danger,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.nTransactions(transactionsCount),
-            style: AppTypography.textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondaryLight.withValues(alpha: 0.7),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                l10n.nTransactions(transactionsCount),
+                style: AppTypography.textTheme.bodySmall?.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

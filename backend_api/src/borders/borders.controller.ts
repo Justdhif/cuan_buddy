@@ -93,6 +93,28 @@ export class BordersController {
       }
     ];
   }
+
+  @Get('wings')
+  getWings(@Req() req: Request) {
+    return [
+      {
+        id: 'none',
+        label: 'Tanpa Sayap',
+        asset: '',
+        tier: 'none',
+        requirementDescription: '',
+        isGlobal: true,
+      },
+      {
+        id: 'wings-all-completed',
+        label: 'Wings of Glory',
+        asset: `assets/borders/wings.png`,
+        tier: 'platinum',
+        requirementDescription: 'Membuka semua medali yang ada di Cuan Buddy.',
+        isGlobal: false,
+      }
+    ];
+  }
 }
 
 

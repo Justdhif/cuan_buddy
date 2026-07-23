@@ -144,6 +144,7 @@ export class RoomsService {
         fullName: profile?.fullName || null,
         avatar: profile?.avatar || null,
         avatarBorder: profile?.avatarBorder || null,
+        avatarWings: profile?.avatarWings || null,
         bannerBorder: profile?.bannerBorder || null,
         bannerType: profile?.bannerType || 'color',
       });

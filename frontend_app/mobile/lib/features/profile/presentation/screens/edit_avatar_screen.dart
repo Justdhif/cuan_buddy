@@ -50,18 +50,21 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
 
   String _selectedBorderId = 'none';
   String _selectedBorderAsset = '';
+  String _selectedWingsId = 'none';
+  String _selectedWingsAsset = '';
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
     _selectedAvatarUrl = widget.profile['avatar'] as String?;
     _avatarOptions = _avatarSeeds.map(_dicebearUrl).toList();
     _initBorder();
+    _initWings();
   }
 
   @override
@@ -88,6 +91,28 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
       setState(() {
         _selectedBorderId = savedId;
         _selectedBorderAsset = borderAssetFromId(savedId);
+      });
+    }
+  }
+
+  Future<void> _initWings() async {
+    final profileWingsId = widget.profile['avatarWings'] as String?;
+    if (profileWingsId != null && profileWingsId.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _selectedWingsId = profileWingsId;
+          _selectedWingsAsset = wingsAssetFromId(profileWingsId);
+        });
+      }
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedWingsId = prefs.getString(kWingsPrefKey) ?? 'none';
+    if (mounted) {
+      setState(() {
+        _selectedWingsId = savedWingsId;
+        _selectedWingsAsset = wingsAssetFromId(savedWingsId);
       });
     }
   }
@@ -175,6 +200,16 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
         // Backend failure for border sync does not prevent success
       }
 
+      // 4. Save wings to cache and backend
+      await prefs.setString(kWingsPrefKey, _selectedWingsId);
+      try {
+        await ref
+            .read(profileRepositoryProvider)
+            .updateWings(wingsId: _selectedWingsId);
+      } catch (_) {
+        // Backend failure for wings sync does not prevent success
+      }
+
       ref.invalidate(profileProvider);
 
       if (mounted) {
@@ -239,7 +274,7 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
                   child: UserAvatar(
                     size: 160,
                     borderAsset: _selectedBorderAsset,
-                    backAsset: borderInfoFromId(_selectedBorderId).backAsset,
+                    wingsAsset: _selectedWingsAsset,
                     avatarUrl: _selectedAvatarUrl,
                     localFile: _selectedLocalFile,
                     fallbackName: '?',
@@ -272,6 +307,7 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
                   tabs: const [
                     Tab(text: 'Avatar'),
                     Tab(text: 'Border'),
+                    Tab(text: 'Wings'),
                   ],
                 ),
               ),
@@ -293,6 +329,12 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.all(24),
                     child: _buildBorderGrid(unlockedBordersAsync, bordersAsync, isDark),
+                  ),
+                  // Tab 3: Wings Grid
+                  SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(24),
+                    child: _buildWingsGrid(unlockedBordersAsync, isDark),
                   ),
                 ],
               ),
@@ -629,6 +671,150 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen>
       ),
       error: (err, _) => Center(
         child: Text('Gagal memuat border: $err'),
+      ),
+    );
+  }
+
+  Widget _buildWingsGrid(AsyncValue<List<String>> unlockedBordersAsync, bool isDark) {
+    return unlockedBordersAsync.when(
+      data: (unlockedBorders) {
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: 1.0,
+          ),
+          itemCount: kWingsOptions.length,
+          itemBuilder: (context, index) {
+            final wings = kWingsOptions[index];
+            final isNoWings = wings.isNone;
+            final isSelected = wings.id == _selectedWingsId;
+            final isUnlocked = wings.isGlobal ||
+                unlockedBorders.contains('border-all-completed') ||
+                unlockedBorders.contains(wings.id);
+
+            return GestureDetector(
+              onTap: () {
+                if (!isUnlocked) {
+                  showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: Row(
+                        children: [
+                          Icon(Icons.lock, color: wings.tier.color),
+                          const SizedBox(width: 8),
+                          Text(wings.label),
+                        ],
+                      ),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tier: ${wings.tier.label}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: wings.tier.color,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(wings.requirementDescription),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Tutup'),
+                        ),
+                      ],
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  _selectedWingsId = wings.id;
+                  _selectedWingsAsset = wings.asset;
+                });
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                    width: 3.0,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          )
+                        ]
+                      : null,
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    isNoWings
+                        ? Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark ? Colors.white10 : Colors.black12,
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.block, size: 24, color: Colors.grey),
+                            ),
+                          )
+                        : wings.asset.startsWith('http')
+                            ? ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: wings.asset,
+                                  fit: BoxFit.contain,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorWidget: (_, __, ___) => const Icon(Icons.broken_image),
+                                ),
+                              )
+                            : Image.asset(
+                                wings.asset,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                height: double.infinity,
+                              ),
+                    if (!isUnlocked)
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.lock_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+      loading: () => const Center(
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (err, _) => Center(
+        child: Text('Gagal memuat status sayap: $err'),
       ),
     );
   }

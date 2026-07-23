@@ -35,9 +35,15 @@ class AppTheme {
         color: isDark ? AppColors.cardDark : AppColors.cardLight,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: isDark
+                ? AppColors.borderDark.withValues(alpha: 0.6)
+                : AppColors.borderLight,
+            width: 1,
+          ),
         ),
-        shadowColor: accentColor.withValues(alpha: 0.1),
+        shadowColor: accentColor.withValues(alpha: 0.08),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor:

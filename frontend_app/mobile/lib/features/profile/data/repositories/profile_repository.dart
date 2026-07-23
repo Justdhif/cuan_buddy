@@ -39,6 +39,7 @@ class ProfileRepository {
     String? bannerColor,
     String? bannerImage,
     String? bannerBorder,
+    String? avatarWings,
     String? listBackground,
     bool clearListBackground = false,
   }) async {
@@ -54,6 +55,7 @@ class ProfileRepository {
     if (bannerColor != null) body['bannerColor'] = bannerColor;
     if (bannerImage != null) body['bannerImage'] = bannerImage;
     if (bannerBorder != null) body['bannerBorder'] = bannerBorder;
+    if (avatarWings != null) body['avatarWings'] = avatarWings;
 
     if (clearListBackground) {
       body['listBackground'] = null;
@@ -74,6 +76,11 @@ class ProfileRepository {
   /// Menyimpan pilihan border avatar ke server agar bisa dilihat user lain.
   Future<void> updateBorder({required String borderId}) async {
     await _dio.patch('/profiles/me', data: {'avatarBorder': borderId});
+  }
+
+  /// Menyimpan pilihan wings avatar ke server agar bisa dilihat user lain.
+  Future<void> updateWings({required String wingsId}) async {
+    await _dio.patch('/profiles/me', data: {'avatarWings': wingsId});
   }
 
   /// Menyimpan pilihan border banner ke server agar bisa dilihat user lain.

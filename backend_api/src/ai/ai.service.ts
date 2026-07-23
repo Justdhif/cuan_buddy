@@ -140,9 +140,9 @@ ${context}`;
       .map((r: any) => `${r.categoryName}: ${formatCurrency(r.total)}`)
       .join(', ');
 
-    const prompt = `Generate a concise personal finance report based on the following data.
-Write in a friendly, informative, and positive tone.
-Maximum 4 short paragraphs. Include 1–2 specific actionable tips at the end.
+    const prompt = `Generate a VERY SHORT, CONCISE AI financial insight (1 to 2 sentences MAX, under 25 words).
+Be direct, encouraging, and practical.
+Do NOT write paragraphs, intros, or long essays. Write in the user's primary language.
 
 Monthly trend (last 3 months):
 ${trendText}
@@ -152,7 +152,7 @@ ${categoryText}`;
 
     const insights = await this.groqService.chat(
       [{ role: 'user', content: prompt }],
-      500,
+      80,
     );
 
     return { insights };

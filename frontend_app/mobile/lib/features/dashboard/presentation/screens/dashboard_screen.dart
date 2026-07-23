@@ -36,6 +36,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   late ScrollController _scrollController;
   late PageController _budgetPageController;
+  bool _showBalance = true;
 
   @override
   void initState() {
@@ -88,7 +89,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final summaryAsync = ref.watch(analyticsSummaryProvider);
-    final healthAsync = ref.watch(financialHealthProvider);
     final transactionsAsync = ref.watch(recentTransactionsProvider);
     final profileAsync = ref.watch(profileProvider);
     final analyticsState = ref.watch(analyticsNotifierProvider);
@@ -151,9 +151,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                         child: summaryAsync.when(
                           skipLoadingOnReload: true,
-                          data: (data) => _buildBalanceCard(data, profileAsync, healthAsync),
-                          loading: () => const SkeletonCard(height: 220),
-                          error: (_, __) => const SkeletonCard(height: 220),
+                          data: (data) => _buildBalanceCard(data, profileAsync),
+                          loading: () => const SkeletonCard(height: 88),
+                          error: (_, __) => const SkeletonCard(height: 88),
                         ),
                       ),
                     ),
@@ -167,16 +167,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     if (budgetsState.isInitialLoad)
                       const SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: SkeletonCard(height: 220),
+                          padding: EdgeInsets.fromLTRB(20, 10, 20, 0),
+                          child: SkeletonCard(height: 165),
                         ),
                       )
                     else
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.only(top: 16),
+                          padding: const EdgeInsets.only(top: 10),
                           child: SizedBox(
-                            height: 240,
+                            height: 165,
                             child: PageView.builder(
                               controller: _budgetPageController,
                               physics: const BouncingScrollPhysics(),
@@ -208,7 +208,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                        padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -286,29 +286,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
           ],
-        ),
-      ),
-      floatingActionButton: GestureDetector(
-        onTap: () => context.push('/ai-chat'),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: AppColors.primary,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 8,
-                spreadRadius: 2,
-                offset: const Offset(0, 4),
-              )
-            ],
-          ),
-          child: const Icon(
-            Icons.smart_toy_rounded,
-            color: Colors.white,
-            size: 32,
-          ),
         ),
       ),
     );
@@ -403,9 +380,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return GestureDetector(
       onTap: () => context.push('/budgets/form'),
       child: Container(
-        height: 204,
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+        height: 160,
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
@@ -447,15 +424,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildBalanceCard(
     Map<String, dynamic> data,
     AsyncValue<Map<String, dynamic>> profileAsync,
-    AsyncValue<Map<String, dynamic>> healthAsync,
   ) {
     final balance = (data['balance'] as num? ?? 0).toDouble();
-    final income = (data['totalIncome'] as num? ?? 0).toDouble();
-    final expense = (data['totalExpense'] as num? ?? 0).toDouble();
     final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
         AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
 
+    final displayBalance = _showBalance
+        ? CurrencyFormatter.formatAmount(balance, symbol: currencySymbol)
+        : '••••••••';
 
     return GlassCard(
       child: Column(
@@ -463,149 +440,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.totalBalance,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    CurrencyFormatter.formatAmount(balance, symbol: currencySymbol),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
-              healthAsync.when(
-                skipLoadingOnReload: true,
-                data: (healthData) {
-                  final status = healthData['status'] as String? ?? 'healthy';
-                  final score = healthData['score'] as int? ?? 100;
-                  
-                  Color statusColor;
-                  IconData statusIcon;
-                  
-                  switch (status) {
-                    case 'warning':
-                      statusColor = AppColors.warning;
-                      statusIcon = Icons.warning_amber_rounded;
-                      break;
-                    case 'critical':
-                    case 'danger':
-                      statusColor = AppColors.danger;
-                      statusIcon = Icons.error_outline_rounded;
-                      break;
-                    default:
-                      statusColor = AppColors.success;
-                      statusIcon = Icons.health_and_safety_outlined;
-                  }
-
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.5)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(statusIcon, size: 14, color: statusColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$score/100',
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              ),
-            ],
-          ),
-          healthAsync.when(
-            skipLoadingOnReload: true,
-            data: (healthData) {
-              final message = healthData['message'] as String?;
-              if (message == null || message.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.insights_rounded, size: 16, color: Colors.white70),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        message,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 13,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
+              Text(
+                l10n.totalBalance,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-              );
-            },
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(child: _miniStat(l10n.income, CurrencyFormatter.formatAmount(income, symbol: currencySymbol))),
-              const SizedBox(width: 12),
-              Expanded(child: _miniStat(l10n.expense, CurrencyFormatter.formatAmount(expense, symbol: currencySymbol))),
+              ),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _showBalance = !_showBalance;
+                  });
+                },
+                child: Icon(
+                  _showBalance
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  size: 20,
+                ),
+              ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _miniStat(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500)),
-          const SizedBox(height: 4),
-          Text(value,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 10),
+          Text(
+            displayBalance,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
         ],
       ),
     );

@@ -31,6 +31,7 @@ export const userProfiles = pgTable('user_profiles', {
   gender: text('gender'),
   bio: text('bio'),
   avatarBorder: text('avatar_border'),
+  avatarWings: text('avatar_wings'),
   bannerBorder: text('banner_border'),
   unlockedBorders: jsonb('unlocked_borders').default([]),
   recordingStreakCount: integer('recording_streak_count').default(0).notNull(),

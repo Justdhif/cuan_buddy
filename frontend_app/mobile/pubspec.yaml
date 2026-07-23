@@ -80,6 +80,7 @@ flutter:
   assets:
     - assets/animations/
     - assets/icon/
+    - assets/illustrations/
     - assets/borders/
     - assets/banners/
     - assets/wallpapers/banners/

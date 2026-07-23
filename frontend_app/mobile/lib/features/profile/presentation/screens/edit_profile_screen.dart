@@ -27,15 +27,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedAvatarUrl;
   File? _selectedLocalFile;
 
-  // Border
+  // Border & Wings
   String _selectedBorderId = 'none';
   String _selectedBorderAsset = '';
+  String _selectedWingsId = 'none';
+  String _selectedWingsAsset = '';
 
   @override
   void initState() {
     super.initState();
     _selectedAvatarUrl = widget.profile['avatar'] as String?;
     _initBorder();
+    _initWings();
   }
 
   /// Load border: prioritas dari data profil (backend), fallback ke SharedPreferences.
@@ -62,6 +65,30 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       setState(() {
         _selectedBorderId = savedId;
         _selectedBorderAsset = borderAssetFromId(savedId);
+      });
+    }
+  }
+
+  Future<void> _initWings() async {
+    final profileWingsId = widget.profile['avatarWings'] as String?;
+    if (profileWingsId != null && profileWingsId.isNotEmpty) {
+      if (mounted) {
+        setState(() {
+          _selectedWingsId = profileWingsId;
+          _selectedWingsAsset = wingsAssetFromId(profileWingsId);
+        });
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(kWingsPrefKey, profileWingsId);
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final savedWingsId = prefs.getString(kWingsPrefKey) ?? 'none';
+    if (mounted) {
+      setState(() {
+        _selectedWingsId = savedWingsId;
+        _selectedWingsAsset = wingsAssetFromId(savedWingsId);
       });
     }
   }
@@ -133,6 +160,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           _selectedAvatarUrl = profile['avatar'] as String?;
           _selectedBorderId = profile['avatarBorder'] as String? ?? 'none';
           _selectedBorderAsset = borderAssetFromId(_selectedBorderId);
+          _selectedWingsId = profile['avatarWings'] as String? ?? 'none';
+          _selectedWingsAsset = wingsAssetFromId(_selectedWingsId);
           _selectedLocalFile = null;
         });
       }
@@ -201,6 +230,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           child: UserAvatar(
                             size: 160,
                             borderAsset: _selectedBorderAsset,
+                            wingsAsset: _selectedWingsAsset,
                             backAsset: borderInfoFromId(_selectedBorderId).backAsset,
                             avatarUrl: _selectedAvatarUrl,
                             localFile: _selectedLocalFile,

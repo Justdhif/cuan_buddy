@@ -737,6 +737,12 @@ abstract class AppLocalizations {
   String get addMember;
   String get allFriendsAlreadyInRoom;
   String get inviteFriendToRoom;
+  String get financeHealthScore;
+  String get aiInsight;
+  String get askAiChatbot;
+  String get financialHealthGood;
+  String get financialHealthGoodSubtitle;
+  String get aiInsightBannerSubtitle;
 }
 
 class AppLocalizationsScope extends InheritedWidget {

@@ -160,15 +160,18 @@ class SkeletonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: isDark ? const Color(0xFF2D3748) : const Color(0xFFE2E8F0),
-      highlightColor:
-          isDark ? const Color(0xFF4A5568) : const Color(0xFFF7FAFC),
+      baseColor: isDark
+          ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+          : const Color(0xFFE2E8F0),
+      highlightColor: isDark
+          ? const Color(0xFF334155).withValues(alpha: 0.8)
+          : const Color(0xFFF8FAFC),
       child: Container(
         height: height,
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
     );

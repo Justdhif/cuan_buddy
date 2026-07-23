@@ -1455,5 +1455,17 @@ class AppLocalizationsId extends AppLocalizations {
   String get allFriendsAlreadyInRoom => 'Semua teman sudah menjadi anggota room ini.';
   @override
   String get inviteFriendToRoom => 'Undang Teman ke Room';
+  @override
+  String get financeHealthScore => 'Finance Health';
+  @override
+  String get aiInsight => 'AI Insight';
+  @override
+  String get askAiChatbot => 'Tanya AI';
+  @override
+  String get financialHealthGood => 'Good!';
+  @override
+  String get financialHealthGoodSubtitle => 'Keuanganmu sehat! Pertahankan kebiasaan baik ini.';
+  @override
+  String get aiInsightBannerSubtitle => 'Dapatkan saran personalized untuk keuangan yang lebih baik bersama AI ✨';
 }
 
