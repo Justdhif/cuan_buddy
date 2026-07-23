@@ -19,6 +19,7 @@ const allBorderIds = [
   'border-legend',
   'border-500-tx',
   'border-all-completed',
+  'wings-all-completed',
 ];
 
 async function seedTestUser() {

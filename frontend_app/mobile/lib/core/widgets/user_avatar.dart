@@ -102,47 +102,33 @@ class UserAvatar extends StatelessWidget {
         left: 0,
         right: 0,
         bottom: borderOffset,
-        child: IgnorePointer(
-          child: effectiveWings!.startsWith('http')
-              ? CachedNetworkImage(
-                  imageUrl: effectiveWings,
-                  fit: BoxFit.fill,
-                  errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                )
-              : Image.asset(
-                  effectiveWings,
-                  fit: BoxFit.fill,
-                ),
+        child: Transform.scale(
+          scale: 1.28, // Perbesar ukuran wings agar tampak lebih megah
+          child: IgnorePointer(
+            child: effectiveWings!.startsWith('http')
+                ? CachedNetworkImage(
+                    imageUrl: effectiveWings,
+                    fit: BoxFit.fill,
+                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                  )
+                : Image.asset(
+                    effectiveWings,
+                    fit: BoxFit.fill,
+                  ),
+          ),
         ),
       );
     }
 
     if (!hasBorder) {
-      final double ringStroke = (avatarSize * 0.05).clamp(1.5, 3.5);
-      final double ringGap    = (avatarSize * 0.02).clamp(1.0, 2.5);
-      final double ringWidget = avatarSize + (ringGap + ringStroke) * 2;
-
       return SizedBox(
         width: size,
         height: size,
         child: Stack(
+          clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
             if (hasWings) buildWingsWidget(),
-            SizedBox(
-              width: ringWidget,
-              height: ringWidget,
-              child: CustomPaint(
-                painter: _GradientRingPainter(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primaryLight, AppColors.primary, AppColors.primaryDark],
-                  ),
-                  strokeWidth: ringStroke,
-                ),
-              ),
-            ),
             Container(
               width: avatarSize,
               height: avatarSize,
