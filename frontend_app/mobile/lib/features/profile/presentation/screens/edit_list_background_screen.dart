@@ -6,11 +6,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/widgets/user_list_tile.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 import '../providers/profile_provider.dart';
 import '../providers/achievement_provider.dart';
 import '../widgets/banner_border_helper.dart';
 import '../widgets/avatar_border_helper.dart'; // Using this since kAllWallpapers is here
-import '../../../../core/widgets/user_list_tile.dart';
 
 class EditListBackgroundScreen extends ConsumerStatefulWidget {
   const EditListBackgroundScreen({super.key, required this.profile});
@@ -38,6 +39,7 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
       final rep = ref.read(profileRepositoryProvider);
       await rep.updateProfile(
         listBackground: _selectedListBackground,
+        clearListBackground: _selectedListBackground == null,
       );
 
       ref.invalidate(profileProvider);
@@ -73,17 +75,22 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unlockedBordersAsync = ref.watch(unlockedBordersProvider);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'List Background',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+    final initialBg = widget.profile['listBackground'] as String?;
+    final isDirty = !_isSaving && _selectedListBackground != initialBg;
+
+    return FormPopScope(
+      hasUnsavedChanges: isDirty,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text(
+            'List Background',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.maybePop(context),
+          ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -182,8 +189,9 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildWallpaperGrid(AsyncValue<List<String>> unlockedBordersAsync, bool isDark) {
     return unlockedBordersAsync.when(

@@ -16,6 +16,7 @@ import '../../../../core/theme/category_icon_shape.dart';
 import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../providers/savings_provider.dart';
 import '../../../wallets/providers/wallet_provider.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 
 class SavingsFormScreen extends ConsumerStatefulWidget {
   const SavingsFormScreen({super.key, this.goal});
@@ -333,6 +334,24 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges {
+    if (_isSaving) return false;
+    if (widget.goal == null) {
+      return _nameController.text.trim().isNotEmpty ||
+          _amountController.text.trim().isNotEmpty ||
+          _selectedEmoji != null;
+    } else {
+      final g = widget.goal!;
+      final origName = g['name'] as String? ?? '';
+      final origAmount = (g['targetAmount'] ?? '').toString();
+      final origEmoji = g['emojiIcon'] as String?;
+
+      return _nameController.text.trim() != origName ||
+          _amountController.text.trim() != origAmount ||
+          _selectedEmoji != origEmoji;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -353,31 +372,33 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
       });
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
+    return FormPopScope(
+      hasUnsavedChanges: _hasUnsavedChanges,
+      child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: Text(
-          widget.goal == null ? l10n.newGoal : l10n.editGoal,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        appBar: AppBar(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          title: Text(
+            widget.goal == null ? l10n.newGoal : l10n.editGoal,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.maybePop(context),
+          ),
+          actions: [
+            if (widget.goal != null)
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded,
+                    color: AppColors.danger),
+                onPressed: _confirmAndDelete,
+                tooltip: l10n.deleteGoal,
+              ),
+            const SizedBox(width: 8),
+          ],
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          if (widget.goal != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline_rounded,
-                  color: AppColors.danger),
-              onPressed: _confirmAndDelete,
-              tooltip: l10n.deleteGoal,
-            ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
@@ -700,8 +721,9 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ── Savings Form Header ───────────────────────────────────────────────────────

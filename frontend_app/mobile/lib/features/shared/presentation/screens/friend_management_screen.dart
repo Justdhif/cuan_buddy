@@ -152,9 +152,9 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                                 : 'Try searching for a different username or email.',
                           )
                         : ListView.separated(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                             itemCount: state.searchResults.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
                             itemBuilder: (context, index) {
                               final match = state.searchResults[index];
                               final String avatarUrl = match['avatar'] ?? '';

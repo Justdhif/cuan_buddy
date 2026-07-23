@@ -21,6 +21,7 @@ import '../../../notifications/presentation/providers/notifications_provider.dar
 import '../../../savings/presentation/providers/savings_provider.dart';
 import '../../../wallets/providers/wallet_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({
@@ -244,6 +245,29 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges {
+    if (_isSaving) return false;
+    if (widget.initialTransaction == null) {
+      return _titleController.text.trim().isNotEmpty ||
+          _amountController.text.trim().isNotEmpty ||
+          _noteController.text.trim().isNotEmpty ||
+          _selectedCategoryId != null;
+    } else {
+      final tx = widget.initialTransaction!;
+      final origTitle = tx['title'] as String? ?? '';
+      final origAmount = (tx['amount'] ?? '').toString();
+      final origNote = tx['note'] as String? ?? '';
+      final origCategory = tx['categoryId'] as String?;
+      final origWallet = tx['walletId'] as String?;
+
+      return _titleController.text.trim() != origTitle ||
+          _amountController.text.trim() != origAmount ||
+          _noteController.text.trim() != origNote ||
+          _selectedCategoryId != origCategory ||
+          _selectedWalletId != origWallet;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -277,7 +301,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
        });
     }
 
-    return Scaffold(
+    return FormPopScope(
+      hasUnsavedChanges: _hasUnsavedChanges,
+      child: Scaffold(
       appBar: AppBar(
         title: Text(
           widget.initialTransaction != null
@@ -287,7 +313,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
+          onPressed: () => Navigator.maybePop(context),
         ),
         actions: [
           if (widget.initialTransaction != null)
@@ -1023,8 +1049,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTypeTab({
     required BuildContext context,

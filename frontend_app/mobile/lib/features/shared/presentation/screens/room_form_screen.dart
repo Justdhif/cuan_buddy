@@ -4,6 +4,7 @@ import '../../../../core/widgets/user_list_tile.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../../profile/presentation/widgets/avatar_border_helper.dart';
@@ -59,7 +60,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
   }
 
   void _goBack() {
-    Navigator.pop(context);
+    Navigator.maybePop(context);
   }
 
   @override
@@ -69,7 +70,9 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     final l10n = AppLocalizations.of(context);
     final accentColor = ref.watch(accentColorProvider);
 
-    return Scaffold(
+    return FormPopScope(
+      hasUnsavedChanges: _selectedFriendIds.isNotEmpty,
+      child: Scaffold(
       body: SafeArea(
         child: Column(
           children: [
@@ -132,9 +135,10 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
                   size: 32,
                 ),
               ),
-            ),
-    );
-  }
+      ),
+    ),
+  );
+}
 
   Widget _buildCustomHeader(bool isDark, AppLocalizations l10n) {
     return Container(
@@ -371,9 +375,9 @@ class _FriendListItemState extends State<_FriendListItem>
       opacity: _fade,
       child: SlideTransition(
         position: _slide,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: UserListTile(
+        child: Column(
+          children: [
+            UserListTile(
             name: widget.name,
             username: widget.username,
             avatarUrl: widget.avatarUrl,
@@ -401,6 +405,8 @@ class _FriendListItemState extends State<_FriendListItem>
                   : null,
             ),
           ),
+          const Divider(height: 1, thickness: 0.5),
+        ],
         ),
       ),
     );

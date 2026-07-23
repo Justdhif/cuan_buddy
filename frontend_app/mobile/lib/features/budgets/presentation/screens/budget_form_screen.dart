@@ -17,6 +17,7 @@ import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
 import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../../../wallets/providers/wallet_provider.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
   const BudgetFormScreen({super.key, this.budget, this.initialCategoryId});
@@ -331,6 +332,25 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges {
+    if (_isSaving) return false;
+    if (widget.budget == null) {
+      return _nameController.text.trim().isNotEmpty ||
+          _amountController.text.trim().isNotEmpty ||
+          _selectedEmoji != null ||
+          _selectedCategoryIds.isNotEmpty;
+    } else {
+      final b = widget.budget!;
+      final origName = b['name'] as String? ?? '';
+      final origAmount = (b['limitAmount'] ?? '').toString();
+      final origEmoji = b['emojiIcon'] as String?;
+
+      return _nameController.text.trim() != origName ||
+          _amountController.text.trim() != origAmount ||
+          _selectedEmoji != origEmoji;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -373,20 +393,22 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       } catch (_) {}
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        title: Text(
-          widget.budget == null ? l10n.setBudget : 'Edit Budget',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+    return FormPopScope(
+      hasUnsavedChanges: _hasUnsavedChanges,
+      child: Scaffold(
+        appBar: AppBar(
+          titleSpacing: 0,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.maybePop(context),
+          ),
+          title: Text(
+            widget.budget == null ? l10n.setBudget : 'Edit Budget',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         actions: [
           if (widget.budget != null)
             IconButton(
@@ -1031,8 +1053,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
 
 

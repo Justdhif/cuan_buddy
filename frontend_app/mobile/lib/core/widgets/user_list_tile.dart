@@ -35,10 +35,8 @@ class UserListTile extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
           color: hasBackground ? null : (isDark ? AppColors.surfaceDark : Colors.white),
           image: hasBackground
               ? DecorationImage(
@@ -52,15 +50,6 @@ class UserListTile extends StatelessWidget {
                   ),
                 )
               : null,
-          boxShadow: hasBackground
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(

@@ -63,6 +63,12 @@ abstract class AppLocalizations {
   String get logInLink;
   String get error;
 
+  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
+  String get unsavedChangesTitle;
+  String get unsavedChangesMessage;
+  String get discardChanges;
+  String get keepEditing;
+
   // ─── Auth — Forgot Password ───────────────────────────────────────────────────
   String get forgotPasswordTitle;
   String get enterOtpSentToEmail;

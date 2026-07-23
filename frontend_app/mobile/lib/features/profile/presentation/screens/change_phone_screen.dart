@@ -8,6 +8,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../providers/profile_provider.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 
 class ChangePhoneScreen extends ConsumerStatefulWidget {
   const ChangePhoneScreen({super.key});
@@ -168,17 +169,23 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          l10n.changePhoneNumberTitle,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left_rounded),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+    final isDirty = !_isVerifying &&
+        !_isSendingOtp &&
+        (_phoneController.text.isNotEmpty || _otpController.text.isNotEmpty);
+
+    return FormPopScope(
+      hasUnsavedChanges: isDirty,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            l10n.changePhoneNumberTitle,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.chevron_left_rounded),
+            onPressed: () => Navigator.maybePop(context),
+          ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
@@ -356,6 +363,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

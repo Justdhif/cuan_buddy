@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 
 class ChangePasswordScreen extends ConsumerStatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -79,14 +80,21 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.changePassword),
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left_rounded),
-          onPressed: () => Navigator.pop(context),
+    final isDirty = !_isLoading &&
+        (_oldPasswordController.text.isNotEmpty ||
+            _newPasswordController.text.isNotEmpty ||
+            _confirmPasswordController.text.isNotEmpty);
+
+    return FormPopScope(
+      hasUnsavedChanges: isDirty,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(l10n.changePassword),
+          leading: IconButton(
+            icon: const Icon(Icons.chevron_left_rounded),
+            onPressed: () => Navigator.maybePop(context),
+          ),
         ),
-      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Form(
@@ -177,6 +185,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

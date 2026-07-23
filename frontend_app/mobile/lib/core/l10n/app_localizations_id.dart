@@ -82,7 +82,18 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get logInLink => 'Masuk';
   @override
-  String get error => 'Error';
+  String get error => 'Gagal';
+
+  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
+  @override
+  String get unsavedChangesTitle => 'Batalkan Perubahan?';
+  @override
+  String get unsavedChangesMessage =>
+      'Ada perubahan yang belum disimpan. Yakin ingin keluar? Perubahan Anda akan hilang.';
+  @override
+  String get discardChanges => 'Keluar & Buang';
+  @override
+  String get keepEditing => 'Lanjut Edit';
 
   // ─── Auth — Forgot Password ───────────────────────────────────────────────────
   @override

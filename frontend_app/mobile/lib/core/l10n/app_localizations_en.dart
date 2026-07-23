@@ -83,6 +83,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get error => 'Error';
 
+  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
+  @override
+  String get unsavedChangesTitle => 'Discard Changes?';
+  @override
+  String get unsavedChangesMessage =>
+      'You have unsaved changes. Are you sure you want to leave? Your changes will be lost.';
+  @override
+  String get discardChanges => 'Discard';
+  @override
+  String get keepEditing => 'Keep Editing';
+
   // ─── Auth — Forgot Password ───────────────────────────────────────────────────
   @override
   String get forgotPasswordTitle => 'Forgot Password? 🔐';

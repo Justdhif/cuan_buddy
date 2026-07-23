@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/widgets/form_pop_scope.dart';
 import '../providers/profile_provider.dart';
 
 class EditUsernameScreen extends ConsumerStatefulWidget {
@@ -89,17 +90,21 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          l10n.usernameField,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+    final isDirty = !_isLoading && _controller.text.trim() != widget.initialUsername;
+
+    return FormPopScope(
+      hasUnsavedChanges: isDirty,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: Text(
+            l10n.usernameField,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () => Navigator.maybePop(context),
+          ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
@@ -201,6 +206,7 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
