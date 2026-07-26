@@ -18,7 +18,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "db:fresh": "npx tsx migrate-fresh.ts"
+    "db:fresh": "npx tsx migrate-fresh.ts",
+    "seed:shared": "npx tsx seed-shared-rooms.ts",
+    "seed:friends": "npx tsx seed-friends.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
@@ -22,6 +22,7 @@ import '../../../shared/widgets/transaction_card.dart';
 import '../../../budgets/presentation/providers/budgets_provider.dart';
 import '../../../shared/widgets/budget_card.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -37,50 +38,62 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   late ScrollController _scrollController;
   late PageController _budgetPageController;
   bool _showBalance = true;
+  bool _isScrolled = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     _budgetPageController = PageController(viewportFraction: 0.93);
-    // Initialise Socket.IO connection once profile loads, then warm-up
-    // the notifications provider so its socket listener is registered
-    // immediately after the connection is established.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final profile = await ref.read(profileProvider.future);
       final userId = profile['userId'] as String? ?? profile['id'] as String?;
       if (userId != null && userId.isNotEmpty) {
         ref.read(socketServiceProvider).connect(userId);
-        // Warm-up the notifications provider *after* connect() so that its
-        // onConnected callback fires with the correct timing.
         ref.read(notificationsNotifierProvider);
-        
-        // Upload FCM Token to backend for push notifications
+
         try {
           final fcmToken = await NotificationService().getFcmToken();
           if (fcmToken != null) {
-            await ref.read(dioClientProvider).dio.patch('/profiles/fcm-token', data: {'token': fcmToken});
+            await ref
+                .read(dioClientProvider)
+                .dio
+                .patch('/profiles/fcm-token', data: {'token': fcmToken});
             debugPrint('FCM Token uploaded successfully.');
           }
         } catch (e) {
           debugPrint('Failed to upload FCM token to backend: $e');
         }
 
-        // Upload Language to backend for push notifications
         try {
           final lang = ref.read(languageProvider);
-          await ref.read(dioClientProvider).dio.patch('/profiles/me', data: {'language': lang});
+          await ref
+              .read(dioClientProvider)
+              .dio
+              .patch('/profiles/me', data: {'language': lang});
           debugPrint('Language setting synchronized to backend: $lang');
         } catch (_) {}
 
-        // Check for auto backup on launch
         ref.read(backupWorkerProvider).checkAndRunAutoBackup();
       }
     });
   }
 
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      final isScrolled = _scrollController.offset > 15;
+      if (isScrolled != _isScrolled) {
+        setState(() {
+          _isScrolled = isScrolled;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _budgetPageController.dispose();
     super.dispose();
@@ -94,6 +107,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final analyticsState = ref.watch(analyticsNotifierProvider);
     final budgetsState = ref.watch(budgetsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final notificationsState = ref.watch(notificationsNotifierProvider);
+    final unreadCount = notificationsState.notifications
+        .where((n) => !(n['isRead'] as bool? ?? false))
+        .length;
 
     ref.listen<AsyncValue<Map<String, dynamic>>>(analyticsSummaryProvider,
         (previous, next) {
@@ -105,7 +122,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final currency = profileAsync.valueOrNull?['currency'] as String? ??
             AppConstants.defaultCurrency;
 
-        // Push data to Android Homescreen Widget
         WidgetService.updateWidgetData(
             balance: balance,
             income: income,
@@ -114,8 +130,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     });
 
+    // Warna background gelap dipakai bareng di header (bottom radius) & Scaffold
+    final bodyBgColor =
+        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
 
     return Scaffold(
+      backgroundColor: bodyBgColor, // <-- TAMBAHAN
       body: GestureDetector(
         onTap: () {},
         child: Stack(
@@ -134,88 +154,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
-                    SliverPersistentHeader(
-                      pinned: true,
-                      delegate: _DashboardHeaderDelegate(
-                        minHeight: 120, // Approximate header height
-                        maxHeight: 120,
-                        baseColor: Theme.of(context).scaffoldBackgroundColor,
-                        builder: (context, shrinkOffset) {
-                          return _buildHeader(
-                              context, ref, profileAsync, shrinkOffset);
-                        },
+                    SliverToBoxAdapter(
+                      child: _buildTopHeaderAndBalance(
+                        context,
+                        ref,
+                        summaryAsync,
+                        profileAsync,
                       ),
                     ),
                     SliverToBoxAdapter(
+                      child: _buildQuickActionsRow(context, isDark),
+                    ),
+                    const SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                        child: summaryAsync.when(
-                          skipLoadingOnReload: true,
-                          data: (data) => _buildBalanceCard(data, profileAsync),
-                          loading: () => const SkeletonCard(height: 88),
-                          error: (_, __) => const SkeletonCard(height: 88),
-                        ),
+                        padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                        child: AiInsightCard(),
                       ),
                     ),
+                    // ── 3. Recent Transactions Section ──────────────────────────────
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                        child: const AiInsightCard(),
-                      ),
-                    ),
-                    // ── Budgets Section ───────────────────────────────────────
-                    if (budgetsState.isInitialLoad)
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(20, 10, 20, 0),
-                          child: SkeletonCard(height: 165),
-                        ),
-                      )
-                    else
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: SizedBox(
-                            height: 165,
-                            child: PageView.builder(
-                              controller: _budgetPageController,
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: budgetsState.budgets.isEmpty ? 1 : budgetsState.budgets.length + 1,
-                              itemBuilder: (context, index) {
-                                Widget card;
-                                if (index == budgetsState.budgets.length) {
-                                  card = _buildAddBudgetCard(context, isDark);
-                                } else {
-                                  final currencyCode = profileAsync.valueOrNull?['currency'] as String? ?? AppConstants.defaultCurrency;
-                                  final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-                                  card = BudgetCard(
-                                    budget: budgetsState.budgets[index],
-                                    isDark: isDark,
-                                    currencySymbol: currencySymbol,
-                                  );
-                                }
-                                return Align(
-                                  alignment: Alignment.topCenter,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                                    child: card,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(l10n.recentActivities,
-                                style: AppTypography.textTheme.titleMedium),
+                            Text(
+                              l10n.languageCode == 'id'
+                                  ? 'Transaksi Terbaru'
+                                  : 'Recent Transactions',
+                              style: AppTypography.textTheme.titleMedium,
+                            ),
                             TextButton(
-                              onPressed: () => context.go('/home/transactions'),
+                              onPressed: () => context.push('/home/transactions'),
                               child: Text(l10n.seeAll),
                             ),
                           ],
@@ -236,8 +206,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         }
                         return SliverList(
                           delegate: SliverChildBuilderDelegate(
-                            (ctx, i) => TransactionCard(transaction: transactions[i]),
-
+                            (ctx, i) =>
+                                TransactionCard(transaction: transactions[i]),
                             childCount: transactions.length,
                           ),
                         );
@@ -249,11 +219,69 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             message: l10n.failedToLoadTransactionsError),
                       ),
                     ),
+
+                    // ── 4. Budgets Section ───────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: Text(
+                          l10n.languageCode == 'id'
+                              ? 'Anggaran Terbaru'
+                              : 'Recent Budget',
+                          style: AppTypography.textTheme.titleMedium,
+                        ),
+                      ),
+                    ),
+                    if (budgetsState.isInitialLoad)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                          child: SkeletonCard(height: 165),
+                        ),
+                      )
+                    else
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 165,
+                          child: PageView.builder(
+                            controller: _budgetPageController,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: budgetsState.budgets.isEmpty
+                                ? 1
+                                : budgetsState.budgets.length + 1,
+                            itemBuilder: (context, index) {
+                              Widget card;
+                              if (index == budgetsState.budgets.length) {
+                                card = _buildAddBudgetCard(context, isDark);
+                              } else {
+                                final currencyCode = profileAsync
+                                        .valueOrNull?['currency'] as String? ??
+                                    AppConstants.defaultCurrency;
+                                final currencySymbol =
+                                    AppConstants.getCurrencySymbol(
+                                        currencyCode);
+                                card = BudgetCard(
+                                  budget: budgetsState.budgets[index],
+                                  isDark: isDark,
+                                  currencySymbol: currencySymbol,
+                                );
+                              }
+                              return Align(
+                                alignment: Alignment.topCenter,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  child: card,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-
-
-                    // ── Analytics: Monthly Trend ─────────────────────────────
+                    // ── 5. Analytics: Monthly Trend ─────────────────────────────
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -285,91 +313,388 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
             ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _buildFixedTopHeader(context, ref, unreadCount, isDark),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue<Map<String, dynamic>> profileAsync,
-    double shrinkOffset,
-  ) {
-    final notificationsState = ref.watch(notificationsNotifierProvider);
-    final unreadCount = notificationsState.notifications
-        .where((n) => !(n['isRead'] as bool? ?? false))
-        .length;
-
+  Widget _buildQuickActionsRow(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Image.asset(
-            'assets/icon/app_icon.png',
-            width: 36,
-            height: 36,
+          Expanded(
+            child: _buildQuickActionButton(
+              context: context,
+              icon: Icons.receipt_long_rounded,
+              label: l10n.transactions,
+              color: AppColors.primary,
+              isDark: isDark,
+              onTap: () => context.push('/home/transactions'),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                _scrollController.animateTo(
-                  0,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              },
-              child: Text(
-                'Cuan Buddy',
-                style: AppTypography.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                  letterSpacing: -0.5,
+            child: _buildQuickActionButton(
+              context: context,
+              icon: Icons.pie_chart_rounded,
+              label: l10n.budgets,
+              color: Colors.purple,
+              isDark: isDark,
+              onTap: () => context.push('/home/budgets'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildQuickActionButton(
+              context: context,
+              icon: Icons.savings_rounded,
+              label: l10n.savingsGoals,
+              color: Colors.orange,
+              isDark: isDark,
+              onTap: () => context.push('/home/savings'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: AppTypography.textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixedTopHeader(
+    BuildContext context,
+    WidgetRef ref,
+    int unreadCount,
+    bool isDark,
+  ) {
+    final appBgColor =
+        isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.of(context).padding.top + 10,
+        20,
+        12,
+      ),
+      decoration: BoxDecoration(
+        color: _isScrolled ? appBgColor : Colors.transparent,
+        border: Border(
+          bottom: BorderSide(
+            color: _isScrolled
+                ? (isDark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.06))
+                : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        boxShadow: _isScrolled
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              ]
+            : [],
+      ),
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/icon/app_icon.png',
+            width: 32,
+            height: 32,
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'Cuan Buddy',
+            style: AppTypography.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: _isScrolled
+                  ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                  : Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => context.push('/home/profile'),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _isScrolled
+                    ? (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.05))
+                    : Colors.white.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                size: 20,
+                color: _isScrolled
+                    ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                    : Colors.white,
               ),
             ),
           ),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () => context.push('/home/profile'),
-                child: Icon(
-                  Icons.person_outline_rounded,
-                  size: 28,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => context.push('/notifications'),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _isScrolled
+                    ? (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.05))
+                    : Colors.white.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () => context.push('/notifications'),
-                icon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_outlined),
-                    if (unreadCount > 0)
-                      Positioned(
-                        right: -2,
-                        top: -2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.danger,
-                            shape: BoxShape.circle,
-                          ),
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    Icons.notifications_outlined,
+                    size: 20,
+                    color: _isScrolled
+                        ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                        : Colors.white,
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.danger,
+                          shape: BoxShape.circle,
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
-            ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopHeaderAndBalance(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<Map<String, dynamic>> summaryAsync,
+    AsyncValue<Map<String, dynamic>> profileAsync,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = ref.watch(accentColorProvider);
+    final HSLColor hsl = HSLColor.fromColor(accentColor);
+    final Color darkerAccent =
+        hsl.withLightness((hsl.lightness * 0.22).clamp(0.0, 1.0)).toColor();
+    final Color lighterAccent =
+        hsl.withLightness((hsl.lightness * 0.40).clamp(0.0, 1.0)).toColor();
+
+    final data = summaryAsync.valueOrNull ?? {};
+    final balance = (data['balance'] as num? ?? 0).toDouble();
+    final expense = (data['totalExpense'] as num? ?? 0).toDouble();
+    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
+        AppConstants.defaultCurrency;
+    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+
+    final displayBalance = _showBalance
+        ? CurrencyFormatter.formatAmount(balance, symbol: currencySymbol)
+        : '••••••••';
+
+    final displayExpense =
+        CurrencyFormatter.formatAmount(expense, symbol: currencySymbol);
+    final currentMonthName =
+        DateFormat('MMMM', l10n.languageCode).format(DateTime.now());
+    final expenseLabel = l10n.languageCode == 'id'
+        ? '$displayExpense pengeluaran di $currentMonthName'
+        : '$displayExpense spent in $currentMonthName';
+
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          // <-- TAMBAHAN
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  lighterAccent,
+                  darkerAccent,
+                ]
+              : [
+                  accentColor,
+                  lighterAccent,
+                ],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _HeaderPatternPainter(accentColor: accentColor),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              MediaQuery.of(context).padding.top + 64,
+              20,
+              24,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (summaryAsync.isLoading && !summaryAsync.hasValue)
+                  const SkeletonCard(height: 60)
+                else ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        displayBalance,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _showBalance = !_showBalance;
+                          });
+                        },
+                        child: Icon(
+                          _showBalance
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: 22,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => context.push('/home/transactions'),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.bar_chart_rounded,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          expenseLabel,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                const FinanceHealthHeaderWidget(),
+              ],
+            ),
           ),
         ],
       ),
@@ -384,7 +709,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         margin: EdgeInsets.zero,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
+          color: isDark
+              ? AppColors.surfaceDark.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: AppColors.primary.withValues(alpha: 0.3),
@@ -421,69 +748,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildBalanceCard(
-    Map<String, dynamic> data,
-    AsyncValue<Map<String, dynamic>> profileAsync,
-  ) {
-    final balance = (data['balance'] as num? ?? 0).toDouble();
-    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
-        AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-
-    final displayBalance = _showBalance
-        ? CurrencyFormatter.formatAmount(balance, symbol: currencySymbol)
-        : '••••••••';
-
-    return GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                l10n.totalBalance,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showBalance = !_showBalance;
-                  });
-                },
-                child: Icon(
-                  _showBalance
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                  color: Colors.white.withValues(alpha: 0.8),
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            displayBalance,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-
-
   Widget _buildMonthlyTrendChart(
     BuildContext context,
     List<dynamic> monthlyTrend,
@@ -493,7 +757,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
         AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
-
 
     List<dynamic> data = [];
     if (monthlyTrend.isEmpty) {
@@ -596,12 +859,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   horizontalInterval: yMax / 4,
                   verticalInterval: 1,
                   getDrawingHorizontalLine: (_) => FlLine(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
                   getDrawingVerticalLine: (_) => FlLine(
-                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    color:
+                        isDark ? AppColors.borderDark : AppColors.borderLight,
                     strokeWidth: 1,
                     dashArray: [4, 4],
                   ),
@@ -616,8 +881,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       return touchedSpots.map((spot) {
                         final val = spot.y;
                         final isIncome = spot.barIndex == 0;
-                        final label = isIncome ? l10n.incomeType : l10n.expenseType;
-                        final color = isIncome ? AppColors.success : AppColors.danger;
+                        final label =
+                            isIncome ? l10n.incomeType : l10n.expenseType;
+                        final color =
+                            isIncome ? AppColors.success : AppColors.danger;
                         return LineTooltipItem(
                           '$label\n${CurrencyFormatter.formatAmount(val, symbol: currencySymbol)}',
                           TextStyle(
@@ -632,8 +899,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -652,7 +921,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           label,
                           style: TextStyle(
                             fontSize: 10,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                           ),
                         );
                       },
@@ -668,7 +939,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         if (idx < 0 || idx >= data.length) {
                           return const SizedBox.shrink();
                         }
-                        final month = (data[idx] as Map<String, dynamic>)['month'] as String? ?? '';
+                        final month = (data[idx]
+                                as Map<String, dynamic>)['month'] as String? ??
+                            '';
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
@@ -676,7 +949,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         );
@@ -713,40 +988,191 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-class _DashboardHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final Widget Function(BuildContext, double) builder;
-  final double minHeight;
-  final double maxHeight;
-  final Color baseColor;
+// ─── Saldo Header Background Custom Pattern Painter ───────────────────────────
+class _HeaderPatternPainter extends CustomPainter {
+  final Color accentColor;
 
-  _DashboardHeaderDelegate({
-    required this.builder,
-    required this.minHeight,
-    required this.maxHeight,
-    required this.baseColor,
-  });
+  _HeaderPatternPainter({required this.accentColor});
 
   @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    // Opacity increases as we scroll up to 50 pixels
-    final double opacity = (shrinkOffset / 50).clamp(0.0, 1.0);
-    return Container(
-      color: baseColor.withValues(alpha: opacity),
-      child: builder(context, shrinkOffset),
+  void paint(Canvas canvas, Size size) {
+    // 1. Ambient Glow Orbs (Soft Lighting & Visual Depth)
+    final orbPaint1 = Paint()
+      ..shader = ui.Gradient.radial(
+        Offset(size.width * 0.85, size.height * 0.20),
+        size.width * 0.65,
+        [
+          accentColor.withValues(alpha: 0.28),
+          Colors.white.withValues(alpha: 0.08),
+          Colors.transparent,
+        ],
+        [0.0, 0.45, 1.0],
+      )
+      ..style = PaintingStyle.fill;
+
+    final orbPaint2 = Paint()
+      ..shader = ui.Gradient.radial(
+        Offset(size.width * 0.15, size.height * 0.85),
+        size.width * 0.50,
+        [
+          Colors.white.withValues(alpha: 0.12),
+          accentColor.withValues(alpha: 0.06),
+          Colors.transparent,
+        ],
+        [0.0, 0.50, 1.0],
+      )
+      ..style = PaintingStyle.fill;
+
+    canvas.drawRect(Offset.zero & size, orbPaint1);
+    canvas.drawRect(Offset.zero & size, orbPaint2);
+
+    // 2. Modern Fintech Micro Dot Matrix
+    const double spacing = 22.0;
+    final dotPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.06)
+      ..style = PaintingStyle.fill;
+    final accentDotPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.25)
+      ..style = PaintingStyle.fill;
+
+    for (double x = 12; x < size.width; x += spacing) {
+      for (double y = 12; y < size.height; y += spacing) {
+        if ((x / spacing).floor() % 3 == 0 && (y / spacing).floor() % 3 == 0) {
+          canvas.drawCircle(Offset(x, y), 1.6, accentDotPaint);
+        } else {
+          canvas.drawCircle(Offset(x, y), 1.0, dotPaint);
+        }
+      }
+    }
+
+    // 3. Financial Upward Growth Waves (Smooth Bezier Curves)
+    final wavePath1 = Path();
+    wavePath1.moveTo(-20, size.height * 0.75);
+    wavePath1.cubicTo(
+      size.width * 0.25,
+      size.height * 0.95,
+      size.width * 0.45,
+      size.height * 0.35,
+      size.width * 0.75,
+      size.height * 0.45,
     );
+    wavePath1.cubicTo(
+      size.width * 0.90,
+      size.height * 0.50,
+      size.width * 0.95,
+      size.height * 0.15,
+      size.width + 20,
+      size.height * 0.10,
+    );
+
+    final wavePaint1 = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(0, size.height),
+        Offset(size.width, 0),
+        [
+          Colors.white.withValues(alpha: 0.05),
+          accentColor.withValues(alpha: 0.35),
+          Colors.white.withValues(alpha: 0.50),
+        ],
+        [0.0, 0.6, 1.0],
+      )
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawPath(wavePath1, wavePaint1);
+
+    // Secondary Financial Wave Curve
+    final wavePath2 = Path();
+    wavePath2.moveTo(-20, size.height * 0.55);
+    wavePath2.cubicTo(
+      size.width * 0.30,
+      size.height * 0.30,
+      size.width * 0.60,
+      size.height * 0.85,
+      size.width + 20,
+      size.height * 0.30,
+    );
+
+    final wavePaint2 = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(0, 0),
+        Offset(size.width, size.height),
+        [
+          accentColor.withValues(alpha: 0.30),
+          Colors.white.withValues(alpha: 0.15),
+          Colors.transparent,
+        ],
+      )
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawPath(wavePath2, wavePaint2);
+
+    // Soft Glowing Gradient Wave Fill Layer
+    final fillPath = Path.from(wavePath1);
+    fillPath.lineTo(size.width + 20, size.height + 20);
+    fillPath.lineTo(-20, size.height + 20);
+    fillPath.close();
+
+    final fillPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(0, size.height * 0.3),
+        Offset(0, size.height),
+        [
+          accentColor.withValues(alpha: 0.12),
+          Colors.transparent,
+        ],
+      )
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(fillPath, fillPaint);
+
+    // 4. Financial Geometric Diamond Accents
+    _drawDiamond(canvas, Offset(size.width * 0.88, size.height * 0.22), 12,
+        accentColor.withValues(alpha: 0.30), isFilled: false);
+    _drawDiamond(canvas, Offset(size.width * 0.88, size.height * 0.22), 5,
+        Colors.white.withValues(alpha: 0.50), isFilled: true);
+
+    _drawDiamond(canvas, Offset(size.width * 0.72, size.height * 0.78), 9,
+        Colors.white.withValues(alpha: 0.20), isFilled: false);
+    _drawDiamond(canvas, Offset(size.width * 0.12, size.height * 0.35), 7,
+        accentColor.withValues(alpha: 0.25), isFilled: false);
+
+    // 5. Tech Concentric Precision Ring Halos (Corner Accent)
+    final ringCenter = Offset(size.width * 0.92, size.height * 0.18);
+    final ringPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.08)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    final ringAccentPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.20)
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawCircle(ringCenter, 28, ringPaint);
+    canvas.drawCircle(ringCenter, 56, ringAccentPaint);
+    canvas.drawCircle(ringCenter, 84, ringPaint);
+  }
+
+  void _drawDiamond(Canvas canvas, Offset center, double size, Color color,
+      {required bool isFilled}) {
+    final path = Path()
+      ..moveTo(center.dx, center.dy - size)
+      ..lineTo(center.dx + size * 0.75, center.dy)
+      ..lineTo(center.dx, center.dy + size)
+      ..lineTo(center.dx - size * 0.75, center.dy)
+      ..close();
+
+    final paint = Paint()
+      ..color = color
+      ..style = isFilled ? PaintingStyle.fill : PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    canvas.drawPath(path, paint);
   }
 
   @override
-  double get maxExtent => maxHeight;
-
-  @override
-  double get minExtent => minHeight;
-
-  @override
-  bool shouldRebuild(covariant _DashboardHeaderDelegate oldDelegate) {
-    return maxHeight != oldDelegate.maxHeight ||
-        minHeight != oldDelegate.minHeight ||
-        baseColor != oldDelegate.baseColor;
+  bool shouldRepaint(covariant _HeaderPatternPainter oldDelegate) {
+    return oldDelegate.accentColor != accentColor;
   }
 }

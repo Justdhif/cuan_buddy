@@ -1,13 +1,16 @@
-import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shimmer/shimmer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
+import '../../../../core/widgets/app_screen_header.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/theme/category_icon_shape.dart';
+import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../providers/shared_provider.dart';
 
 class SharedScreen extends ConsumerStatefulWidget {
@@ -17,15 +20,9 @@ class SharedScreen extends ConsumerStatefulWidget {
   ConsumerState<SharedScreen> createState() => _SharedScreenState();
 }
 
-class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProviderStateMixin {
+class _SharedScreenState extends ConsumerState<SharedScreen> {
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
-
-  // Speed-dial FAB state
-  bool _fabOpen = false;
-  late AnimationController _fabController;
-  late Animation<double> _fade1, _fade2;
-  late Animation<Offset> _slide1, _slide2;
 
   @override
   void initState() {
@@ -37,96 +34,264 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
     _scrollController.addListener(() {
       setState(() => _scrollOffset = _scrollController.offset);
     });
-
-    _fabController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _fade1 = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-          parent: _fabController,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
-    );
-    _fade2 = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-          parent: _fabController,
-          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
-    );
-
-    _slide1 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
-      CurvedAnimation(
-          parent: _fabController,
-          curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
-    );
-    _slide2 = Tween<Offset>(begin: const Offset(0, 1.0), end: Offset.zero).animate(
-      CurvedAnimation(
-          parent: _fabController,
-          curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
-    );
   }
 
   @override
   void dispose() {
-    _fabController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _toggleFab() {
-    setState(() {
-      _fabOpen = !_fabOpen;
-      if (_fabOpen) {
-        _fabController.forward();
-      } else {
-        _fabController.reverse();
-      }
-    });
   }
 
   void _showCreateRoomScreen() {
     context.push('/shared/room-form');
   }
 
-  Widget _buildSubFab({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-    required Animation<double> fadeAnim,
-    required Animation<Offset> slideAnim,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return FadeTransition(
-      opacity: fadeAnim,
-      child: SlideTransition(
-        position: slideAnim,
-        child: IgnorePointer(
-          ignoring: !_fabOpen,
-          child: Tooltip(
-            message: tooltip,
-            child: GestureDetector(
-              onTap: onTap,
-              child: Container(
-                width: 48,
-                height: 48,
+  /// Builds the Hero Net Balance Card across all shared rooms
+  Widget _buildNetBalanceBanner(bool isDark, TextTheme textTheme, bool isId) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF1E1E38), const Color(0xFF121324)]
+              : [AppColors.primary, AppColors.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  color: isDark ? AppColors.surfaceDark : Colors.white,
-                  border: Border.all(color: AppColors.primary, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 3),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                isId ? 'Ringkasan Ruangan' : 'Room Summary',
+                style: textTheme.titleSmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Income',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      CurrencyFormatter.formatAmount(0, symbol: 'Rp', decimalPrecision: 0),
+                      style: textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFF64FFDA),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-                child: Icon(icon, color: AppColors.primary, size: 22),
               ),
+              Container(
+                width: 1,
+                height: 36,
+                color: Colors.white.withValues(alpha: 0.2),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Expense',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        CurrencyFormatter.formatAmount(0, symbol: 'Rp', decimalPrecision: 0),
+                        style: textTheme.titleMedium?.copyWith(
+                          color: const Color(0xFFFF8A80),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds Quick Actions row (New Room, Friends)
+  Widget _buildQuickActionsRow(bool isDark, AppLocalizations l10n, bool isId) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildActionButton(
+              isDark: isDark,
+              icon: Icons.add_home_work_rounded,
+              label: isId ? 'Room Baru' : 'New Room',
+              color: AppColors.primary,
+              onTap: _showCreateRoomScreen,
             ),
           ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _buildActionButton(
+              isDark: isDark,
+              icon: Icons.people_alt_rounded,
+              label: l10n.manageFriends,
+              color: const Color(0xFF00B4D8),
+              onTap: () => context.push('/shared/friends'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required bool isDark,
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceDark : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            )
+          ],
         ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds member avatar stack snippet for each room card
+  Widget _buildMemberAvatarStack(List<dynamic> members) {
+    if (members.isEmpty) return const SizedBox.shrink();
+
+    final displayMembers = members.take(3).toList();
+    final remainingCount = members.length > 3 ? members.length - 3 : 0;
+
+    return SizedBox(
+      height: 28,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: (displayMembers.length * 18.0) + 12,
+            child: Stack(
+              children: [
+                for (int i = 0; i < displayMembers.length; i++)
+                  Positioned(
+                    left: i * 18.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: UserAvatar(
+                        size: 24,
+                        fallbackName: displayMembers[i]['name'] ?? displayMembers[i]['username'] ?? 'U',
+                        avatarUrl: displayMembers[i]['avatar'],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (remainingCount > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '+$remainingCount',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -137,7 +302,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
     final state = ref.watch(sharedNotifierProvider);
     final textTheme = AppTypography.textTheme;
     final l10n = AppLocalizations.of(context);
-    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final isId = l10n.languageCode == 'id';
 
     final viewportHeight = MediaQuery.of(context).size.height -
         kToolbarHeight -
@@ -156,22 +321,52 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
               ),
               controller: _scrollController,
               slivers: [
-                // ── Hero header scrolls naturally with the page ─────────────
+                // ── Top spacing for AppScreenHeader ─────────────────────────────
                 SliverToBoxAdapter(
-                  child: _SharedHeroHeader(isDark: isDark),
+                  child: SizedBox(height: MediaQuery.of(context).padding.top + 54),
+                ),
+
+                // ── Hero Net Balance Summary Banner ─────────────────────────────
+                SliverToBoxAdapter(
+                  child: _buildNetBalanceBanner(isDark, textTheme, isId),
+                ),
+
+                // ── Quick Actions Row ───────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: _buildQuickActionsRow(isDark, l10n, isId),
+                ),
+
+                // ── Section Title ───────────────────────────────────────────────
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isId ? 'Daftar Ruangan' : 'Room List',
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                        Text(
+                          '${state.rooms.length} ${isId ? 'Ruangan' : 'Rooms'}',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
 
                 if (state.isLoading)
-                  const SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 200,
-                      child: Center(child: CircularProgressIndicator()),
-                    ),
-                  )
+                  const _SharedRoomListSkeleton()
                 else if (state.rooms.isEmpty)
                   SliverToBoxAdapter(
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: viewportHeight),
+                      constraints: BoxConstraints(minHeight: viewportHeight * 0.5),
                       child: AppEmptyState(
                         icon: Icons.group_outlined,
                         title: l10n.noRoomsYet,
@@ -185,7 +380,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
                           onPressed: _showCreateRoomScreen,
                           icon: const Icon(Icons.add, color: Colors.white),
                           label: Text(
-                            l10n.createRoom,
+                            isId ? 'Room Baru' : 'New Room',
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -194,7 +389,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
                   )
                 else ...[
                   SliverPadding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
@@ -204,6 +399,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
                           final String role = room['role'] ?? 'member';
                           final String emoji = room['emojiIcon'] ?? '📁';
                           final String colorHex = room['colorCode'] ?? '#6C63FF';
+                          final List members = room['members'] is List ? room['members'] : [];
                           final Color roomColor = AppColors.colorFromHex(colorHex, fallback: AppColors.primary);
 
                           return Padding(
@@ -212,85 +408,152 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
                               onTap: () {
                                 context.push('/shared/room/${room['id']}');
                               },
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(20),
                               child: Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: isDark ? AppColors.surfaceDark : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
                                     color: isDark ? AppColors.borderDark : AppColors.borderLight,
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 52,
-                                      height: 52,
-                                      decoration: ShapeDecoration(
-                                        color: roomColor.withValues(alpha: 0.15),
-                                        shape: ref.read(categoryIconShapeProvider).toShapeBorder(52),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          emoji,
-                                          style: const TextStyle(fontSize: 24),
-                                        ),
-                                      ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: isDark ? 0.1 : 0.04),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            name,
-                                            style: textTheme.titleMedium?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        // Squircle Emoji Container with soft glow
+                                        Container(
+                                          width: 52,
+                                          height: 52,
+                                          decoration: ShapeDecoration(
+                                            color: roomColor.withValues(alpha: 0.15),
+                                            shape: ref.read(categoryIconShapeProvider).toShapeBorder(52),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              emoji,
+                                              style: const TextStyle(fontSize: 26),
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
-                                          Row(
+                                        ),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Icon(
-                                                Icons.people_outline,
-                                                size: 14,
-                                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      name,
+                                                      style: textTheme.titleMedium?.copyWith(
+                                                        fontWeight: FontWeight.bold,
+                                                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: role == 'owner'
+                                                          ? AppColors.warning.withValues(alpha: 0.18)
+                                                          : AppColors.primary.withValues(alpha: 0.1),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Text(
+                                                      role == 'owner' ? 'Owner' : (isId ? 'Anggota' : 'Member'),
+                                                      style: TextStyle(
+                                                        color: role == 'owner' ? AppColors.warningDark : AppColors.primary,
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  )
+                                                ],
                                               ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                '$membersCount ${l10n.members}',
+                                              const SizedBox(height: 6),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.people_outline_rounded,
+                                                    size: 14,
+                                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '$membersCount ${isId ? 'Anggota' : 'Members'}',
+                                                    style: textTheme.bodySmall?.copyWith(
+                                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Divider(height: 1, color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                                    const SizedBox(height: 12),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        // Avatar Stack or Member summary
+                                        members.isNotEmpty
+                                            ? _buildMemberAvatarStack(members)
+                                            : Row(
+                                                children: [
+                                                  Icon(Icons.group, size: 16, color: AppColors.primary),
+                                                  const SizedBox(width: 6),
+                                                  Text(
+                                                    isId ? 'Ruangan Bersama' : 'Shared Room',
+                                                    style: textTheme.bodySmall?.copyWith(
+                                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: isDark
+                                                    ? AppColors.surfaceDark
+                                                    : AppColors.backgroundLight,
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                isId ? 'Aktif' : 'Active',
                                                 style: textTheme.bodySmall?.copyWith(
+                                                  fontWeight: FontWeight.bold,
                                                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                                                 ),
                                               ),
-                                              const SizedBox(width: 12),
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: role == 'owner'
-                                                      ? AppColors.warning.withValues(alpha: 0.2)
-                                                      : AppColors.primary.withValues(alpha: 0.1),
-                                                  borderRadius: BorderRadius.circular(6),
-                                                ),
-                                                child: Text(
-                                                  role == 'owner' ? 'Owner' : 'Member',
-                                                  style: TextStyle(
-                                                    color: role == 'owner' ? AppColors.warningDark : AppColors.primary,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              )
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: isDark ? AppColors.textHintDark : AppColors.textHintLight,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Icon(
+                                              Icons.chevron_right_rounded,
+                                              color: isDark ? AppColors.textHintDark : AppColors.textHintLight,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -303,275 +566,168 @@ class _SharedScreenState extends ConsumerState<SharedScreen> with TickerProvider
                     ),
                   ),
                   const SliverToBoxAdapter(
-                    child: SizedBox(height: 120), // Bottom padding for FAB
+                    child: SizedBox(height: 32),
                   ),
                 ],
               ],
             ),
           ),
-          // ── Pinned AppBar Background (appears on scroll) ─────────────────────
+          // ── Fixed AppScreenHeader ──────────────────────────────────────────
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            child: Builder(builder: (context) {
-              final t = (_scrollOffset / 60).clamp(0.0, 1.0);
-              return Opacity(
-                opacity: t,
-                child: Container(
-                  height: MediaQuery.of(context).padding.top + kToolbarHeight,
-                  color: bgColor,
-                ),
-              );
-            }),
-          ),
-          // ── Floating animated title (moves from hero to AppBar) ──────────────
-          _buildFloatingTitle(context, l10n, isDark, bgColor),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Sub 2: Manage Friends (topmost)
-          _buildSubFab(
-            icon: Icons.person_add_rounded,
-            tooltip: l10n.manageFriends,
-            onTap: () {
-              _toggleFab();
-              context.push('/shared/friends');
-            },
-            fadeAnim: _fade2,
-            slideAnim: _slide2,
-          ),
-          const SizedBox(height: 12),
-          // Sub 1: Create Room (middle)
-          _buildSubFab(
-            icon: Icons.add_home_work_rounded,
-            tooltip: l10n.createRoom,
-            onTap: () {
-              _toggleFab();
-              _showCreateRoomScreen();
-            },
-            fadeAnim: _fade1,
-            slideAnim: _slide1,
-          ),
-          const SizedBox(height: 16),
-          // Main FAB
-          GestureDetector(
-            onTap: _toggleFab,
-            child: AnimatedBuilder(
-              animation: _fabController,
-              builder: (ctx, child) => Transform.rotate(
-                angle: _fabController.value * 0.785398, // 45 degrees
-                child: child,
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.primary,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.add_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
+            child: AppScreenHeader(
+              title: l10n.sharedSpace,
+              isScrolled: _scrollOffset > 15,
+              showBackButton: false,
+              showActions: false,
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildFloatingTitle(
-    BuildContext context,
-    AppLocalizations l10n,
-    bool isDark,
-    Color bgColor,
-  ) {
-    final statusBarH = MediaQuery.of(context).padding.top;
-    const appBarH = kToolbarHeight;
-    final heroTitleY = statusBarH + 12.0 + 8.0 + 14.0;
-    final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
-    final travelDist = heroTitleY - appBarTitleY;
-
-    final t = (_scrollOffset / travelDist.abs()).clamp(0.0, 1.0);
-    var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
-
-    if (_scrollOffset < 0) {
-      currentY -= _scrollOffset;
-    }
-
-    final heroSize = AppTypography.textTheme.headlineMedium?.fontSize ?? 28.0;
-    final appBarSize = AppTypography.textTheme.titleLarge?.fontSize ?? 22.0;
-    final currentSize = lerpDouble(heroSize, appBarSize, t)!;
-
-    return Positioned(
-      top: currentY,
-      left: 24.0,
-      right: 120.0,
-      child: GestureDetector(
-        onTap: () {
-          _scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        },
-        child: Text(
-          l10n.sharedSpace,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: currentSize,
-            fontWeight: FontWeight.bold,
-            fontFamily: AppTypography.textTheme.headlineMedium?.fontFamily,
-            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-          ),
-        ),
-      ),
-    );
-  }
-
-
 }
 
-class _SharedHeroHeader extends StatelessWidget {
-  const _SharedHeroHeader({required this.isDark});
-  final bool isDark;
+class _SharedRoomListSkeleton extends StatelessWidget {
+  const _SharedRoomListSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 12, 16, 0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Opacity(
-                    opacity: 0,
-                    child: Text(
-                      l10n.sharedSpace,
-                      style: AppTypography.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark
+        ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+        : const Color(0xFFE2E8F0);
+    final highlightColor = isDark
+        ? const Color(0xFF334155).withValues(alpha: 0.8)
+        : const Color(0xFFF8FAFC);
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Container(
+                                      height: 16,
+                                      width: 140,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    Container(
+                                      height: 16,
+                                      width: 52,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 12,
+                                  width: 84,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 14),
+                      Container(
+                        height: 1,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            height: 24,
+                            width: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.friendsInviteDescription,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            // Right illustration
-            SizedBox(
-              width: 88,
-              height: 88,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Center main – people icon
-                  Positioned(
-                    left: 20,
-                    top: 20,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.people_rounded, color: Colors.purple, size: 26),
-                    ),
-                  ),
-                  // Top-right – forum
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.forum_rounded, color: Colors.blue, size: 16),
-                    ),
-                  ),
-                  // Bottom-left – savings
-                  Positioned(
-                    left: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.savings_rounded, color: Colors.green, size: 15),
-                    ),
-                  ),
-                  // Top-left – wallet
-                  Positioned(
-                    left: 2,
-                    top: 2,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.orange, size: 13),
-                    ),
-                  ),
-                  // Bottom-right – pie chart
-                  Positioned(
-                    right: 4,
-                    bottom: 4,
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.pie_chart_rounded, color: Colors.red, size: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 4),
-          ],
+            );
+          },
+          childCount: 3,
         ),
       ),
     );
   }
 }
+
+
+
 

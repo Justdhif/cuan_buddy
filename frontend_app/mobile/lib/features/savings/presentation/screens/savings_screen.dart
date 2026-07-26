@@ -1,4 +1,3 @@
-import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +7,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
+import '../../../../core/widgets/app_screen_header.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/savings_provider.dart';
 import '../../../../core/theme/category_icon_shape.dart';
@@ -56,81 +56,17 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             color: AppColors.primary,
             child: _buildBody(context, ref, savingsState, isDark, currencySymbol),
           ),
-          // ── Pinned AppBar Background (appears on scroll) ─────────────────────
+          // ── Fixed AppScreenHeader ──────────────────────────────────────────
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            child: Builder(builder: (context) {
-              final t = (_scrollOffset / 60).clamp(0.0, 1.0);
-              return Opacity(
-                opacity: t,
-                child: Container(
-                  height: MediaQuery.of(context).padding.top + kToolbarHeight,
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                ),
-              );
-            }),
+            child: AppScreenHeader(
+              title: l10n.savingsGoals,
+              isScrolled: _scrollOffset > 15,
+            ),
           ),
-          // ── Floating animated title (moves from hero to AppBar) ──────────────
-          _buildFloatingTitle(context, l10n, isDark),
         ],
-      ),
-    );
-  }
-
-  /// Floating title that physically moves from hero position to AppBar as user scrolls.
-  Widget _buildFloatingTitle(
-    BuildContext context,
-    AppLocalizations l10n,
-    bool isDark,
-  ) {
-    final statusBarH = MediaQuery.of(context).padding.top;
-    const appBarH = kToolbarHeight;
-    // Hero title Y: statusBar + 12 padding + 8 SizedBox + ~14 half-text
-    final heroTitleY = statusBarH + 12.0 + 8.0 + 14.0;
-    // AppBar title Y: vertically centered in AppBar
-    final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
-    final travelDist = heroTitleY - appBarTitleY;
-
-    // t: 0 = title at hero, 1 = title at AppBar
-    final t = (_scrollOffset / travelDist.abs()).clamp(0.0, 1.0);
-    var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
-
-    // Adjust for overscroll (pull to refresh)
-    if (_scrollOffset < 0) {
-      currentY -= _scrollOffset; 
-    }
-
-    final heroSize = AppTypography.textTheme.headlineMedium?.fontSize ?? 28.0;
-    final appBarSize = AppTypography.textTheme.titleLarge?.fontSize ?? 22.0;
-    final currentSize = lerpDouble(heroSize, appBarSize, t)!;
-
-    return Positioned(
-      top: currentY,
-      left: 24.0,
-      right: 120.0,
-      child: GestureDetector(
-        onTap: () {
-          _scrollController.animateTo(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        },
-        child: Text(
-          l10n.savingsGoals,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: currentSize,
-            fontWeight: FontWeight.bold,
-            fontFamily: AppTypography.textTheme.headlineMedium?.fontFamily,
-            color: isDark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
-        ),
       ),
     );
   }
@@ -158,9 +94,9 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
-        // ── Hero content — scrolls naturally with the page ─────────────
+        // ── Top spacing for AppScreenHeader ─────────────────────────────
         SliverToBoxAdapter(
-          child: _SavingsHeroHeader(isDark: isDark),
+          child: SizedBox(height: MediaQuery.of(context).padding.top + 54),
         ),
         // Summary Header
         SliverToBoxAdapter(
@@ -677,135 +613,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                 ],
               ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Hero Header Widget ────────────────────────────────────────────────────────
-class _SavingsHeroHeader extends StatelessWidget {
-  const _SavingsHeroHeader({required this.isDark});
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 12, 20, 0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Opacity(
-                    opacity: 0,
-                    child: Text(
-                      l10n.savingsGoals,
-                      style: AppTypography.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.savingsSubtitle,
-                    style: AppTypography.textTheme.bodyMedium?.copyWith(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              width: 88,
-              height: 88,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // Center main icon – piggy bank
-                  Positioned(
-                    left: 20,
-                    top: 20,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(Icons.savings_rounded, color: AppColors.primary, size: 26),
-                    ),
-                  ),
-                  // Top-right – star / target
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                    ),
-                  ),
-                  // Bottom-left – trending up
-                  Positioned(
-                    left: 0,
-                    bottom: 0,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.trending_up_rounded, color: AppColors.success, size: 15),
-                    ),
-                  ),
-                  // Top-left – flag / goal
-                  Positioned(
-                    left: 2,
-                    top: 2,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.purple.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.flag_rounded, color: Colors.purple, size: 13),
-                    ),
-                  ),
-                  // Bottom-right – coin / attach money
-                  Positioned(
-                    right: 4,
-                    bottom: 4,
-                    child: Container(
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.monetization_on_rounded, color: Colors.orange, size: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

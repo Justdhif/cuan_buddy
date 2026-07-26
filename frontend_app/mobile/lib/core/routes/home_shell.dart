@@ -1,29 +1,10 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import '../theme/app_colors.dart';
 import '../l10n/app_localizations.dart';
 import '../../features/profile/presentation/providers/achievement_provider.dart';
-
-class _CustomConvexStyle extends StyleHook {
-  final TextStyle baseStyle;
-  _CustomConvexStyle(this.baseStyle);
-
-  @override
-  double get activeIconSize => 40;
-
-  @override
-  double get activeIconMargin => 10;
-
-  @override
-  double get iconSize => 24;
-
-  @override
-  TextStyle textStyle(Color color, String? fontFamily) {
-    return baseStyle.copyWith(color: color, fontSize: 10);
-  }
-}
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({
@@ -42,7 +23,6 @@ class HomeShell extends ConsumerStatefulWidget {
 class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateMixin {
   late PageController _pageController;
   late AnimationController _fadeController;
-  bool _isNavClick = false;
   bool _isPageChangingFromSwipe = false;
 
   @override
@@ -64,20 +44,12 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
     super.didUpdateWidget(oldWidget);
     if (widget.navigationShell.currentIndex != oldWidget.navigationShell.currentIndex) {
       final targetIndex = widget.navigationShell.currentIndex;
-      if (_isNavClick) {
-        // Nav clicked: jump page immediately and trigger fade animation
-        _pageController.jumpToPage(targetIndex);
-        _fadeController.forward(from: 0.0);
-        _isNavClick = false;
-      } else if (!_isPageChangingFromSwipe) {
-        // Page changed externally or programmatically without click/swipe
-        if (_pageController.hasClients && _pageController.page?.round() != targetIndex) {
-          _pageController.animateToPage(
-            targetIndex,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+      if (!_isPageChangingFromSwipe) {
+        // Page changed programmatically or via nav click: jump immediately and trigger fade animation
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(targetIndex);
         }
+        _fadeController.forward(from: 0.0);
       }
       _isPageChangingFromSwipe = false;
     }
@@ -93,6 +65,7 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: FadeTransition(
         opacity: _fadeController,
         child: PageView(
@@ -113,9 +86,6 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
         currentIndex: widget.navigationShell.currentIndex,
         onTap: (index) {
           if (index != widget.navigationShell.currentIndex) {
-            setState(() {
-              _isNavClick = true;
-            });
             widget.navigationShell.goBranch(
               index,
               initialLocation: index == widget.navigationShell.currentIndex,
@@ -127,7 +97,7 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
   }
 }
 
-// ─── Custom Bottom Navigation Bar ─────────────────────────────────────────────
+// ─── Floating Telegram-Style Capsule Bottom Navigation Bar ─────────────────────
 class _CuanBuddyNavBar extends ConsumerWidget {
   const _CuanBuddyNavBar({
     required this.currentIndex,
@@ -141,36 +111,138 @@ class _CuanBuddyNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return StyleProvider(
-      style: _CustomConvexStyle(Theme.of(context).textTheme.bodySmall!),
-      child: ConvexAppBar(
-        key: ValueKey(currentIndex),
-        style: TabStyle.fixedCircle,
-        backgroundColor: isDark
-            ? AppColors.surfaceDark
-            : Theme.of(context).scaffoldBackgroundColor,
-        color:
-            isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-        activeColor: AppColors.primary,
-        shadowColor:
-            isDark ? Colors.black.withValues(alpha: 0.6) : Colors.black12,
-        cornerRadius: 0,
-        elevation: isDark ? 8 : 4,
-        height: 60 +
-            (MediaQuery.of(context).padding.bottom > 0
-                ? MediaQuery.of(context).padding.bottom * 0.6
-                : 0),
-        initialActiveIndex: currentIndex,
-        onTap: onTap,
-        items: [
-          TabItem(icon: Icons.receipt_long_outlined, title: l10n.transactions),
-          TabItem(icon: Icons.pie_chart_outline_rounded, title: l10n.budgets),
-          TabItem(icon: Icons.home_rounded, title: l10n.home),
-          TabItem(icon: Icons.savings_outlined, title: l10n.savingsGoals),
-          TabItem(icon: Icons.group_outlined, title: l10n.shared),
-        ],
+    final navItems = [
+      _NavItemData(
+        index: 0,
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
+        label: l10n.home,
+      ),
+      _NavItemData(
+        index: 1,
+        icon: Icons.group_outlined,
+        activeIcon: Icons.group_rounded,
+        label: l10n.shared,
+      ),
+      _NavItemData(
+        index: 2,
+        icon: Icons.settings_outlined,
+        activeIcon: Icons.settings_rounded,
+        label: l10n.languageCode == 'id' ? 'Pengaturan' : 'Settings',
+      ),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        0,
+        16,
+        bottomPadding > 0 ? bottomPadding : 12,
+      ),
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+              blurRadius: 20,
+              spreadRadius: 0,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF1E2A38).withValues(alpha: 0.20)
+                    : Colors.white.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(32),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : Colors.white.withValues(alpha: 0.6),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: navItems.map((item) {
+                  final isSelected = currentIndex == item.index;
+                  return Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onTap(item.index),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Active Pill Container behind icon (Telegram style)
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.15)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Icon(
+                              isSelected ? item.activeIcon : item.icon,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : (isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight),
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            item.label,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight:
+                                  isSelected ? FontWeight.bold : FontWeight.w500,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : (isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
+}
+
+class _NavItemData {
+  final int index;
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+
+  const _NavItemData({
+    required this.index,
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
 }

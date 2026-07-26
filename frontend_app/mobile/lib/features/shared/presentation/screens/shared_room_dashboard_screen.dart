@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -373,9 +374,7 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
     final l10n = AppLocalizations.of(context);
 
     if (state.isRoomLoading && state.activeRoom == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return _SharedRoomDashboardSkeleton(isDark: isDark);
     }
 
     final room = state.activeRoom;
@@ -466,98 +465,169 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              roomColor.withValues(alpha: isDark ? 0.25 : 0.15),
-                              roomColor.withValues(alpha: isDark ? 0.08 : 0.03),
+                              roomColor.withValues(alpha: isDark ? 0.35 : 0.2),
+                              roomColor.withValues(alpha: isDark ? 0.12 : 0.05),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(
-                            color: roomColor.withValues(alpha: isDark ? 0.35 : 0.2),
+                            color: roomColor.withValues(alpha: isDark ? 0.45 : 0.25),
                             width: 1.5,
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            // Room emoji with shape from profile setting
-                            Container(
-                              width: 64,
-                              height: 64,
-                              alignment: Alignment.center,
-                              decoration: ShapeDecoration(
-                                color: roomColor.withValues(alpha: 0.2),
-                                shape: iconShape.toShapeBorder(64),
-                              ),
-                              child: Text(
-                                room['emojiIcon'] ?? '📁',
-                                style: const TextStyle(fontSize: 28),
-                              ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: roomColor.withValues(alpha: 0.1),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Row(
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                // Room emoji with shape from profile setting
+                                Container(
+                                  width: 64,
+                                  height: 64,
+                                  alignment: Alignment.center,
+                                  decoration: ShapeDecoration(
+                                    color: roomColor.withValues(alpha: 0.25),
+                                    shape: iconShape.toShapeBorder(64),
+                                  ),
+                                  child: Text(
+                                    room['emojiIcon'] ?? '📁',
+                                    style: const TextStyle(fontSize: 32),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          roomName,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: isDark ? Colors.white : Colors.black87,
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              roomName,
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: isDark ? Colors.white : Colors.black87,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: _showEditRoomBottomSheet,
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Icon(
+                                                Icons.edit_outlined,
+                                                size: 16,
+                                                color: isDark ? Colors.white70 : AppColors.primary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 8),
-                                      GestureDetector(
-                                        onTap: _showEditRoomBottomSheet,
-                                        child: Icon(
-                                          Icons.edit_outlined,
-                                          size: 16,
-                                          color: isDark ? Colors.white70 : AppColors.primary,
-                                        ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.04),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.group_outlined,
+                                                  size: 14,
+                                                  color: isDark ? Colors.white70 : Colors.black54,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '${members.length} ${l10n.members}',
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: isDark ? Colors.white70 : AppColors.textSecondaryLight,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: room['role'] == 'owner'
+                                                  ? AppColors.warning.withValues(alpha: 0.2)
+                                                  : AppColors.primary.withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              room['role'] == 'owner' ? 'Owner' : (l10n.languageCode == 'id' ? 'Anggota' : 'Member'),
+                                              style: TextStyle(
+                                                color: room['role'] == 'owner' ? AppColors.warningDark : AppColors.primary,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 8),
-                                  // Pill showing only the number of members
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.group_outlined,
-                                          size: 12,
-                                          color: isDark ? Colors.white70 : Colors.black54,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${members.length} ${l10n.members}',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: isDark ? Colors.white70 : AppColors.textSecondaryLight,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Divider(height: 1, color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.06)),
+                            const SizedBox(height: 14),
+                            // Add Expense Bar inside hero card
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  elevation: 0,
+                                ),
+                                onPressed: () {
+                                  context.push(
+                                    '/transactions/form',
+                                    extra: {
+                                      'initialType': 'expense',
+                                      'initialTransaction': {
+                                        'roomId': widget.roomId,
+                                      }
+                                    },
+                                  ).then((_) => ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(widget.roomId));
+                                },
+                                icon: const Icon(Icons.add_rounded, size: 18),
+                                label: Text(
+                                  l10n.languageCode == 'id' ? 'Catat Transaksi' : 'Add Transaction',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
                               ),
                             ),
                           ],
@@ -1407,3 +1477,113 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     return false;
   }
 }
+
+class _SharedRoomDashboardSkeleton extends StatelessWidget {
+  final bool isDark;
+  const _SharedRoomDashboardSkeleton({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor = isDark
+        ? const Color(0xFF1E293B).withValues(alpha: 0.6)
+        : const Color(0xFFE2E8F0);
+    final highlightColor = isDark
+        ? const Color(0xFF334155).withValues(alpha: 0.8)
+        : const Color(0xFFF8FAFC);
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
+        title: Shimmer.fromColors(
+          baseColor: baseColor,
+          highlightColor: highlightColor,
+          child: Container(
+            height: 18,
+            width: 140,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(9),
+            ),
+          ),
+        ),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+      ),
+      body: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Room Info Card Skeleton
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Action Buttons Row Skeleton
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Section Title Skeleton
+              Container(
+                height: 16,
+                width: 120,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Transaction Item Skeletons
+              for (int i = 0; i < 4; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

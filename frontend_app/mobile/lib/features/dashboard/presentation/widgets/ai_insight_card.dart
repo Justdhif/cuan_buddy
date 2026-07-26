@@ -9,41 +9,15 @@ import 'package:shimmer/shimmer.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
 import '../providers/dashboard_provider.dart';
 
-class AiInsightCard extends ConsumerWidget {
-  const AiInsightCard({super.key});
+// ─── Finance Health Header Widget (No Card Box, No Title, No Info/Warning Icon) ───
+class FinanceHealthHeaderWidget extends ConsumerWidget {
+  const FinanceHealthHeaderWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final healthAsync = ref.watch(financialHealthProvider);
-    final insightsAsync = ref.watch(aiInsightsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ─── Left Card: Finance Health Score ─────────────────────────────
-          Expanded(
-            child: _buildHealthCard(context, healthAsync, isDark, l10n),
-          ),
-          const SizedBox(width: 12),
-          // ─── Right Card: AI Insight ──────────────────────────────────────
-          Expanded(
-            child: _buildAiCard(context, insightsAsync, isDark, l10n),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Health Score Card ──────────────────────────────────────────────────────
-  Widget _buildHealthCard(
-    BuildContext context,
-    AsyncValue<Map<String, dynamic>> healthAsync,
-    bool isDark,
-    AppLocalizations l10n,
-  ) {
     return healthAsync.when(
       data: (healthData) {
         final score = (healthData['score'] as num? ?? 82).toInt();
@@ -53,124 +27,189 @@ class AiInsightCard extends ConsumerWidget {
         String statusText;
         switch (status) {
           case 'warning':
-            statusColor = AppColors.warning;
+            statusColor = const Color(0xFFFBBF24); // Amber
             statusText = 'Warning!';
             break;
           case 'critical':
           case 'danger':
-            statusColor = AppColors.danger;
+            statusColor = const Color(0xFFF87171); // Light Red
             statusText = 'Critical!';
             break;
           default:
-            statusColor = AppColors.success;
+            statusColor = const Color(0xFF34D399); // Emerald / Light Green
             statusText = l10n.financialHealthGood;
         }
 
-        return _buildGlassContainer(
-          isDark: isDark,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.financeHealthScore,
-                      style: AppTypography.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _buildGaugeRing(score, statusColor),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _showHealthInfoBottomSheet(context, l10n),
-                    child: Icon(
-                      Icons.info_outline_rounded,
-                      size: 18,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Circular Gauge + Status Text
-              Row(
-                children: [
-                  _buildGaugeRing(score, statusColor),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          statusText,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                      const SizedBox(height: 3),
+                      Text(
+                        l10n.financialHealthGoodSubtitle,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12,
+                          height: 1.35,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          l10n.financialHealthGoodSubtitle,
-                          style: AppTypography.textTheme.labelSmall?.copyWith(
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                            fontSize: 10,
-                            height: 1.3,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 24,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: _SparklinePainter(color: statusColor),
               ),
-              const SizedBox(height: 12),
-              // Sparkline graph
-              SizedBox(
-                height: 24,
-                width: double.infinity,
-                child: CustomPaint(
-                  painter: _SparklinePainter(color: statusColor),
+            ),
+          ],
+        );
+      },
+      loading: () => _buildFinanceHealthHeaderSkeleton(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildFinanceHealthHeaderSkeleton() {
+    return Shimmer.fromColors(
+      baseColor: Colors.white.withValues(alpha: 0.12),
+      highlightColor: Colors.white.withValues(alpha: 0.28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 90,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      height: 11,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      width: 130,
+                      height: 11,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        );
-      },
-      loading: () => _buildHealthCardSkeleton(isDark),
-      error: (_, __) => _buildGlassContainer(
-        isDark: isDark,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.financeHealthScore,
-                style: AppTypography.textTheme.labelLarge),
-            const SizedBox(height: 8),
-            Text(l10n.error, style: const TextStyle(color: AppColors.danger)),
-          ],
-        ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            height: 14,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(7),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // ─── AI Insight Card ────────────────────────────────────────────────────────
-  Widget _buildAiCard(
-    BuildContext context,
-    AsyncValue<String> insightsAsync,
-    bool isDark,
-    AppLocalizations l10n,
-  ) {
+  Widget _buildGaugeRing(int score, Color statusColor) {
+    return SizedBox(
+      width: 54,
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: const Size(54, 54),
+            painter: _GaugePainter(
+              progress: (score.clamp(0, 100)) / 100.0,
+              color: statusColor,
+            ),
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '$score',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0,
+                ),
+              ),
+              Text(
+                '/100',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── AI Insight Standalone Card (Placed in Main Dashboard Body) ───────────────
+class AiInsightCard extends ConsumerWidget {
+  const AiInsightCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final insightsAsync = ref.watch(aiInsightsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+
     if (insightsAsync.isLoading && !insightsAsync.hasValue) {
       return _buildAiCardSkeleton(isDark);
     }
@@ -184,75 +223,82 @@ class AiInsightCard extends ConsumerWidget {
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // ─── Layer 2 (Middle Background Watermark): Large AI Illustration ─────
+          // ─── Background Watermark Mascot ──────────────────────────────────
           Positioned(
-            right: -10,
-            bottom: -12,
+            right: -20,
+            bottom: -16,
             child: Opacity(
-              opacity: isDark ? 0.32 : 0.42,
-              child: _build3DRobotMascot(size: 130),
+              opacity: isDark ? 0.35 : 0.45,
+              child: _build3DRobotMascot(size: 120),
             ),
           ),
 
-          // ─── Layer 3 (Front Layer): Content & Text Controls ───────────────
+          // ─── Content ───────────────────────────────────────────────────────
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Header without emoji
-              Text(
-                l10n.aiInsight,
-                style: AppTypography.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
+              Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 18,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.aiInsight,
+                    style: AppTypography.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(right: 75),
+                child: Text(
+                  shortInsight,
+                  style: AppTypography.textTheme.bodySmall?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 8),
-              // Short Insight text
-              Text(
-                shortInsight,
-                style: AppTypography.textTheme.bodySmall?.copyWith(
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                  fontSize: 11,
-                  height: 1.35,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              // Glass Action Button
+              const SizedBox(height: 14),
+              // Action Button
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: isDark
-                      ? AppColors.primary.withValues(alpha: 0.15)
-                      : AppColors.primary.withValues(alpha: 0.08),
+                      ? AppColors.primary.withValues(alpha: 0.18)
+                      : AppColors.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.25),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        l10n.askAiChatbot,
-                        style: AppTypography.textTheme.labelMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                          color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      l10n.askAiChatbot,
+                      style: AppTypography.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     Container(
-                      width: 22,
-                      height: 22,
+                      width: 20,
+                      height: 20,
                       decoration: const BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
@@ -260,7 +306,7 @@ class AiInsightCard extends ConsumerWidget {
                       child: Icon(
                         Icons.chevron_right_rounded,
                         color: AppColors.primary,
-                        size: 16,
+                        size: 15,
                       ),
                     ),
                   ],
@@ -273,7 +319,6 @@ class AiInsightCard extends ConsumerWidget {
     );
   }
 
-  // ─── Glassmorphism Box Wrapper ──────────────────────────────────────────────
   Widget _buildGlassContainer({
     required Widget child,
     required bool isDark,
@@ -284,7 +329,7 @@ class AiInsightCard extends ConsumerWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: isDark
                 ? AppColors.surfaceDark.withValues(alpha: 0.8)
@@ -315,48 +360,6 @@ class AiInsightCard extends ConsumerWidget {
     return box;
   }
 
-  // ─── Circular Gauge Ring ────────────────────────────────────────────────────
-  Widget _buildGaugeRing(int score, Color statusColor) {
-    return SizedBox(
-      width: 58,
-      height: 58,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size(58, 58),
-            painter: _GaugePainter(
-              progress: (score.clamp(0, 100)) / 100.0,
-              color: statusColor,
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$score',
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
-                ),
-              ),
-              const Text(
-                '/100',
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── 3D Glass Robot Mascot Asset ───────────────────────────────────────────
   Widget _build3DRobotMascot({double size = 80}) {
     return SizedBox(
       width: size,
@@ -375,7 +378,6 @@ class AiInsightCard extends ConsumerWidget {
     );
   }
 
-  // ─── Shorten AI Insight Text ────────────────────────────────────────────────
   String _shortenInsightText(String rawText, AppLocalizations l10n) {
     if (rawText.isEmpty ||
         rawText.contains('Unable to connect') ||
@@ -397,144 +399,6 @@ class AiInsightCard extends ConsumerWidget {
     return cleaned.length > 85 ? '${cleaned.substring(0, 82)}...' : cleaned;
   }
 
-  // ─── Bottom Sheet for Score Info ────────────────────────────────────────────
-  void _showHealthInfoBottomSheet(
-      BuildContext context, AppLocalizations l10n) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.health_and_safety_outlined,
-                    color: AppColors.primary, size: 28),
-                const SizedBox(width: 12),
-                Text(
-                  l10n.financeHealthScore,
-                  style: AppTypography.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.languageCode == 'id'
-                  ? 'Skor Kesehatan Keuangan dihitung secara otomatis berdasarkan rasio tabungan bulanan, pengeluaran vs pemasukan, dan kepatuhan anggaran kamu.'
-                  : 'Finance Health Score is calculated automatically based on your monthly savings ratio, expense vs income ratio, and budget adherence.',
-              style: AppTypography.textTheme.bodyMedium?.copyWith(height: 1.5),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHealthCardSkeleton(bool isDark) {
-    return _buildGlassContainer(
-      isDark: isDark,
-      child: Shimmer.fromColors(
-        baseColor: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : const Color(0xFFE2E8F0),
-        highlightColor: isDark
-            ? Colors.white.withValues(alpha: 0.2)
-            : const Color(0xFFF8FAFC),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 80,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                ),
-                Container(
-                  width: 16,
-                  height: 16,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(7),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        width: double.infinity,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        width: 60,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              height: 14,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(7),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildAiCardSkeleton(bool isDark) {
     return _buildGlassContainer(
       isDark: isDark,
@@ -547,51 +411,36 @@ class AiInsightCard extends ConsumerWidget {
             : const Color(0xFFF8FAFC),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              width: 75,
+              width: 80,
+              height: 14,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
               height: 12,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
-            const SizedBox(height: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: 70,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Container(
-              width: double.infinity,
+              width: 180,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              width: 100,
               height: 32,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -614,12 +463,12 @@ class _GaugePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = 6.0;
+    final strokeWidth = 5.5;
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - strokeWidth) / 2;
 
     final bgPaint = Paint()
-      ..color = color.withValues(alpha: 0.15)
+      ..color = Colors.white.withValues(alpha: 0.2)
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
