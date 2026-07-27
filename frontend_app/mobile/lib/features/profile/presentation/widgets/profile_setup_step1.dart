@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import 'avatar_border_helper.dart';
+import '../../../../core/widgets/user_avatar.dart';
 
 class ProfileSetupStep1 extends StatelessWidget {
   const ProfileSetupStep1({
@@ -15,7 +15,6 @@ class ProfileSetupStep1 extends StatelessWidget {
     required this.genderDisplay,
     required this.selectedAvatarUrl,
     required this.selectedLocalFile,
-    required this.selectedBorderAsset,
     required this.fallback,
     required this.hintColor,
     required this.onAvatarEditTap,
@@ -34,7 +33,6 @@ class ProfileSetupStep1 extends StatelessWidget {
   final String genderDisplay;
   final String? selectedAvatarUrl;
   final File? selectedLocalFile;
-  final String selectedBorderAsset;
   final String fallback;
   final Color hintColor;
   final VoidCallback onAvatarEditTap;
@@ -44,11 +42,11 @@ class ProfileSetupStep1 extends StatelessWidget {
   final VoidCallback onBirthdateTap;
   final VoidCallback onGenderTap;
   final Widget Function({
-    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Color? subtitleColor,
   }) buildInfoTile;
 
   @override
@@ -58,20 +56,26 @@ class ProfileSetupStep1 extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title & Subtitle for Step 1
+        // Section Title Header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                l10n.completeYourProfile,
-                style: AppTypography.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+                'Lengkapi Identitas Profil',
+                style: AppTypography.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
-                l10n.profileSetupSubtitle,
-                style: AppTypography.textTheme.bodyLarge?.copyWith(color: hintColor),
+                'Sesuaikan foto, nama, username, dan bio aplikasi Anda.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: hintColor,
+                ),
               ),
             ],
           ),
@@ -85,8 +89,7 @@ class ProfileSetupStep1 extends StatelessWidget {
               GestureDetector(
                 onTap: onAvatarEditTap,
                 child: UserAvatar(
-                  size: 140,
-                  borderAsset: selectedBorderAsset,
+                  size: 120,
                   avatarUrl: selectedAvatarUrl,
                   localFile: selectedLocalFile,
                   fallbackName: fullName.isNotEmpty ? fullName : '?',
@@ -108,41 +111,43 @@ class ProfileSetupStep1 extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        const Divider(height: 1, thickness: 0.5),
 
+        // Information Fields
         buildInfoTile(
-          context: context,
-          icon: Icons.person_outline_rounded,
-          title: l10n.fullName,
+          icon: Icons.badge_outlined,
+          title: l10n.languageCode == 'id' ? 'Nama Lengkap' : 'Full Name',
           subtitle: fullName.isNotEmpty ? fullName : fallback,
           onTap: onFullNameTap,
+          subtitleColor: fullName.isEmpty ? hintColor : null,
         ),
         buildInfoTile(
-          context: context,
           icon: Icons.alternate_email_rounded,
           title: 'Username',
           subtitle: username.isNotEmpty ? '@$username' : fallback,
           onTap: onUsernameTap,
+          subtitleColor: username.isEmpty ? hintColor : null,
         ),
         buildInfoTile(
-          context: context,
-          icon: Icons.info_outline_rounded,
-          title: l10n.bioField,
+          icon: Icons.notes_rounded,
+          title: 'Bio',
           subtitle: bio.isNotEmpty ? bio : fallback,
           onTap: onBioTap,
+          subtitleColor: bio.isEmpty ? hintColor : null,
         ),
         buildInfoTile(
-          context: context,
           icon: Icons.cake_outlined,
-          title: l10n.dateOfBirth,
-          subtitle: birthdateDisplay,
+          title: l10n.languageCode == 'id' ? 'Tanggal Lahir' : 'Birthdate',
+          subtitle: birthdateDisplay.isNotEmpty ? birthdateDisplay : fallback,
           onTap: onBirthdateTap,
+          subtitleColor: birthdateDisplay.isEmpty ? hintColor : null,
         ),
         buildInfoTile(
-          context: context,
-          icon: Icons.wc_outlined,
-          title: l10n.genderField,
-          subtitle: genderDisplay,
+          icon: Icons.person_outline,
+          title: l10n.languageCode == 'id' ? 'Jenis Kelamin' : 'Gender',
+          subtitle: genderDisplay.isNotEmpty ? genderDisplay : fallback,
           onTap: onGenderTap,
+          subtitleColor: genderDisplay.isEmpty ? hintColor : null,
         ),
       ],
     );

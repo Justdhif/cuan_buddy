@@ -10,8 +10,7 @@ import '../../../../core/widgets/user_list_tile.dart';
 import '../../../../core/widgets/form_pop_scope.dart';
 import '../providers/profile_provider.dart';
 import '../providers/achievement_provider.dart';
-import '../widgets/banner_border_helper.dart';
-import '../widgets/avatar_border_helper.dart'; // Using this since kAllWallpapers is here
+import '../widgets/list_background_helper.dart';
 
 class EditListBackgroundScreen extends ConsumerStatefulWidget {
   const EditListBackgroundScreen({super.key, required this.profile});
@@ -116,7 +115,6 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
                     name: widget.profile['fullName'] ?? widget.profile['username'] ?? 'User Name',
                     username: widget.profile['username'],
                     avatarUrl: widget.profile['avatar'],
-                    avatarBorderAsset: borderAssetFromId(widget.profile['avatarBorder'] as String?),
                     listBackground: _selectedListBackground,
                     isDark: isDark,
                   ),

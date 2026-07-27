@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_colors.dart';
 import '../l10n/app_localizations.dart';
-import '../../features/profile/presentation/providers/achievement_provider.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({
@@ -34,9 +33,6 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
       duration: const Duration(milliseconds: 300),
     );
     _fadeController.forward(from: 1.0); // Start fully visible
-    
-    // Preload data unlocked borders di background saat masuk dashboard utama
-    ref.read(unlockedBordersProvider);
   }
 
   @override

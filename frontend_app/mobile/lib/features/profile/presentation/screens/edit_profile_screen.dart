@@ -2,15 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../providers/profile_provider.dart';
-import '../providers/achievement_provider.dart';
-import '../widgets/avatar_border_helper.dart';
-
-// Konfigurasi border dikelola terpusat di avatar_border_helper.dart
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key, required this.profile});
@@ -27,72 +23,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   String? _selectedAvatarUrl;
   File? _selectedLocalFile;
 
-  // Border & Wings
-  String _selectedBorderId = 'none';
-  String _selectedBorderAsset = '';
-  String _selectedWingsId = 'none';
-  String _selectedWingsAsset = '';
-
   @override
   void initState() {
     super.initState();
     _selectedAvatarUrl = widget.profile['avatar'] as String?;
-    _initBorder();
-    _initWings();
   }
-
-  /// Load border: prioritas dari data profil (backend), fallback ke SharedPreferences.
-  Future<void> _initBorder() async {
-    // Cek dulu apakah profile sudah punya border dari backend
-    final profileBorderId = widget.profile['avatarBorder'] as String?;
-    if (profileBorderId != null && profileBorderId.isNotEmpty) {
-      if (mounted) {
-        setState(() {
-          _selectedBorderId = profileBorderId;
-          _selectedBorderAsset = borderAssetFromId(profileBorderId);
-        });
-      }
-      // Sync juga ke SharedPreferences sebagai cache
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(kBorderPrefKey, profileBorderId);
-      return;
-    }
-
-    // Fallback: baca dari SharedPreferences (cache lokal)
-    final prefs = await SharedPreferences.getInstance();
-    final savedId = prefs.getString(kBorderPrefKey) ?? 'none';
-    if (mounted) {
-      setState(() {
-        _selectedBorderId = savedId;
-        _selectedBorderAsset = borderAssetFromId(savedId);
-      });
-    }
-  }
-
-  Future<void> _initWings() async {
-    final profileWingsId = widget.profile['avatarWings'] as String?;
-    if (profileWingsId != null && profileWingsId.isNotEmpty) {
-      if (mounted) {
-        setState(() {
-          _selectedWingsId = profileWingsId;
-          _selectedWingsAsset = wingsAssetFromId(profileWingsId);
-        });
-      }
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(kWingsPrefKey, profileWingsId);
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final savedWingsId = prefs.getString(kWingsPrefKey) ?? 'none';
-    if (mounted) {
-      setState(() {
-        _selectedWingsId = savedWingsId;
-        _selectedWingsAsset = wingsAssetFromId(savedWingsId);
-      });
-    }
-  }
-
 
   Widget _buildInfoTile({
     required BuildContext context,
@@ -150,18 +85,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(profileProvider);
-    // Panggil watch di sini agar data terbaru selalu ditarik dan di-cache
-    ref.watch(unlockedBordersProvider);
 
     ref.listen<AsyncValue<Map<String, dynamic>>>(profileProvider, (previous, next) {
       if (next.hasValue) {
         final profile = next.value!;
         setState(() {
           _selectedAvatarUrl = profile['avatar'] as String?;
-          _selectedBorderId = profile['avatarBorder'] as String? ?? 'none';
-          _selectedBorderAsset = borderAssetFromId(_selectedBorderId);
-          _selectedWingsId = profile['avatarWings'] as String? ?? 'none';
-          _selectedWingsAsset = wingsAssetFromId(_selectedWingsId);
           _selectedLocalFile = null;
         });
       }
@@ -218,24 +147,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               children: [
                 Center(
                   child: Column(
-                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          if (profileAsync.hasValue) {
-                            context.push('/profile/edit-photo', extra: profileAsync.value);
-                          }
-                        },
-                        child: Hero(
-                          tag: 'avatar',
-                          child: UserAvatar(
-                            size: 160,
-                            borderAsset: _selectedBorderAsset,
-                            wingsAsset: _selectedWingsAsset,
-                            backAsset: borderInfoFromId(_selectedBorderId).backAsset,
-                            avatarUrl: _selectedAvatarUrl,
-                            localFile: _selectedLocalFile,
-                            fallbackName: '?',
-                          ),
+                    children: [
+                      Hero(
+                        tag: 'avatar',
+                        child: UserAvatar(
+                          size: 120,
+                          avatarUrl: _selectedAvatarUrl,
+                          localFile: _selectedLocalFile,
+                          fallbackName: fullName.isNotEmpty ? fullName : '?',
                         ),
                       ),
                     ],
@@ -245,28 +164,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const Divider(height: 1, thickness: 0.5),
 
                 // 2. Media & Customization Fields List
-                _buildInfoTile(
-                  context: context,
-                  icon: Icons.image_outlined,
-                  title: l10n.profilePhoto,
-                  subtitle: l10n.profilePhotoSubtitle,
-                  onTap: () {
-                    if (profileAsync.hasValue) {
-                      context.push('/profile/edit-photo', extra: profileAsync.value);
-                    }
-                  },
-                ),
-                _buildInfoTile(
-                  context: context,
-                  icon: Icons.panorama_outlined,
-                  title: l10n.profileBanner,
-                  subtitle: l10n.profileBannerSubtitle,
-                  onTap: () {
-                    if (profileAsync.hasValue) {
-                      context.push('/profile/edit-banner', extra: profileAsync.value);
-                    }
-                  },
-                ),
                 _buildInfoTile(
                   context: context,
                   icon: Icons.wallpaper_outlined,

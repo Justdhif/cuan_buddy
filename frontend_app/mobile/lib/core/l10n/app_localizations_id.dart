@@ -1467,5 +1467,57 @@ class AppLocalizationsId extends AppLocalizations {
   String get financialHealthGoodSubtitle => 'Keuanganmu sehat! Pertahankan kebiasaan baik ini.';
   @override
   String get aiInsightBannerSubtitle => 'Dapatkan saran personalized untuk keuangan yang lebih baik bersama AI ✨';
+
+  // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
+  @override
+  String get categoryInformation => 'INFORMASI & SYNC';
+  @override
+  String get categoryTransactions => 'TRANSAKSI & PERENCANAAN KEUANGAN';
+  @override
+  String get categoryPlanning => 'PERENCANAAN';
+  @override
+  String get channelOverview => 'ringkasan-ruang';
+  @override
+  String get channelOverviewTitle => 'Ringkasan Ruang';
+  @override
+  String get channelOverviewDesc => 'Ikhtisar keuangan & aktivitas ruang';
+  @override
+  String get channelTransactions => 'daftar-transaksi';
+  @override
+  String get channelTransactionsTitle => 'Daftar Transaksi';
+  @override
+  String get channelTransactionsDesc => 'Catatan transaksi bersama di ruang ini';
+  @override
+  String get channelExpense => 'pengeluaran';
+  @override
+  String get channelIncome => 'pemasukan';
+  @override
+  String get channelBudget => 'budget-anggaran';
+  @override
+  String get channelBudgetTitle => 'Budget & Anggaran';
+  @override
+  String get channelBudgetDesc => 'Alokasi batas pengeluaran bersama';
+  @override
+  String get channelSavings => 'target-tabungan';
+  @override
+  String get channelSavingsTitle => 'Target Tabungan';
+  @override
+  String get channelSavingsDesc => 'Target dan progres tabungan bersama';
+  @override
+  String get channelMembers => 'anggota-ruang';
+  @override
+  String get channelMembersTitle => 'Anggota & Akses';
+  @override
+  String get channelMembersDesc => 'Daftar anggota dan hak akses ruang';
+  @override
+  String get allRoomsLobby => 'Lobi Ruangan';
+  @override
+  String get searchInRoom => 'Cari di room ini...';
+  @override
+  String get addTransactionButton => 'Tambah Transaksi';
+  @override
+  String get addBudgetButton => 'Buat Budget';
+  @override
+  String get addSavingGoalButton => 'Tambah Target Tabungan';
 }
 

@@ -1461,5 +1461,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financialHealthGoodSubtitle => 'Your finances are healthy! Keep up these good habits.';
   @override
   String get aiInsightBannerSubtitle => 'Get personalized advice for better finances with AI ✨';
+
+  // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
+  @override
+  String get categoryInformation => 'INFORMATION & SYNC';
+  @override
+  String get categoryTransactions => 'TRANSACTIONS & FINANCIAL PLANNING';
+  @override
+  String get categoryPlanning => 'PLANNING';
+  @override
+  String get channelOverview => 'room-overview';
+  @override
+  String get channelOverviewTitle => 'Room Overview';
+  @override
+  String get channelOverviewDesc => 'Financial overview & room activity';
+  @override
+  String get channelTransactions => 'transaction-list';
+  @override
+  String get channelTransactionsTitle => 'Transaction List';
+  @override
+  String get channelTransactionsDesc => 'Shared transactions log in this room';
+  @override
+  String get channelExpense => 'expenses';
+  @override
+  String get channelIncome => 'income';
+  @override
+  String get channelBudget => 'budget-planning';
+  @override
+  String get channelBudgetTitle => 'Budget & Planning';
+  @override
+  String get channelBudgetDesc => 'Shared spending limit allocations';
+  @override
+  String get channelSavings => 'saving-goals';
+  @override
+  String get channelSavingsTitle => 'Saving Goals';
+  @override
+  String get channelSavingsDesc => 'Shared saving targets and progress';
+  @override
+  String get channelMembers => 'room-members';
+  @override
+  String get channelMembersTitle => 'Members & Access';
+  @override
+  String get channelMembersDesc => 'List of members and room permissions';
+  @override
+  String get allRoomsLobby => 'Rooms Lobby';
+  @override
+  String get searchInRoom => 'Search in this room...';
+  @override
+  String get addTransactionButton => 'Add Transaction';
+  @override
+  String get addBudgetButton => 'Create Budget';
+  @override
+  String get addSavingGoalButton => 'Add Saving Goal';
 }
 

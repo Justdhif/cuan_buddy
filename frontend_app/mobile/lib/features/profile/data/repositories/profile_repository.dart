@@ -13,16 +13,6 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  Future<List<dynamic>> getAvatarBorders() async {
-    final response = await _dio.get('/borders/avatars');
-    return response.data as List<dynamic>;
-  }
-
-  Future<List<dynamic>> getBannerBorders() async {
-    final response = await _dio.get('/borders/banners');
-    return response.data as List<dynamic>;
-  }
-
   Future<void> submitFeedback(String message) async {
     await _dio.post('/feedback', data: {'message': message});
   }
@@ -38,8 +28,6 @@ class ProfileRepository {
     String? bannerType,
     String? bannerColor,
     String? bannerImage,
-    String? bannerBorder,
-    String? avatarWings,
     String? listBackground,
     bool clearListBackground = false,
   }) async {
@@ -54,8 +42,6 @@ class ProfileRepository {
     if (bannerType != null) body['bannerType'] = bannerType;
     if (bannerColor != null) body['bannerColor'] = bannerColor;
     if (bannerImage != null) body['bannerImage'] = bannerImage;
-    if (bannerBorder != null) body['bannerBorder'] = bannerBorder;
-    if (avatarWings != null) body['avatarWings'] = avatarWings;
 
     if (clearListBackground) {
       body['listBackground'] = null;
@@ -73,22 +59,7 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  /// Menyimpan pilihan border avatar ke server agar bisa dilihat user lain.
-  Future<void> updateBorder({required String borderId}) async {
-    await _dio.patch('/profiles/me', data: {'avatarBorder': borderId});
-  }
-
-  /// Menyimpan pilihan wings avatar ke server agar bisa dilihat user lain.
-  Future<void> updateWings({required String wingsId}) async {
-    await _dio.patch('/profiles/me', data: {'avatarWings': wingsId});
-  }
-
-  /// Menyimpan pilihan border banner ke server agar bisa dilihat user lain.
-  Future<void> updateBannerBorder({required String borderId}) async {
-    await _dio.patch('/profiles/me', data: {'bannerBorder': borderId});
-  }
-
-  /// Mengambil list ID border yang telah di-unlock secara permanen oleh user dari server.
+  /// Mengambil list ID border/wallpaper yang telah di-unlock secara permanen oleh user dari server.
   Future<List<String>> getUnlockedBorders() async {
     final response = await _dio.get('/profiles/unlocked-borders');
     if (response.data is List) {
@@ -97,7 +68,7 @@ class ProfileRepository {
     return [];
   }
 
-  /// Meminta server untuk mengevaluasi ulang pencapaian user dan meng-unlock border baru.
+  /// Meminta server untuk mengevaluasi ulang pencapaian user.
   Future<Map<String, dynamic>> checkAchievements() async {
     final response = await _dio.post('/profiles/check-achievements');
     return response.data as Map<String, dynamic>;
@@ -154,4 +125,3 @@ class ProfileRepository {
     );
   }
 }
-

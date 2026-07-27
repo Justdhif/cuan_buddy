@@ -224,8 +224,8 @@ class SharedNotifier extends StateNotifier<SharedState> {
     }
   }
 
-  Future<void> fetchRoomDetails(String roomId) async {
-    state = state.copyWith(isRoomLoading: true, error: null);
+  Future<void> fetchRoomDetails(String roomId, {bool silent = false}) async {
+    if (!silent) state = state.copyWith(isRoomLoading: true, error: null);
     try {
       final roomRes = await _dioClient.dio.get('/rooms/$roomId');
       final txRes = await _dioClient.dio.get('/transactions', queryParameters: {'roomId': roomId, 'limit': 100});

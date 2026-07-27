@@ -30,8 +30,6 @@ import '../../features/profile/presentation/screens/edit_bio_screen.dart';
 import '../../features/profile/presentation/screens/edit_username_screen.dart';
 import '../../features/profile/presentation/screens/edit_birthdate_screen.dart';
 import '../../features/profile/presentation/screens/edit_gender_screen.dart';
-import '../../features/profile/presentation/screens/edit_avatar_screen.dart';
-import '../../features/profile/presentation/screens/edit_banner_screen.dart';
 import '../../features/profile/presentation/screens/edit_list_background_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
 
@@ -152,26 +150,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/profile/edit-photo',
+        path: '/profile/edit-list-background',
         pageBuilder: (context, state) {
           final profile = state.extra as Map<String, dynamic>;
-          return _buildPage(state, EditAvatarScreen(profile: profile));
+          return _buildPage(state, EditListBackgroundScreen(profile: profile));
         },
       ),
-      GoRoute(
-        path: '/profile/edit-banner',
-        pageBuilder: (context, state) {
-          final profile = state.extra as Map<String, dynamic>;
-          return _buildPage(state, EditBannerScreen(profile: profile));
-        },
-      ),
-        GoRoute(
-          path: '/profile/edit-list-background',
-          pageBuilder: (context, state) {
-            final profile = state.extra as Map<String, dynamic>;
-            return _buildPage(state, EditListBackgroundScreen(profile: profile));
-          },
-        ),
 
       GoRoute(
         path: '/profile/widgets',
@@ -338,7 +322,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/shared/room/:id',
         pageBuilder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return _buildPage(state, SharedRoomDashboardScreen(roomId: id));
+          final extra = state.extra as Map<String, dynamic>?;
+          final initialChannel = extra?['initialChannel'] as DiscordChannel? ?? DiscordChannel.overview;
+          return _buildPage(state, SharedRoomDashboardScreen(roomId: id, initialChannel: initialChannel));
         },
       ),
       GoRoute(

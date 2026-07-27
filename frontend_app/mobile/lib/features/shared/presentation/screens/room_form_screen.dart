@@ -7,7 +7,6 @@ import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/widgets/form_pop_scope.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../providers/shared_provider.dart';
-import '../../../profile/presentation/widgets/avatar_border_helper.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/selected_users_chip_row.dart';
 
@@ -255,10 +254,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
           final String name =
               friend['fullName'] ?? friend['username'] ?? friend['email'];
           final bool isSelected = _selectedFriendIds.contains(friendId);
-          final avatarUrl = friend['avatar'];
-          final avatarBorderId = friend['avatarBorder'] as String?;
-          final borderAsset = borderAssetFromId(avatarBorderId);
-
+          final avatarUrl = friend['avatar'] as String?;
           return _FriendListItem(
             key: ValueKey(friendId),
             index: index,
@@ -266,7 +262,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
             name: name,
             username: friend['username'] as String?,
             avatarUrl: avatarUrl,
-            borderAsset: borderAsset,
             listBackground: friend['listBackground'] as String?,
             isSelected: isSelected,
             isDark: isDark,
@@ -313,7 +308,6 @@ class _FriendListItem extends StatefulWidget {
     required this.name,
     required this.username,
     required this.avatarUrl,
-    required this.borderAsset,
     required this.listBackground,
     required this.isSelected,
     required this.isDark,
@@ -325,7 +319,6 @@ class _FriendListItem extends StatefulWidget {
   final String name;
   final String? username;
   final String? avatarUrl;
-  final String borderAsset;
   final String? listBackground;
   final bool isSelected;
   final bool isDark;
@@ -381,7 +374,6 @@ class _FriendListItemState extends State<_FriendListItem>
             name: widget.name,
             username: widget.username,
             avatarUrl: widget.avatarUrl,
-            avatarBorderAsset: widget.borderAsset,
             listBackground: widget.listBackground,
             isDark: widget.isDark,
             onTap: widget.onTap,

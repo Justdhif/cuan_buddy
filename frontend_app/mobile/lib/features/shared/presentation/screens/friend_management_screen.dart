@@ -7,7 +7,6 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../providers/shared_provider.dart';
-import '../../../profile/presentation/widgets/avatar_border_helper.dart';
 
 class FriendManagementScreen extends ConsumerStatefulWidget {
   const FriendManagementScreen({super.key});
@@ -160,8 +159,6 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                               final String avatarUrl = match['avatar'] ?? '';
                               final String name = match['fullName'] ?? match['username'] ?? match['email'];
                               final String? rawUsername = match['username'];
-                              final String? borderId = match['avatarBorder'];
-                              final borderAsset = borderAssetFromId(borderId);
                               
                               final String status = match['friendshipStatus'] ?? 'none';
                               final bool isSender = match['isSender'] ?? false;
@@ -198,7 +195,6 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                                 name: name,
                                 username: rawUsername,
                                 avatarUrl: avatarUrl,
-                                avatarBorderAsset: borderAsset,
                                 listBackground: match['listBackground'],
                                 heroTag: 'avatar_',
                                 actionWidget: actionBtn,

@@ -1,20 +1,4 @@
-/// Widget reusable untuk menampilkan avatar pengguna dengan bingkai (border) dekoratif.
-///
-/// Fitur:
-///  - Mendukung foto dari URL jaringan (CachedNetworkImage), file lokal, dan initial huruf
-///  - Overlay border PNG yang melingkar di atas avatar
-///  - Fallback elegan dengan initial nama jika foto tidak tersedia
-///  - Ukuran avatar selalu proporsional terhadap ukuran total widget
-///
-/// Cara penggunaan paling sederhana:
-/// ```dart
-/// UserAvatar(
-///   size: 80,
-///   avatarUrl: profile['avatar'],
-///   borderAsset: borderAssetFromId(profile['avatarBorder']),
-///   fallbackName: profile['displayName'] ?? 'U',
-/// )
-/// ```
+/// Widget reusable untuk menampilkan avatar pengguna.
 library;
 
 import 'dart:io';
@@ -22,16 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
 
-/// Widget avatar bulat (lingkaran) yang mendukung overlay bingkai dekoratif.
-///
-/// Parameter:
-/// - [size]         : Ukuran total widget (width & height) dalam logical pixels.
-/// - [avatarUrl]    : URL foto profil dari server (optional).
-/// - [localFile]    : File lokal jika foto baru dipilih dari galeri (optional).
-/// - [fallbackName] : Teks (nama / huruf) yang ditampilkan jika tidak ada foto.
-/// - [borderAsset]  : Path asset PNG bingkai. Kosong string ('') = tanpa bingkai.
-/// - [onTap]        : Callback saat widget ditekan (optional).
-/// - [heroTag]      : Tag untuk animasi Hero (optional).
+/// Widget avatar bulat (lingkaran).
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
     super.key,
@@ -39,9 +14,6 @@ class UserAvatar extends StatelessWidget {
     this.avatarUrl,
     this.localFile,
     this.fallbackName = '?',
-    this.borderAsset = '',
-    this.backAsset,
-    this.wingsAsset,
     this.onTap,
     this.heroTag,
   });
@@ -57,11 +29,6 @@ class UserAvatar extends StatelessWidget {
 
   /// Nama atau teks fallback. Huruf pertama akan ditampilkan jika tidak ada foto.
   final String fallbackName;
-
-  /// Path asset PNG bingkai overlay. Kosongkan ('') jika tidak ingin bingkai.
-  final String borderAsset;
-  final String? backAsset;
-  final String? wingsAsset;
 
   /// Callback ketika widget ditekan. Jika null, widget tidak interaktif.
   final VoidCallback? onTap;
@@ -85,112 +52,15 @@ class UserAvatar extends StatelessWidget {
   }
 
   Widget _buildCore() {
-    final hasBorder = borderAsset.isNotEmpty;
-    final effectiveWings = (wingsAsset != null && wingsAsset!.isNotEmpty)
-        ? wingsAsset
-        : (backAsset != null && backAsset!.isNotEmpty ? backAsset : null);
-    final hasWings = effectiveWings != null;
-
-    const double avatarRatio = 600 / 1024;
-    const double kBorderYOffset = 19.5 / 1024; 
-    final double avatarSize = size * avatarRatio;
-    final double borderOffset = size * kBorderYOffset;
-
-    Widget buildWingsWidget() {
-      return Positioned(
-        top: -borderOffset,
-        left: 0,
-        right: 0,
-        bottom: borderOffset,
-        child: Transform.scale(
-          scale: 1.28, // Perbesar ukuran wings agar tampak lebih megah
-          child: IgnorePointer(
-            child: effectiveWings!.startsWith('http')
-                ? CachedNetworkImage(
-                    imageUrl: effectiveWings,
-                    fit: BoxFit.fill,
-                    errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                  )
-                : Image.asset(
-                    effectiveWings,
-                    fit: BoxFit.fill,
-                  ),
-          ),
-        ),
-      );
-    }
-
-    if (!hasBorder) {
-      return SizedBox(
-        width: size,
-        height: size,
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            if (hasWings) buildWingsWidget(),
-            Container(
-              width: avatarSize,
-              height: avatarSize,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: _buildImage(avatarSize),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return SizedBox(
+    return Container(
       width: size,
       height: size,
-      child: FittedBox(
-        fit: BoxFit.contain,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              if (hasWings) buildWingsWidget(),
-
-              Container(
-                width: avatarSize,
-                height: avatarSize,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF1F5F9),
-                  shape: BoxShape.circle,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: _buildImage(avatarSize),
-              ),
-
-              Positioned(
-                top: -borderOffset,
-                left: 0,
-                right: 0,
-                bottom: borderOffset,
-                child: IgnorePointer(
-                  child: borderAsset.startsWith('http')
-                      ? CachedNetworkImage(
-                          imageUrl: borderAsset,
-                          fit: BoxFit.fill,
-                          errorWidget: (_, __, ___) => const SizedBox.shrink(),
-                        )
-                      : Image.asset(
-                          borderAsset,
-                          fit: BoxFit.fill,
-                        ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF1F5F9),
+        shape: BoxShape.circle,
       ),
+      clipBehavior: Clip.antiAlias,
+      child: _buildImage(size),
     );
   }
 
@@ -273,36 +143,4 @@ class UserAvatar extends StatelessWidget {
       ),
     );
   }
-}
-
-// ─── Gradient Ring Painter ───────────────────────────────────────────────────────────────────
-/// Melukis lingkaran ring dengan gradient warna tema.
-/// Digunakan saat avatar tidak menggunakan border PNG dekoratif.
-class _GradientRingPainter extends CustomPainter {
-  const _GradientRingPainter({
-    required this.gradient,
-    required this.strokeWidth,
-  });
-
-  final LinearGradient gradient;
-  final double strokeWidth;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect   = Offset.zero & size;
-    final center = rect.center;
-    final radius = (size.shortestSide - strokeWidth) / 2;
-
-    final paint = Paint()
-      ..style       = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap   = StrokeCap.round
-      ..shader      = gradient.createShader(rect);
-
-    canvas.drawCircle(center, radius, paint);
-  }
-
-  @override
-  bool shouldRepaint(_GradientRingPainter old) =>
-      old.gradient != gradient || old.strokeWidth != strokeWidth;
 }

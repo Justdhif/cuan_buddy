@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../profile/presentation/widgets/avatar_border_helper.dart';
+import '../../../../core/widgets/user_avatar.dart';
 
 /// Horizontal scrollable row of selected-user chips.
 class SelectedUsersChipRow extends StatefulWidget {
@@ -116,8 +116,6 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
             final username = friend['username'] as String?;
             final displayName = username != null ? '@$username' : fallbackName;
             final avatarUrl = friend['avatar'] as String?;
-            final avatarBorderId = friend['avatarBorder'] as String?;
-            final borderAsset = borderAssetFromId(avatarBorderId);
 
             // SizeTransition grows width 0→full (pushes siblings right)
             // FadeTransition fades the content in/out simultaneously
@@ -136,7 +134,7 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
                   reverseCurve: Curves.easeIn,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.only(right: 8),
                   child: SizedBox(
                     width: 80,
                     child: Column(
@@ -152,7 +150,6 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
                                 alignment: Alignment.topCenter,
                                 child: UserAvatar(
                                   size: 64,
-                                  borderAsset: borderAsset,
                                   avatarUrl: avatarUrl,
                                   fallbackName: fallbackName,
                                 ),

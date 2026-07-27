@@ -8,11 +8,13 @@ class AppBottomSheet {
     required WidgetBuilder builder,
     bool isScrollControlled = true,
     bool useSafeArea = true,
+    bool useRootNavigator = true,
   }) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
+      useRootNavigator: useRootNavigator,
       backgroundColor: Colors.transparent, // We draw our own background
       elevation: 0, // Disable default shadow since we use custom shape
       builder: (context) {

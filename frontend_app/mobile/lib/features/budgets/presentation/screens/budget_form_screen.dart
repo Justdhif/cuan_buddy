@@ -263,6 +263,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Padding(

@@ -137,6 +137,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
     
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Padding(

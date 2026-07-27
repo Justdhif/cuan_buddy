@@ -7,14 +7,12 @@ class UserBanner extends StatelessWidget {
     required this.bannerColor,
     this.bannerType = 'color',
     this.bannerImage,
-    this.borderAsset = '',
     this.localFile,
   });
 
   final String bannerColor;
   final String bannerType;
   final String? bannerImage;
-  final String borderAsset;
   final dynamic localFile; // Using dynamic because dart:io File can conflict if not imported properly
 
   Color _parseHexColor(String hexColor) {
@@ -35,41 +33,13 @@ class UserBanner extends StatelessWidget {
 
     return AspectRatio(
       aspectRatio: 2.5,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: borderAsset.isNotEmpty ? 8.0 : 0.0,
-            bottom: borderAsset.isNotEmpty ? 5.0 : 0.0,
-            left: borderAsset.isNotEmpty ? 8.0 : 0.0,
-            right: borderAsset.isNotEmpty ? 5.0 : 0.0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: parsedBannerColor,
-                borderRadius: BorderRadius.circular(20.0),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: _buildBannerContent(parsedBannerColor),
-            ),
-          ),
-          if (borderAsset.isNotEmpty)
-            Positioned(
-              top: 16.0,
-              right: -12.0,
-              bottom: -10.0,
-              child: IgnorePointer(
-                child: borderAsset.startsWith('http')
-                    ? CachedNetworkImage(
-                        imageUrl: borderAsset,
-                        errorWidget: (_, __, ___) =>
-                            const SizedBox.shrink(),
-                      )
-                    : Image.asset(
-                        borderAsset,
-                      ),
-              ),
-            ),
-        ],
+      child: Container(
+        decoration: BoxDecoration(
+          color: parsedBannerColor,
+          borderRadius: BorderRadius.circular(20.0),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: _buildBannerContent(parsedBannerColor),
       ),
     );
   }
@@ -95,15 +65,15 @@ class UserBanner extends StatelessWidget {
         errorWidget: (_, __, ___) => Container(color: parsedBannerColor),
       );
     } else if (bannerType == 'image' && localFile == null && (bannerImage == null || bannerImage!.isEmpty)) {
-        return Container(
-          color: parsedBannerColor,
-          child: const Center(
-            child: Text(
-              'No Image Selected',
-              style: TextStyle(color: Colors.white70),
-            ),
+      return Container(
+        color: parsedBannerColor,
+        child: const Center(
+          child: Text(
+            'No Image Selected',
+            style: TextStyle(color: Colors.white70),
           ),
-        );
+        ),
+      );
     }
     return null;
   }

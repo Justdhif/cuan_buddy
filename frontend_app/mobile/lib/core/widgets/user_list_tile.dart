@@ -10,23 +10,23 @@ class UserListTile extends StatelessWidget {
     required this.name,
     this.username,
     this.avatarUrl,
-    this.avatarBorderAsset = '',
     this.listBackground,
     this.heroTag,
     this.actionWidget,
     this.onTap,
     this.isDark = false,
+    this.backgroundColor,
   });
 
   final String name;
   final String? username;
   final String? avatarUrl;
-  final String avatarBorderAsset;
   final String? listBackground;
   final String? heroTag;
   final Widget? actionWidget;
   final VoidCallback? onTap;
   final bool isDark;
+  final Color? backgroundColor;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,9 @@ class UserListTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: hasBackground ? null : (isDark ? AppColors.surfaceDark : Colors.white),
+          color: hasBackground
+              ? null
+              : (backgroundColor ?? (isDark ? AppColors.backgroundDark : AppColors.backgroundLight)),
           image: hasBackground
               ? DecorationImage(
                   image: listBackground!.startsWith('http')
@@ -103,7 +105,6 @@ class UserListTile extends StatelessWidget {
   Widget _buildAvatar() {
     return UserAvatar(
       size: 52,
-      borderAsset: avatarBorderAsset,
       avatarUrl: avatarUrl,
       fallbackName: name,
     );

@@ -6,8 +6,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../providers/profile_provider.dart';
-import '../widgets/avatar_border_helper.dart';
-import '../widgets/banner_border_helper.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/widgets/user_banner.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -46,14 +45,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           l10n.profileTitle,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: l10n.languageCode == 'id' ? 'Pengaturan' : 'Settings',
-            onPressed: () => context.push('/settings'),
-          ),
-          const SizedBox(width: 8),
-        ],
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
@@ -123,19 +114,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 children: [
                   _buildInfoTile(
                     context: context,
-                    icon: Icons.image_outlined,
-                    title: l10n.profilePhotoSubtitle,
-                    subtitle: l10n.profilePhoto,
+                    icon: Icons.wallpaper_rounded,
+                    title: l10n.languageCode == 'id' ? 'Wallpaper List Card' : 'Wallpaper List Card',
+                    subtitle: profile['listBackground'] != null ? (l10n.languageCode == 'id' ? 'Wallpaper Aktif' : 'Active Wallpaper') : fallback,
                     onTap: () =>
-                        context.push('/profile/edit-photo', extra: profile),
-                  ),
-                  _buildInfoTile(
-                    context: context,
-                    icon: Icons.panorama_outlined,
-                    title: l10n.profileBannerSubtitle,
-                    subtitle: l10n.profileBanner,
-                    onTap: () =>
-                        context.push('/profile/edit-banner', extra: profile),
+                        context.push('/profile/edit-list-background', extra: profile),
                   ),
                   _buildInfoTile(
                     context: context,
@@ -208,19 +191,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final l10n = AppLocalizations.of(context);
     final name = profile['fullName'] as String? ?? l10n.you;
     final avatar = profile['avatar'] as String?;
-    final avatarBorderId = profile['avatarBorder'] as String?;
-    final borderAsset = borderAssetFromId(avatarBorderId);
-    final avatarWingsId = profile['avatarWings'] as String?;
-    final wingsAsset = wingsAssetFromId(avatarWingsId);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final username = profile['username'] as String?;
     final bio = profile['bio'] as String?;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     final bannerType = profile['bannerType'] as String? ?? 'color';
     final bannerColor = profile['bannerColor'] as String? ?? '#6C63FF';
     final bannerImage = profile['bannerImage'] as String?;
-    final bannerBorderId = profile['bannerBorder'] as String? ?? 'none';
-    final bannerBorderAsset = bannerBorderAssetFromId(bannerBorderId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -234,23 +211,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 bannerColor: bannerColor,
                 bannerType: bannerType,
                 bannerImage: bannerImage,
-                borderAsset: bannerBorderAsset,
               ),
               Positioned(
                 bottom: -50,
                 left: 16,
-                child: GestureDetector(
-                  onTap: () =>
-                      context.push('/profile/edit-photo', extra: profile),
-                  child: Hero(
-                    tag: 'avatar',
-                    child: UserAvatar(
-                      size: 110,
-                      borderAsset: borderAsset,
-                      wingsAsset: wingsAsset,
-                      avatarUrl: avatar,
-                      fallbackName: name,
-                    ),
+                child: Hero(
+                  tag: 'avatar',
+                  child: UserAvatar(
+                    size: 110,
+                    avatarUrl: avatar,
+                    fallbackName: name,
                   ),
                 ),
               ),

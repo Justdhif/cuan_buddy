@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../profile/presentation/widgets/avatar_border_helper.dart';
-import '../../../profile/presentation/widgets/banner_border_helper.dart';
+import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/widgets/user_banner.dart';
 
 class PublicProfileScreen extends StatelessWidget {
@@ -14,8 +13,6 @@ class PublicProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = user['fullName'] as String? ?? user['username'] as String? ?? 'User';
     final avatar = user['avatar'] as String?;
-    final avatarBorderId = user['avatarBorder'] as String?;
-    final borderAsset = borderAssetFromId(avatarBorderId);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final username = user['username'] as String?;
     final bio = user['bio'] as String?;
@@ -23,8 +20,6 @@ class PublicProfileScreen extends StatelessWidget {
     final bannerType = user['bannerType'] as String? ?? 'color';
     final bannerColor = user['bannerColor'] as String? ?? '#6C63FF';
     final bannerImage = user['bannerImage'] as String?;
-    final bannerBorderId = user['bannerBorder'] as String? ?? 'none';
-    final bannerBorderAsset = bannerBorderAssetFromId(bannerBorderId);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -52,7 +47,6 @@ class PublicProfileScreen extends StatelessWidget {
                     bannerColor: bannerColor,
                     bannerType: bannerType,
                     bannerImage: bannerImage,
-                    borderAsset: bannerBorderAsset,
                   ),
                   Positioned(
                     bottom: -80,
@@ -61,7 +55,6 @@ class PublicProfileScreen extends StatelessWidget {
                       tag: 'avatar_${user['email'] ?? user['id'] ?? username}',
                       child: UserAvatar(
                         size: 160,
-                        borderAsset: borderAsset,
                         avatarUrl: avatar,
                         fallbackName: name,
                       ),
@@ -119,7 +112,6 @@ class PublicProfileScreen extends StatelessWidget {
             const SizedBox(height: 32),
             const Divider(height: 1, thickness: 0.5),
             const SizedBox(height: 24),
-            // Statistics or other info can go here in the future
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(

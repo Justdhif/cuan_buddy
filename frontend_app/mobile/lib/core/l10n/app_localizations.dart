@@ -743,6 +743,33 @@ abstract class AppLocalizations {
   String get financialHealthGood;
   String get financialHealthGoodSubtitle;
   String get aiInsightBannerSubtitle;
+
+  // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
+  String get categoryInformation;
+  String get categoryTransactions;
+  String get categoryPlanning;
+  String get channelOverview;
+  String get channelOverviewTitle;
+  String get channelOverviewDesc;
+  String get channelTransactions;
+  String get channelTransactionsTitle;
+  String get channelTransactionsDesc;
+  String get channelExpense;
+  String get channelIncome;
+  String get channelBudget;
+  String get channelBudgetTitle;
+  String get channelBudgetDesc;
+  String get channelSavings;
+  String get channelSavingsTitle;
+  String get channelSavingsDesc;
+  String get channelMembers;
+  String get channelMembersTitle;
+  String get channelMembersDesc;
+  String get allRoomsLobby;
+  String get searchInRoom;
+  String get addTransactionButton;
+  String get addBudgetButton;
+  String get addSavingGoalButton;
 }
 
 class AppLocalizationsScope extends InheritedWidget {

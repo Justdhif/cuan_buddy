@@ -12,6 +12,7 @@ class AppScreenHeader extends ConsumerWidget {
     required this.isScrolled,
     this.showBackButton = true,
     this.showActions = false,
+    this.customActions,
     this.onBackTap,
   });
 
@@ -19,6 +20,7 @@ class AppScreenHeader extends ConsumerWidget {
   final bool isScrolled;
   final bool showBackButton;
   final bool showActions;
+  final List<Widget>? customActions;
   final VoidCallback? onBackTap;
 
   @override
@@ -106,7 +108,9 @@ class AppScreenHeader extends ConsumerWidget {
               ),
             ),
           ),
-          if (showActions) ...[
+          if (customActions != null) ...[
+            ...customActions!,
+          ] else if (showActions) ...[
             const SizedBox(width: 8),
             // Profile Icon Button
             GestureDetector(
