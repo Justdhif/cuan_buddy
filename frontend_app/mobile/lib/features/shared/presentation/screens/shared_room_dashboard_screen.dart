@@ -12,6 +12,8 @@ import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
+import '../../widgets/budget_card.dart';
+import '../../widgets/savings_goal_card.dart';
 import '../../../profile/presentation/widgets/avatar_border_helper.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -702,61 +704,11 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, idx) {
                         final budget = state.roomBudgets[idx];
-                        final String name = budget['name'] ?? budget['category']?['name'] ?? 'Budget';
-                        final double limit = budget['limitAmount'] is num ? (budget['limitAmount'] as num).toDouble() : double.parse(budget['limitAmount'] ?? '0');
-                        final double spent = budget['spentAmount'] is num ? (budget['spentAmount'] as num).toDouble() : 0.0;
-                        final percent = limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
-                        final color = AppColors.colorFromHex(budget['colorCode'], fallback: AppColors.primary);
-
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    name,
-                                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    '${(percent * 100).toInt()}%',
-                                    style: textTheme.bodySmall?.copyWith(color: percent >= 0.9 ? AppColors.danger : AppColors.primary),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              LinearProgressIndicator(
-                                value: percent,
-                                backgroundColor: isDark ? AppColors.borderDark : AppColors.dividerLight,
-                                valueColor: AlwaysStoppedAnimation(percent >= 0.9 ? AppColors.danger : color),
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${l10n.usedAmount}: ${CurrencyFormatter.formatAmount(spent, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
-                                    style: textTheme.bodySmall,
-                                  ),
-                                  Text(
-                                    '${l10n.limitAmountLabel}: ${CurrencyFormatter.formatAmount(limit, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
-                                    style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        return BudgetCard(
+                          budget: budget,
+                          isDark: isDark,
+                          currencySymbol: AppConstants.getCurrencySymbol(baseCurrency),
+                          onTap: () => context.push('/budgets/form', extra: {'budget': budget}),
                         );
                       },
                     ),
@@ -773,52 +725,11 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, idx) {
                         final goal = state.roomSavings[idx];
-                        final String name = goal['name'] ?? 'Savings Goal';
-                        final double target = goal['targetAmount'] is num ? (goal['targetAmount'] as num).toDouble() : double.parse(goal['targetAmount'] ?? '0');
-                        final double current = goal['currentAmount'] is num ? (goal['currentAmount'] as num).toDouble() : double.parse(goal['currentAmount'] ?? '0');
-                        final percent = target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
-                        final color = AppColors.colorFromHex(goal['colorCode'], fallback: AppColors.success);
-
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.surfaceDark : Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 12),
-                              LinearProgressIndicator(
-                                value: percent,
-                                backgroundColor: isDark ? AppColors.borderDark : AppColors.dividerLight,
-                                valueColor: AlwaysStoppedAnimation(color),
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${l10n.collectedAmount}: ${CurrencyFormatter.formatAmount(current, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
-                                    style: textTheme.bodySmall,
-                                  ),
-                                  Text(
-                                    '${l10n.targetAmountLabel}: ${CurrencyFormatter.formatAmount(target, symbol: AppConstants.getCurrencySymbol(baseCurrency))}',
-                                    style: textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        return SavingsGoalCard(
+                          goal: goal,
+                          isDark: isDark,
+                          currencySymbol: AppConstants.getCurrencySymbol(baseCurrency),
+                          onTap: () => context.push('/savings/detail', extra: {'goal': goal}),
                         );
                       },
                     ),
@@ -890,8 +801,9 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
         padding: const EdgeInsets.symmetric(horizontal: 24),
         clipBehavior: Clip.none,
         children: [
-          // 1. Add Member Chip
-          _buildAddMemberChip(l10n, isDark),
+          // 1. Add Member Chip (Owner only)
+          if (state.activeRoom?['role'] == 'owner')
+            _buildAddMemberChip(l10n, isDark),
           
           // 2. You Chip
           if (youMember != null)
@@ -1035,6 +947,18 @@ class _SharedRoomDashboardScreenState extends ConsumerState<SharedRoomDashboardS
 
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (room['role'] != 'owner') {
+      AppSnackbar.show(
+        context,
+        title: l10n.error,
+        message: isDark
+            ? 'Only the room owner can invite new members'
+            : 'Hanya pemilik ruangan yang dapat mengundang anggota baru',
+        type: SnackbarType.error,
+      );
+      return;
+    }
 
     AppBottomSheet.show(
       context: context,

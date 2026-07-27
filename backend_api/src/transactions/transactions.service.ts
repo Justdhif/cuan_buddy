@@ -344,9 +344,12 @@ export class TransactionsService {
     updateTransactionDto: UpdateTransactionDto,
   ) {
     const oldTx = await this.db.query.transactions.findFirst({
-      where: and(eq(transactions.id, id), eq(transactions.userId, userId)),
+      where: eq(transactions.id, id),
     });
     if (!oldTx) throw new NotFoundException('Transaction not found');
+    if (oldTx.userId !== userId) {
+      throw new ForbiddenException('You can only edit your own transactions');
+    }
 
     const targetWalletId = updateTransactionDto.walletId ?? oldTx.walletId;
     const targetWallet = await this.db.query.wallets.findFirst({
@@ -400,6 +403,14 @@ export class TransactionsService {
   }
 
   async remove(userId: string, id: string) {
+    const existingTx = await this.db.query.transactions.findFirst({
+      where: eq(transactions.id, id),
+    });
+    if (!existingTx) throw new NotFoundException('Transaction not found');
+    if (existingTx.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own transactions');
+    }
+
     const [deleted] = await this.db
       .delete(transactions)
       .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))

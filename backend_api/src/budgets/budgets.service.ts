@@ -204,7 +204,14 @@ export class BudgetsService {
   }
 
   async update(userId: string, id: string, updateBudgetDto: UpdateBudgetDto) {
-    // Optimized: single query — no separate findOne before update
+    const existingBudget = await this.db.query.budgets.findFirst({
+      where: eq(budgets.id, id),
+    });
+    if (!existingBudget) throw new NotFoundException('Budget not found');
+    if (existingBudget.userId !== userId) {
+      throw new ForbiddenException('You can only edit your own budgets');
+    }
+
     const updateData: any = { ...updateBudgetDto, updatedAt: new Date() };
     if (updateBudgetDto.limitAmount) updateData.limitAmount = updateBudgetDto.limitAmount.toString();
     if (updateBudgetDto.walletId === null) updateData.walletId = null;
@@ -220,7 +227,14 @@ export class BudgetsService {
   }
 
   async remove(userId: string, id: string) {
-    // Optimized: single query — delete with ownership check
+    const existingBudget = await this.db.query.budgets.findFirst({
+      where: eq(budgets.id, id),
+    });
+    if (!existingBudget) throw new NotFoundException('Budget not found');
+    if (existingBudget.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own budgets');
+    }
+
     const [deleted] = await this.db.delete(budgets)
       .where(and(eq(budgets.id, id), eq(budgets.userId, userId)))
       .returning({ id: budgets.id });

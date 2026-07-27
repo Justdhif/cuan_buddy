@@ -116,6 +116,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       return;
     }
 
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    if (widget.initialTransaction != null) {
+      final txUserId = widget.initialTransaction!['userId'] as String?;
+      if (txUserId != null && currentUserId != null && txUserId != currentUserId) {
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Hanya pembuat transaksi yang dapat mengubah transaksi ini',
+          type: SnackbarType.error,
+        );
+        return;
+      }
+    }
+
     setState(() => _isSaving = true);
 
     try {
@@ -186,6 +200,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<void> _confirmAndDelete() async {
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    if (widget.initialTransaction != null) {
+      final txUserId = widget.initialTransaction!['userId'] as String?;
+      if (txUserId != null && currentUserId != null && txUserId != currentUserId) {
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Hanya pembuat transaksi yang dapat menghapus transaksi ini',
+          type: SnackbarType.error,
+        );
+        return;
+      }
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

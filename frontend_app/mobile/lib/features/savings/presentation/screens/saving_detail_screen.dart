@@ -100,6 +100,18 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   void _onEdit() {
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    final goalUserId = _goal['userId'] as String?;
+    if (goalUserId != null && currentUserId != null && goalUserId != currentUserId) {
+      AppSnackbar.show(
+        context,
+        title: l10n.error,
+        message: 'Hanya pembuat saving goal yang dapat mengubah data ini',
+        type: SnackbarType.error,
+      );
+      return;
+    }
+
     context.push('/savings/form', extra: {'goal': _goal}).then((_) async {
       if (mounted) {
         try {
@@ -118,6 +130,18 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
   }
 
   Future<void> _onDelete() async {
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    final goalUserId = _goal['userId'] as String?;
+    if (goalUserId != null && currentUserId != null && goalUserId != currentUserId) {
+      AppSnackbar.show(
+        context,
+        title: l10n.error,
+        message: 'Hanya pembuat saving goal yang dapat menghapus data ini',
+        type: SnackbarType.error,
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

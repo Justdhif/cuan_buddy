@@ -125,7 +125,10 @@ export class SavingsGoalsService {
   }
 
   async update(userId: string, id: string, updateSavingsGoalDto: UpdateSavingsGoalDto) {
-    await this.findOne(userId, id);
+    const goal = await this.findOne(userId, id);
+    if (goal.userId !== userId) {
+      throw new ForbiddenException('You can only edit your own savings goals');
+    }
 
     const updateData: any = {};
     if (updateSavingsGoalDto.name) {
@@ -144,8 +147,12 @@ export class SavingsGoalsService {
     const [updated] = await this.db
       .update(savingsGoals)
       .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(savingsGoals.id, id))
+      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)))
       .returning();
+
+    if (!updated) {
+      throw new NotFoundException('Savings goal not found');
+    }
 
     // Check if goal is reached after update
     if (updated && Number(updated.currentAmount) >= Number(updated.targetAmount) && updated.status !== 'completed') {
@@ -164,9 +171,12 @@ export class SavingsGoalsService {
   }
 
   async remove(userId: string, id: string) {
-    await this.findOne(userId, id);
+    const goal = await this.findOne(userId, id);
+    if (goal.userId !== userId) {
+      throw new ForbiddenException('You can only delete your own savings goals');
+    }
     await this.db.delete(savingsGoals)
-      .where(eq(savingsGoals.id, id));
+      .where(and(eq(savingsGoals.id, id), eq(savingsGoals.userId, userId)));
     return { message: 'Savings goal deleted successfully' };
   }
 }

@@ -223,6 +223,10 @@ export class RoomsService {
       throw new ForbiddenException('You are not a member of this room');
     }
 
+    if (membership.role !== 'owner') {
+      throw new ForbiddenException('Only the room owner can invite members');
+    }
+
     // Verify invitee is not already in the room
     const inviteeMembership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, inviteeId)),

@@ -16,6 +16,7 @@ import '../../../../core/theme/category_icon_shape.dart';
 import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../providers/savings_provider.dart';
 import '../../../wallets/providers/wallet_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/widgets/form_pop_scope.dart';
 
 class SavingsFormScreen extends ConsumerStatefulWidget {
@@ -214,6 +215,20 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
 
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
+
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    if (widget.goal != null && widget.goal!['id'] != null) {
+      final goalUserId = widget.goal!['userId'] as String?;
+      if (goalUserId != null && currentUserId != null && goalUserId != currentUserId) {
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Hanya pembuat saving goal yang dapat mengubah data ini',
+          type: SnackbarType.error,
+        );
+        return;
+      }
+    }
     
     // Custom validation for Top Integrated Name & Amount
     if (_nameController.text.trim().isEmpty) {

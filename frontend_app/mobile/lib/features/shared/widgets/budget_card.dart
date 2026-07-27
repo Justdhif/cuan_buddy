@@ -14,11 +14,13 @@ class BudgetCard extends ConsumerWidget {
     required this.budget,
     required this.isDark,
     required this.currencySymbol,
+    this.onTap,
   });
 
   final dynamic budget;
   final bool isDark;
   final String currencySymbol;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -148,7 +150,7 @@ class BudgetCard extends ConsumerWidget {
         children: [
           // ─── Top Section: Gradient ───────────────────────────────────────
           GestureDetector(
-            onTap: () => context.push('/budgets/form', extra: {'budget': tx}),
+            onTap: onTap ?? () => context.push('/budgets/form', extra: {'budget': tx}),
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(

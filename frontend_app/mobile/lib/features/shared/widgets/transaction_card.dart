@@ -103,6 +103,7 @@ class TransactionCard extends ConsumerWidget {
       child: Padding(
         padding: contentPadding,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             GestureDetector(
               onTap: onIconTap,
@@ -118,182 +119,216 @@ class TransactionCard extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: GestureDetector(
                 onTap: onTitleTap,
                 behavior: HitTestBehavior.opaque,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                  Text(
-                    title,
-                    style: AppTypography.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 4,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: catColor.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          catName ?? l10n.transaction,
-                          style: AppTypography.textTheme.labelSmall?.copyWith(
-                            color: catColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                    Text(
+                      title,
+                      style: AppTypography.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      if (walletName != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: walletColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '$walletEmoji $walletName',
-                            style: AppTypography.textTheme.labelSmall?.copyWith(
-                              color: walletColor,
-                            ),
-                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 4,
+                      children: [
+                        _buildBadge(
+                          text: catName ?? l10n.transaction,
+                          textColor: catColor,
+                          bgColor: catColor.withValues(alpha: 0.15),
+                          fontWeight: FontWeight.w600,
                         ),
-                      if (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: savingsColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                        if (walletName != null)
+                          _buildBadge(
+                            text: '$walletEmoji $walletName',
+                            textColor: walletColor,
+                            bgColor: walletColor.withValues(alpha: 0.12),
                           ),
-                          child: Text(
-                            '$savingsEmoji ${savingsGoal['name']}',
-                            style: AppTypography.textTheme.labelSmall?.copyWith(
-                              color: savingsColor,
-                            ),
+                        if (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map)
+                          _buildBadge(
+                            text: '$savingsEmoji ${savingsGoal['name']}',
+                            textColor: savingsColor,
+                            bgColor: savingsColor.withValues(alpha: 0.12),
                           ),
-                        ),
-                      if (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(8),
+                        if (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null)
+                          _buildMemberBadge(
+                            name: (tx['user']['profile']['fullName'] ??
+                                tx['user']['profile']['username'] ??
+                                'User').toString(),
+                            avatarUrl: tx['user']['profile']['avatar'] as String?,
+                            email: tx['user']['email'] as String?,
+                            color: AppColors.secondary,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CircleAvatar(
-                                radius: 6,
-                                backgroundImage: (tx['user']['profile']['avatar'] != null && (tx['user']['profile']['avatar'] as String).isNotEmpty)
-                                    ? NetworkImage(tx['user']['profile']['avatar'])
-                                    : null,
-                                backgroundColor: AppColors.secondary,
-                                child: (tx['user']['profile']['avatar'] == null || (tx['user']['profile']['avatar'] as String).isEmpty)
-                                    ? Text(
-                                        (tx['user']['profile']['fullName'] ?? tx['user']['email']).toString().substring(0, 1).toUpperCase(),
-                                        style: const TextStyle(fontSize: 4, color: Colors.white, fontWeight: FontWeight.bold),
-                                      )
-                                    : null,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                tx['user']['profile']['fullName'] ?? tx['user']['profile']['username'] ?? 'User',
-                                style: AppTypography.textTheme.labelSmall?.copyWith(
-                                  color: AppColors.secondaryDark,
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             GestureDetector(
               onTap: onAmountTap,
               behavior: HitTestBehavior.opaque,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                txCurrency == currencyCode
-                    ? Text(
-                        '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                        style: AppTypography.textTheme.titleMedium?.copyWith(
-                          color: isIncome ? AppColors.success : AppColors.danger,
-                          fontWeight: FontWeight.bold,
+                  txCurrency == currencyCode
+                      ? Text(
+                          '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                          style: AppTypography.textTheme.titleMedium?.copyWith(
+                            color: isIncome ? AppColors.success : AppColors.danger,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : Consumer(
+                          builder: (context, ref, _) {
+                            final convertedAsync =
+                                ref.watch(convertedAmountProvider(ConversionParams(
+                              amount: amount,
+                              from: txCurrency,
+                              to: currencyCode,
+                            )));
+                            return convertedAsync.when(
+                              data: (converted) => Text(
+                                '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                                style: AppTypography.textTheme.titleMedium?.copyWith(
+                                  color: isIncome ? AppColors.success : AppColors.danger,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              loading: () => const SizedBox(
+                                  width: 24,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2)),
+                              error: (_, __) => Text(
+                                '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(baseAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                                style: AppTypography.textTheme.titleMedium?.copyWith(
+                                  color: isIncome ? AppColors.success : AppColors.danger,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      )
-                    : Consumer(
-                        builder: (context, ref, _) {
-                          final convertedAsync =
-                              ref.watch(convertedAmountProvider(ConversionParams(
-                            amount: amount,
-                            from: txCurrency,
-                            to: currencyCode,
-                          )));
-                          return convertedAsync.when(
-                            data: (converted) => Text(
-                              '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                              style: AppTypography.textTheme.titleMedium?.copyWith(
-                                color: isIncome ? AppColors.success : AppColors.danger,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            loading: () => const SizedBox(
-                                width: 24,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2)),
-                            error: (_, __) => Text(
-                              '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(baseAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                              style: AppTypography.textTheme.titleMedium?.copyWith(
-                                color: isIncome ? AppColors.success : AppColors.danger,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
-                        },
+                  if (txCurrency != currencyCode)
+                    Text(
+                      '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
+                      style: TextStyle(
+                        color: AppColors.textSecondaryLight,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
                       ),
-                if (txCurrency != currencyCode)
-                  Text(
-                    '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
-                    style: TextStyle(
-                      color: AppColors.textSecondaryLight,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 12,
                     ),
-                  ),
-                if (showTime && tx['date'] != null)
-                  Text(
-                    _formatTime(tx['date'] as String),
-                    style: AppTypography.textTheme.labelSmall?.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
-                      fontSize: 10,
+                  if (showTime && tx['date'] != null)
+                    Text(
+                      _formatTime(tx['date'] as String),
+                      style: AppTypography.textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                        fontSize: 10,
+                      ),
                     ),
-                  ),
-              ],
-            ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBadge({
+    required String text,
+    required Color textColor,
+    required Color bgColor,
+    double maxWidth = 135.0,
+    FontWeight fontWeight = FontWeight.w500,
+  }) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTypography.textTheme.labelSmall?.copyWith(
+          color: textColor,
+          fontWeight: fontWeight,
+          fontSize: 10.5,
+          height: 1.15,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMemberBadge({
+    required String name,
+    required String? avatarUrl,
+    required String? email,
+    required Color color,
+    double maxWidth = 135.0,
+  }) {
+    final initial = name.isNotEmpty
+        ? name.substring(0, 1).toUpperCase()
+        : (email != null && email.isNotEmpty ? email.substring(0, 1).toUpperCase() : 'U');
+
+    return Container(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 6,
+            backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                ? NetworkImage(avatarUrl)
+                : null,
+            backgroundColor: color,
+            child: (avatarUrl == null || avatarUrl.isEmpty)
+                ? Text(
+                    initial,
+                    style: const TextStyle(
+                      fontSize: 4,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.textTheme.labelSmall?.copyWith(
+                color: AppColors.secondaryDark,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w500,
+                height: 1.15,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

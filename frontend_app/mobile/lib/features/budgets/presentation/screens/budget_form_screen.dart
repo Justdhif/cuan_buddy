@@ -17,6 +17,7 @@ import '../../../transactions/presentation/providers/transaction_provider.dart'
     show categoriesProvider;
 import '../../../transactions/presentation/widgets/amount_calculator_sheet.dart';
 import '../../../wallets/providers/wallet_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../../core/widgets/form_pop_scope.dart';
 
 class BudgetFormScreen extends ConsumerStatefulWidget {
@@ -127,6 +128,20 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    if (widget.budget != null && widget.budget!['id'] != null) {
+      final budgetUserId = widget.budget!['userId'] as String?;
+      if (budgetUserId != null && currentUserId != null && budgetUserId != currentUserId) {
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Hanya pembuat budget yang dapat mengubah budget ini',
+          type: SnackbarType.error,
+        );
+        return;
+      }
+    }
+
     setState(() => _isSaving = true);
 
     final monthYearStr = DateFormat('yyyy-MM').format(_selectedDate);
@@ -184,6 +199,20 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   }
 
   Future<void> _deleteBudget() async {
+    final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
+    if (widget.budget != null) {
+      final budgetUserId = widget.budget!['userId'] as String?;
+      if (budgetUserId != null && currentUserId != null && budgetUserId != currentUserId) {
+        AppSnackbar.show(
+          context,
+          title: l10n.error,
+          message: 'Hanya pembuat budget yang dapat menghapus budget ini',
+          type: SnackbarType.error,
+        );
+        return;
+      }
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
