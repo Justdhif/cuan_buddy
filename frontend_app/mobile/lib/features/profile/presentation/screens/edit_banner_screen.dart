@@ -183,171 +183,164 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen> {
           surfaceTintColor: Colors.transparent,
           elevation: 0,
         ),
+        bottomNavigationBar: GestureDetector(
+          onTap: _isSaving ? null : _saveBanner,
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 64,
+                child: _isSaving
+                    ? const Center(
+                        child: SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Text(
+                          l10n.saveButton,
+                          style: AppTypography.textTheme.titleMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ),
+        ),
         body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Preview Banner
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: UserBanner(
-                          bannerType: _bannerType,
-                          bannerColor: _bannerColor,
-                          bannerImage: _bannerImage,
-                          localFile: _localImageFile,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Upload custom image banner button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _pickBannerImage,
-                          icon: const Icon(Icons.add_photo_alternate_rounded),
-                          label: Text(l10n.languageCode == 'id'
-                              ? 'Unggah Gambar Banner'
-                              : 'Upload Banner Image'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 16),
-
-                      // Color Options Header
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            l10n.languageCode == 'id'
-                                ? 'Warna Banner'
-                                : 'Banner Color',
-                            style: AppTypography.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: _showColorPicker,
-                            icon: const Icon(Icons.palette_outlined, size: 18),
-                            label: Text(l10n.languageCode == 'id'
-                                ? 'Kustom'
-                                : 'Custom'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Preset Color Palette Grid
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1,
-                        ),
-                        itemCount: _presetColors.length,
-                        itemBuilder: (context, index) {
-                          final hex = _presetColors[index];
-                          final color = _parseColor(hex);
-                          final isSelected = _bannerType == 'color' &&
-                              _bannerColor.toUpperCase() == hex.toUpperCase() &&
-                              _localImageFile == null;
-
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _bannerColor = hex;
-                                _bannerType = 'color';
-                                _localImageFile = null;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected
-                                      ? (isDark ? Colors.white : Colors.black)
-                                      : Colors.transparent,
-                                  width: 3,
-                                ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: color.withValues(alpha: 0.4),
-                                          blurRadius: 8,
-                                          spreadRadius: 2,
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: isSelected
-                                  ? const Icon(Icons.check_rounded,
-                                      color: Colors.white, size: 20)
-                                  : null,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+          bottom: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Preview Banner
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: UserBanner(
+                    bannerType: _bannerType,
+                    bannerColor: _bannerColor,
+                    bannerImage: _bannerImage,
+                    localFile: _localImageFile,
                   ),
                 ),
-              ),
+                const SizedBox(height: 24),
 
-              // Save Button
-              GestureDetector(
-                onTap: _isSaving ? null : _saveBanner,
-                child: Container(
+                // Upload custom image banner button
+                SizedBox(
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: SizedBox(
-                      height: 64,
-                      child: _isSaving
-                          ? const Center(
-                              child: SizedBox(
-                                height: 24,
-                                width: 24,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            )
-                          : Center(
-                              child: Text(
-                                l10n.saveButton,
-                                style: AppTypography.textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
+                  child: OutlinedButton.icon(
+                    onPressed: _pickBannerImage,
+                    icon: const Icon(Icons.add_photo_alternate_rounded),
+                    label: Text(l10n.languageCode == 'id'
+                        ? 'Unggah Gambar Banner'
+                        : 'Upload Banner Image'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+
+                // Color Options Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      l10n.languageCode == 'id'
+                          ? 'Warna Banner'
+                          : 'Banner Color',
+                      style: AppTypography.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _showColorPicker,
+                      icon: const Icon(Icons.palette_outlined, size: 18),
+                      label: Text(l10n.languageCode == 'id'
+                          ? 'Kustom'
+                          : 'Custom'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Preset Color Palette Grid
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: _presetColors.length,
+                  itemBuilder: (context, index) {
+                    final hex = _presetColors[index];
+                    final color = _parseColor(hex);
+                    final isSelected = _bannerType == 'color' &&
+                        _bannerColor.toUpperCase() == hex.toUpperCase() &&
+                        _localImageFile == null;
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _bannerColor = hex;
+                          _bannerType = 'color';
+                          _localImageFile = null;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected
+                                ? (isDark ? Colors.white : Colors.black)
+                                : Colors.transparent,
+                            width: 3,
+                          ),
+                          boxShadow: isSelected
+                              ? [
+                                  BoxShadow(
+                                    color: color.withValues(alpha: 0.4),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: isSelected
+                            ? const Icon(Icons.check_rounded,
+                                color: Colors.white, size: 20)
+                            : null,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

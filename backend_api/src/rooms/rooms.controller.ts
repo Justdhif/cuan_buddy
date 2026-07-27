@@ -12,6 +12,12 @@ export class RoomsController {
     return this.roomsService.createRoom(req.user.userId, body);
   }
 
+  // ─── MUST be before :id routes to avoid route conflict ───────────────────────
+  @Post('join-code')
+  joinRoomByInviteCode(@Req() req: any, @Body() body: { inviteCode: string }) {
+    return this.roomsService.joinRoomByInviteCode(req.user.userId, body.inviteCode);
+  }
+
   @Get()
   listRooms(@Req() req: any) {
     return this.roomsService.listRooms(req.user.userId);
@@ -38,6 +44,16 @@ export class RoomsController {
     @Body() body: { userId: string }
   ) {
     return this.roomsService.inviteMember(req.user.userId, id, body.userId);
+  }
+
+  @Post(':id/invite-code')
+  generateInviteCode(@Req() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.roomsService.generateInviteCode(req.user.userId, id);
+  }
+
+  @Delete(':id/invite-code')
+  deleteInviteCode(@Req() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.roomsService.deleteInviteCode(req.user.userId, id);
   }
 
   @Delete(':id')

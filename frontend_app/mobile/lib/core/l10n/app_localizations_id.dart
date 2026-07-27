@@ -1529,5 +1529,43 @@ class AppLocalizationsId extends AppLocalizations {
   String get invitePermissionSettings => 'Izin Mengundang';
   @override
   String get onlyOwnerCanInviteError => 'Hanya pemilik room yang dapat mengundang anggota ke room ini';
+  // ─── Invite Code ─────────────────────────────────────────────────────────────
+  @override
+  String get inviteCode => 'Kode Undangan';
+  @override
+  String get inviteCodeSubtitle => 'Siapapun yang punya kode ini bisa bergabung ke room';
+  @override
+  String get inviteCodeExpiry => 'Kedaluwarsa dalam';
+  @override
+  String get generateInviteCode => 'Buat Kode Undangan';
+  @override
+  String get regenerateInviteCode => 'Buat Ulang Kode';
+  @override
+  String get regenerateConfirmTitle => 'Buat Ulang Kode Undangan?';
+  @override
+  String get regenerateConfirmMessage => 'Kode saat ini akan dinonaktifkan dan kode baru akan dibuat. Orang dengan kode lama tidak bisa lagi bergabung.';
+  @override
+  String get deleteInviteCode => 'Hapus Kode Undangan';
+  @override
+  String get deleteInviteCodeConfirm => 'Hapus kode undangan? Room akan menjadi privat dan tidak ada yang bisa bergabung via kode.';
+  @override
+  String get inviteCodeCopied => 'Kode undangan berhasil disalin!';
+  @override
+  String get inviteCodeInvalid => 'Kode undangan tidak valid. Periksa kembali dan coba lagi.';
+  @override
+  String get inviteCodeExpired => 'Kode undangan ini sudah kedaluwarsa. Minta pemilik room untuk membuat kode baru.';
+  @override
+  String get joinRoomCode => 'Gabung Room';
+  @override
+  String get joinRoomCodeHint => 'Masukkan kode undangan (contoh: AB12CD34)';
+  @override
+  String get joinRoomCodeSubtitle => 'Masukkan kode undangan 8 karakter yang dibagikan oleh pemilik room.';
+  @override
+  String get roomPublic => 'Publik';
+  @override
+  String get roomPrivate => 'Privat';
+  @override
+  String get roomPublicDesc => 'Siapapun dengan kode undangan bisa bergabung';
+  @override
+  String get roomPrivateDesc => 'Hanya anggota yang diundang yang bisa bergabung';
 }
-

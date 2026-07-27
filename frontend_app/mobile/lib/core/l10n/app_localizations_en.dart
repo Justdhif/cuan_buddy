@@ -1523,5 +1523,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invitePermissionSettings => 'Invite Permission';
   @override
   String get onlyOwnerCanInviteError => 'Only the room owner can invite members to this room';
+  // ─── Invite Code ─────────────────────────────────────────────────────────────
+  @override
+  String get inviteCode => 'Invite Code';
+  @override
+  String get inviteCodeSubtitle => 'Anyone with this code can join the room';
+  @override
+  String get inviteCodeExpiry => 'Expires in';
+  @override
+  String get generateInviteCode => 'Generate Invite Code';
+  @override
+  String get regenerateInviteCode => 'Regenerate Code';
+  @override
+  String get regenerateConfirmTitle => 'Regenerate Invite Code?';
+  @override
+  String get regenerateConfirmMessage => 'The current code will be invalidated and a new one will be created. Anyone with the old code will no longer be able to join.';
+  @override
+  String get deleteInviteCode => 'Delete Invite Code';
+  @override
+  String get deleteInviteCodeConfirm => 'Remove the invite code? The room will become private and no one can join via code.';
+  @override
+  String get inviteCodeCopied => 'Invite code copied!';
+  @override
+  String get inviteCodeInvalid => 'Invalid invite code. Please check and try again.';
+  @override
+  String get inviteCodeExpired => 'This invite code has expired. Ask the room owner to generate a new one.';
+  @override
+  String get joinRoomCode => 'Join Room';
+  @override
+  String get joinRoomCodeHint => 'Enter invite code (e.g. AB12CD34)';
+  @override
+  String get joinRoomCodeSubtitle => 'Enter the 8-character invite code shared by the room owner.';
+  @override
+  String get roomPublic => 'Public';
+  @override
+  String get roomPrivate => 'Private';
+  @override
+  String get roomPublicDesc => 'Anyone with the invite code can join';
+  @override
+  String get roomPrivateDesc => 'Only invited members can join';
 }
-

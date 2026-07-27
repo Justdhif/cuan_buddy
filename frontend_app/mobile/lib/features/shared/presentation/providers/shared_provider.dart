@@ -304,33 +304,54 @@ class SharedNotifier extends StateNotifier<SharedState> {
     }
   }
 
-  Future<String?> joinRoomByUuid(String roomUuid) async {
-    final String cleanUuid = roomUuid.trim();
-    if (cleanUuid.isEmpty) return 'UUID tidak boleh kosong';
+  Future<String?> joinRoomByCode(String inviteCode) async {
+    final String cleanCode = inviteCode.trim().toUpperCase().replaceAll('-', '');
+    if (cleanCode.isEmpty) return 'Kode undangan tidak boleh kosong';
     try {
-      final res = await _dioClient.dio.post('/rooms/join', data: {
-        'uuid': cleanUuid,
-        'roomId': cleanUuid,
+      final res = await _dioClient.dio.post('/rooms/join-code', data: {
+        'inviteCode': cleanCode,
       });
       if (res.statusCode == 200 || res.statusCode == 201) {
         await fetchRooms(silent: true);
         final String newRoomId = res.data is Map
-            ? (res.data['id'] ?? res.data['roomId'] ?? cleanUuid)
-            : cleanUuid;
-        await fetchRoomDetails(newRoomId);
+            ? (res.data['roomId'] ?? '')
+            : '';
+        if (newRoomId.isNotEmpty) {
+          await fetchRoomDetails(newRoomId);
+        }
         return null;
       }
       return res.data['message'] ?? 'Gagal bergabung ke ruangan';
     } catch (e) {
-      try {
-        final res = await _dioClient.dio.post('/rooms/$cleanUuid/join');
-        if (res.statusCode == 200 || res.statusCode == 201) {
-          await fetchRooms(silent: true);
-          await fetchRoomDetails(cleanUuid);
-          return null;
-        }
-      } catch (_) {}
-      return 'Ruangan tidak ditemukan atau Anda sudah bergabung.';
+      return e.toString();
+    }
+  }
+
+  Future<Map<String, dynamic>?> generateInviteCode(String roomId) async {
+    try {
+      final res = await _dioClient.dio.post('/rooms/$roomId/invite-code');
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchRoomDetails(roomId, silent: true);
+        await fetchRooms(silent: true);
+        return res.data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<String?> deleteInviteCode(String roomId) async {
+    try {
+      final res = await _dioClient.dio.delete('/rooms/$roomId/invite-code');
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchRoomDetails(roomId, silent: true);
+        await fetchRooms(silent: true);
+        return null;
+      }
+      return res.data['message'] ?? 'Gagal menghapus kode undangan';
+    } catch (e) {
+      return e.toString();
     }
   }
 

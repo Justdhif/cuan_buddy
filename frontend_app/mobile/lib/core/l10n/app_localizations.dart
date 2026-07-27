@@ -775,6 +775,26 @@ abstract class AppLocalizations {
   String get anyMemberCanInviteSubtitle;
   String get invitePermissionSettings;
   String get onlyOwnerCanInviteError;
+  // ─── Invite Code ─────────────────────────────────────────────────────────────
+  String get inviteCode;
+  String get inviteCodeSubtitle;
+  String get inviteCodeExpiry;
+  String get generateInviteCode;
+  String get regenerateInviteCode;
+  String get regenerateConfirmTitle;
+  String get regenerateConfirmMessage;
+  String get deleteInviteCode;
+  String get deleteInviteCodeConfirm;
+  String get inviteCodeCopied;
+  String get inviteCodeInvalid;
+  String get inviteCodeExpired;
+  String get joinRoomCode;
+  String get joinRoomCodeHint;
+  String get joinRoomCodeSubtitle;
+  String get roomPublic;
+  String get roomPrivate;
+  String get roomPublicDesc;
+  String get roomPrivateDesc;
 }
 
 class AppLocalizationsScope extends InheritedWidget {

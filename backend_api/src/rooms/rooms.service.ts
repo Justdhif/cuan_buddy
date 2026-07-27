@@ -310,4 +310,138 @@ export class RoomsService {
 
     return updatedRoom;
   }
+
+  // ─── Invite Code: private helper ────────────────────────────────────────────
+  private async _generateUniqueInviteCode(): Promise<string> {
+    const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1 to avoid confusion
+    const LENGTH = 8;
+    let attempts = 0;
+    while (attempts < 10) {
+      let code = '';
+      for (let i = 0; i < LENGTH; i++) {
+        code += CHARS[Math.floor(Math.random() * CHARS.length)];
+      }
+      // Check uniqueness
+      const existing = await this.db.query.rooms.findFirst({
+        where: eq(rooms.inviteCode, code),
+      });
+      if (!existing) return code;
+      attempts++;
+    }
+    throw new Error('Failed to generate unique invite code after 10 attempts');
+  }
+
+  // ─── Invite Code: generate / regenerate ─────────────────────────────────────
+  async generateInviteCode(userId: string, roomId: string) {
+    const membership = await this.db.query.roomMembers.findFirst({
+      where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this room');
+    }
+    if (membership.role !== 'owner') {
+      throw new ForbiddenException('Only the room owner can manage the invite code');
+    }
+
+    const newCode = await this._generateUniqueInviteCode();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+    const [updatedRoom] = await this.db.update(rooms)
+      .set({ inviteCode: newCode, inviteCodeExpiresAt: expiresAt })
+      .where(eq(rooms.id, roomId))
+      .returning();
+
+    return {
+      inviteCode: updatedRoom.inviteCode,
+      inviteCodeExpiresAt: updatedRoom.inviteCodeExpiresAt,
+    };
+  }
+
+  // ─── Invite Code: delete (make room private again) ───────────────────────────
+  async deleteInviteCode(userId: string, roomId: string) {
+    const membership = await this.db.query.roomMembers.findFirst({
+      where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
+    });
+
+    if (!membership) {
+      throw new ForbiddenException('You are not a member of this room');
+    }
+    if (membership.role !== 'owner') {
+      throw new ForbiddenException('Only the room owner can manage the invite code');
+    }
+
+    await this.db.update(rooms)
+      .set({ inviteCode: null, inviteCodeExpiresAt: null })
+      .where(eq(rooms.id, roomId));
+
+    return { message: 'Invite code deleted. Room is now private.' };
+  }
+
+  // ─── Join room via invite code ────────────────────────────────────────────────
+  async joinRoomByInviteCode(userId: string, code: string) {
+    const cleanCode = code.trim().toUpperCase().replace(/-/g, '');
+
+    if (!cleanCode || cleanCode.length < 6) {
+      throw new BadRequestException('Invalid invite code');
+    }
+
+    // Find room by invite code
+    const room = await this.db.query.rooms.findFirst({
+      where: eq(rooms.inviteCode, cleanCode),
+    });
+
+    if (!room) {
+      throw new NotFoundException('Room not found. The invite code may be invalid.');
+    }
+
+    // Check expiry
+    if (room.inviteCodeExpiresAt && new Date() > new Date(room.inviteCodeExpiresAt)) {
+      throw new BadRequestException('This invite code has expired. Ask the room owner to generate a new one.');
+    }
+
+    // Check if user is already a member
+    const existing = await this.db.query.roomMembers.findFirst({
+      where: and(eq(roomMembers.roomId, room.id), eq(roomMembers.userId, userId)),
+    });
+
+    if (existing) {
+      throw new BadRequestException('You are already a member of this room');
+    }
+
+    // Add user as member
+    await this.db.insert(roomMembers).values({
+      roomId: room.id,
+      userId,
+      role: 'member',
+    });
+
+    // Notify room owner
+    const ownerMembership = await this.db.query.roomMembers.findFirst({
+      where: and(eq(roomMembers.roomId, room.id), eq(roomMembers.role, 'owner')),
+    });
+    const joinerProfile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.userId, userId),
+    });
+    const joinerUser = await this.db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    const joinerName = joinerProfile?.fullName || joinerProfile?.username || joinerUser?.email || 'Someone';
+
+    if (ownerMembership) {
+      void this.notificationsService.createAndBroadcast(
+        ownerMembership.userId,
+        'ROOM_JOIN',
+        JSON.stringify({
+          roomId: room.id,
+          roomName: room.name,
+          joinerId: userId,
+          joinerName,
+        }),
+        'room_join'
+      );
+    }
+
+    return { roomId: room.id, roomName: room.name };
+  }
 }

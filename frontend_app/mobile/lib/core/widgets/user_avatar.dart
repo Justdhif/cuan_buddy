@@ -56,7 +56,7 @@ class UserAvatar extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.15),
+        color: AppColors.primary,
         shape: BoxShape.circle,
       ),
       clipBehavior: Clip.antiAlias,
@@ -97,14 +97,14 @@ class UserAvatar extends StatelessWidget {
     return Container(
       width: imgSize,
       height: imgSize,
-      color: AppColors.primary.withValues(alpha: 0.15),
+      color: AppColors.primary,
       child: Center(
         child: SizedBox(
           width: imgSize * 0.3,
           height: imgSize * 0.3,
-          child: CircularProgressIndicator(
+          child: const CircularProgressIndicator(
             strokeWidth: 2,
-            color: AppColors.primary.withValues(alpha: 0.5),
+            color: Colors.white,
           ),
         ),
       ),

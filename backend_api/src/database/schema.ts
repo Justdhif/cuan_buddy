@@ -86,6 +86,8 @@ export const rooms = pgTable('rooms', {
   colorCode: text('color_code').default('#6C63FF'),
   description: text('description'),
   onlyOwnerCanInvite: boolean('only_owner_can_invite').default(true).notNull(),
+  inviteCode: text('invite_code').unique(),        // null = private, value = public (joinable via code)
+  inviteCodeExpiresAt: timestamp('invite_code_expires_at'), // null = no expiry set yet
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
