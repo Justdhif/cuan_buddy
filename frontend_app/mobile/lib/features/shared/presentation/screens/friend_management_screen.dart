@@ -186,7 +186,10 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                   ),
                                   onPressed: () => _sendFriendRequest(match['email']),
-                                  child: Text(l10n.invite, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    l10n.languageCode == 'id' ? 'Tambah' : 'Add',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  ),
                                 );
                               }
 

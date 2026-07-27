@@ -40,6 +40,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
 
   late Color _selectedColor;
   bool _isSaving = false;
+  bool _onlyOwnerCanInvite = true;
 
   @override
   void initState() {
@@ -98,6 +99,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
       widget.selectedFriendIds,
       emojiIcon: emoji,
       colorCode: colorCode,
+      onlyOwnerCanInvite: _onlyOwnerCanInvite,
     );
 
     if (mounted) {
@@ -292,6 +294,128 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
                     ],
+                    // ─── Invite Permission Setting ───────────────────────────
+                    Container(
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1E1E2E)
+                            : const Color(0xFFF8F9FF),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF2E2E4E)
+                              : const Color(0xFFE2E8FF),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.shield_rounded,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  l10n.invitePermissionSettings,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Divider(
+                            height: 1,
+                            color: isDark
+                                ? const Color(0xFF2E2E4E)
+                                : const Color(0xFFE2E8FF),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: _onlyOwnerCanInvite
+                                        ? AppColors.primary
+                                            .withValues(alpha: 0.15)
+                                        : (isDark
+                                            ? const Color(0xFF2C2C3E)
+                                            : const Color(0xFFEEF0FF)),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(
+                                    _onlyOwnerCanInvite
+                                        ? Icons.lock_rounded
+                                        : Icons.group_add_rounded,
+                                    size: 20,
+                                    color: _onlyOwnerCanInvite
+                                        ? AppColors.primary
+                                        : (isDark
+                                            ? Colors.white54
+                                            : Colors.black45),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        l10n.onlyOwnerCanInvite,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        _onlyOwnerCanInvite
+                                            ? l10n.onlyOwnerCanInviteSubtitle
+                                            : l10n.anyMemberCanInviteSubtitle,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isDark
+                                              ? Colors.white54
+                                              : Colors.black45,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Switch.adaptive(
+                                  value: _onlyOwnerCanInvite,
+                                  onChanged: (val) {
+                                    setState(
+                                        () => _onlyOwnerCanInvite = val);
+                                  },
+                                  activeColor: AppColors.primary,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),

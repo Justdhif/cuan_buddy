@@ -207,20 +207,80 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              UserBanner(
-                bannerColor: bannerColor,
-                bannerType: bannerType,
-                bannerImage: bannerImage,
+              // Banner with Edit Button
+              GestureDetector(
+                onTap: () => context.push('/profile/edit-banner', extra: profile),
+                child: Stack(
+                  children: [
+                    UserBanner(
+                      bannerColor: bannerColor,
+                      bannerType: bannerType,
+                      bannerImage: bannerImage,
+                    ),
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.45),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
+              // Avatar with Camera Edit Badge Button
               Positioned(
                 bottom: -50,
                 left: 16,
-                child: Hero(
-                  tag: 'avatar',
-                  child: UserAvatar(
-                    size: 110,
-                    avatarUrl: avatar,
-                    fallbackName: name,
+                child: GestureDetector(
+                  onTap: () => context.push('/profile/edit-photo', extra: profile),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Hero(
+                        tag: 'avatar',
+                        child: UserAvatar(
+                          size: 110,
+                          avatarUrl: avatar,
+                          fallbackName: name,
+                        ),
+                      ),
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              width: 2.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.2),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

@@ -9,6 +9,7 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
@@ -16,6 +17,7 @@ import '../../widgets/budget_card.dart';
 import '../../widgets/savings_goal_card.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/user_avatar.dart';
+import '../../../../core/widgets/user_list_tile.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/widgets/color_picker_sheet.dart';
@@ -143,6 +145,7 @@ class _SharedRoomDashboardScreenState
       fallback: AppColors.primary,
     );
     final iconShape = ref.read(categoryIconShapeProvider);
+    bool modalOnlyOwnerCanInvite = activeRoom['onlyOwnerCanInvite'] ?? true;
 
     final presetColors = [
       const Color(0xFF66BB6A),
@@ -290,7 +293,95 @@ class _SharedRoomDashboardScreenState
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
+                      // ─── Invite Permission Toggle ─────────────────
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E1E2E)
+                              : const Color(0xFFF8F9FF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF2E2E4E)
+                                : const Color(0xFFE2E8FF),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: modalOnlyOwnerCanInvite
+                                      ? AppColors.primary
+                                          .withValues(alpha: 0.15)
+                                      : (isDark
+                                          ? const Color(0xFF2C2C3E)
+                                          : const Color(0xFFEEF0FF)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  modalOnlyOwnerCanInvite
+                                      ? Icons.lock_rounded
+                                      : Icons.group_add_rounded,
+                                  size: 20,
+                                  color: modalOnlyOwnerCanInvite
+                                      ? AppColors.primary
+                                      : (isDark
+                                          ? Colors.white54
+                                          : Colors.black45),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.onlyOwnerCanInvite,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      modalOnlyOwnerCanInvite
+                                          ? l10n.onlyOwnerCanInviteSubtitle
+                                          : l10n.anyMemberCanInviteSubtitle,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? Colors.white54
+                                            : Colors.black45,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Switch.adaptive(
+                                value: modalOnlyOwnerCanInvite,
+                                onChanged: (val) {
+                                  setModalState(
+                                      () => modalOnlyOwnerCanInvite = val);
+                                },
+                                activeColor: AppColors.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -315,6 +406,7 @@ class _SharedRoomDashboardScreenState
                                 name: newName,
                                 emojiIcon: emojiCtrl.text,
                                 colorCode: hexColor,
+                                onlyOwnerCanInvite: modalOnlyOwnerCanInvite,
                               );
 
                           if (context.mounted) {
@@ -372,13 +464,11 @@ class _SharedRoomDashboardScreenState
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (room['role'] != 'owner') {
+    if (room['onlyOwnerCanInvite'] == true && room['role'] != 'owner') {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: isDark
-            ? 'Only the room owner can invite new members'
-            : 'Hanya pemilik ruangan yang dapat mengundang anggota baru',
+        message: l10n.onlyOwnerCanInviteError,
         type: SnackbarType.error,
       );
       return;
@@ -432,93 +522,65 @@ class _SharedRoomDashboardScreenState
                               friend['email'];
                           final String? username = friend['username'];
                           final avatarUrl = friend['avatar'];
+                          final listBackground = friend['listBackground'];
 
-                          return Row(
-                            children: [
-                              UserAvatar(
-                                size: 44,
-                                avatarUrl: avatarUrl,
-                                fallbackName: name,
+                          return UserListTile(
+                            name: name,
+                            username: username,
+                            avatarUrl: avatarUrl,
+                            listBackground: listBackground,
+                            isDark: isDark,
+                            actionWidget: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (username != null &&
-                                        username.isNotEmpty) ...[
-                                      Text(
-                                        '@$username',
-                                        style: AppTypography
-                                            .textTheme.bodySmall
-                                            ?.copyWith(
-                                          color: AppColors.primary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                    ],
-                                    Text(
-                                      name,
-                                      style: AppTypography.textTheme.labelLarge
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              onPressed: () async {
+                                final messenger =
+                                    ScaffoldMessenger.of(context);
+                                final localizations =
+                                    Localizations.localeOf(context);
+                                Navigator.pop(context);
+
+                                final error = await ref
+                                    .read(sharedNotifierProvider.notifier)
+                                    .inviteMember(widget.roomId, friendId);
+
+                                if (!mounted) return;
+                                if (error != null) {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(error),
+                                      backgroundColor: AppColors.danger,
                                     ),
-                                  ],
+                                  );
+                                } else {
+                                  messenger.showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        localizations.languageCode == 'id'
+                                            ? 'Berhasil mengundang $name'
+                                            : 'Successfully invited $name',
+                                      ),
+                                      backgroundColor: AppColors.success,
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                l10n.invite,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  final messenger =
-                                      ScaffoldMessenger.of(context);
-                                  final localizations =
-                                      Localizations.localeOf(context);
-                                  Navigator.pop(context);
-
-                                  final error = await ref
-                                      .read(sharedNotifierProvider.notifier)
-                                      .inviteMember(widget.roomId, friendId);
-
-                                  if (!mounted) return;
-                                  if (error != null) {
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text(error),
-                                        backgroundColor: AppColors.danger,
-                                      ),
-                                    );
-                                  } else {
-                                    messenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          localizations.languageCode == 'id'
-                                              ? 'Berhasil mengundang $name'
-                                              : 'Successfully invited $name',
-                                        ),
-                                        backgroundColor: AppColors.success,
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Text(
-                                  l10n.invite,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           );
                         },
                       ),
@@ -574,33 +636,51 @@ class _SharedRoomDashboardScreenState
   }
 
   Widget? _buildFab() {
+    VoidCallback? onTap;
     if (widget.initialChannel == DiscordChannel.transactions ||
         widget.initialChannel == DiscordChannel.expense ||
         widget.initialChannel == DiscordChannel.income) {
-      return FloatingActionButton(
-        onPressed: _addTransaction,
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      );
+      onTap = _addTransaction;
     } else if (widget.initialChannel == DiscordChannel.budget) {
-      return FloatingActionButton(
-        onPressed: _addBudget,
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      );
+      onTap = _addBudget;
     } else if (widget.initialChannel == DiscordChannel.savings) {
-      return FloatingActionButton(
-        onPressed: _addSavingsGoal,
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      );
+      onTap = _addSavingsGoal;
     }
-    return null;
+
+    if (onTap == null) return null;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 68),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primary,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.35),
+                blurRadius: 10,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.add_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    ref.watch(accentColorProvider);
     final state = ref.watch(sharedNotifierProvider);
     final l10n = AppLocalizations.of(context);
 
@@ -653,7 +733,6 @@ class _SharedRoomDashboardScreenState
           style: const TextStyle(fontWeight: FontWeight.bold),
           overflow: TextOverflow.ellipsis,
         ),
-        // 3 action icons removed as requested by user
         actions: const [],
       ),
       body: RefreshIndicator(
@@ -664,6 +743,7 @@ class _SharedRoomDashboardScreenState
         child: _buildChannelBody(
             context, state, room, isDark, l10n, baseCurrency),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: _buildFab(),
     );
   }

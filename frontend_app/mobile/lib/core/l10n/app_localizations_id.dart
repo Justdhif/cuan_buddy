@@ -1470,9 +1470,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
   @override
-  String get categoryInformation => 'INFORMASI & SYNC';
+  String get categoryInformation => 'INFORMASI';
   @override
-  String get categoryTransactions => 'TRANSAKSI & PERENCANAAN KEUANGAN';
+  String get categoryTransactions => 'FINANSIAL';
   @override
   String get categoryPlanning => 'PERENCANAAN';
   @override
@@ -1519,5 +1519,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get addBudgetButton => 'Buat Budget';
   @override
   String get addSavingGoalButton => 'Tambah Target Tabungan';
+  @override
+  String get onlyOwnerCanInvite => 'Hanya Owner yang Bisa Mengundang';
+  @override
+  String get onlyOwnerCanInviteSubtitle => 'Hanya pemilik room yang dapat mengundang anggota baru';
+  @override
+  String get anyMemberCanInviteSubtitle => 'Semua anggota dapat mengundang teman baru ke room ini';
+  @override
+  String get invitePermissionSettings => 'Izin Mengundang';
+  @override
+  String get onlyOwnerCanInviteError => 'Hanya pemilik room yang dapat mengundang anggota ke room ini';
 }
 

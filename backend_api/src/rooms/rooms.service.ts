@@ -11,8 +11,8 @@ export class RoomsService {
     private readonly notificationsService: NotificationsService
   ) {}
 
-  async createRoom(userId: string, body: { name: string; memberUserIds?: string[]; emojiIcon?: string; colorCode?: string; description?: string }) {
-    const { name, memberUserIds = [], emojiIcon, colorCode, description } = body;
+  async createRoom(userId: string, body: { name: string; memberUserIds?: string[]; emojiIcon?: string; colorCode?: string; description?: string; onlyOwnerCanInvite?: boolean }) {
+    const { name, memberUserIds = [], emojiIcon, colorCode, description, onlyOwnerCanInvite = true } = body;
     if (!name || name.trim() === '') {
       throw new BadRequestException('Room name is required');
     }
@@ -23,6 +23,7 @@ export class RoomsService {
       emojiIcon: emojiIcon || undefined,
       colorCode: colorCode || undefined,
       description: description || null,
+      onlyOwnerCanInvite,
       createdBy: userId,
     }).returning();
 
@@ -214,7 +215,7 @@ export class RoomsService {
   }
 
   async inviteMember(userId: string, roomId: string, inviteeId: string) {
-    // Verify current user is member (preferably owner)
+    // Verify current user is member
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
     });
@@ -223,7 +224,12 @@ export class RoomsService {
       throw new ForbiddenException('You are not a member of this room');
     }
 
-    if (membership.role !== 'owner') {
+    // Check room's invite permission setting
+    const roomRecord = await this.db.query.rooms.findFirst({
+      where: eq(rooms.id, roomId),
+    });
+
+    if (roomRecord?.onlyOwnerCanInvite && membership.role !== 'owner') {
       throw new ForbiddenException('Only the room owner can invite members');
     }
 
@@ -236,10 +242,7 @@ export class RoomsService {
       throw new BadRequestException('User is already a member of this room');
     }
 
-    // Get room details
-    const roomRecord = await this.db.query.rooms.findFirst({
-      where: eq(rooms.id, roomId),
-    });
+    // Get room details (already fetched above if roomRecord exists)
 
     // Get inviter details
     const inviterProfile = await this.db.query.userProfiles.findFirst({
@@ -273,7 +276,7 @@ export class RoomsService {
     return newMember;
   }
 
-  async updateRoom(userId: string, roomId: string, body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string }) {
+  async updateRoom(userId: string, roomId: string, body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string; onlyOwnerCanInvite?: boolean }) {
     // 1. Verify user is owner of the room
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
@@ -287,13 +290,14 @@ export class RoomsService {
       throw new ForbiddenException('Only the owner can update room details');
     }
 
-    const { name, emojiIcon, colorCode, description } = body;
+    const { name, emojiIcon, colorCode, description, onlyOwnerCanInvite } = body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (emojiIcon !== undefined) updateData.emojiIcon = emojiIcon;
     if (colorCode !== undefined) updateData.colorCode = colorCode;
     if (description !== undefined) updateData.description = description;
+    if (onlyOwnerCanInvite !== undefined) updateData.onlyOwnerCanInvite = onlyOwnerCanInvite;
 
     if (Object.keys(updateData).length === 0) {
       throw new BadRequestException('No fields to update');

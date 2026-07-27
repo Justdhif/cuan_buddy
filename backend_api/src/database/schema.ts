@@ -85,6 +85,7 @@ export const rooms = pgTable('rooms', {
   emojiIcon: text('emoji_icon').default('📁'),
   colorCode: text('color_code').default('#6C63FF'),
   description: text('description'),
+  onlyOwnerCanInvite: boolean('only_owner_can_invite').default(true).notNull(),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

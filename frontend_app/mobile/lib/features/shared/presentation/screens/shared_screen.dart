@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
@@ -7,6 +8,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -64,8 +66,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       _selectedRoomId = roomId;
     });
     if (roomId != null) {
-      final isCached = ref.read(sharedNotifierProvider).activeRoom?['id'] == roomId;
-      ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(roomId, silent: isCached);
+      ref.read(sharedNotifierProvider.notifier).fetchRoomDetails(roomId, silent: false);
     }
   }
 
@@ -162,6 +163,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       fallback: AppColors.primary,
     );
     final iconShape = ref.read(categoryIconShapeProvider);
+    bool modalOnlyOwnerCanInvite = activeRoom['onlyOwnerCanInvite'] ?? true;
 
     final presetColors = [
       const Color(0xFF66BB6A),
@@ -309,7 +311,95 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
+                      // ─── Invite Permission Toggle ─────────────────
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E1E2E)
+                              : const Color(0xFFF8F9FF),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color(0xFF2E2E4E)
+                                : const Color(0xFFE2E8FF),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: modalOnlyOwnerCanInvite
+                                      ? AppColors.primary
+                                          .withValues(alpha: 0.15)
+                                      : (isDark
+                                          ? const Color(0xFF2C2C3E)
+                                          : const Color(0xFFEEF0FF)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  modalOnlyOwnerCanInvite
+                                      ? Icons.lock_rounded
+                                      : Icons.group_add_rounded,
+                                  size: 20,
+                                  color: modalOnlyOwnerCanInvite
+                                      ? AppColors.primary
+                                      : (isDark
+                                          ? Colors.white54
+                                          : Colors.black45),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.onlyOwnerCanInvite,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      modalOnlyOwnerCanInvite
+                                          ? l10n.onlyOwnerCanInviteSubtitle
+                                          : l10n.anyMemberCanInviteSubtitle,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? Colors.white54
+                                            : Colors.black45,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Switch.adaptive(
+                                value: modalOnlyOwnerCanInvite,
+                                onChanged: (val) {
+                                  setModalState(
+                                      () => modalOnlyOwnerCanInvite = val);
+                                },
+                                activeColor: AppColors.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
@@ -334,6 +424,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                                 name: newName,
                                 emojiIcon: emojiCtrl.text,
                                 colorCode: hexColor,
+                                onlyOwnerCanInvite: modalOnlyOwnerCanInvite,
                               );
 
                           if (context.mounted) {
@@ -388,13 +479,11 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (activeRoom['role'] != 'owner') {
+    if (activeRoom['onlyOwnerCanInvite'] == true && activeRoom['role'] != 'owner') {
       AppSnackbar.show(
         context,
         title: l10n.error,
-        message: isDark
-            ? 'Only the room owner can invite new members'
-            : 'Hanya pemilik ruangan yang dapat mengundang anggota baru',
+        message: l10n.onlyOwnerCanInviteError,
         type: SnackbarType.error,
       );
       return;
@@ -448,11 +537,13 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                               friend['email'];
                           final String? username = friend['username'];
                           final avatarUrl = friend['avatar'];
+                          final listBackground = friend['listBackground'];
 
                           return UserListTile(
                             name: name,
                             username: username,
                             avatarUrl: avatarUrl,
+                            listBackground: listBackground,
                             isDark: isDark,
                             actionWidget: ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -520,9 +611,291 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     );
   }
 
+  void _showRoomOptionsSheet(
+      BuildContext context, bool isDark, AppLocalizations l10n) {
+    AppBottomSheet.show(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.languageCode == 'id' ? 'Opsi Ruangan' : 'Room Options',
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Option 1: Buat Room Baru
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  context.push('/shared/room-form');
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.06),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.add_circle_outline_rounded,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.languageCode == 'id'
+                                  ? 'Buat Room Baru'
+                                  : 'Create New Room',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              l10n.languageCode == 'id'
+                                  ? 'Buat grup keuangan bersama teman'
+                                  : 'Create a shared financial room',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Option 2: Gabung Room
+              InkWell(
+                onTap: () {
+                  Navigator.pop(context);
+                  _showJoinRoomSheet(context, isDark, l10n);
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.05)
+                        : Colors.black.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.08)
+                          : Colors.black.withValues(alpha: 0.06),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.meeting_room_rounded,
+                          color: AppColors.secondary,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.languageCode == 'id'
+                                  ? 'Gabung Room'
+                                  : 'Join Room',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              l10n.languageCode == 'id'
+                                  ? 'Masukkan UUID / kode akses ruangan'
+                                  : 'Enter room UUID to join',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showJoinRoomSheet(
+      BuildContext context, bool isDark, AppLocalizations l10n) {
+    final uuidCtrl = TextEditingController();
+
+    AppBottomSheet.show(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.languageCode == 'id' ? 'Gabung ke Room' : 'Join Room',
+                style: AppTypography.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.languageCode == 'id'
+                    ? 'Tempelkan atau ketik UUID ruangan yang ingin Anda masuki.'
+                    : 'Paste or enter the UUID of the room you want to join.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+              const SizedBox(height: 16),
+              AppTextField(
+                controller: uuidCtrl,
+                hint: 'e.g. 123e4567-e89b-12d3-a456-426614174000',
+                prefixIcon: const Icon(Icons.key_rounded, size: 20),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () async {
+                  final String uuid = uuidCtrl.text.trim();
+                  if (uuid.isEmpty) {
+                    AppSnackbar.show(
+                      context,
+                      title: l10n.error,
+                      message: l10n.languageCode == 'id'
+                          ? 'UUID tidak boleh kosong'
+                          : 'UUID cannot be empty',
+                      type: SnackbarType.error,
+                    );
+                    return;
+                  }
+
+                  Navigator.pop(context);
+
+                  final error = await ref
+                      .read(sharedNotifierProvider.notifier)
+                      .joinRoomByUuid(uuid);
+
+                  if (error != null) {
+                    if (context.mounted) {
+                      AppSnackbar.show(
+                        context,
+                        title: l10n.error,
+                        message: error,
+                        type: SnackbarType.error,
+                      );
+                    }
+                  } else {
+                    if (context.mounted) {
+                      AppSnackbar.show(
+                        context,
+                        title:
+                            l10n.languageCode == 'id' ? 'Berhasil' : 'Success',
+                        message: l10n.languageCode == 'id'
+                            ? 'Berhasil bergabung ke ruangan!'
+                            : 'Successfully joined room!',
+                        type: SnackbarType.success,
+                      );
+                    }
+                  }
+                },
+                child: Text(
+                  l10n.languageCode == 'id' ? 'Gabung Room' : 'Join Room',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = ref.watch(accentColorProvider);
     final state = ref.watch(sharedNotifierProvider);
     final l10n = AppLocalizations.of(context);
 
@@ -548,7 +921,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 // 2. Column 2: Active View (Manage Friends by default OR Room Channel Navigation)
                 Expanded(
                   child: (state.isLoading && state.rooms.isEmpty) ||
-                          (state.isRoomLoading && state.activeRoom == null && !isFriendsMode)
+                          (state.isRoomLoading && !isFriendsMode)
                       ? _SharedNavigationSkeleton(isDark: isDark)
                       : isFriendsMode
                           ? _buildFriendManagementPanel(context, state, isDark, l10n)
@@ -612,7 +985,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Center(
               child: InkWell(
-                onTap: () => context.push('/shared/room-form'),
+                onTap: () => _showRoomOptionsSheet(context, isDark, AppLocalizations.of(context)),
                 borderRadius: BorderRadius.circular(22),
                 child: Container(
                   width: 44,
@@ -621,9 +994,9 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                     color: isDark ? const Color(0xFF313338) : Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.add_rounded,
-                    color: Color(0xFF23A55A),
+                    color: AppColors.primary,
                     size: 24,
                   ),
                 ),
@@ -662,7 +1035,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                       height: 44,
                       decoration: BoxDecoration(
                         color: isFriendsSelected
-                            ? const Color(0xFF00B4D8)
+                            ? AppColors.primary
                             : (isDark ? const Color(0xFF313338) : Colors.white),
                         borderRadius: BorderRadius.circular(
                           isFriendsSelected ? 14 : 22,
@@ -670,7 +1043,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                         boxShadow: isFriendsSelected
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFF00B4D8).withValues(alpha: 0.4),
+                                  color: AppColors.primary.withValues(alpha: 0.4),
                                   blurRadius: 10,
                                   offset: const Offset(0, 3),
                                 )
@@ -679,7 +1052,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                       ),
                       child: Icon(
                         Icons.people_alt_rounded,
-                        color: isFriendsSelected ? Colors.white : const Color(0xFF00B4D8),
+                        color: isFriendsSelected ? Colors.white : AppColors.primary,
                         size: 22,
                       ),
                     ),
@@ -1034,15 +1407,25 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     // Seamless background matching main app background
     final bg = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
     final String roomId = room['id'];
-    final String roomName = room['name'] ?? 'Room';
+    final String rawRoomName = room['name'] ?? 'Room';
+    final String cleanRoomName = rawRoomName
+        .replaceAll(
+          RegExp(
+            r'[\u{1F300}-\u{1F9FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F1E0}-\u{1F1FF}]',
+            unicode: true,
+          ),
+          '',
+        )
+        .trim();
 
     return Container(
       color: bg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Room Title Header (Clean Title Only)
+          // Room Title Header (Clean Title Only, Full Width Border)
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               border: Border(
@@ -1050,18 +1433,61 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                   color: isDark
                       ? Colors.white.withValues(alpha: 0.08)
                       : Colors.black.withValues(alpha: 0.06),
+                  width: 1.0,
                 ),
               ),
             ),
-            child: Text(
-              roomName,
-              style: AppTypography.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  cleanRoomName.isNotEmpty ? cleanRoomName : rawRoomName,
+                  style: AppTypography.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                GestureDetector(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: roomId));
+                    AppSnackbar.show(
+                      context,
+                      title: l10n.languageCode == 'id' ? 'Berhasil' : 'Success',
+                      message: l10n.languageCode == 'id'
+                          ? 'UUID Room berhasil disalin'
+                          : 'Room UUID copied to clipboard',
+                      type: SnackbarType.success,
+                    );
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'UUID: $roomId',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.copy_rounded,
+                        size: 12,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 

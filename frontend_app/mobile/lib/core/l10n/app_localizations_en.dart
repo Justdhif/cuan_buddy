@@ -1464,9 +1464,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
   @override
-  String get categoryInformation => 'INFORMATION & SYNC';
+  String get categoryInformation => 'INFORMATION';
   @override
-  String get categoryTransactions => 'TRANSACTIONS & FINANCIAL PLANNING';
+  String get categoryTransactions => 'FINANCIAL';
   @override
   String get categoryPlanning => 'PLANNING';
   @override
@@ -1513,5 +1513,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addBudgetButton => 'Create Budget';
   @override
   String get addSavingGoalButton => 'Add Saving Goal';
+  @override
+  String get onlyOwnerCanInvite => 'Only Owner Can Invite';
+  @override
+  String get onlyOwnerCanInviteSubtitle => 'Only the room owner can invite new members';
+  @override
+  String get anyMemberCanInviteSubtitle => 'All members can invite new friends to this room';
+  @override
+  String get invitePermissionSettings => 'Invite Permission';
+  @override
+  String get onlyOwnerCanInviteError => 'Only the room owner can invite members to this room';
 }
 

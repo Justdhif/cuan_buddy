@@ -55,8 +55,8 @@ class UserAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF1F5F9),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.15),
         shape: BoxShape.circle,
       ),
       clipBehavior: Clip.antiAlias,
@@ -97,7 +97,7 @@ class UserAvatar extends StatelessWidget {
     return Container(
       width: imgSize,
       height: imgSize,
-      color: AppColors.primary.withValues(alpha: 0.08),
+      color: AppColors.primary.withValues(alpha: 0.15),
       child: Center(
         child: SizedBox(
           width: imgSize * 0.3,
@@ -111,7 +111,7 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
-  /// Fallback: lingkaran dengan initial huruf pertama nama.
+  /// Fallback: lingkaran dengan warna aksen dari setting dan initial huruf.
   Widget _buildFallback(double imgSize) {
     final initial = fallbackName.isNotEmpty
         ? fallbackName.trim()[0].toUpperCase()
@@ -121,20 +121,13 @@ class UserAvatar extends StatelessWidget {
       width: imgSize,
       height: imgSize,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary.withValues(alpha: 0.15),
-            AppColors.primary.withValues(alpha: 0.25),
-          ],
-        ),
+        color: AppColors.primary,
       ),
       child: Center(
         child: Text(
           initial,
           style: TextStyle(
-            color: AppColors.primary,
+            color: Colors.white,
             fontWeight: FontWeight.w800,
             fontSize: imgSize * 0.38,
             height: 1.0,

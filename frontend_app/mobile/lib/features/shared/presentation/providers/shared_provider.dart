@@ -179,6 +179,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
     String emojiIcon = '📁',
     String colorCode = '#6C63FF',
     String? description,
+    bool onlyOwnerCanInvite = true,
   }) async {
     try {
       final res = await _dioClient.dio.post('/rooms', data: {
@@ -186,6 +187,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
         'memberUserIds': memberUserIds,
         'emojiIcon': emojiIcon,
         'colorCode': colorCode,
+        'onlyOwnerCanInvite': onlyOwnerCanInvite,
         if (description != null && description.trim().isNotEmpty)
           'description': description.trim(),
       });
@@ -205,6 +207,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
     String? emojiIcon,
     String? colorCode,
     String? description,
+    bool? onlyOwnerCanInvite,
   }) async {
     try {
       final res = await _dioClient.dio.patch('/rooms/$roomId', data: {
@@ -212,6 +215,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
         if (emojiIcon != null) 'emojiIcon': emojiIcon,
         if (colorCode != null) 'colorCode': colorCode,
         if (description != null) 'description': description,
+        if (onlyOwnerCanInvite != null) 'onlyOwnerCanInvite': onlyOwnerCanInvite,
       });
       if (res.statusCode == 200 || res.statusCode == 201) {
         await fetchRoomDetails(roomId);
@@ -225,7 +229,13 @@ class SharedNotifier extends StateNotifier<SharedState> {
   }
 
   Future<void> fetchRoomDetails(String roomId, {bool silent = false}) async {
-    if (!silent) state = state.copyWith(isRoomLoading: true, error: null);
+    if (!silent) {
+      state = state.copyWith(
+        isRoomLoading: true,
+        clearActiveRoom: true,
+        error: null,
+      );
+    }
     try {
       final roomRes = await _dioClient.dio.get('/rooms/$roomId');
       final txRes = await _dioClient.dio.get('/transactions', queryParameters: {'roomId': roomId, 'limit': 100});
@@ -291,6 +301,36 @@ class SharedNotifier extends StateNotifier<SharedState> {
       return res.data['message'] ?? 'Failed to invite member';
     } catch (e) {
       return e.toString();
+    }
+  }
+
+  Future<String?> joinRoomByUuid(String roomUuid) async {
+    final String cleanUuid = roomUuid.trim();
+    if (cleanUuid.isEmpty) return 'UUID tidak boleh kosong';
+    try {
+      final res = await _dioClient.dio.post('/rooms/join', data: {
+        'uuid': cleanUuid,
+        'roomId': cleanUuid,
+      });
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        await fetchRooms(silent: true);
+        final String newRoomId = res.data is Map
+            ? (res.data['id'] ?? res.data['roomId'] ?? cleanUuid)
+            : cleanUuid;
+        await fetchRoomDetails(newRoomId);
+        return null;
+      }
+      return res.data['message'] ?? 'Gagal bergabung ke ruangan';
+    } catch (e) {
+      try {
+        final res = await _dioClient.dio.post('/rooms/$cleanUuid/join');
+        if (res.statusCode == 200 || res.statusCode == 201) {
+          await fetchRooms(silent: true);
+          await fetchRoomDetails(cleanUuid);
+          return null;
+        }
+      } catch (_) {}
+      return 'Ruangan tidak ditemukan atau Anda sudah bergabung.';
     }
   }
 

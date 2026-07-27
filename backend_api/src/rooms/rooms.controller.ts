@@ -8,7 +8,7 @@ export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
   @Post()
-  createRoom(@Req() req: any, @Body() body: { name: string; memberUserIds?: string[] }) {
+  createRoom(@Req() req: any, @Body() body: { name: string; memberUserIds?: string[]; onlyOwnerCanInvite?: boolean }) {
     return this.roomsService.createRoom(req.user.userId, body);
   }
 
@@ -26,7 +26,7 @@ export class RoomsController {
   updateRoom(
     @Req() req: any,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string }
+    @Body() body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string; onlyOwnerCanInvite?: boolean }
   ) {
     return this.roomsService.updateRoom(req.user.userId, id, body);
   }

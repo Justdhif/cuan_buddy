@@ -148,13 +148,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 Center(
                   child: Column(
                     children: [
-                      Hero(
-                        tag: 'avatar',
-                        child: UserAvatar(
-                          size: 120,
-                          avatarUrl: _selectedAvatarUrl,
-                          localFile: _selectedLocalFile,
-                          fallbackName: fullName.isNotEmpty ? fullName : '?',
+                      GestureDetector(
+                        onTap: () => context.push('/profile/edit-photo', extra: profile),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Hero(
+                              tag: 'avatar',
+                              child: UserAvatar(
+                                size: 120,
+                                avatarUrl: _selectedAvatarUrl,
+                                localFile: _selectedLocalFile,
+                                fallbackName: fullName.isNotEmpty ? fullName : '?',
+                              ),
+                            ),
+                            Positioned(
+                              right: 2,
+                              bottom: 2,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                    width: 2.5,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.camera_alt_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => context.push('/profile/edit-photo', extra: profile),
+                        child: Text(
+                          l10n.editPhoto,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                       ),
                     ],
@@ -164,6 +204,28 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const Divider(height: 1, thickness: 0.5),
 
                 // 2. Media & Customization Fields List
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.camera_alt_outlined,
+                  title: l10n.profilePhoto,
+                  subtitle: l10n.languageCode == 'id' ? 'Ubah foto avatar profil' : 'Change profile photo',
+                  onTap: () {
+                    if (profileAsync.hasValue) {
+                      context.push('/profile/edit-photo', extra: profileAsync.value);
+                    }
+                  },
+                ),
+                _buildInfoTile(
+                  context: context,
+                  icon: Icons.palette_outlined,
+                  title: l10n.languageCode == 'id' ? 'Banner Profil' : 'Profile Banner',
+                  subtitle: l10n.languageCode == 'id' ? 'Ubah warna atau gambar banner' : 'Change banner color or image',
+                  onTap: () {
+                    if (profileAsync.hasValue) {
+                      context.push('/profile/edit-banner', extra: profileAsync.value);
+                    }
+                  },
+                ),
                 _buildInfoTile(
                   context: context,
                   icon: Icons.wallpaper_outlined,

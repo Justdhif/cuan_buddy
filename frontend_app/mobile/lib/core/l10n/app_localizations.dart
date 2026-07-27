@@ -770,6 +770,11 @@ abstract class AppLocalizations {
   String get addTransactionButton;
   String get addBudgetButton;
   String get addSavingGoalButton;
+  String get onlyOwnerCanInvite;
+  String get onlyOwnerCanInviteSubtitle;
+  String get anyMemberCanInviteSubtitle;
+  String get invitePermissionSettings;
+  String get onlyOwnerCanInviteError;
 }
 
 class AppLocalizationsScope extends InheritedWidget {
