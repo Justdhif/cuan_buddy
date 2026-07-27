@@ -24,6 +24,9 @@ import '../../../shared/widgets/budget_card.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
+import '../../../transactions/presentation/widgets/ai_voice_sheet.dart';
+import '../../../transactions/presentation/widgets/ai_scan_sheet.dart';
+import '../../../transactions/presentation/providers/transaction_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -327,21 +330,49 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildQuickActionsRow(BuildContext context, bool isDark) {
     final l10n = AppLocalizations.of(context);
+    final voiceLabel = l10n.languageCode == 'id' ? 'Voice AI' : 'Voice AI';
+    final scanLabel = l10n.languageCode == 'id' ? 'Scan Struk' : 'Scan Receipt';
+
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Row(
         children: [
           Expanded(
             child: _buildQuickActionButton(
               context: context,
-              icon: Icons.receipt_long_rounded,
-              label: l10n.transactions,
+              icon: Icons.mic_rounded,
+              label: voiceLabel,
               color: AppColors.primary,
               isDark: isDark,
-              onTap: () => context.push('/home/transactions'),
+              onTap: () async {
+                final result = await showAiVoiceSheet(context);
+                if (result == true) {
+                  ref.invalidate(analyticsSummaryProvider);
+                  ref.invalidate(recentTransactionsProvider);
+                  ref.invalidate(allTransactionsProvider);
+                }
+              },
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildQuickActionButton(
+              context: context,
+              icon: Icons.document_scanner_rounded,
+              label: scanLabel,
+              color: const Color(0xFF10B981),
+              isDark: isDark,
+              onTap: () async {
+                final result = await showAiScanSheet(context);
+                if (result == true) {
+                  ref.invalidate(analyticsSummaryProvider);
+                  ref.invalidate(recentTransactionsProvider);
+                  ref.invalidate(allTransactionsProvider);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: _buildQuickActionButton(
               context: context,
@@ -352,7 +383,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onTap: () => context.push('/home/budgets'),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: _buildQuickActionButton(
               context: context,

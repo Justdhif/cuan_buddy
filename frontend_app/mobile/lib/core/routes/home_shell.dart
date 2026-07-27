@@ -122,12 +122,18 @@ class _CuanBuddyNavBar extends ConsumerWidget {
       ),
       _NavItemData(
         index: 1,
+        icon: Icons.receipt_long_outlined,
+        activeIcon: Icons.receipt_long_rounded,
+        label: l10n.transactions,
+      ),
+      _NavItemData(
+        index: 2,
         icon: Icons.group_outlined,
         activeIcon: Icons.group_rounded,
         label: l10n.shared,
       ),
       _NavItemData(
-        index: 2,
+        index: 3,
         icon: Icons.settings_outlined,
         activeIcon: Icons.settings_rounded,
         label: l10n.languageCode == 'id' ? 'Pengaturan' : 'Settings',
@@ -188,7 +194,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
                             duration: const Duration(milliseconds: 220),
                             curve: Curves.easeOutCubic,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 4),
+                                horizontal: 14, vertical: 4),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.15)

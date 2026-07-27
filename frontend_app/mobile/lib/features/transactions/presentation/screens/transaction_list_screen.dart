@@ -258,6 +258,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
             child: AppScreenHeader(
               title: l10n.transactions,
               isScrolled: _scrollOffset > 15,
+              showBackButton: false,
             ),
           ),
         ],

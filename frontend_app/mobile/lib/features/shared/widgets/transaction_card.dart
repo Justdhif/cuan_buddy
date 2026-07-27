@@ -89,6 +89,14 @@ class TransactionCard extends ConsumerWidget {
         ? baseAmountRaw.toDouble()
         : double.tryParse(baseAmountRaw?.toString() ?? '0') ?? amount;
 
+    final formattedTime = (showTime && tx['date'] != null) ? _formatTime(tx['date'] as String) : null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final hasBadges = catName != null ||
+        walletName != null ||
+        (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map) ||
+        (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null);
+
     return InkWell(
       onTap: onTap ??
           () {
@@ -102,146 +110,173 @@ class TransactionCard extends ConsumerWidget {
           },
       child: Padding(
         padding: contentPadding,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            GestureDetector(
-              onTap: onIconTap,
-              child: Container(
-                width: 48,
-                height: 48,
-                decoration: ShapeDecoration(
-                  color: catColor,
-                  shape: iconShape.toShapeBorder(48),
-                ),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: GestureDetector(
-                onTap: onTitleTap,
-                behavior: HitTestBehavior.opaque,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            // ─── Top Row: Icon | Title + Timestamp | Amount ──────────────────
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: onIconTap,
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: ShapeDecoration(
+                      color: catColor,
+                      shape: iconShape.toShapeBorder(48),
                     ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 5,
-                      runSpacing: 4,
+                    child: Center(
+                      child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Middle: Title & Timestamp
+                Expanded(
+                  child: GestureDetector(
+                    onTap: onTitleTap,
+                    behavior: HitTestBehavior.opaque,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildBadge(
-                          text: catName ?? l10n.transaction,
-                          textColor: catColor,
-                          bgColor: catColor.withValues(alpha: 0.15),
-                          fontWeight: FontWeight.w600,
+                        Text(
+                          title,
+                          style: AppTypography.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (walletName != null)
-                          _buildBadge(
-                            text: '$walletEmoji $walletName',
-                            textColor: walletColor,
-                            bgColor: walletColor.withValues(alpha: 0.12),
+                        if (formattedTime != null && formattedTime.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            formattedTime,
+                            style: AppTypography.textTheme.labelSmall?.copyWith(
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        if (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map)
-                          _buildBadge(
-                            text: '$savingsEmoji ${savingsGoal['name']}',
-                            textColor: savingsColor,
-                            bgColor: savingsColor.withValues(alpha: 0.12),
-                          ),
-                        if (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null)
-                          _buildMemberBadge(
-                            name: (tx['user']['profile']['fullName'] ??
-                                tx['user']['profile']['username'] ??
-                                'User').toString(),
-                            avatarUrl: tx['user']['profile']['avatar'] as String?,
-                            email: tx['user']['email'] as String?,
-                            color: AppColors.secondary,
-                          ),
+                        ],
                       ],
                     ),
-                  ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Far Right: Amount
+                GestureDetector(
+                  onTap: onAmountTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      txCurrency == currencyCode
+                          ? Text(
+                              '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                              style: AppTypography.textTheme.titleMedium?.copyWith(
+                                color: isIncome ? AppColors.success : AppColors.danger,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          : Consumer(
+                              builder: (context, ref, _) {
+                                final convertedAsync =
+                                    ref.watch(convertedAmountProvider(ConversionParams(
+                                  amount: amount,
+                                  from: txCurrency,
+                                  to: currencyCode,
+                                )));
+                                return convertedAsync.when(
+                                  data: (converted) => Text(
+                                    '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                                      color: isIncome ? AppColors.success : AppColors.danger,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  loading: () => const SizedBox(
+                                      width: 24,
+                                      height: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2)),
+                                  error: (_, __) => Text(
+                                    '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(baseAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
+                                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                                      color: isIncome ? AppColors.success : AppColors.danger,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                      if (txCurrency != currencyCode)
+                        Text(
+                          '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
+                          style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // ─── Bottom Row: Badges (Horizontal Scrollable List) ─────────────
+            if (hasBadges) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.only(left: 62),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _buildBadge(
+                        text: catName ?? l10n.transaction,
+                        textColor: catColor,
+                        bgColor: catColor.withValues(alpha: 0.15),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      if (walletName != null) ...[
+                        const SizedBox(width: 6),
+                        _buildBadge(
+                          text: '$walletEmoji $walletName',
+                          textColor: walletColor,
+                          bgColor: walletColor.withValues(alpha: 0.12),
+                        ),
+                      ],
+                      if (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map) ...[
+                        const SizedBox(width: 6),
+                        _buildBadge(
+                          text: '$savingsEmoji ${savingsGoal['name']}',
+                          textColor: savingsColor,
+                          bgColor: savingsColor.withValues(alpha: 0.12),
+                        ),
+                      ],
+                      if (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null) ...[
+                        const SizedBox(width: 6),
+                        _buildMemberBadge(
+                          name: (tx['user']['profile']['fullName'] ??
+                              tx['user']['profile']['username'] ??
+                              'User').toString(),
+                          avatarUrl: tx['user']['profile']['avatar'] as String?,
+                          email: tx['user']['email'] as String?,
+                          color: AppColors.secondary,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            GestureDetector(
-              onTap: onAmountTap,
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  txCurrency == currencyCode
-                      ? Text(
-                          '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(amount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                          style: AppTypography.textTheme.titleMedium?.copyWith(
-                            color: isIncome ? AppColors.success : AppColors.danger,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : Consumer(
-                          builder: (context, ref, _) {
-                            final convertedAsync =
-                                ref.watch(convertedAmountProvider(ConversionParams(
-                              amount: amount,
-                              from: txCurrency,
-                              to: currencyCode,
-                            )));
-                            return convertedAsync.when(
-                              data: (converted) => Text(
-                                '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(converted, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                                style: AppTypography.textTheme.titleMedium?.copyWith(
-                                  color: isIncome ? AppColors.success : AppColors.danger,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              loading: () => const SizedBox(
-                                  width: 24,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2)),
-                              error: (_, __) => Text(
-                                '${isIncome ? "▲" : "▼"} ${CurrencyFormatter.formatAmount(baseAmount, symbol: currencySymbol, decimalPrecision: walletPrecision)}',
-                                style: AppTypography.textTheme.titleMedium?.copyWith(
-                                  color: isIncome ? AppColors.success : AppColors.danger,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                  if (txCurrency != currencyCode)
-                    Text(
-                      '≈ ${isIncome ? '+' : '-'}${CurrencyFormatter.formatAmount(amount, symbol: txCurrencySymbol, decimalPrecision: walletPrecision)}',
-                      style: TextStyle(
-                        color: AppColors.textSecondaryLight,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  if (showTime && tx['date'] != null)
-                    Text(
-                      _formatTime(tx['date'] as String),
-                      style: AppTypography.textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                        fontSize: 10,
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            ],
           ],
         ),
       ),

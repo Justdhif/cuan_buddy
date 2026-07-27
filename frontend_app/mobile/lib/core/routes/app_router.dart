@@ -371,11 +371,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
-      GoRoute(
-        path: '/home/transactions',
-        pageBuilder: (context, state) =>
-            _buildPage(state, const TransactionListScreen()),
-      ),
+
       GoRoute(
         path: '/home/budgets',
         pageBuilder: (context, state) =>
@@ -413,7 +409,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _buildPage(state, const DashboardScreen()),
             ),
           ]),
-          // Branch 1 – Shared
+          // Branch 1 – Transactions
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: '/home/transactions',
+              pageBuilder: (context, state) =>
+                  _buildPage(state, const TransactionListScreen()),
+            ),
+          ]),
+          // Branch 2 – Shared
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/shared',
@@ -421,7 +425,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _buildPage(state, const SharedScreen()),
             ),
           ]),
-          // Branch 2 – Settings
+          // Branch 3 – Settings
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/settings',
