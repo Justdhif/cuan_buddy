@@ -91,10 +91,18 @@ class TransactionCard extends ConsumerWidget {
     final formattedTime = (showTime && tx['date'] != null) ? _formatTime(tx['date'] as String) : null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final room = tx['room'];
+    final roomName = room is Map ? room['name'] as String? : null;
+    final roomEmoji = room is Map ? (room['emojiIcon'] as String? ?? '👥') : '👥';
+    final roomColorCode = room is Map ? room['colorCode'] as String? : null;
+    final roomColor = AppColors.colorFromHex(roomColorCode, fallback: const Color(0xFF8B5CF6));
+
     final hasBadges = catName != null ||
         walletName != null ||
         (!hideSavingsGoal && savingsGoal != null && savingsGoal is Map) ||
-        (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null);
+        tx['roomId'] != null ||
+        roomName != null ||
+        (tx['user'] != null && tx['user']['profile'] != null);
 
     return InkWell(
       onTap: onTap ??
@@ -259,7 +267,16 @@ class TransactionCard extends ConsumerWidget {
                           bgColor: savingsColor.withValues(alpha: 0.12),
                         ),
                       ],
-                      if (tx['roomId'] != null && tx['user'] != null && tx['user']['profile'] != null) ...[
+                      if (tx['roomId'] != null || roomName != null) ...[
+                        const SizedBox(width: 6),
+                        _buildBadge(
+                          text: roomName != null ? '$roomEmoji $roomName' : '👥 Room',
+                          textColor: roomColor,
+                          bgColor: roomColor.withValues(alpha: 0.15),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ],
+                      if (tx['user'] != null && tx['user']['profile'] != null) ...[
                         const SizedBox(width: 6),
                         _buildMemberBadge(
                           name: (tx['user']['profile']['fullName'] ??

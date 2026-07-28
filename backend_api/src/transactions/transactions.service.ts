@@ -257,9 +257,22 @@ export class TransactionsService {
       }
       conditions.push(eq(transactions.roomId, roomId));
     } else {
-      // Personal space - only list user's personal (non-room) transactions
-      conditions.push(eq(transactions.userId, userId));
-      conditions.push(sql`${transactions.roomId} IS NULL`);
+      // Include personal transactions & room transactions for rooms user is a member of
+      const userMemberships = await this.db.query.roomMembers.findMany({
+        where: eq(roomMembers.userId, userId),
+      });
+      const roomIds = userMemberships.map((m: any) => m.roomId);
+
+      if (roomIds.length > 0) {
+        conditions.push(
+          or(
+            eq(transactions.userId, userId),
+            sql`${transactions.roomId} IN ${roomIds}`
+          )
+        );
+      } else {
+        conditions.push(eq(transactions.userId, userId));
+      }
     }
 
     if (startDate) conditions.push(gte(transactions.date, new Date(startDate)));
@@ -281,6 +294,7 @@ export class TransactionsService {
         category: true,
         savingsGoal: true,
         wallet: true,
+        room: true,
         user: {
           with: {
             profile: true,
@@ -313,7 +327,7 @@ export class TransactionsService {
   async findOne(userId: string, id: string) {
     const transaction = await this.db.query.transactions.findFirst({
       where: eq(transactions.id, id),
-      with: { category: true, savingsGoal: true, wallet: true, user: { with: { profile: true } } },
+      with: { category: true, savingsGoal: true, wallet: true, room: true, user: { with: { profile: true } } },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');
@@ -426,8 +440,20 @@ export class TransactionsService {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
+    const userMemberships = await this.db.query.roomMembers.findMany({
+      where: eq(roomMembers.userId, userId),
+    });
+    const roomIds = userMemberships.map((m: any) => m.roomId);
+
+    const accessCondition = roomIds.length > 0
+      ? or(
+          eq(transactions.userId, userId),
+          sql`${transactions.roomId} IN ${roomIds}`
+        )
+      : eq(transactions.userId, userId);
+
     const conditions = [
-      eq(transactions.userId, userId),
+      accessCondition,
       gte(transactions.date, startDate),
       lte(transactions.date, endDate),
     ];

@@ -165,99 +165,81 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
 
     return Scaffold(
       extendBody: true,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (notification) {
-          _onScrollNotification(notification, navBehavior);
-          return false;
-        },
-        child: FadeTransition(
-          opacity: _fadeController,
-          child: PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              if (index != widget.navigationShell.currentIndex) {
-                _isPageChangingFromSwipe = true;
-                widget.navigationShell.goBranch(
-                  index,
-                  initialLocation: index == widget.navigationShell.currentIndex,
-                );
-              }
-            },
-            children: widget.children,
-          ),
-        ),
-      ),
-      bottomNavigationBar: Stack(
+      body: Stack(
         alignment: Alignment.bottomCenter,
-        clipBehavior: Clip.none,
         children: [
 
-          AnimatedSlide(
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeInOutCubic,
-            offset: showNavBar ? Offset.zero : const Offset(0, 1.5),
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 220),
-              opacity: showNavBar ? 1.0 : 0.0,
-              child: _CuanBuddyNavBar(
-                currentIndex: widget.navigationShell.currentIndex,
-                onTap: (index) {
+          NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              _onScrollNotification(notification, navBehavior);
+              return false;
+            },
+            child: FadeTransition(
+              opacity: _fadeController,
+              child: PageView(
+                controller: _pageController,
+                onPageChanged: (index) {
                   if (index != widget.navigationShell.currentIndex) {
+                    _isPageChangingFromSwipe = true;
                     widget.navigationShell.goBranch(
                       index,
                       initialLocation: index == widget.navigationShell.currentIndex,
                     );
                   }
                 },
+                children: widget.children,
               ),
             ),
           ),
 
           if (navBehavior == BottomNavBehavior.manualChevron)
             Positioned(
-              bottom: showNavBar ? (64 + bottomMargin + 10) : (bottomMargin + 6),
-              child: AnimatedSlide(
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeInOutCubic,
-                offset: showChevron ? Offset.zero : const Offset(0, 2.5),
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 220),
-                  opacity: showChevron ? 1.0 : 0.0,
-                  child: Material(
-                    color: Colors.transparent,
-                    elevation: 6,
-                    shape: const CircleBorder(),
-                    child: InkWell(
-                      onTap: _toggleChevron,
-                      customBorder: const CircleBorder(),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF1E2A38).withValues(alpha: 0.90)
-                              : Colors.white.withValues(alpha: 0.95),
-                          border: Border.all(
+              bottom: showNavBar ? (64 + bottomMargin + 12) : (bottomMargin + 12),
+              child: IgnorePointer(
+                ignoring: !showChevron,
+                child: AnimatedSlide(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeInOutCubic,
+                  offset: showChevron ? Offset.zero : const Offset(0, 2.5),
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 220),
+                    opacity: showChevron ? 1.0 : 0.0,
+                    child: Material(
+                      color: Colors.transparent,
+                      elevation: 8,
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        onTap: _toggleChevron,
+                        customBorder: const CircleBorder(),
+                        child: Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
                             color: Theme.of(context).brightness == Brightness.dark
-                                ? Colors.white.withValues(alpha: 0.25)
-                                : Colors.black.withValues(alpha: 0.12),
-                            width: 1.2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.20),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                                ? const Color(0xFF1E2A38).withValues(alpha: 0.95)
+                                : Colors.white.withValues(alpha: 0.98),
+                            border: Border.all(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white.withValues(alpha: 0.3)
+                                  : Colors.black.withValues(alpha: 0.15),
+                              width: 1.5,
                             ),
-                          ],
-                        ),
-                        child: Icon(
-                          showNavBar
-                              ? Icons.keyboard_arrow_down_rounded
-                              : Icons.keyboard_arrow_up_rounded,
-                          color: AppColors.primary,
-                          size: 26,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.25),
+                                blurRadius: 14,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            showNavBar
+                                ? Icons.keyboard_arrow_down_rounded
+                                : Icons.keyboard_arrow_up_rounded,
+                            color: AppColors.primary,
+                            size: 28,
+                          ),
                         ),
                       ),
                     ),
@@ -266,6 +248,26 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
               ),
             ),
         ],
+      ),
+      bottomNavigationBar: AnimatedSlide(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+        offset: showNavBar ? Offset.zero : const Offset(0, 1.5),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 220),
+          opacity: showNavBar ? 1.0 : 0.0,
+          child: _CuanBuddyNavBar(
+            currentIndex: widget.navigationShell.currentIndex,
+            onTap: (index) {
+              if (index != widget.navigationShell.currentIndex) {
+                widget.navigationShell.goBranch(
+                  index,
+                  initialLocation: index == widget.navigationShell.currentIndex,
+                );
+              }
+            },
+          ),
+        ),
       ),
     );
   }
