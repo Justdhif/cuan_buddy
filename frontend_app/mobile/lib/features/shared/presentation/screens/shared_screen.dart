@@ -31,6 +31,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
   String? _selectedRoomId;
   final TextEditingController _friendSearchCtrl = TextEditingController();
   String _friendSearchQuery = '';
+  final Set<String> _loadingInviteCodeRoomIds = {};
 
   bool _infoExpanded = true;
   bool _txExpanded = true;
@@ -1757,9 +1758,11 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     );
   }
   Widget _buildInviteCodeCard(Map<String, dynamic> room, bool isDark, AppLocalizations l10n) {
+    final String roomId = room['id']?.toString() ?? '';
     final String? inviteCode = room['inviteCode'];
     final String? expiresAtStr = room['inviteCodeExpiresAt'];
     final bool isOwner = room['role'] == 'owner';
+    final bool isCodeLoading = _loadingInviteCodeRoomIds.contains(roomId);
 
     DateTime? expiresAt;
     if (expiresAtStr != null) {
@@ -1769,9 +1772,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     }
 
     final bool isExpired = expiresAt != null && DateTime.now().isAfter(expiresAt);
-    final String displayCode = inviteCode != null
-        ? '-'
-        : '';
+    final String displayCode = inviteCode ?? '';
 
     int daysRemaining = 0;
     if (expiresAt != null) {
@@ -1817,7 +1818,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
               color: isDark ? Colors.white54 : Colors.black54,
             ),
           ),
-          if (inviteCode != null) ...[
+          if (inviteCode != null && inviteCode.isNotEmpty) ...[
             const SizedBox(height: 10),
             Row(
               children: [
@@ -1871,7 +1872,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             if (!isExpired && expiresAt != null) ...[
               const SizedBox(height: 6),
               Text(
-                ':  ',
+                '${l10n.inviteCodeExpiry} $daysRemaining ${l10n.languageCode == 'id' ? 'hari lagi' : 'days'}',
                 style: const TextStyle(
                   fontSize: 10,
                   color: Colors.grey,
@@ -1884,17 +1885,37 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                if (inviteCode == null || isExpired)
+                if (inviteCode == null || inviteCode.isEmpty || isExpired)
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () async {
-                        await ref
-                            .read(sharedNotifierProvider.notifier)
-                            .generateInviteCode(room['id']);
-                      },
-                      icon: const Icon(Icons.add_rounded, size: 14),
+                      onPressed: isCodeLoading
+                          ? null
+                          : () async {
+                              setState(() => _loadingInviteCodeRoomIds.add(roomId));
+                              try {
+                                await ref
+                                    .read(sharedNotifierProvider.notifier)
+                                    .generateInviteCode(roomId);
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _loadingInviteCodeRoomIds.remove(roomId));
+                                }
+                              }
+                            },
+                      icon: isCodeLoading
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.add_rounded, size: 14),
                       label: Text(
-                        l10n.generateInviteCode,
+                        isCodeLoading
+                            ? (l10n.languageCode == 'id' ? 'Memproses...' : 'Processing...')
+                            : l10n.generateInviteCode,
                         style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -1911,33 +1932,53 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 else ...[
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final bool? confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text(l10n.regenerateConfirmTitle),
-                            content: Text(l10n.regenerateConfirmMessage),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
+                      onPressed: isCodeLoading
+                          ? null
+                          : () async {
+                              final bool? confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text(l10n.regenerateConfirmTitle),
+                                  content: Text(l10n.regenerateConfirmMessage),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: Text(l10n.languageCode == 'id' ? 'Ya' : 'Yes'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                setState(() => _loadingInviteCodeRoomIds.add(roomId));
+                                try {
+                                  await ref
+                                      .read(sharedNotifierProvider.notifier)
+                                      .generateInviteCode(roomId);
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _loadingInviteCodeRoomIds.remove(roomId));
+                                  }
+                                }
+                              }
+                            },
+                      icon: isCodeLoading
+                          ? SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.primary,
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: Text(l10n.languageCode == 'id' ? 'Ya' : 'Yes'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await ref
-                              .read(sharedNotifierProvider.notifier)
-                              .generateInviteCode(room['id']);
-                        }
-                      },
-                      icon: const Icon(Icons.sync_rounded, size: 14),
+                            )
+                          : const Icon(Icons.sync_rounded, size: 14),
                       label: Text(
-                        l10n.regenerateInviteCode,
+                        isCodeLoading
+                            ? (l10n.languageCode == 'id' ? 'Memproses...' : 'Processing...')
+                            : l10n.regenerateInviteCode,
                         style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -1952,30 +1993,39 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    onPressed: () async {
-                      final bool? confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(l10n.deleteInviteCode),
-                          content: Text(l10n.deleteInviteCodeConfirm),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text(l10n.languageCode == 'id' ? 'Hapus' : 'Delete'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        await ref
-                            .read(sharedNotifierProvider.notifier)
-                            .deleteInviteCode(room['id']);
-                      }
-                    },
+                    onPressed: isCodeLoading
+                        ? null
+                        : () async {
+                            final bool? confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(l10n.deleteInviteCode),
+                                content: Text(l10n.deleteInviteCodeConfirm),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: Text(l10n.languageCode == 'id' ? 'Hapus' : 'Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              setState(() => _loadingInviteCodeRoomIds.add(roomId));
+                              try {
+                                await ref
+                                    .read(sharedNotifierProvider.notifier)
+                                    .deleteInviteCode(roomId);
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _loadingInviteCodeRoomIds.remove(roomId));
+                                }
+                              }
+                            }
+                          },
                     icon: const Icon(Icons.delete_outline_rounded, size: 16),
                     style: IconButton.styleFrom(
                       backgroundColor: AppColors.danger.withValues(alpha: 0.1),

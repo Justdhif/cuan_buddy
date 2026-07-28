@@ -37,7 +37,7 @@ void main() async {
   await initializeDateFormatting('en', null);
 
   final sharedPreferences = await SharedPreferences.getInstance();
-  GoogleFonts.config.allowRuntimeFetching = true;
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   runApp(
     ProviderScope(

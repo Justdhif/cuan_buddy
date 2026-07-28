@@ -333,9 +333,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Expanded(
             child: _buildRedesignedAiButton(
               context: context,
-              title: isId ? 'Voice AI' : 'Voice AI',
-              subtitle: isId ? 'Input Bicara' : 'Voice Input',
-              badgeText: 'AI Voice',
+              title: isId ? 'Catat via Suara' : 'Add via Voice',
+              subtitle: isId ? 'Ucapkan Transaksi' : 'Speak Transaction',
+              badgeText: isId ? 'Suara' : 'Voice',
               icon: Icons.mic_rounded,
               gradientColors: isDark
                   ? [const Color(0xFF4F46E5), const Color(0xFF7C3AED)]
@@ -357,9 +357,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Expanded(
             child: _buildRedesignedAiButton(
               context: context,
-              title: isId ? 'Scan Struk' : 'Scan Receipt',
-              subtitle: isId ? 'Ekstrak Struk' : 'Auto Extract',
-              badgeText: 'AI Scan',
+              title: isId ? 'Scan & Foto Struk' : 'Scan & Photo Receipt',
+              subtitle: isId ? 'Foto atau Upload' : 'Photo or Upload',
+              badgeText: isId ? 'Scan / Foto' : 'Scan / Photo',
               icon: Icons.document_scanner_rounded,
               gradientColors: isDark
                   ? [const Color(0xFF059669), const Color(0xFF0D9488)]
@@ -482,8 +482,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
-                                  Icons.auto_awesome_rounded,
-                                  size: 10,
+                                  Icons.bolt_rounded,
+                                  size: 11,
                                   color: Colors.amberAccent,
                                 ),
                                 const SizedBox(width: 3),

@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import { eq, and, inArray, sql } from 'drizzle-orm';
+import { eq, and, inArray, sql, asc } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
 import { rooms, roomMembers, users, userProfiles, transactions, budgets, savingsGoals } from '../database/schema';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -80,6 +80,7 @@ export class RoomsService {
 
     const roomsList = await this.db.query.rooms.findMany({
       where: inArray(rooms.id, roomIds),
+      orderBy: [asc(rooms.createdAt)],
     });
 
     const result: any[] = [];
