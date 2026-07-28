@@ -23,9 +23,9 @@ const defaultCategories = [
 
 async function seed() {
   console.log('🌱 Seeding categories for all users...');
-  
+
   const allUsers = await db.select().from(schema.users);
-  
+
   if (allUsers.length === 0) {
     console.log('⚠️ No users found in database. Please register a user first before seeding.');
     process.exit(0);

@@ -24,7 +24,7 @@ class CategoryRepository {
     final response = await _dio.post('/categories', data: {
       'name': name,
       'emojiIcon': emojiIcon,
-      'colorCode': colorCode ?? '#4F46E5', // Default primary color
+      'colorCode': colorCode ?? '#4F46E5',
     });
     return response.data as Map<String, dynamic>;
   }

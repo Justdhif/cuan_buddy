@@ -32,7 +32,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
     try {
-      // Optimized: rely on DB unique constraint instead of a separate findFirst query
+
       const [insertedUser] = await this.db
         .insert(users)
         .values({
@@ -205,16 +205,16 @@ export class AuthService {
 
       // Automatically generate tokens for auto-login after verification
       const tokens = this.generateTokens(updatedUser.id, updatedUser.email);
-      
+
       // Update lastLoginAt
       void this.db
         .update(users)
         .set({ lastLoginAt: new Date() })
         .where(eq(users.id, updatedUser.id));
 
-      return { 
+      return {
         message: 'Your account has been successfully verified.',
-        ...tokens 
+        ...tokens
       };
     } catch (error) {
       throw new BadRequestException('Verification token is invalid or has expired.');

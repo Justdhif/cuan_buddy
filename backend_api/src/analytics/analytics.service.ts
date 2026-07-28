@@ -9,7 +9,7 @@ export class AnalyticsService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
 
   async getSummary(userId: string) {
-    // Optimized: single SQL aggregate query instead of fetching all rows to JS
+
     const [result] = await this.db
       .select({
         totalIncome: sql<number>`COALESCE(SUM(CASE WHEN type = 'income' THEN amount::numeric ELSE 0 END), 0)`,
@@ -32,7 +32,7 @@ export class AnalyticsService {
   }
 
   async getSpendingByCategory(userId: string) {
-    // Optimized: aggregate and group by category in SQL
+
     const results = await this.db
       .select({
         categoryName: sql<string>`COALESCE(c.name, 'Uncategorized')`,

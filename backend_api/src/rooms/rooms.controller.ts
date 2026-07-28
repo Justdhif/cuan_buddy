@@ -12,7 +12,6 @@ export class RoomsController {
     return this.roomsService.createRoom(req.user.userId, body);
   }
 
-  // ─── MUST be before :id routes to avoid route conflict ───────────────────────
   @Post('join-code')
   joinRoomByInviteCode(@Req() req: any, @Body() body: { inviteCode: string }) {
     return this.roomsService.joinRoomByInviteCode(req.user.userId, body.inviteCode);

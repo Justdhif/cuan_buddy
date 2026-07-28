@@ -23,7 +23,6 @@ export class BudgetsService {
       }
     }
 
-    // Check if budget for this category and month already exists (only if category based)
     if (createBudgetDto.type === 'category' && createBudgetDto.categoryId) {
       const existing = await this.db.query.budgets.findFirst({
         where: and(
@@ -86,9 +85,9 @@ export class BudgetsService {
 
     const data = await this.db.query.budgets.findMany({
       where: and(...conditions),
-      with: { 
+      with: {
         category: true,
-        wallet: true 
+        wallet: true
       },
       limit: 200, // fetch all, filter in JS
       offset: 0,

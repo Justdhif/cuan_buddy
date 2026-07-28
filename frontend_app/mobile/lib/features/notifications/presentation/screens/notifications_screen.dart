@@ -36,7 +36,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               .any((n) => !(n['isRead'] as bool? ?? false)))
             TextButton(
               onPressed: () {
-                // Mark all as read
+
                 for (final n in notifState.notifications) {
                   final id = n['id'] as String?;
                   final isRead = n['isRead'] as bool? ?? false;
@@ -283,7 +283,7 @@ class _NotificationTile extends ConsumerWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dot indicator for unread
+
             Container(
               margin: const EdgeInsets.only(top: 6, right: 12),
               width: 8,
@@ -293,7 +293,7 @@ class _NotificationTile extends ConsumerWidget {
                 color: isRead ? Colors.transparent : AppColors.primary,
               ),
             ),
-            // Icon
+
             Container(
               width: 44,
               height: 44,
@@ -314,7 +314,7 @@ class _NotificationTile extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Content
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

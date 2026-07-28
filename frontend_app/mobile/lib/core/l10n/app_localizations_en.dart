@@ -3,7 +3,6 @@ import 'app_localizations.dart';
 class AppLocalizationsEn extends AppLocalizations {
   const AppLocalizationsEn();
 
-  // ─── Meta ─────────────────────────────────────────────────────────────────────
   @override
   String get languageCode => 'en';
   @override
@@ -11,7 +10,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get home => 'Home';
 
-  // ─── Auth — Login ─────────────────────────────────────────────────────────────
   @override
   String get welcomeBack => 'Welcome back';
   @override
@@ -41,7 +39,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get loginFailed => 'Login Failed';
 
-  // ─── Auth — Register ──────────────────────────────────────────────────────────
   @override
   String get createAccount => 'Create an account';
   @override
@@ -83,7 +80,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get error => 'Error';
 
-  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
   @override
   String get unsavedChangesTitle => 'Discard Changes?';
   @override
@@ -94,7 +90,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get keepEditing => 'Keep Editing';
 
-  // ─── Auth — Forgot Password ───────────────────────────────────────────────────
   @override
   String get forgotPasswordTitle => 'Forgot Password? 🔐';
   @override
@@ -131,7 +126,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get info => 'Info';
 
-  // ─── Auth — Email Verification ────────────────────────────────────────────────
   @override
   String get verifyEmail => 'Verify Email';
   @override
@@ -176,11 +170,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get success => 'Success';
 
-  // ─── Splash ───────────────────────────────────────────────────────────────────
   @override
   String get splashTagline => 'Manage your finances smartly ✨';
 
-  // ─── Dashboard ────────────────────────────────────────────────────────────────
   @override
   String get hello => 'Hello, ';
   @override
@@ -238,7 +230,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tryAgain => 'Try Again';
 
-  // ─── Transactions ─────────────────────────────────────────────────────────────
   @override
   String get transactions => 'Transactions';
   @override
@@ -317,7 +308,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noCategories => 'No categories found';
 
-  // ─── Budgets ──────────────────────────────────────────────────────────────────
   @override
   String get budgets => 'Budgets';
   @override
@@ -387,7 +377,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String budgetExceededBy(String amount) => 'Budget exceeded by $amount';
 
-  // ─── Savings ──────────────────────────────────────────────────────────────────
   @override
   String get addSavingsGoal => 'Add Savings Goal';
   @override
@@ -500,7 +489,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String updateGoalTitle(String name) => 'Update $name';
 
-  // ─── Categories ───────────────────────────────────────────────────────────────
   @override
   String get manageCategories => 'Manage Categories';
   @override
@@ -535,7 +523,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get hexColor => 'HEX Color';
 
-  // ─── Wallets ──────────────────────────────────────────────────────────────────
   @override
   String get manageWallets => 'Manage Wallets';
   @override
@@ -584,7 +571,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get walletDecimalSetAmount => 'Set amount';
 
-  // ─── Notifications ────────────────────────────────────────────────────────────
   @override
   String get notifications => 'Notifications';
   @override
@@ -597,13 +583,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notification => 'Notification';
 
-  // ─── AI Chat ──────────────────────────────────────────────────────────────────
   @override
   String get cuanBuddyAI => 'CuanBuddy AI';
   @override
   String get askAboutFinances => 'Ask about your finances...';
 
-  // ─── Analytics ────────────────────────────────────────────────────────────────
   @override
   String get analytics => 'Analytics';
   @override
@@ -621,7 +605,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get noAnalyticsData => 'No data available';
 
-  // ─── Profile ──────────────────────────────────────────────────────────────────
   @override
   String get profile => 'Profile';
   @override
@@ -647,7 +630,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get logOutConfirm => 'Are you sure you want to log out?';
 
-  // ─── Transaction Redesign ──────────────────────────────────────────────────
   @override
   String get totalCashflow => 'Total cashflow';
   @override
@@ -673,7 +655,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get selectLanguage => 'Select Language';
 
-  // ─── Change Password & Phone ──────────────────────────────────────────────────
   @override
   String get changePassword => 'Change Password';
   @override
@@ -726,7 +707,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get changePhoneNumberLink => 'Change phone number';
 
-  // ─── Edit Profile ─────────────────────────────────────────────────────────────
   @override
   String get chooseAvatar => 'Choose Avatar';
   @override
@@ -932,7 +912,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get connectWithUs => 'Connect with us:';
 
-  // ─── Backup & Restore ─────────────────────────────────────────────────────────
   @override
   String get backupSettings => 'Backup Settings';
   @override
@@ -1026,8 +1005,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get backupDownloadedToDevice => 'Backup downloaded to your device';
 
-
-  // ─── Profile Setup ────────────────────────────────────────────────────────────
   @override
   String get step1of2 => 'Step 1/2';
   @override
@@ -1078,7 +1055,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get saveAndFinishOnboarding => 'Save & Finish';
 
-  // ─── Common ───────────────────────────────────────────────────────────────────
   @override
   String get retry => 'Retry';
   @override
@@ -1096,7 +1072,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String of_(String amount) => 'of $amount';
 
-  // ─── Onboarding ──────────────────────────────────────────────────────────────
   @override
   String get onboardingTitle1 => 'Track Your Expenses';
   @override
@@ -1117,7 +1092,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get next => 'Next';
 
-  // ─── AI Voice ───────────────────────────────────────────────────────────────
   @override
   String get aiVoiceTitle => 'Transaction Confirmation';
   @override
@@ -1153,7 +1127,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aiVoiceSuccess => 'Transaction saved via AI Voice!';
 
-  // ─── Extra Fields ─────────────────────────────────────────────────────────────
   @override
   String get usernameHint => 'Enter your username';
   @override
@@ -1176,13 +1149,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changePasswordInfo =>
       'Please enter your current password to create a new one. Make sure your new password is at least 8 characters long.';
 
-  // ─── Export & Import ──────────────────────────────────────────────────────────
   @override
   String get exportData => 'Export Data';
   @override
   String get importData => 'Import Data';
 
-  // ─── Saving Detail ──────────────────────────────────────────────────────────
   @override
   String get transactionHistory => 'Transaction History';
   @override
@@ -1190,7 +1161,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get perDayShort => '/day';
 
-  // ─── Notifications ────────────────────────────────────────────────────────
   @override
   String get newTransactionRecorded => 'New Transaction Recorded';
   @override
@@ -1224,7 +1194,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get expenseNotification => 'expense';
 
-  // ─── Exceptions & Network Errors ──────────────────────────────────────────
   @override
   String get errInvalidData => 'Invalid data. Please check again 😊';
   @override
@@ -1279,7 +1248,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get sendFeedback => 'Send Feedback';
 
-  // Budget Screen Additions
   @override
   String get startMonth => 'Start Month';
   @override
@@ -1322,7 +1290,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String budgetActivePeriod(String startMonth, String endMonth) =>
       'Budget is valid from $startMonth to $endMonth.';
 
-  // ─── Savings Form (new fields) ─────────────────────────────────────────────
   @override
   String get selectWallet => 'Select Wallet';
   @override
@@ -1338,7 +1305,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get purchaseLinkHint => 'https://shopee.co.id/... or Tokopedia';
 
-  // ─── Shared Space (Lobi, Room, Teman) ──────────────────────────────────────────
   @override
   String get sharedSpace => 'Shared Space';
   @override
@@ -1462,7 +1428,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aiInsightBannerSubtitle => 'Get personalized advice for better finances with AI ✨';
 
-  // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
   @override
   String get categoryInformation => 'INFORMATION';
   @override
@@ -1523,7 +1488,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invitePermissionSettings => 'Invite Permission';
   @override
   String get onlyOwnerCanInviteError => 'Only the room owner can invite members to this room';
-  // ─── Invite Code ─────────────────────────────────────────────────────────────
+
   @override
   String get inviteCode => 'Invite Code';
   @override

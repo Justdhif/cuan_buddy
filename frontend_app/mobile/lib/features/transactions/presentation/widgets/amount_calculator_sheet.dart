@@ -62,10 +62,9 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
   double _convertedResult = 0.0;
   String? _pressedKey;
 
-  // Selected wallet for input
   Map<String, dynamic>? _selectedWallet;
   bool _isConverting = false;
-  bool _showConverted = false; // Toggle state for display currency
+  bool _showConverted = false;
 
   @override
   void initState() {
@@ -79,7 +78,6 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
     }
     _evaluateExpression();
 
-    // Auto-select initial wallet/currency after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final wallets = ref.read(walletsProvider).valueOrNull ?? [];
       if (wallets.isNotEmpty) {
@@ -151,7 +149,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
     try {
       _result = _calculateBODMAS(_expression);
     } catch (_) {
-      // Keep previous valid result
+
     }
   }
 
@@ -285,22 +283,17 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
             ? 'Masukkan nominal jumlah transaksi'
             : 'Enter transaction nominal amount');
 
-    // Base currency info
     final baseCurrency = ref.watch(profileProvider).valueOrNull?['currency'] as String? ?? 'IDR';
     final baseCurrencySymbol = AppConstants.getCurrencySymbol(baseCurrency);
 
-    // Selected input currency info
     final txCurrency = _selectedWallet?['currency'] as String? ?? 'IDR';
     final txCurrencySymbol = AppConstants.getCurrencySymbol(txCurrency);
 
-    // Precision is taken from selected wallet
     final selectedPrecision = (_selectedWallet?['decimalPrecision'] as num?)?.toInt() ?? widget.decimalPrecision;
 
-    // Display formatted strings
     final displayConverted = CurrencyFormatter.formatAmount(_convertedResult, symbol: baseCurrencySymbol, decimalPrecision: selectedPrecision);
     final displayOriginal = CurrencyFormatter.formatAmount(_result, symbol: txCurrencySymbol, decimalPrecision: selectedPrecision);
 
-    // Wallets for selector
     final walletsAsync = ref.watch(walletsProvider);
     final wallets = walletsAsync.valueOrNull ?? [];
 
@@ -310,7 +303,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Header ──
+
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Column(
@@ -334,7 +327,6 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
           ),
         ),
 
-        // ── Result Display & Converter ──
         Container(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
           child: Column(
@@ -343,7 +335,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  // Loading Spinner if converting
+
                   if (_isConverting)
                     const Padding(
                       padding: EdgeInsets.only(right: 12),
@@ -353,7 +345,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
-                  // Compact display: Toggles between original amount and converted amount
+
                   Flexible(
                     child: GestureDetector(
                       onTap: () {
@@ -366,7 +358,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
                       child: Text(
                         _showConverted ? displayConverted : displayOriginal,
                         style: AppTypography.textTheme.headlineMedium?.copyWith(
-                          fontSize: 36, // Smaller size, as requested
+                          fontSize: 36,
                           fontWeight: FontWeight.w800,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -377,7 +369,6 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
                     ),
                   ),
 
-                  // Converter Action Button (only shown if selected wallet currency != base currency AND not currently showing converted)
                   if (txCurrency != baseCurrency && !_showConverted) ...[
                     const SizedBox(width: 12),
                     GestureDetector(
@@ -434,7 +425,6 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
 
         const Divider(height: 1),
 
-        // ── Wallet Selector ──
         if (wallets.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.only(top: 14),
@@ -445,13 +435,13 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: wallets.length + 1,
                 itemBuilder: (context, index) {
-                  // The last item is the '+' button
+
                   if (index == wallets.length) {
                     return Padding(
                       padding: const EdgeInsets.only(left: 4),
                       child: GestureDetector(
                         onTap: () {
-                          // Navigate to wallet form sheet to create a new wallet
+
                           context.push('/manage-wallets/form');
                         },
                         child: Container(
@@ -494,7 +484,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
                         height: 40,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
-                          color: isSelected 
+                          color: isSelected
                               ? walletColor.withValues(alpha: 0.15)
                               : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                           border: Border.all(
@@ -507,7 +497,7 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
                         child: Text(
                           '${wallet['name']}',
                           style: TextStyle(
-                            color: isSelected 
+                            color: isSelected
                                 ? (isDark ? Colors.white : walletColor)
                                 : (isDark ? Colors.white70 : Colors.black87),
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -523,7 +513,6 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
           ),
         ],
 
-        // ── Numpad ──
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
           child: Container(
@@ -543,12 +532,11 @@ class _AmountCalculatorSheetState extends ConsumerState<AmountCalculatorSheet> {
           ),
         ),
 
-        // ── Save Button ──
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: ElevatedButton(
             onPressed: () {
-              // Save the converted base currency amount & original currency
+
               widget.onSave(_convertedResult, baseCurrency);
               Navigator.pop(context);
             },

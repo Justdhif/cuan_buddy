@@ -3,8 +3,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../l10n/app_localizations.dart';
 
-/// Shows a stylized confirmation dialog when the user tries to navigate away
-/// from a form with unsaved changes.
 Future<bool> showConfirmDiscardDialog(
   BuildContext context, {
   String? title,
@@ -101,8 +99,6 @@ Future<bool> showConfirmDiscardDialog(
   return result ?? false;
 }
 
-/// A wrapper around [PopScope] that intercept pops when [hasUnsavedChanges] is true
-/// and asks for confirmation before discarding changes.
 class FormPopScope extends StatelessWidget {
   const FormPopScope({
     super.key,

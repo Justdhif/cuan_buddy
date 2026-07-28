@@ -20,7 +20,7 @@ class TransactionCalendar extends ConsumerStatefulWidget {
 }
 
 class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
-  /// Opens a month-only grid picker as a bottom sheet.
+
   Future<void> _showMonthPicker(
       BuildContext context, TransactionFilterState state, bool isDark) async {
     final localeCode = ref.read(languageProvider);
@@ -33,7 +33,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
       builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Title
+
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
               child: Row(
@@ -48,7 +48,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
               ),
             ),
             const Divider(height: 1),
-            // Month grid
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: GridView.builder(
@@ -116,7 +116,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
     }
   }
 
-  /// Opens a year-only scroll picker as a bottom sheet.
   Future<void> _showYearPicker(
       BuildContext context, TransactionFilterState state, bool isDark) async {
     final l10n = AppLocalizations.of(context);
@@ -136,7 +135,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
       builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Title
+
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
               child: Row(
@@ -151,7 +150,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
               ),
             ),
             const Divider(height: 1),
-            // Year list
+
             SizedBox(
               height: 300,
               child: ListView.builder(
@@ -259,7 +258,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Left chevron
+
         IconButton(
           icon: const Icon(Icons.chevron_left_rounded),
           onPressed: () {
@@ -277,7 +276,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
           constraints: const BoxConstraints(),
         ),
 
-        // Center: tappable month text + tappable year text
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -307,7 +305,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
           ],
         ),
 
-        // Right chevron
         IconButton(
           icon: const Icon(Icons.chevron_right_rounded),
           onPressed: () {
@@ -362,7 +359,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
           DateTime(state.currentMonth.year, state.currentMonth.month + 1, 0);
 
       int firstWeekday = firstDayOfMonth.weekday;
-      if (firstWeekday == 7) firstWeekday = 0; // Make Sunday 0
+      if (firstWeekday == 7) firstWeekday = 0;
 
       for (int i = firstWeekday - 1; i >= 0; i--) {
         days.add(firstDayOfMonth.subtract(Duration(days: i + 1)));
@@ -372,7 +369,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
             DateTime(state.currentMonth.year, state.currentMonth.month, i + 1));
       }
 
-      const totalGridDays = 35; // Exactly 5 weeks
+      const totalGridDays = 35;
       final remainingDays = totalGridDays - days.length;
       if (remainingDays > 0) {
         for (int i = 0; i < remainingDays; i++) {
@@ -503,13 +500,11 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
       BuildContext context, TransactionFilterState state, bool isDark) {
     final l10n = AppLocalizations.of(context);
 
-    // Determine if today is already the selected date
     final now = DateTime.now();
     final isTodaySelected = state.selectedDate.year == now.year &&
         state.selectedDate.month == now.month &&
         state.selectedDate.day == now.day;
 
-    // Left Component: Today button (icon-only, disabled when today is selected)
     final todayButton = InkWell(
       onTap: isTodaySelected
           ? null
@@ -546,7 +541,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
       ),
     );
 
-    // Center Component: Legend labels
     final legendLabels = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -592,7 +586,6 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
       ],
     );
 
-    // Right Component: Expand/Collapse button
     final toggleButton = InkWell(
       onTap: () {
         ref.read(transactionFilterProvider.notifier).toggleExpand();
@@ -688,7 +681,7 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       );
-                      
+
                       final textPainter = TextPainter(
                         text: TextSpan(text: amount, style: amountStyle),
                         maxLines: 1,

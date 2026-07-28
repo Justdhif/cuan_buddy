@@ -83,7 +83,7 @@ export class AuthController {
   getProfile(@Req() req) {
     return req.user;
   }
-  
+
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('logout')

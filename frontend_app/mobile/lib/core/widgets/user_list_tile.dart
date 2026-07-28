@@ -47,7 +47,7 @@ class UserListTile extends StatelessWidget {
                       : AssetImage(listBackground!),
                   fit: BoxFit.cover,
                   colorFilter: ColorFilter.mode(
-                    Colors.black.withValues(alpha: 0.65), // Darken the wallpaper so text is readable
+                    Colors.black.withValues(alpha: 0.65),
                     BlendMode.darken,
                   ),
                 )

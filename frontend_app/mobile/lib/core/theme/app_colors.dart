@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ─── Brand Colors ────────────────────────────────────────────────────────────
   static const Color defaultPrimary = Color(0xFF60A5FA);
   static Color primary = defaultPrimary;
 
@@ -18,7 +17,6 @@ class AppColors {
   static const Color accentLight = Color(0xFFFED7AA);
   static const Color accentDark = Color(0xFFEA580C);
 
-  // ─── Semantic Colors ─────────────────────────────────────────────────────────
   static const Color success = Color(0xFF4ADE80);
   static const Color successLight = Color(0xFFBBF7D0);
   static const Color successDark = Color(0xFF16A34A);
@@ -31,7 +29,6 @@ class AppColors {
   static const Color dangerLight = Color(0xFFFECDD3);
   static const Color dangerDark = Color(0xFFE11D48);
 
-  // ─── Light Mode ──────────────────────────────────────────────────────────────
   static const Color backgroundLight = Color(0xFFF8FAFC);
   static const Color surfaceLight = Color(0xFFFFFFFF);
   static const Color cardLight = Color(0xFFFFFFFF);
@@ -41,7 +38,6 @@ class AppColors {
   static const Color borderLight = Color(0xFFE2E8F0);
   static const Color dividerLight = Color(0xFFF1F5F9);
 
-  // ─── Dark Mode ───────────────────────────────────────────────────────────────
   static const Color backgroundDark = Color(0xFF0B0F19);
   static const Color surfaceDark = Color(0xFF111827);
   static const Color cardDark = Color(0xFF1A2333);
@@ -51,7 +47,6 @@ class AppColors {
   static const Color borderDark = Color(0xFF1E293B);
   static const Color dividerDark = Color(0xFF1E293B);
 
-  // ─── Gradients ───────────────────────────────────────────────────────────────
   static LinearGradient get primaryGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
@@ -76,7 +71,6 @@ class AppColors {
     colors: [Color(0xFFFB7185), Color(0xFFFDBA74)],
   );
 
-  // ─── Chart Pastel Colors ─────────────────────────────────────────────────────
   static const List<Color> chartColors = [
     Color(0xFF60A5FA),
     Color(0xFF6EE7B7),
@@ -88,7 +82,6 @@ class AppColors {
     Color(0xFFFCD34D),
   ];
 
-  // ─── Utilities ───────────────────────────────────────────────────────────────
   static Color colorFromHex(String? hexString, {Color? fallback}) {
     final defaultFallback = fallback ?? AppColors.primary;
     if (hexString == null || hexString.isEmpty) return defaultFallback;

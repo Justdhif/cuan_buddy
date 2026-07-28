@@ -61,7 +61,7 @@ export class SavingsGoalsService {
     const conditions: any[] = [];
 
     if (roomId) {
-      // Verify membership
+
       const isMember = await this.db.query.roomMembers.findFirst({
         where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
       });

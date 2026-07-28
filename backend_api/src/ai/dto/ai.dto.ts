@@ -5,7 +5,7 @@ export class AiChatDto {
   @ApiProperty({ example: 'Where did I overspend this month?' })
   @IsString()
   @IsNotEmpty()
-  @MaxLength(500) // Limit input to prevent token abuse
+  @MaxLength(500)
   message!: string;
 }
 

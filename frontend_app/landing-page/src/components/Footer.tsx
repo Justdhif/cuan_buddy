@@ -7,8 +7,8 @@ export default function Footer() {
   return (
     <footer className="bg-white text-ink border-t border-hairline/60 pt-20 pb-10 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Stripe-style 4-column Link Grid */}
+
+        {}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2 mb-6">
@@ -155,7 +155,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Legal bottom bar */}
+        {}
         <div className="pt-8 border-t border-hairline/60 flex flex-col md:flex-row justify-between items-center gap-4 text-[13px] text-ink-mute">
           <div className="font-light">
             &copy; {new Date().getFullYear()} CuanBuddy. {t("footer.rights")}

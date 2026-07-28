@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/user_avatar.dart';
 
-/// Horizontal scrollable row of selected-user chips.
 class SelectedUsersChipRow extends StatefulWidget {
   const SelectedUsersChipRow({
     super.key,
@@ -33,20 +32,20 @@ class SelectedUsersChipRow extends StatefulWidget {
 }
 
 class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with TickerProviderStateMixin {
-  // Per-chip animation controllers (also tracks chips animating out)
+
   final Map<String, AnimationController> _ctrls = {};
-  // Render list: includes chips currently animating out
+
   final List<String> _renderIds = [];
 
   @override
   void initState() {
     super.initState();
-    // Pre-populate without animation (screen opens with 0 selected usually)
+
     for (final id in widget.selectedIds) {
       final ctrl = AnimationController(
         vsync: this,
         duration: const Duration(milliseconds: 320),
-        value: 1.0, // already visible
+        value: 1.0,
       );
       _ctrls[id] = ctrl;
       _renderIds.add(id);
@@ -60,7 +59,6 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
     final oldSet = old.selectedIds.toSet();
     final newSet = widget.selectedIds.toSet();
 
-    // ── Added chips ──────────────────────────────────────────────────────────
     for (final id in widget.selectedIds) {
       if (!oldSet.contains(id)) {
         final ctrl = AnimationController(
@@ -68,13 +66,12 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
           duration: const Duration(milliseconds: 320),
         );
         _ctrls[id] = ctrl;
-        // Insert at front to match parent ordering
+
         setState(() => _renderIds.insert(0, id));
         ctrl.forward();
       }
     }
 
-    // ── Removed chips ────────────────────────────────────────────────────────
     for (final id in old.selectedIds) {
       if (!newSet.contains(id)) {
         _ctrls[id]?.reverse().then((_) {
@@ -117,8 +114,6 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
             final displayName = username != null ? '@$username' : fallbackName;
             final avatarUrl = friend['avatar'] as String?;
 
-            // SizeTransition grows width 0→full (pushes siblings right)
-            // FadeTransition fades the content in/out simultaneously
             return SizeTransition(
               sizeFactor: CurvedAnimation(
                 parent: ctrl,
@@ -126,7 +121,7 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
                 reverseCurve: Curves.easeInCubic,
               ),
               axis: Axis.horizontal,
-              alignment: Alignment.centerLeft, // anchor to the left edge
+              alignment: Alignment.centerLeft,
               child: FadeTransition(
                 opacity: CurvedAnimation(
                   parent: ctrl,
@@ -142,7 +137,7 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
                       children: [
                         SizedBox(
                           width: 76,
-                          height: 64, // Reduced from 76
+                          height: 64,
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
@@ -154,7 +149,7 @@ class _SelectedUsersChipRowState extends State<SelectedUsersChipRow> with Ticker
                                   fallbackName: fallbackName,
                                 ),
                               ),
-                              // X badge
+
                               if (!widget.isReadonly)
                                 Align(
                                   alignment: Alignment.topLeft,

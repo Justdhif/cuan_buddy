@@ -18,7 +18,6 @@ import '../../../shared/widgets/transaction_card.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 
-// ── Provider: transactions filtered by savingsGoalId ─────────────────────────
 final savingsGoalTransactionsProvider =
     FutureProvider.autoDispose.family<List<dynamic>, String>((ref, goalId) async {
   final dio = ref.watch(dioClientProvider).dio;
@@ -46,9 +45,8 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
 
-  // ── Goal helpers ─────────────────────────────────────────────────────────────
   Map<String, dynamic> get _goal {
-    // keep local copy in case parent updates
+
     return _latestGoal ?? widget.goal;
   }
 
@@ -98,7 +96,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     super.dispose();
   }
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
   void _onEdit() {
     final currentUserId = ref.read(profileProvider).valueOrNull?['userId'] ?? ref.read(profileProvider).valueOrNull?['id'];
     final goalUserId = _goal['userId'] as String?;
@@ -123,7 +120,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
             });
           }
         } catch (_) {}
-        // Also refresh the global provider list
+
         ref.read(savingsNotifierProvider.notifier).fetchGoals();
       }
     });
@@ -194,7 +191,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
       'initialSavingsGoalId': _goalId,
       'lockedSavingsGoal': false,
     }).then((_) {
-      // Invalidate transactions and savings to refresh after adding
+
       ref.invalidate(savingsGoalTransactionsProvider(_goalId));
       ref.read(savingsNotifierProvider.notifier).fetchGoals();
     });
@@ -224,12 +221,11 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             slivers: [
-              // ── Hero Banner ────────────────────────────────────────────────
+
               SliverToBoxAdapter(
                 child: _buildHeroBanner(context, isDark, useFmt ? fmt : fmtGoal),
               ),
 
-              // ── Info Cards Row ────────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -237,7 +233,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                 ),
               ),
 
-              // ── Progress Card ─────────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -425,7 +420,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                     ),
                   ),
                 ),
-              // ── Transactions Section Header ────────────────────────────────────
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
@@ -451,14 +446,12 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
             ),
           ),
 
-          // ── Transactions List ─────────────────────────────────────────────
           _buildTransactionSliver(context, isDark, currencyCode, currencySymbol),
 
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
 
-          // ── Pinned AppBar Background (fades in on scroll) ────────────────
           Positioned(
             top: 0,
             left: 0,
@@ -475,7 +468,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
             }),
           ),
 
-          // ── Top Bar Buttons ────────────────────────────────────────────────
           Positioned(
             top: statusBarH,
             left: 0,
@@ -530,7 +522,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
             ),
           ),
 
-          // ── Floating animated title ────────────────────────────────────────
           _buildFloatingTitle(context, isDark, statusBarH),
         ],
       ),
@@ -567,7 +558,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     );
   }
 
-  // ── Hero Banner ─────────────────────────────────────────────────────────────
   Widget _buildHeroBanner(BuildContext context, bool isDark, NumberFormat fmt) {
     final targetDateStr = _goal['targetDate'] as String?;
     String? targetDateFormatted;
@@ -595,7 +585,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
       ),
       child: Stack(
         children: [
-          // Decorative circles
+
           Positioned(
             right: -30,
             top: -30,
@@ -620,7 +610,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
               ),
             ),
           ),
-          // Content
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
@@ -631,7 +621,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // ── Savings Icon ─────────────────────────────────────
+
                       _buildSavingsIcon(),
                       const SizedBox(width: 16),
                       Expanded(
@@ -639,7 +629,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Opacity(
-                              opacity: 0.0, // Drawn by floating title
+                              opacity: 0.0,
                               child: Text(
                                 _name,
                                 style: AppTypography.textTheme.headlineSmall?.copyWith(
@@ -741,7 +731,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // ── Current Amount Big Display (marquee if overflow) ────
+
                   _buildMarqueeAmount(
                     text: fmt.format(_currentAmount),
                     style: AppTypography.textTheme.displaySmall?.copyWith(
@@ -795,7 +785,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     );
   }
 
-  // ── Info cards row ─────────────────────────────────────────────────────────
   Widget _buildInfoCards(BuildContext context, bool isDark, NumberFormat fmt) {
     final remaining = (_targetAmount - _currentAmount).clamp(0, double.infinity);
 
@@ -868,7 +857,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
       ],
     );
   }
-  // ── Transactions Sliver ─────────────────────────────────────────────────────
+
   Widget _buildTransactionSliver(
     BuildContext context,
     bool isDark,
@@ -952,7 +941,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
             );
           }
 
-          // Group by date
           final grouped = _groupByDate(transactions);
           final dateKeys = grouped.keys.toList();
 
@@ -967,7 +955,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Date header
+
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8, top: 4, left: 20, right: 20),
                         child: Text(
@@ -981,7 +969,7 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
                           ),
                         ),
                       ),
-                      // Transactions for this date
+
                       Column(
                         children: List.generate(dayTxs.length, (i) {
                           final tx = dayTxs[i] as Map<String, dynamic>;
@@ -1018,7 +1006,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     });
   }
 
-  // ── Helpers ─────────────────────────────────────────────────────────────────
   Map<String, List<dynamic>> _groupByDate(List<dynamic> transactions) {
     final map = <String, List<dynamic>>{};
     for (final tx in transactions) {
@@ -1087,21 +1074,17 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     );
   }
 
-  // ── Floating Title ──────────────────────────────────────────────────────────
   Widget _buildFloatingTitle(BuildContext context, bool isDark, double statusBarH) {
     const appBarH = kToolbarHeight;
-    // Hero title Y: Top padding is 56 (inside SafeArea).
-    // Plus statusBarH. The container has padding fromLTRB(20, 56, 20, 20).
+
     final heroTitleY = statusBarH + 56.0;
-    
-    // AppBar title Y: centered in AppBar
-    final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0; // approx center
+
+    final appBarTitleY = statusBarH + appBarH / 2.0 - 13.0;
 
     final travelDist = heroTitleY - appBarTitleY;
     final t = (_scrollOffset / travelDist.abs()).clamp(0.0, 1.0);
     var currentY = lerpDouble(heroTitleY, appBarTitleY, t)!;
 
-    // Adjust for pull-to-refresh
     if (_scrollOffset < 0) {
       currentY -= _scrollOffset;
     }
@@ -1109,18 +1092,16 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
     final heroSize = AppTypography.textTheme.headlineSmall?.fontSize ?? 24.0;
     final appBarSize = AppTypography.textTheme.titleLarge?.fontSize ?? 20.0;
     final currentSize = lerpDouble(heroSize, appBarSize, t)!;
-    
-    // X position interpolation
-    // Hero X: left padding 20 + icon width 80 + SizedBox 16 = 116
+
     const heroTitleX = 116.0;
-    // AppBar X: left padding 48 + 16 = 64
+
     const appBarTitleX = 64.0;
     final currentX = lerpDouble(heroTitleX, appBarTitleX, t)!;
 
     return Positioned(
       top: currentY,
       left: currentX,
-      right: 120.0, // space for edit/delete buttons
+      right: 120.0,
       child: IgnorePointer(
         child: Text(
           _name,
@@ -1140,7 +1121,6 @@ class _SavingDetailScreenState extends ConsumerState<SavingDetailScreen> {
   }
 }
 
-// ── Info Card ────────────────────────────────────────────────────────────────
 class _InfoCard extends StatelessWidget {
   const _InfoCard({
     required this.icon,
@@ -1202,8 +1182,3 @@ class _InfoCard extends StatelessWidget {
     );
   }
 }
-
-// ── Transaction Tile ─────────────────────────────────────────────────────────
-
-// ── Arc Progress Painter ─────────────────────────────────────────────────────
-

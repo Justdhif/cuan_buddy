@@ -56,7 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
         child: Column(
           children: [
-            // ── 1. Profile Navigation Tile ─────────────────────────────────────
+
             _buildSettingsTile(
               context: context,
               icon: Icons.person_outline_rounded,
@@ -67,7 +67,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () => context.push('/home/profile'),
             ),
 
-            // ── 2. Settings Menu List ───────────────────────────────────────────
             _buildSettingsTile(
               context: context,
               icon: Icons.key_outlined,

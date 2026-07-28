@@ -35,8 +35,8 @@ export default function FeaturesSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="bg-linear-surface-1 border border-linear-hairline rounded-[12px] p-8 shadow-level-1 hover:border-linear-primary/40 transition-all duration-300 flex flex-col justify-between"
             >
               <div>

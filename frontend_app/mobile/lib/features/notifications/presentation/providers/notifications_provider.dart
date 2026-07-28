@@ -45,25 +45,20 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
 
   final Ref ref;
 
-  /// Register socket listener so real-time updates work regardless of
-  /// which screen is active.  We defer actual `.on()` registration until
-  /// the socket has established a connection to avoid missing events.
   void _subscribeToSocket() {
     final socket = ref.read(socketServiceProvider);
 
     void registerListener() {
-      // Remove any stale listener first to prevent duplicates on reconnect.
+
       socket.off('new_notification');
 
       socket.on('new_notification', (data) async {
-        // 1. Update local state optimistically for instant UI refresh.
+
         if (data is Map) {
           final newNotif = Map<String, dynamic>.from(data);
           final updated = [newNotif, ...state.notifications];
           state = state.copyWith(notifications: updated);
 
-          // 2. Push a local notification so the user sees it even when
-          //    the app is in the background / notification shade is open.
           String title = newNotif['title'] as String? ?? 'CuanBuddy';
           String message = newNotif['message'] as String? ??
               newNotif['body'] as String? ??
@@ -75,7 +70,6 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               ref.read(profileProvider).valueOrNull?['currency'] as String? ??
                   AppConstants.defaultCurrency;
 
-          // Trigger optimistic/silent refresh of lobby data on friendship notifications
           if (title == 'FRIEND_REQUEST' ||
               title == 'FRIEND_REQUEST_ACCEPTED' ||
               title == 'FRIEND_REQUEST_DECLINED' ||
@@ -221,7 +215,6 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
                   : '$inviterName invited you to room $roomName';
             } catch (_) {}
           }
-          
 
           NotificationService().showSocketNotification(
             id: Random().nextInt(100000),
@@ -230,12 +223,10 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
           );
         }
 
-        // 3. Also do a full fetch to sync with server-formatted data.
         fetchNotifications();
       });
     }
 
-    // Register immediately if socket is already connected; otherwise wait.
     socket.onConnected(registerListener);
   }
 
@@ -262,7 +253,6 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
       final dio = ref.read(dioClientProvider).dio;
       await dio.patch('/notifications/$id/read');
 
-      // Update local state optimistically
       final updated = state.notifications.map((n) {
         if (n['id'] == id) {
           return {...(n as Map), 'isRead': true};
@@ -270,14 +260,12 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
         return n;
       }).toList();
       state = state.copyWith(notifications: updated);
-    } catch (e) {
-      // Ignore or show error
-    }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
-    // Clean up socket listener and onConnect callback when provider is disposed
+
     final socket = ref.read(socketServiceProvider);
     socket.off('new_notification');
     super.dispose();

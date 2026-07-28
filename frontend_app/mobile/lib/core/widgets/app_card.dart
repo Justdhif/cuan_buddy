@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-// ─── App Card ────────────────────────────────────────────────────────────────
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
@@ -79,7 +78,6 @@ class AppCard extends StatelessWidget {
   }
 }
 
-// ─── Glassmorphism Card ───────────────────────────────────────────────────────
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
@@ -116,7 +114,7 @@ class GlassCard extends StatelessWidget {
         borderRadius: radius,
         child: Stack(
           children: [
-            // Glassmorphism overlay circles
+
             Positioned(
               top: -30,
               right: -30,

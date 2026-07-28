@@ -5,9 +5,6 @@ import { userProfiles, wallets, users, savingsGoals, transactions, roomMembers }
 import { UpdateProfileDto, UpdateAvatarDto } from './dto/update-profile.dto';
 import { sendWhatsAppMessage } from '../common/utils/whatsapp.util';
 
-// ─── Border Achievement Definitions ───────────────────────────────────────────
-// Daftar semua border achievement dan kondisi unlock-nya.
-// Kondisi dicek server-side untuk keamanan.
 const ACHIEVEMENT_BORDERS = [
   { id: 'border-all-completed', label: 'The Completionist', tier: 'platinum' },
   { id: 'border-millionaire',  label: 'Cuan Millionaire',      tier: 'platinum' },
@@ -32,7 +29,7 @@ export class UserProfilesService {
       where: eq(userProfiles.userId, userId),
     });
     if (!profile) throw new NotFoundException('Profile not found');
-    
+
     const currency = await this.getBaseCurrency(userId);
     return { ...profile, currency };
   }
@@ -47,7 +44,7 @@ export class UserProfilesService {
       .set(updateData)
       .where(eq(userProfiles.userId, userId))
       .returning();
-      
+
     const currency = await this.getBaseCurrency(userId);
     return { ...updated, currency };
   }
@@ -57,7 +54,7 @@ export class UserProfilesService {
       .set({ avatar: updateAvatarDto.avatar, updatedAt: new Date() })
       .where(eq(userProfiles.userId, userId))
       .returning();
-      
+
     const currency = await this.getBaseCurrency(userId);
     return { ...updated, currency };
   }
@@ -71,7 +68,7 @@ export class UserProfilesService {
 
   async sendOtp(userId: string, phone: string) {
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes expiry
+    const expiresAt = Date.now() + 5 * 60 * 1000;
     this.otpStore.set(phone, { code, expiresAt });
 
     const result = await sendWhatsAppMessage({
@@ -89,7 +86,6 @@ export class UserProfilesService {
 
   async verifyOtp(userId: string, phone: string, code: string) {
     const otpData = this.otpStore.get(phone);
-    
 
     if (!otpData) {
       throw new BadRequestException('OTP not found or has expired. Please request a new one.');
@@ -241,5 +237,3 @@ export class UserProfilesService {
     await this.checkAndUnlockBorders(userId);
   }
 }
-
-

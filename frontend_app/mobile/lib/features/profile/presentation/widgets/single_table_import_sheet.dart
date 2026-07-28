@@ -91,7 +91,7 @@ class SingleTableImportSheet extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Drag handle ────────────────────────────────────────────
+
           Center(
             child: Container(
               width: 40,
@@ -104,7 +104,6 @@ class SingleTableImportSheet extends ConsumerWidget {
             ),
           ),
 
-          // ── Icon ───────────────────────────────────────────────────
           Container(
             alignment: Alignment.center,
             child: Container(
@@ -122,7 +121,6 @@ class SingleTableImportSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Title & Subtitle ───────────────────────────────────────
           Text(
             l10n.importData,
             style: AppTypography.textTheme.headlineSmall
@@ -141,14 +139,12 @@ class SingleTableImportSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 28),
 
-          // ── Divider ────────────────────────────────────────────────
           Divider(
             color: isDark ? AppColors.borderDark : AppColors.borderLight,
             height: 1,
           ),
           const SizedBox(height: 20),
 
-          // ── Download Templates ─────────────────────────────────────
           Text(l10n.downloadTemplates,
               style: AppTypography.textTheme.titleSmall?.copyWith(
                 color: isDark
@@ -169,7 +165,6 @@ class SingleTableImportSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 28),
 
-          // ── Upload & Restore Button ────────────────────────────────
           AppButton(
             label: l10n.uploadAndRestore,
             onPressed: () {

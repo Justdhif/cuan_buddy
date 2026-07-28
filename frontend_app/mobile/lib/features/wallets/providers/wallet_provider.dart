@@ -34,7 +34,7 @@ class WalletsNotifier extends StateNotifier<AsyncValue<List<Map<String, dynamic>
       final res = await _dioClient.dio.post('/wallets', data: data);
       if (res.statusCode == 201) {
         await fetchWallets();
-        return null; // Success
+        return null;
       }
       return res.data['message'] ?? 'Failed to create wallet';
     } catch (e) {

@@ -70,7 +70,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             children: [
               const SizedBox(height: 52),
 
-              // ─── App Icon ─────────────────────────────────────────
               Center(
                 child: Container(
                   width: 90,
@@ -98,7 +97,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
               const SizedBox(height: 36),
 
-              // ─── Heading ─────────────────────────────────────────
               Text(
                 l10n.createAccount,
                 style: AppTypography.textTheme.headlineMedium?.copyWith(
@@ -117,7 +115,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
               const SizedBox(height: 36),
 
-              // ─── Form ─────────────────────────────────────────────
               Form(
                 key: _formKey,
                 child: Column(
@@ -157,7 +154,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         return null;
                       },
                     ),
-                    // Password strength indicator
+
                     if (_password.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       _buildPasswordStrength(_password, l10n),
@@ -184,7 +181,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     const SizedBox(height: 28),
 
-                    // Sign Up button
                     AppButton(
                       label: l10n.signUp,
                       onPressed: _register,
@@ -267,7 +263,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 }
 
-// ─── Reusable dark-themed text field ─────────────────────────────────────────
 class _DarkTextField extends StatefulWidget {
   const _DarkTextField({
     required this.controller,

@@ -19,12 +19,10 @@ class RoomFormScreen extends ConsumerStatefulWidget {
 
 class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     with TickerProviderStateMixin {
-  // Step 1 states
-  // Ordered list: newest selection is at index 0 (shown leftmost)
+
   List<String> _selectedFriendIds = [];
   final _searchController = TextEditingController();
 
-  // Controls the smooth show/hide of the selected-users section
   late final AnimationController _sectionCtrl;
   late final Animation<double> _sectionFade;
 
@@ -49,7 +47,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
     super.dispose();
   }
 
-  /// Called whenever selection changes to animate the section in/out.
   void _updateSectionVisibility() {
     if (_selectedFriendIds.isNotEmpty) {
       _sectionCtrl.forward();
@@ -76,7 +73,7 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
         child: Column(
           children: [
             _buildCustomHeader(isDark, l10n),
-            // ── Animated selected-users section ──────────────────────
+
             AnimatedSize(
               duration: const Duration(milliseconds: 320),
               curve: Curves.easeInOutCubic,
@@ -294,12 +291,6 @@ class _RoomFormScreenState extends ConsumerState<RoomFormScreen>
   }
 }
 
-
-
-
-
-// ─── Friend List Item (animated) ──────────────────────────────────────────────
-/// Individual friend row with a staggered fade+slide-up entrance animation.
 class _FriendListItem extends StatefulWidget {
   const _FriendListItem({
     super.key,
@@ -342,7 +333,6 @@ class _FriendListItemState extends State<_FriendListItem>
       duration: const Duration(milliseconds: 380),
     );
 
-    // Stagger each item by 40 ms × index (capped at 320 ms)
     final delay = Duration(milliseconds: (widget.index * 40).clamp(0, 320));
 
     _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
@@ -405,8 +395,6 @@ class _FriendListItemState extends State<_FriendListItem>
   }
 }
 
-// ─── Friend List Skeleton ──────────────────────────────────────────────────────
-/// Shimmer-style placeholder rows while friends are being fetched.
 class _FriendListSkeleton extends StatefulWidget {
   const _FriendListSkeleton({required this.isDark});
   final bool isDark;
@@ -466,7 +454,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
               ),
               child: Row(
                 children: [
-                  // Avatar circle placeholder
+
                   Container(
                     width: 52,
                     height: 52,
@@ -480,7 +468,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Username placeholder
+
                         Container(
                           height: 11,
                           width: 80,
@@ -490,7 +478,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
                           ),
                         ),
                         const SizedBox(height: 6),
-                        // Full name placeholder
+
                         Container(
                           height: 15,
                           width: 140,
@@ -503,7 +491,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Checkbox placeholder
+
                   Container(
                     width: 24,
                     height: 24,
@@ -521,4 +509,3 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
     );
   }
 }
-

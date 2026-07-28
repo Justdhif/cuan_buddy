@@ -19,7 +19,6 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
 
-  // Avatar
   String? _selectedAvatarUrl;
   File? _selectedLocalFile;
 
@@ -120,7 +119,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           final rawBirthdate = profile['birthDate'] as String? ?? profile['birthdate'] as String? ?? '';
           final gender = profile['gender'] as String?;
 
-          // Format birthdate display
           String birthdateDisplay = '';
           if (rawBirthdate.isNotEmpty) {
             try {
@@ -131,7 +129,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             }
           }
 
-          // Gender display label
           String genderDisplay = '';
           if (gender == 'male') {
             genderDisplay = l10n.genderMale;
@@ -203,7 +200,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 24),
                 const Divider(height: 1, thickness: 0.5),
 
-                // 2. Media & Customization Fields List
                 _buildInfoTile(
                   context: context,
                   icon: Icons.camera_alt_outlined,
@@ -239,7 +235,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const Divider(height: 1, thickness: 0.5),
 
-                // 3. Info Fields List
                 _buildInfoTile(
                   context: context,
                   icon: Icons.person_outline_rounded,

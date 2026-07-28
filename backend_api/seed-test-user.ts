@@ -76,12 +76,12 @@ async function seedTestUser() {
     // Gunakan raw query sql untuk update demi keandalan kompilasi
     const bordersJson = JSON.stringify(allBorderIds);
     await sql`
-      UPDATE user_profiles 
-      SET unlocked_borders = ${bordersJson}::jsonb, 
-          full_name = 'Dhif Cuan Buddy', 
-          username = 'justdhif418', 
-          bio = 'Akun testing untuk verifikasi semua bingkai border avatar premium 🚀', 
-          updated_at = NOW() 
+      UPDATE user_profiles
+      SET unlocked_borders = ${bordersJson}::jsonb,
+          full_name = 'Dhif Cuan Buddy',
+          username = 'justdhif418',
+          bio = 'Akun testing untuk verifikasi semua bingkai border avatar premium 🚀',
+          updated_at = NOW()
       WHERE user_id = ${user.id}
     `;
     console.log(`✅ Profil berhasil diperbarui dengan semua border ter-unlock.`);

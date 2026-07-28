@@ -46,7 +46,7 @@ export class CategoriesService {
 
   async update(userId: string, id: string, updateCategoryDto: any) {
     const category = await this.findOne(userId, id);
-    
+
     const [updated] = await this.db.update(categories)
       .set({ ...updateCategoryDto, updatedAt: new Date() })
       .where(and(eq(categories.id, id), eq(categories.userId, userId)))
@@ -56,7 +56,7 @@ export class CategoriesService {
 
   async remove(userId: string, id: string) {
     const category = await this.findOne(userId, id);
-    
+
     await this.db.delete(categories)
       .where(and(eq(categories.id, id), eq(categories.userId, userId)));
     return { message: 'Category removed successfully' };

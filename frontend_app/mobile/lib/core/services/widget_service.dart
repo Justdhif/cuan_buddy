@@ -25,9 +25,7 @@ class WidgetService {
       await HomeWidget.saveWidgetData<String>(
           'expense', formatCurrency.format(expense));
       await HomeWidget.updateWidget(androidName: androidWidgetName);
-    } catch (e) {
-      // Ignore widget update errors on platforms that don't support it
-    }
+    } catch (_) {}
   }
 
   static const String androidSavingsWidgetName = 'SavingsWidgetProvider';
@@ -59,8 +57,6 @@ class WidgetService {
       await HomeWidget.saveWidgetData<String>(
           'savings_percent', percent.toString());
       await HomeWidget.updateWidget(androidName: androidSavingsWidgetName);
-    } catch (e) {
-      // Ignore widget update errors
-    }
+    } catch (_) {}
   }
 }

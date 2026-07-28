@@ -289,7 +289,6 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
   }
 }
 
-// ─── Theme Picker Sheet ──────────────────────────────────────────
 class _ThemePickerSheet extends StatelessWidget {
   const _ThemePickerSheet({
     required this.currentMode,
@@ -414,7 +413,6 @@ class _ThemePickerSheet extends StatelessWidget {
   }
 }
 
-// ─── Language Picker Sheet ──────────────────────────────────────────────────
 class _LanguagePickerSheet extends StatelessWidget {
   const _LanguagePickerSheet({
     required this.currentCode,
@@ -518,7 +516,6 @@ class _LanguagePickerSheet extends StatelessWidget {
   }
 }
 
-// ─── Shape Picker Sheet ──────────────────────────────────────────────────
 class _ShapePickerSheet extends StatelessWidget {
   const _ShapePickerSheet({
     required this.currentShape,
@@ -636,7 +633,7 @@ class _ShapePickerSheet extends StatelessWidget {
     );
   }
 }
-// ─── Shape Preview Painter ─────────────────────────────────────────────────────
+
 class _ShapePreviewPainter extends CustomPainter {
   _ShapePreviewPainter({
     required this.shapeBorder,

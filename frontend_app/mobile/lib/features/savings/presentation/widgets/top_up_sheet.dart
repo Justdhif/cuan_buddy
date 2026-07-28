@@ -33,7 +33,7 @@ class _TopUpSheet extends ConsumerStatefulWidget {
 class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
-  bool _isAdding = true; // true = Add, false = Reduce
+  bool _isAdding = true;
   bool _isLoading = false;
   late String _selectedCurrency;
 
@@ -68,7 +68,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
       final newAmount =
           _isAdding ? currentAmount + amount : currentAmount - amount;
 
-      // Prevent negative balance
       if (newAmount < 0) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -85,7 +84,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           .read(savingsNotifierProvider.notifier)
           .updateBalance(id, newAmount);
 
-      // Create a transaction for this savings operation
       try {
         final categories = await ref.read(categoriesProvider.future);
         final savingsCategory = categories.firstWhere(
@@ -105,7 +103,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           'date': DateTime.now().toUtc().toIso8601String(),
         });
 
-        // Invalidate transaction providers
         ref.invalidate(allTransactionsProvider);
         ref.invalidate(recentTransactionsProvider);
         ref.invalidate(analyticsSummaryProvider);
@@ -113,7 +110,7 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
         ref.invalidate(calendarSummaryProvider);
         ref.invalidate(monthlySummaryProvider);
       } catch (e) {
-        // Just log the error, don't fail the top-up
+
         debugPrint('Failed to create savings transaction: $e');
       }
 
@@ -169,7 +166,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           ),
           const SizedBox(height: 20),
 
-          // Add or Reduce Selector
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -256,7 +252,6 @@ class _TopUpSheetState extends ConsumerState<_TopUpSheet> {
           ),
           const SizedBox(height: 24),
 
-          // Amount Input
           Form(
             key: _formKey,
             child: Row(

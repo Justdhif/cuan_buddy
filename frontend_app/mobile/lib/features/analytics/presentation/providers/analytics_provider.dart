@@ -51,8 +51,7 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
       final dio = ref.read(dioClientProvider).dio;
       final currencyService = ref.read(currencyServiceProvider);
 
-      // We need to get the user's base currency to convert transactions properly
-      String baseCurrency = 'IDR'; // fallback
+      String baseCurrency = 'IDR';
       try {
         final profileRes = await dio.get('/profiles/me');
         if (profileRes.data != null && profileRes.data['currency'] != null) {
@@ -60,7 +59,6 @@ class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
         }
       } catch (_) {}
 
-      // Fetch all transactions to calculate the accurate converted summary
       final txRes =
           await dio.get('/transactions', queryParameters: {'limit': 10000});
       final txData = txRes.data;

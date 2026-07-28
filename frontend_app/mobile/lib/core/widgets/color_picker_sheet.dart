@@ -13,7 +13,7 @@ Future<Color?> showCustomColorPicker({
 }) async {
   final l10n = AppLocalizations.of(context);
   final isDark = Theme.of(context).brightness == Brightness.dark;
-  
+
   Color tempColor = initialColor;
   final hexController = TextEditingController(
     text: tempColor.toARGB32().toRadixString(16).substring(2).toUpperCase(),
@@ -69,9 +69,7 @@ Future<Color?> showCustomColorPicker({
                   onColorChanged: (Color color) {
                     setState(() {
                       tempColor = color;
-                      // Update hex controller only if user is not currently typing in it
-                      // Actually, if we just update it, it might move the cursor, but it's fine for simple use.
-                      // To be safe, we only update if it doesn't match the current parsed value.
+
                       final currentHex = color.toARGB32().toRadixString(16).substring(2).toUpperCase();
                       if (hexController.text.toUpperCase() != currentHex) {
                         hexController.text = currentHex;
@@ -83,8 +81,8 @@ Future<Color?> showCustomColorPicker({
                   enableAlpha: false,
                   displayThumbColor: true,
                   paletteType: PaletteType.hueWheel,
-                  hexInputBar: false, 
-                  labelTypes: const [], // Hide RGB, HSV, HSL labels
+                  hexInputBar: false,
+                  labelTypes: const [],
                   portraitOnly: true,
                 ),
               ),
@@ -105,9 +103,7 @@ Future<Color?> showCustomColorPicker({
                             setState(() {
                               tempColor = newColor;
                             });
-                          } catch (e) {
-                            // ignore parsing error
-                          }
+                          } catch (_) {}
                         }
                       },
                     ),

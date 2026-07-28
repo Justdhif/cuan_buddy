@@ -1,7 +1,6 @@
 class AppConstants {
   AppConstants._();
 
-  // ─── API ─────────────────────────────────────────────────────────────────────
   static const String baseUrl = 'https://cuan-buddy-api.vercel.app/api';
   static const String assetCacheVersion = '6';
   static const String verifyEmailBaseUrl =
@@ -9,11 +8,9 @@ class AppConstants {
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
-  // ─── Secure Storage Keys ─────────────────────────────────────────────────────
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
 
-  // ─── SharedPreferences Keys ──────────────────────────────────────────────────
   static const String themeModeKey = 'theme_mode';
   static const String currencyCodeKey = 'currency_code';
   static const String languageKey = 'language_code';
@@ -23,7 +20,7 @@ class AppConstants {
   static const String onboardingCompleteKey = 'onboarding_complete';
   static const String categoryIconShapeKey = 'category_icon_shape';
   static const String accentColorKey = 'accent_color';
-  // ─── Defaults ────────────────────────────────────────────────────────────────
+
   static const String defaultCurrency = 'IDR';
   static const String defaultCurrencySymbol = 'Rp';
   static const String defaultLanguage = 'en';
@@ -48,17 +45,14 @@ class AppConstants {
     )['symbol']!;
   }
 
-  // ─── Pagination ──────────────────────────────────────────────────────────────
   static const int defaultPageSize = 20;
   static const int dashboardRecentCount = 5;
 
-  // ─── Animation Durations ─────────────────────────────────────────────────────
   static const Duration shortAnimation = Duration(milliseconds: 200);
   static const Duration mediumAnimation = Duration(milliseconds: 350);
   static const Duration longAnimation = Duration(milliseconds: 600);
   static const Duration counterAnimation = Duration(milliseconds: 1200);
 
-  // ─── Category Emojis ─────────────────────────────────────────────────────────
   static const Map<String, String> categoryEmojis = {
     'food': '🍔',
     'transport': '🚕',

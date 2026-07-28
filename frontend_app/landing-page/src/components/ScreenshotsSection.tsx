@@ -43,11 +43,11 @@ export default function ScreenshotsSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {screens.map((screen, idx) => (
-            <div 
+            <div
               key={idx}
               className="bg-canvas dark:bg-[#0d0e26] border border-hairline dark:border-hairline/10 rounded-[20px] overflow-hidden shadow-level-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-level-2"
             >
-              {/* Mock Screen Header */}
+              {}
               <div className={`h-40 bg-gradient-to-br ${screen.color} flex items-center justify-center relative p-6 border-b border-hairline/40 dark:border-hairline/10`}>
                 <div className="bg-brand-dark-900 text-white rounded-[12px] p-4 shadow-md flex items-center gap-3">
                   {screen.icon}

@@ -71,14 +71,12 @@ export class TransactionsService {
       })
       .returning();
 
-    // Update wallet balance
     await this.applyWalletEffect(userId, createTransactionDto.walletId, createTransactionDto.type as 'income' | 'expense', roundedAmount);
 
     if (newTransaction.savingsGoalId) {
       void this.applySavingsGoalEffect(userId, newTransaction.savingsGoalId, newTransaction.type as 'income' | 'expense', Number(newTransaction.amount), Number(newTransaction.baseAmount));
     }
 
-    // Fire-and-forget: notification
     void this.notificationsService.createAndBroadcast(
       userId,
       'TRANSACTION_RECORDED',
@@ -90,7 +88,6 @@ export class TransactionsService {
       'transaction',
     );
 
-    // Fire-and-forget: anomaly detection — does not block response
     void this.aiService.detectAnomaly(
       userId,
       newTransaction.id,
@@ -99,12 +96,10 @@ export class TransactionsService {
       newTransaction.type,
     );
 
-    // Fire-and-forget: check budget thresholds
     if (newTransaction.type === 'expense' && newTransaction.categoryId) {
       void this.checkBudgetThreshold(userId, newTransaction.categoryId, newTransaction.date, newTransaction.walletId);
     }
 
-    // Fire-and-forget: update recording streak for achievements
     void this.updateRecordingStreak(userId);
 
     return newTransaction;
@@ -160,7 +155,7 @@ export class TransactionsService {
   private async checkBudgetThreshold(userId: string, categoryId: string, transactionDate: Date, transactionWalletId: string) {
     try {
       const monthYear = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
-      
+
       const applicableBudgets = await this.db.query.budgets.findMany({
         where: and(
           eq(budgets.userId, userId),
@@ -176,7 +171,7 @@ export class TransactionsService {
         const limitAmount = Number(budget.limitAmount);
         const startDate = new Date(transactionDate.getFullYear(), transactionDate.getMonth(), 1);
         const endDate = new Date(transactionDate.getFullYear(), transactionDate.getMonth() + 1, 0, 23, 59, 59, 999);
-        
+
         const amountCol = budget.walletId ? sql<number>`SUM(amount::numeric)` : sql<number>`SUM(base_amount::numeric)`;
         const spentConds = [
           eq(transactions.userId, userId),
@@ -193,7 +188,7 @@ export class TransactionsService {
           .select({ total: amountCol })
           .from(transactions)
           .where(and(...spentConds));
-          
+
         const totalSpent = Number(spentData[0]?.total || 0);
         const categoryName = budget.category?.name || 'Category';
 
@@ -417,7 +412,7 @@ export class TransactionsService {
       .returning();
 
     if (!deleted) throw new NotFoundException('Transaction not found');
-    
+
     await this.applyWalletEffect(userId, deleted.walletId, deleted.type as 'income' | 'expense', Number(deleted.amount), true);
 
     if (deleted.savingsGoalId) {

@@ -117,10 +117,9 @@ final allTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
 
   final query = <String, dynamic>{
-    'limit': 100, // Fetch up to 100 for the day
+    'limit': 100,
   };
 
-  // Always filter by selectedDate
   final start = DateTime(filter.selectedDate.year, filter.selectedDate.month,
       filter.selectedDate.day);
   final end = DateTime(filter.selectedDate.year, filter.selectedDate.month,

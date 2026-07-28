@@ -5,7 +5,7 @@ class AppTypography {
   AppTypography._();
 
   static TextTheme get textTheme => TextTheme(
-        // Display
+
         displayLarge: GoogleFonts.plusJakartaSans(
           fontSize: 57,
           fontWeight: FontWeight.w700,
@@ -21,7 +21,7 @@ class AppTypography {
           fontWeight: FontWeight.w600,
           letterSpacing: 0,
         ),
-        // Headline
+
         headlineLarge: GoogleFonts.plusJakartaSans(
           fontSize: 32,
           fontWeight: FontWeight.w700,
@@ -37,7 +37,7 @@ class AppTypography {
           fontWeight: FontWeight.w600,
           letterSpacing: 0,
         ),
-        // Title
+
         titleLarge: GoogleFonts.plusJakartaSans(
           fontSize: 22,
           fontWeight: FontWeight.w700,
@@ -53,7 +53,7 @@ class AppTypography {
           fontWeight: FontWeight.w600,
           letterSpacing: 0.1,
         ),
-        // Body
+
         bodyLarge: GoogleFonts.plusJakartaSans(
           fontSize: 16,
           fontWeight: FontWeight.w400,
@@ -69,7 +69,7 @@ class AppTypography {
           fontWeight: FontWeight.w400,
           letterSpacing: 0.4,
         ),
-        // Label
+
         labelLarge: GoogleFonts.plusJakartaSans(
           fontSize: 14,
           fontWeight: FontWeight.w600,
@@ -87,4 +87,3 @@ class AppTypography {
         ),
       );
 }
-

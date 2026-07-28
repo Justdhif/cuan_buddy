@@ -74,7 +74,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 1, thickness: 0.5),
           const SizedBox(height: 12),
 
-          // ── Profile Fields & Customization Tiles List ──────────────────────
           profileAsync.when(
             data: (profile) {
               final fullName = profile['fullName'] as String? ?? '';
@@ -207,7 +206,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              // Banner with Edit Button
+
               GestureDetector(
                 onTap: () => context.push('/profile/edit-banner', extra: profile),
                 child: Stack(
@@ -237,7 +236,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
 
-              // Avatar with Camera Edit Badge Button
               Positioned(
                 bottom: -50,
                 left: 16,

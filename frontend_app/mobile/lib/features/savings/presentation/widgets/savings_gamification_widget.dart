@@ -4,7 +4,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 
 class SavingsGamificationWidget extends StatefulWidget {
-  final double percentage; // 0.0 to 1.0
+  final double percentage;
 
   const SavingsGamificationWidget({super.key, required this.percentage});
 
@@ -74,7 +74,7 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget>
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Tree Illustration with Fill Effect
+
             SizedBox(
               width: 64,
               height: 64,
@@ -101,7 +101,7 @@ class _SavingsGamificationWidgetState extends State<SavingsGamificationWidget>
               ),
             ),
             const SizedBox(width: 16),
-            // Percentage and Motivation Text
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -26,8 +26,8 @@ export default function SecurityPrivacySection() {
     <section className="py-24 bg-canvas dark:bg-[#0c0d24] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Mock Shield Graphic - Left Column (5 cols) */}
+
+          {}
           <div className="lg:col-span-5 order-last lg:order-first flex justify-center relative">
             <div className="absolute w-72 h-72 bg-primary/10 rounded-full filter blur-3xl animate-pulse"></div>
             <div className="relative bg-brand-dark-900 border border-hairline/10 rounded-[32px] p-10 shadow-level-2 text-center max-w-sm flex flex-col items-center">
@@ -43,7 +43,7 @@ export default function SecurityPrivacySection() {
             </div>
           </div>
 
-          {/* Text and Features Grid - Right Column (7 cols) */}
+          {}
           <div className="lg:col-span-7 space-y-8">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ruby/10 border border-ruby/20 text-ruby text-[11px] font-semibold tracking-wider uppercase">

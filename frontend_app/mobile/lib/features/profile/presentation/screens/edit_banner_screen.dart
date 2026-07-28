@@ -228,7 +228,7 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Preview Banner
+
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: UserBanner(
@@ -240,7 +240,6 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Upload custom image banner button
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -259,7 +258,6 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen> {
                 const Divider(),
                 const SizedBox(height: 16),
 
-                // Color Options Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -283,7 +281,6 @@ class _EditBannerScreenState extends ConsumerState<EditBannerScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Preset Color Palette Grid
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

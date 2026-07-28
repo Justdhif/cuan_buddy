@@ -2,30 +2,25 @@ import 'package:flutter/material.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_id.dart';
 
-// ─── Abstract Base ─────────────────────────────────────────────────────────────
 abstract class AppLocalizations {
   const AppLocalizations();
 
-  /// Resolve the current [AppLocalizations] from the nearest [AppLocalizationsScope].
   static AppLocalizations of(BuildContext context) {
     final scope =
         context.dependOnInheritedWidgetOfExactType<AppLocalizationsScope>();
     return scope?.localizations ?? const AppLocalizationsEn();
   }
 
-  /// Factory — returns the right subclass based on language code.
   static AppLocalizations forLocale(String languageCode) {
     return languageCode == 'id'
         ? const AppLocalizationsId()
         : const AppLocalizationsEn();
   }
 
-  // ─── Language Meta ────────────────────────────────────────────────────────────
   String get languageCode;
   String get languageName;
   String get home;
 
-  // ─── Auth — Login ─────────────────────────────────────────────────────────────
   String get welcomeBack;
   String get loginSubtitle;
   String get email;
@@ -41,7 +36,6 @@ abstract class AppLocalizations {
   String get signUpNow;
   String get loginFailed;
 
-  // ─── Auth — Register ──────────────────────────────────────────────────────────
   String get createAccount;
   String get registerSubtitle;
   String get fullName;
@@ -63,13 +57,11 @@ abstract class AppLocalizations {
   String get logInLink;
   String get error;
 
-  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
   String get unsavedChangesTitle;
   String get unsavedChangesMessage;
   String get discardChanges;
   String get keepEditing;
 
-  // ─── Auth — Forgot Password ───────────────────────────────────────────────────
   String get forgotPasswordTitle;
   String get enterOtpSentToEmail;
   String get enterEmailForOtp;
@@ -88,7 +80,6 @@ abstract class AppLocalizations {
   String get otpSentToEmail;
   String get info;
 
-  // ─── Auth — Email Verification ────────────────────────────────────────────────
   String get verifyEmail;
   String get waitingForActivation;
   String get verificationRequired;
@@ -108,10 +99,8 @@ abstract class AppLocalizations {
   String get accountNotYetVerified;
   String get success;
 
-  // ─── Splash ───────────────────────────────────────────────────────────────────
   String get splashTagline;
 
-  // ─── Dashboard ────────────────────────────────────────────────────────────────
   String get hello;
   String get aiAdvisor;
   String get totalBalance;
@@ -122,7 +111,7 @@ abstract class AppLocalizations {
   String get seeAll;
   String get spendingByCategory;
   String get budgetDetails;
-  // ─── AI Voice ───────────────────────────────────────────────────────────────
+
   String get aiVoiceTitle;
   String get aiVoiceTapToStart;
   String get aiVoiceTapToStop;
@@ -159,7 +148,6 @@ abstract class AppLocalizations {
   String get exceededBudget;
   String get tryAgain;
 
-  // ─── Transactions ─────────────────────────────────────────────────────────────
   String get transactions;
   String get transactionsSubtitle;
   String get addTransaction;
@@ -198,7 +186,6 @@ abstract class AppLocalizations {
   String get incomeType;
   String get noCategories;
 
-  // ─── Budgets ──────────────────────────────────────────────────────────────────
   String get budgets;
   String get budgetsSubtitle;
   String get totalBudget;
@@ -233,7 +220,6 @@ abstract class AppLocalizations {
   String get budgetPeriodEnded;
   String budgetExceededBy(String amount);
 
-  // ─── Savings ──────────────────────────────────────────────────────────────────
   String get addSavingsGoal;
   String get savingsGoals;
   String get savingsSubtitle;
@@ -289,7 +275,6 @@ abstract class AppLocalizations {
   String get fundsReducedSuccess;
   String updateGoalTitle(String name);
 
-  // ─── Categories ───────────────────────────────────────────────────────────────
   String get manageCategories;
   String get noCategoriesFound;
   String get deleteCategory;
@@ -307,7 +292,6 @@ abstract class AppLocalizations {
   String get customColor;
   String get hexColor;
 
-  // ─── Wallets ──────────────────────────────────────────────────────────────────
   String get manageWallets;
   String get addWallet;
   String get editWallet;
@@ -331,18 +315,15 @@ abstract class AppLocalizations {
   String get walletDecimalReset;
   String get walletDecimalSetAmount;
 
-  // ─── Notifications ────────────────────────────────────────────────────────────
   String get notifications;
   String get markAllRead;
   String get noNotifications;
   String get noNotificationsSubtitle;
   String get notification;
 
-  // ─── AI Chat ──────────────────────────────────────────────────────────────────
   String get cuanBuddyAI;
   String get askAboutFinances;
 
-  // ─── Analytics ────────────────────────────────────────────────────────────────
   String get analytics;
   String get thisMonth;
   String get lastMonth;
@@ -352,7 +333,6 @@ abstract class AppLocalizations {
   String get topCategories;
   String get noAnalyticsData;
 
-  // ─── Profile ──────────────────────────────────────────────────────────────────
   String get profile;
   String get accentColor;
   String get preferences;
@@ -373,7 +353,6 @@ abstract class AppLocalizations {
   String get failed;
   String get selectLanguage;
 
-  // ─── Change Password & Phone ──────────────────────────────────────────────────
   String get changePassword;
   String get oldPassword;
   String get oldPasswordHint;
@@ -399,7 +378,6 @@ abstract class AppLocalizations {
   String get verifyAndSave;
   String get changePhoneNumberLink;
 
-  // ─── Edit Profile ─────────────────────────────────────────────────────────────
   String get chooseAvatar;
   String get personalInfo;
   String get currentAvatarLabel;
@@ -489,7 +467,6 @@ abstract class AppLocalizations {
   String get aboutAppDesc;
   String get connectWithUs;
 
-  // ─── Backup & Restore ─────────────────────────────────────────────────────────
   String get backupSettings;
   String get step2of2;
   String get enableAutoBackup;
@@ -521,7 +498,7 @@ abstract class AppLocalizations {
   String get uploadAndRestore;
   String get backupStarted;
   String get failedToLoadBackupSettings;
-  // ─── Backup Hub & Main Sheet ────────────────────────────────────────────────
+
   String get backupHubBackupDesc;
   String get backupHubRestoreDesc;
   String get backupHubExportDesc;
@@ -537,7 +514,6 @@ abstract class AppLocalizations {
   String get backupNoFiles;
   String get backupDownloadedToDevice;
 
-  // ─── Profile Setup ────────────────────────────────────────────────────────────
   String get step1of2;
   String get completeYourProfile;
   String get profileSetupSubtitle;
@@ -563,7 +539,6 @@ abstract class AppLocalizations {
   String get initialBalanceLabel;
   String get saveAndFinishOnboarding;
 
-  // ─── Common ───────────────────────────────────────────────────────────────────
   String get retry;
   String get close;
   String get ok;
@@ -573,12 +548,10 @@ abstract class AppLocalizations {
   String spent(String amount);
   String of_(String amount);
 
-  // ─── Transaction Redesign ──────────────────────────────────────────────────
   String get totalCashflow;
   String nTransactions(int count);
   String get yesterday;
 
-  // ─── Onboarding ──────────────────────────────────────────────────────────────
   String get onboardingTitle1;
   String get onboardingDesc1;
   String get onboardingTitle2;
@@ -588,7 +561,6 @@ abstract class AppLocalizations {
   String get getStarted;
   String get next;
 
-  // ─── Extra Fields ─────────────────────────────────────────────────────────────
   String get usernameHint;
   String get genderOther;
   String get bioHint;
@@ -600,13 +572,10 @@ abstract class AppLocalizations {
   String get pleaseSelectSavingsGoal;
   String get changePasswordInfo;
 
-  // ─── Export & Import ──────────────────────────────────────────────────────────
-  // ─── Saving Detail ──────────────────────────────────────────────────────────
   String get transactionHistory;
   String get perDay;
   String get perDayShort;
 
-  // ─── Notifications ────────────────────────────────────────────────────────
   String get newTransactionRecorded;
   String transactionRecordedSuccess(String typeStr, String amountStr);
   String get newBudgetCreated;
@@ -622,7 +591,6 @@ abstract class AppLocalizations {
   String get incomeNotification;
   String get expenseNotification;
 
-  // ─── Exceptions & Network Errors ──────────────────────────────────────────
   String get errInvalidData;
   String get errAuthFailed;
   String get errUnverifiedAccount;
@@ -651,7 +619,6 @@ abstract class AppLocalizations {
   String get feedbackInstruction;
   String get sendFeedback;
 
-  // Budget Screen Additions
   String get startDate;
   String get periodStartsOnWhatDate;
   String selectedDateInfo(int day);
@@ -672,7 +639,6 @@ abstract class AppLocalizations {
   String get startMonth;
   String budgetActivePeriod(String startMonth, String endMonth);
 
-  // ─── Savings Form (new fields) ────────────────────────────────────────────────
   String get selectWallet;
   String get failedToLoadWallet;
   String get noWalletsFound;
@@ -681,7 +647,6 @@ abstract class AppLocalizations {
   String get purchaseLinkLabel;
   String get purchaseLinkHint;
 
-  // ─── Shared Space (Lobi, Room, Teman) ──────────────────────────────────────────
   String get sharedSpace;
   String get manageFriends;
   String get friends;
@@ -744,7 +709,6 @@ abstract class AppLocalizations {
   String get financialHealthGoodSubtitle;
   String get aiInsightBannerSubtitle;
 
-  // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
   String get categoryInformation;
   String get categoryTransactions;
   String get categoryPlanning;
@@ -775,7 +739,7 @@ abstract class AppLocalizations {
   String get anyMemberCanInviteSubtitle;
   String get invitePermissionSettings;
   String get onlyOwnerCanInviteError;
-  // ─── Invite Code ─────────────────────────────────────────────────────────────
+
   String get inviteCode;
   String get inviteCodeSubtitle;
   String get inviteCodeExpiry;
@@ -818,4 +782,3 @@ class AppLocalizationsScope extends InheritedWidget {
     return localizations.languageCode != oldWidget.localizations.languageCode;
   }
 }
-

@@ -97,7 +97,7 @@ class BackupWorker {
         tables: tables,
         onReceiveProgress: (received, total) {
           if (total != -1) {
-            final progress = (received / total * 40).toInt() + 50; // 50 to 90%
+            final progress = (received / total * 40).toInt() + 50;
             notificationService.showProgressNotification(
               id: 99,
               title: 'CuanBuddy Backup',
@@ -209,7 +209,7 @@ class BackupWorker {
         );
 
         if (result == null || result.files.single.path == null) {
-          return; // User canceled
+          return;
         }
         path = result.files.single.path!;
       }

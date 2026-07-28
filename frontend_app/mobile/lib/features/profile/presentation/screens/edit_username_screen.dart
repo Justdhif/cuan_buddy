@@ -44,7 +44,6 @@ class _EditUsernameScreenState extends ConsumerState<EditUsernameScreen> {
       return;
     }
 
-    // Basic username validation: only letters, numbers, underscores
     final validUsername = RegExp(r'^[a-zA-Z0-9_]+$');
     if (!validUsername.hasMatch(username)) {
       AppSnackbar.show(

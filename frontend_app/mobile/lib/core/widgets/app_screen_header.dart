@@ -112,7 +112,7 @@ class AppScreenHeader extends ConsumerWidget {
             ...customActions!,
           ] else if (showActions) ...[
             const SizedBox(width: 8),
-            // Profile Icon Button
+
             GestureDetector(
               onTap: () => context.push('/home/profile'),
               child: Container(
@@ -132,7 +132,7 @@ class AppScreenHeader extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Notification Bell Icon Button
+
             GestureDetector(
               onTap: () => context.push('/notifications'),
               child: Container(

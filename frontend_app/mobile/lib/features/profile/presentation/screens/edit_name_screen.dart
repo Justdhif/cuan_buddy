@@ -114,7 +114,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
                     decoration: InputDecoration(
                       labelText: l10n.yourFullName,
                       labelStyle: TextStyle(color: AppColors.primary),
-                      counterText: '', // We build custom counter below
+                      counterText: '',
                       focusedBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: AppColors.primary, width: 2),
                       ),
@@ -123,7 +123,7 @@ class _EditNameScreenState extends ConsumerState<EditNameScreen> {
                       ),
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: Colors.grey),
-                        onPressed: () {}, // Smiley placeholder
+                        onPressed: () {},
                       ),
                     ),
                   ),

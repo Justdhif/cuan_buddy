@@ -1,7 +1,7 @@
 export function formatCurrency(amount: string | number): string {
   const numericAmount = Number(amount);
   if (isNaN(numericAmount)) return 'Rp 0';
-  
+
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
@@ -21,7 +21,7 @@ export function roundDecimal(value: string | number, precision = 2): number {
 export function formatDate(date: Date | string): string {
   if (!date) return '-';
   const d = new Date(date);
-  
+
   return new Intl.DateTimeFormat('id-ID', {
     dateStyle: 'long',
     timeStyle: 'short',

@@ -59,10 +59,6 @@ class AuthRepository {
     await preferencesService.setBackupSetupComplete(false);
   }
 
-  /// Refresh access token secara eksplisit menggunakan refresh token.
-  /// Dipakai saat splash screen untuk memastikan token valid sebelum
-  /// mencoba load data. Menggunakan Dio instance baru (tanpa interceptor)
-  /// agar tidak terjadi loop.
   Future<bool> refreshTokens() async {
     try {
       final refreshToken = await authService.getRefreshToken();
@@ -72,7 +68,6 @@ class AuthRepository {
         return false;
       }
 
-      // Gunakan Dio instance terpisah untuk menghindari interceptor loop
       final refreshDio = Dio(
         BaseOptions(
           baseUrl: dioClient.dio.options.baseUrl,

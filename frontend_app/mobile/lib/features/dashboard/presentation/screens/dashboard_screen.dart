@@ -133,12 +133,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       }
     });
 
-    // Warna background gelap dipakai bareng di header (bottom radius) & Scaffold
     final bodyBgColor =
         isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
 
     return Scaffold(
-      backgroundColor: bodyBgColor, // <-- TAMBAHAN
+      backgroundColor: bodyBgColor,
       body: GestureDetector(
         onTap: () {},
         child: Stack(
@@ -174,7 +173,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         child: AiInsightCard(),
                       ),
                     ),
-                    // ── 3. Recent Transactions Section ──────────────────────────────
+
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
@@ -226,7 +225,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ),
 
-                    // ── 4. Budgets Section ───────────────────────────────────────
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -287,7 +285,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
-                    // ── 5. Analytics: Monthly Trend ─────────────────────────────
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -802,7 +799,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
-          // <-- TAMBAHAN
+
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
         ),
@@ -1196,7 +1193,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-// ─── Saldo Header Background Custom Pattern Painter ───────────────────────────
 class _HeaderPatternPainter extends CustomPainter {
   final Color accentColor;
 
@@ -1204,7 +1200,7 @@ class _HeaderPatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 1. Ambient Glow Orbs (Soft Lighting & Visual Depth)
+
     final orbPaint1 = Paint()
       ..shader = ui.Gradient.radial(
         Offset(size.width * 0.85, size.height * 0.20),
@@ -1234,7 +1230,6 @@ class _HeaderPatternPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, orbPaint1);
     canvas.drawRect(Offset.zero & size, orbPaint2);
 
-    // 2. Modern Fintech Micro Dot Matrix
     const double spacing = 22.0;
     final dotPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.06)
@@ -1253,7 +1248,6 @@ class _HeaderPatternPainter extends CustomPainter {
       }
     }
 
-    // 3. Financial Upward Growth Waves (Smooth Bezier Curves)
     final wavePath1 = Path();
     wavePath1.moveTo(-20, size.height * 0.75);
     wavePath1.cubicTo(
@@ -1289,7 +1283,6 @@ class _HeaderPatternPainter extends CustomPainter {
 
     canvas.drawPath(wavePath1, wavePaint1);
 
-    // Secondary Financial Wave Curve
     final wavePath2 = Path();
     wavePath2.moveTo(-20, size.height * 0.55);
     wavePath2.cubicTo(
@@ -1316,7 +1309,6 @@ class _HeaderPatternPainter extends CustomPainter {
 
     canvas.drawPath(wavePath2, wavePaint2);
 
-    // Soft Glowing Gradient Wave Fill Layer
     final fillPath = Path.from(wavePath1);
     fillPath.lineTo(size.width + 20, size.height + 20);
     fillPath.lineTo(-20, size.height + 20);
@@ -1335,7 +1327,6 @@ class _HeaderPatternPainter extends CustomPainter {
 
     canvas.drawPath(fillPath, fillPaint);
 
-    // 4. Financial Geometric Diamond Accents
     _drawDiamond(canvas, Offset(size.width * 0.88, size.height * 0.22), 12,
         accentColor.withValues(alpha: 0.30), isFilled: false);
     _drawDiamond(canvas, Offset(size.width * 0.88, size.height * 0.22), 5,
@@ -1346,7 +1337,6 @@ class _HeaderPatternPainter extends CustomPainter {
     _drawDiamond(canvas, Offset(size.width * 0.12, size.height * 0.35), 7,
         accentColor.withValues(alpha: 0.25), isFilled: false);
 
-    // 5. Tech Concentric Precision Ring Halos (Corner Accent)
     final ringCenter = Offset(size.width * 0.92, size.height * 0.18);
     final ringPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.08)

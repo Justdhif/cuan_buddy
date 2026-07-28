@@ -20,7 +20,6 @@ import '../../../../core/widgets/user_avatar.dart';
 import '../../../../core/widgets/user_list_tile.dart';
 import '../../../../core/utils/app_snackbar.dart';
 
-
 enum DiscordChannel {
   overview,
   transactions,
@@ -116,7 +115,6 @@ class _SharedRoomDashboardScreenState
       ),
     );
   }
-
 
   void _showInviteMemberBottomSheet() {
     final state = ref.read(sharedNotifierProvider);
@@ -369,7 +367,6 @@ class _SharedRoomDashboardScreenState
     final baseCurrency =
         profile?['currency'] as String? ?? AppConstants.defaultCurrency;
 
-    // Dynamic title matching clicked navigation item
     String pageTitle;
     switch (widget.initialChannel) {
       case DiscordChannel.overview:
@@ -441,7 +438,6 @@ class _SharedRoomDashboardScreenState
     }
   }
 
-  // ─── TAB 1: Overview ───────────────────────────────────────────────────────
   Widget _buildOverviewTab(
     BuildContext context,
     SharedState state,
@@ -458,7 +454,7 @@ class _SharedRoomDashboardScreenState
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Hero Room Banner
+
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -524,7 +520,6 @@ class _SharedRoomDashboardScreenState
         ),
         const SizedBox(height: 20),
 
-        // Members Section
         Text(
           l10n.members,
           style: AppTypography.textTheme.titleSmall?.copyWith(
@@ -538,7 +533,6 @@ class _SharedRoomDashboardScreenState
         _buildMemberChipsStack(members, state, room, l10n, isDark),
         const SizedBox(height: 20),
 
-        // Summary Statistics Cards
         _buildSummaryOverviewCards(state, l10n, isDark, baseCurrency),
       ],
     );
@@ -748,7 +742,6 @@ class _SharedRoomDashboardScreenState
     );
   }
 
-  // ─── TAB 2: Transactions ───────────────────────────────────────────────────
   Widget _buildTransactionsTab(
       SharedState state, bool isDark, AppLocalizations l10n) {
     final list = state.roomTransactions;
@@ -773,7 +766,6 @@ class _SharedRoomDashboardScreenState
     );
   }
 
-  // ─── TAB 3: Budgets ────────────────────────────────────────────────────────
   Widget _buildBudgetsTab(SharedState state, bool isDark,
       AppLocalizations l10n, String baseCurrency) {
     final list = state.roomBudgets;
@@ -805,7 +797,6 @@ class _SharedRoomDashboardScreenState
     );
   }
 
-  // ─── TAB 4: Savings Goals ──────────────────────────────────────────────────
   Widget _buildSavingsTab(SharedState state, bool isDark,
       AppLocalizations l10n, String baseCurrency) {
     final list = state.roomSavings;
@@ -837,7 +828,6 @@ class _SharedRoomDashboardScreenState
     );
   }
 
-  // ─── TAB 5: Members ────────────────────────────────────────────────────────
   Widget _buildMembersTab(
     BuildContext context,
     SharedState state,

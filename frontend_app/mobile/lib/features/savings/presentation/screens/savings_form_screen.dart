@@ -90,7 +90,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
 
       _selectedCurrency =
           widget.goal!['currency'] ?? AppConstants.defaultCurrency;
-          
+
       _selectedWalletId = widget.goal!['walletId']?.toString();
 
       final targetDateStr = widget.goal!['targetDate']?.toString();
@@ -144,7 +144,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetController = TextEditingController(text: _nameController.text);
-    
+
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -240,8 +240,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
         return;
       }
     }
-    
-    // Custom validation for Top Integrated Name & Amount
+
     if (_nameController.text.trim().isEmpty) {
       AppSnackbar.show(context,
           title: l10n.error,
@@ -249,7 +248,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
           type: SnackbarType.error);
       return;
     }
-    
+
     final rawAmount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
     if (rawAmount <= 0) {
       AppSnackbar.show(context,
@@ -448,7 +447,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
     final walletsAsync = ref.watch(walletsProvider);
     final iconShape = ref.watch(categoryIconShapeProvider);
 
-    // Auto-select first wallet if creating a new goal
     if (widget.goal == null &&
         _selectedWalletId == null &&
         walletsAsync is AsyncData &&
@@ -497,7 +495,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top Integrated Block ──────────────────────────────────
+
                 Container(
                   color: isDark
                       ? const Color(0xFF232838)
@@ -522,7 +520,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                   ),
                 ),
 
-                // ── Form Fields ───────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
@@ -590,7 +587,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Wallet Selector ──────────────────────────────────
                       Text(l10n.selectWallet, style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 12),
                       walletsAsync.when(
@@ -685,7 +681,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Target Date ────────────────────────────────────────
                       Text(l10n.targetDateOptional, style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 12),
                       InkWell(
@@ -732,7 +727,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Pinned Switch ──────────────────────────────────────
                       Container(
                         decoration: BoxDecoration(
                           color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
@@ -759,7 +753,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // ── Target Purchase Link ──────────────────────────────
                       Text(l10n.purchaseLinkOptional, style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 12),
                       AppTextField(
@@ -827,7 +820,6 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
 }
 }
 
-// ── Savings Form Header ───────────────────────────────────────────────────────
 class SavingsFormHeader extends StatelessWidget {
   const SavingsFormHeader({
     super.key,
@@ -866,7 +858,7 @@ class SavingsFormHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Name Area (Top)
+
           InkWell(
             onTap: onNameTap,
             child: Padding(
@@ -899,13 +891,12 @@ class SavingsFormHeader extends StatelessWidget {
               ),
             ),
           ),
-          
-          // Emoji & Amount Area (Bottom)
+
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Emoji Hitbox (Left Side)
+
                 InkWell(
                   onTap: onEmojiTap,
                   child: Padding(
@@ -927,7 +918,7 @@ class SavingsFormHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Amount Hitbox (Right Side)
+
                 Expanded(
                   child: InkWell(
                     onTap: onAmountTap,

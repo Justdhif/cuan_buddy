@@ -85,8 +85,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
             .listen((amp) {
           if (mounted) {
             setState(() {
-              // Normal speech amplitude typically ranges from -40 to 0.
-              // Adjust normalization so it looks good visually.
+
               final normalized = (amp.current + 40) / 40;
               _amplitude = normalized.clamp(0.0, 1.0);
             });
@@ -141,7 +140,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
     final result = await ref
         .read(aiNotifierProvider.notifier)
         .processVoiceTransaction(path);
-    await _deleteAudioFile(); // clean up after processing
+    await _deleteAudioFile();
 
     if (result != null && result['extracted'] != null) {
       setState(() {
@@ -184,7 +183,6 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
 
       await dio.post('/transactions', data: payload);
 
-      // Invalidate providers
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(recentTransactionsProvider);
 
@@ -196,7 +194,7 @@ class _AiVoiceSheetState extends ConsumerState<AiVoiceSheet>
           message: l10n.aiVoiceSuccess,
           type: SnackbarType.success,
         );
-        Navigator.pop(context, true); // true indicates successful save
+        Navigator.pop(context, true);
       }
     } catch (e) {
       setState(() => _isSaving = false);

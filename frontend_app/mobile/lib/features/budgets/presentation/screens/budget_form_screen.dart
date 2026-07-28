@@ -34,12 +34,12 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _nameController = TextEditingController();
-  
+
   String? _selectedEmoji;
   Color _selectedColor = AppColors.primary;
-  String _budgetType = 'standalone'; // 'standalone' or 'category'
+  String _budgetType = 'standalone';
   Set<String> _selectedCategoryIds = {};
-  
+
   String? _selectedWalletId;
   String? _roomId;
   DateTime _selectedDate = DateTime.now();
@@ -72,30 +72,28 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           ? rawL.toDouble()
           : double.tryParse(rawL?.toString() ?? '0') ?? 0;
       _amountController.text = limitAmount.toStringAsFixed(0);
-      
+
       _nameController.text = widget.budget!['name'] as String? ?? '';
       _selectedEmoji = widget.budget!['emojiIcon'] as String?;
-      
+
       final colorHex = widget.budget!['colorCode'] as String?;
       if (colorHex != null) {
         _selectedColor = AppColors.colorFromHex(colorHex);
       }
-      
-      // Parse type
+
       _budgetType = widget.budget!['type'] == 'standalone' ? 'standalone' : 'category';
-      
-      // Parse category IDs
+
       final cats = widget.budget!['categoryIds'];
       if (cats is List) {
         _selectedCategoryIds = cats.map((e) => e.toString()).toSet();
       } else if (widget.budget!['categoryId'] != null) {
         _selectedCategoryIds = {widget.budget!['categoryId'].toString()};
       }
-      
+
       if (_budgetType == 'category' && _selectedCategoryIds.isEmpty && widget.budget!['categoryId'] != null) {
           _selectedCategoryIds.add(widget.budget!['categoryId'].toString());
       }
-      
+
       _selectedWalletId = widget.budget!['walletId']?.toString();
       _selectedCurrency = widget.budget!['currency'] ?? 'IDR';
       _periodCount = (widget.budget!['periodCount'] as num?)?.toInt() ?? 1;
@@ -167,7 +165,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         'type': _budgetType,
         'categoryIds': _budgetType == 'standalone' ? [] : _selectedCategoryIds.toList(),
         if (_budgetType == 'category' && _selectedCategoryIds.isNotEmpty)
-           'categoryId': _selectedCategoryIds.first, // Backward compatibility
+           'categoryId': _selectedCategoryIds.first,
         'limitAmount':
             double.parse(_amountController.text.replaceAll(',', '')),
         'currency': _selectedCurrency,
@@ -177,7 +175,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         if (_selectedWalletId != null) 'walletId': _selectedWalletId,
         if (_roomId != null) 'roomId': _roomId,
       };
-      
+
       if (widget.budget == null || widget.budget!['id'] == null) {
         await dio.post('/budgets', data: payload);
         ref.invalidate(budgetsNotifierProvider);
@@ -272,7 +270,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetController = TextEditingController(text: _nameController.text);
-    
+
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -363,7 +361,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       },
     );
   }
-  
+
   Future<void> _showColorPicker() async {
     final newColor = await showCustomColorPicker(
       context: context,
@@ -462,7 +460,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
     final walletsAsync = ref.watch(walletsProvider);
     final iconShape = ref.watch(categoryIconShapeProvider);
 
-    // Auto-select base currency wallet on create
     if (widget.budget == null &&
         _selectedWalletId == null &&
         walletsAsync is AsyncData &&
@@ -481,7 +478,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       });
     }
 
-    // Sync currency from selected wallet
     if (_selectedWalletId != null &&
         walletsAsync is AsyncData &&
         walletsAsync.value != null) {
@@ -533,7 +529,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top Integrated Block ──────────────────────────────────
+
                 Container(
                   color: isDark
                       ? const Color(0xFF232838)
@@ -562,7 +558,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                   ),
                 ),
 
-                // ── Form Fields ───────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
@@ -629,7 +624,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // ── Wallet Selector ──────────────────────────────────
+
                       Text('Wallet', style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 12),
                       walletsAsync.when(
@@ -759,7 +754,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         },
                       ),
 
-
                       const SizedBox(height: 24),
                       Text('Period', style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 12),
@@ -773,7 +767,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Periode
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -801,7 +795,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                               ],
                             ),
                             Divider(color: isDark ? Colors.white12 : Colors.black12, height: 24),
-                            // Bulan Permulaan
+
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -842,7 +836,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                               ],
                             ),
                             const SizedBox(height: 16),
-                            // Info Bulan Akhir
+
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
@@ -873,7 +867,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // ── Budget Type ──
+
                       Row(
                         children: [
                           Expanded(
@@ -931,7 +925,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // ── Categories List (If specific) ──
                       AnimatedSize(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOutCubic,
@@ -957,9 +950,9 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                 clipBehavior: Clip.none,
                                 physics: const BouncingScrollPhysics(),
                                 separatorBuilder: (context, index) => const SizedBox(width: 16),
-                              itemCount: filtered.length + 1, // +1 for "All" button
+                              itemCount: filtered.length + 1,
                               itemBuilder: (context, index) {
-                                // The first item is "All" button
+
                                 if (index == 0) {
                                   final isAllSelected = _selectedCategoryIds.isEmpty;
                                   return SizedBox(
@@ -967,7 +960,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     child: GestureDetector(
                                       onTap: () {
                                       setState(() {
-                                        _selectedCategoryIds.clear(); // Clear all specific categories, means "All" is active
+                                        _selectedCategoryIds.clear();
                                       });
                                     },
                                     child: Column(
@@ -1043,7 +1036,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                       if (isSelected) {
                                         _selectedCategoryIds.remove(catId);
                                       } else {
-                                        _selectedCategoryIds.add(catId); // Adding a specific category auto-cancels "All" because _selectedCategoryIds is no longer empty
+                                        _selectedCategoryIds.add(catId);
                                       }
                                     });
                                   },
@@ -1110,7 +1103,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       ]
                     ) : const SizedBox(width: double.infinity, height: 0),
                   ),
-                      
 
                       const SizedBox(height: 40),
                     ],
@@ -1172,8 +1164,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   );
 }
 
-
-
   Widget _buildCategorySkeletonLoader(bool isDark) {
     return SizedBox(
       height: 44,
@@ -1188,7 +1178,6 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
   }
 }
 
-// ─── Skeleton Chip ────────────────────────────────────────────────────────────
 class _SkeletonChip extends StatefulWidget {
   const _SkeletonChip({required this.isDark});
   final bool isDark;
@@ -1242,7 +1231,6 @@ class _SkeletonChipState extends State<_SkeletonChip>
   }
 }
 
-// ─── Budget Form Header ───────────────────────────────────────────────────────
 class BudgetFormHeader extends StatelessWidget {
   const BudgetFormHeader({
     super.key,
@@ -1281,7 +1269,7 @@ class BudgetFormHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Name Area (Top)
+
           InkWell(
             onTap: onNameTap,
             child: Padding(
@@ -1314,13 +1302,12 @@ class BudgetFormHeader extends StatelessWidget {
               ),
             ),
           ),
-          
-          // Emoji & Amount Area (Bottom)
+
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Category Hitbox (Left Side)
+
                 InkWell(
                   onTap: onCategoryTap,
                   child: Padding(
@@ -1342,7 +1329,7 @@ class BudgetFormHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Amount Hitbox (Right Side)
+
                 Expanded(
                   child: InkWell(
                     onTap: onAmountTap,

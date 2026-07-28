@@ -7,15 +7,13 @@ dotenv.config();
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
-const userId = '1d6057af-1469-40ca-83a9-397d01b89bda'; // ID user justdhif418@gmail.com
+const userId = '1d6057af-1469-40ca-83a9-397d01b89bda';
 
 async function seedData() {
   console.log('🌱 Menyiapkan data pencapaian untuk user justdhif418@gmail.com...');
 
-  // 1. Tambah 5 Saving Goals Personal (in_progress dan completed)
   console.log('💰 Membuat data Saving Goals...');
-  
-  // Hapus dulu saving goals lama dari user ini agar bersih
+
   await sql`DELETE FROM savings_goals WHERE user_id = ${userId}`;
 
   // Sisipkan saving goals baru
@@ -50,7 +48,7 @@ async function seedData() {
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 7);
 
   await sql`
-    UPDATE user_profiles 
+    UPDATE user_profiles
     SET recording_streak_count = 35,
         created_at = ${sixMonthsAgo.toISOString()}
     WHERE user_id = ${userId}

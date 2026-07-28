@@ -172,7 +172,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Emoji and Name
+
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -215,8 +215,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
-                    // Color Picker
+
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
@@ -280,7 +279,6 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Selected Users Chips (Readonly)
                     if (widget.selectedFriendIds.isNotEmpty) ...[
                       Text(l10n.selectedMembers, style: AppTypography.textTheme.titleSmall),
                       const SizedBox(height: 16),
@@ -288,13 +286,13 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
                         selectedIds: widget.selectedFriendIds,
                         friendMap: friendMap,
                         isDark: isDark,
-                        isReadonly: true, // Hides X button
+                        isReadonly: true,
                         contentPadding: EdgeInsets.zero,
                         accentColor: accentColor,
                       ),
                       const SizedBox(height: 24),
                     ],
-                    // ─── Invite Permission Setting ───────────────────────────
+
                     Container(
                       decoration: BoxDecoration(
                         color: isDark

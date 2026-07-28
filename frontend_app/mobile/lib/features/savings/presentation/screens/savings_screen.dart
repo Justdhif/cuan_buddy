@@ -55,7 +55,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             color: AppColors.primary,
             child: _buildBody(context, ref, savingsState, isDark, currencySymbol),
           ),
-          // ── Fixed AppScreenHeader ──────────────────────────────────────────
+
           Positioned(
             top: 0,
             left: 0,
@@ -78,9 +78,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
       decimalDigits: 0,
     );
 
-
-
-    // Use all goals, no filter
     final filteredGoals = state.goals;
 
     final viewportHeight = MediaQuery.of(context).size.height -
@@ -93,11 +90,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
-        // ── Top spacing for AppScreenHeader ─────────────────────────────
+
         SliverToBoxAdapter(
           child: SizedBox(height: MediaQuery.of(context).padding.top + 54),
         ),
-        // Summary Header
+
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -138,7 +135,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // 1. Total Saldo
+
                               Expanded(
                                 child: _buildSummaryMetric(
                                   icon: Icons.account_balance_wallet_rounded,
@@ -157,7 +154,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                                 ),
                               ),
                               Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 2. Progress Total
+
                               Expanded(
                                 child: _buildSummaryMetric(
                                   icon: Icons.pie_chart_rounded,
@@ -190,7 +187,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                                 ),
                               ),
                               Container(width: 1, height: 60, color: isDark ? AppColors.borderDark : AppColors.borderLight, margin: const EdgeInsets.symmetric(horizontal: 6)),
-                              // 3. Total Target
+
                               Expanded(
                                 child: _buildSummaryMetric(
                                   icon: Icons.track_changes_rounded,
@@ -222,7 +219,6 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           ),
         ),
 
-        // Goals List
         if (state.isInitialLoad)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),

@@ -67,9 +67,7 @@ class SavingsNotifier extends StateNotifier<SavingsState> {
           currency: currency,
         );
       }
-    } catch (e) {
-      // Goal not found or error parsing
-    }
+    } catch (_) {}
   }
 
   Future<void> fetchGoals() async {

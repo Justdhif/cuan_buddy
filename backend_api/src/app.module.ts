@@ -32,7 +32,7 @@ import { BordersModule } from './borders/borders.module';
       rootPath: join(__dirname, '..', 'public'),
     }),
     ConfigModule.forRoot({ isGlobal: true }),
-    // Rate limiting: max 60 requests per 60s per IP to prevent compute abuse
+
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     DatabaseModule,
     AuthModule,
@@ -55,7 +55,7 @@ import { BordersModule } from './borders/borders.module';
   controllers: [AppController],
   providers: [
     AppService,
-    // Apply ThrottlerGuard globally to all routes
+
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })

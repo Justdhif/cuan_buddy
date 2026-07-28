@@ -48,9 +48,6 @@ class AuthInterceptor extends Interceptor {
   final Dio dio;
   final PreferencesService prefs;
 
-  // ─── Refresh State ─────────────────────────────────────────────────────────
-  // Completer dipakai agar multiple request yang expired secara bersamaan
-  // hanya trigger satu refresh — yang lain menunggu hasilnya (seperti antrian).
   bool _isRefreshing = false;
   Completer<bool>? _refreshCompleter;
 
@@ -59,7 +56,7 @@ class AuthInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    // Lewati interceptor untuk endpoint refresh itu sendiri (pakai refresh token manual)
+
     if (options.path.endsWith('/auth/refresh')) {
       handler.next(options);
       return;
@@ -68,7 +65,7 @@ class AuthInterceptor extends Interceptor {
     final accessToken = await authService.getAccessToken();
 
     if (accessToken != null && accessToken.isNotEmpty) {
-      // Proactive refresh: jika access token expired/hampir expired, refresh dulu
+
       if (authService.isTokenExpired(accessToken)) {
         final refreshed = await _doRefresh();
         if (refreshed) {
@@ -77,7 +74,7 @@ class AuthInterceptor extends Interceptor {
             options.headers['Authorization'] = 'Bearer $newToken';
           }
         }
-        // Tetap lanjut request (akan kena 401 jika refresh gagal → ditangani onError)
+
       } else {
         options.headers['Authorization'] = 'Bearer $accessToken';
       }
@@ -91,7 +88,7 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    // 401 dari endpoint biasa (bukan endpoint /auth/*) → coba refresh lalu retry
+
     final path = err.requestOptions.path;
     final isAuthEndpoint = path.contains('/auth/');
 
@@ -110,22 +107,18 @@ class AuthInterceptor extends Interceptor {
           handler.resolve(retryResponse);
           return;
         } catch (_) {
-          // Retry gagal — lanjut ke error handling di bawah
+
         }
       }
-      // Refresh gagal → hapus token agar user diarahkan ke login
+
       await authService.clearTokens();
     }
 
     handler.reject(_convertToAppException(err));
   }
 
-  // ─── Core Refresh Logic ────────────────────────────────────────────────────
-  /// Refresh access token menggunakan refresh token yang tersimpan.
-  /// Jika sudah ada refresh yang sedang berjalan, request lain menunggu
-  /// hasilnya via Completer (tidak ada race condition / double refresh).
   Future<bool> _doRefresh() async {
-    // Jika ada refresh yang sedang berjalan, tunggu hasilnya
+
     if (_isRefreshing) {
       return _refreshCompleter!.future;
     }
@@ -137,13 +130,12 @@ class AuthInterceptor extends Interceptor {
     try {
       final refreshToken = await authService.getRefreshToken();
 
-      // Kalau refresh token tidak ada atau sudah expired → tidak bisa refresh
       if (refreshToken == null ||
           refreshToken.isEmpty ||
           authService.isTokenExpired(refreshToken)) {
         await authService.clearTokens();
       } else {
-        // Gunakan Dio instance terpisah (tanpa interceptor) untuk menghindari loop
+
         final refreshDio = Dio(
           BaseOptions(
             baseUrl: dio.options.baseUrl,
@@ -179,7 +171,7 @@ class AuthInterceptor extends Interceptor {
     } catch (_) {
       await authService.clearTokens();
     } finally {
-      // Selesaikan semua request yang menunggu, reset state
+
       _refreshCompleter!.complete(success);
       _isRefreshing = false;
     }
@@ -250,4 +242,3 @@ extension RequestOptionsExtension on RequestOptions {
     );
   }
 }
-

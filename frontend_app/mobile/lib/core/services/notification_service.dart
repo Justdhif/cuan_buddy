@@ -44,10 +44,9 @@ class NotificationService {
           ?.requestNotificationsPermission();
     }
 
-    // Initialize Firebase Cloud Messaging
     try {
       await Firebase.initializeApp();
-      
+
       final FirebaseMessaging messaging = FirebaseMessaging.instance;
       await messaging.requestPermission(
         alert: true,
@@ -102,7 +101,7 @@ class NotificationService {
       progress: progress,
       ongoing: true,
       icon: '@mipmap/launcher_icon',
-      color: const Color(0xFFA78BFA), // AppColors.primary
+      color: const Color(0xFFA78BFA),
     );
     final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -127,7 +126,7 @@ class NotificationService {
       priority: Priority.high,
       ongoing: false,
       icon: '@mipmap/launcher_icon',
-      color: Color(0xFF4ADE80), // AppColors.success
+      color: Color(0xFF4ADE80),
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -152,7 +151,7 @@ class NotificationService {
       priority: Priority.high,
       ongoing: false,
       icon: '@mipmap/launcher_icon',
-      color: Color(0xFFFB7185), // AppColors.danger
+      color: Color(0xFFFB7185),
     );
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -163,7 +162,6 @@ class NotificationService {
         notificationDetails: platformChannelSpecifics);
   }
 
-  /// Shows a local push notification triggered by a real-time socket event.
   Future<void> showSocketNotification({
     required int id,
     required String title,
@@ -178,7 +176,7 @@ class NotificationService {
       priority: Priority.high,
       ongoing: false,
       icon: '@mipmap/launcher_icon',
-      color: Color(0xFFA78BFA), // AppColors.primary
+      color: Color(0xFFA78BFA),
       playSound: true,
       enableVibration: true,
     );

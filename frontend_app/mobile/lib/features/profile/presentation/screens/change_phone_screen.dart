@@ -26,7 +26,6 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
   bool _otpSent = false;
   bool _isVerifying = false;
 
-  // Countdown Timer
   int _secondsRemaining = 0;
   Timer? _timer;
 
@@ -41,7 +40,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
   void _startTimer() {
     _timer?.cancel();
     setState(() {
-      _secondsRemaining = 300; // 5 minutes
+      _secondsRemaining = 300;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining > 0) {
@@ -62,7 +61,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
 
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     final l10n = AppLocalizations.of(context);
     final phone = _phoneController.text.trim();
 
@@ -106,7 +105,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
   Future<void> _verifyOtp() async {
     final code = _otpController.text;
     if (code.length != 6) return;
-    
+
     final l10n = AppLocalizations.of(context);
     final phone = _phoneController.text.trim();
 
@@ -117,7 +116,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
     try {
       final dio = ref.read(dioClientProvider).dio;
       await dio.post('/profiles/phone/verify-otp', data: {'phone': phone, 'code': code});
-      
+
       ref.invalidate(profileProvider);
 
       if (mounted) {
@@ -127,7 +126,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
           message: l10n.otpSuccessMessage,
           type: SnackbarType.success,
         );
-        Navigator.of(context).pop(); // Go back to account screen
+        Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {

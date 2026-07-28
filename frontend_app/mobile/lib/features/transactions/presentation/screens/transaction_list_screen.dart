@@ -29,7 +29,6 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   final ScrollController _scrollController = ScrollController();
   double _scrollOffset = 0.0;
 
-  // Speed-dial FAB state
   bool _fabOpen = false;
   late AnimationController _fabController;
   late Animation<double> _fade1, _fade2, _fade3;
@@ -42,7 +41,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
       duration: const Duration(milliseconds: 380),
       vsync: this,
     );
-    // Staggered intervals: btn1 first (closest to main), btn2 middle, btn3 last (topmost)
+
     _fade1 = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
           parent: _fabController,
@@ -244,13 +243,13 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                 },
               ),
               const SliverToBoxAdapter(
-                child: SizedBox(height: 120), // Bottom padding for FAB
+                child: SizedBox(height: 120),
               ),
             ],
           ],
         ),
       ),
-          // ── Fixed AppScreenHeader ──────────────────────────────────────────
+
           Positioned(
             top: 0,
             left: 0,
@@ -270,11 +269,11 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-          // ── Staggered sub-buttons (always in tree for smooth exit animation) ──
+
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Sub 3 - Scan Receipt (topmost, animates third)
+
               _buildSubFab(
                 icon: Icons.document_scanner_rounded,
                 onTap: () async {
@@ -288,7 +287,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                 slideAnim: _slide3,
               ),
               const SizedBox(height: 12),
-              // Sub 2 – Mic (middle, animates second)
+
               _buildSubFab(
                 icon: Icons.mic_rounded,
                 onTap: () async {
@@ -302,7 +301,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
                 slideAnim: _slide2,
               ),
               const SizedBox(height: 12),
-              // Sub 1 – Manual (bottom, animates first)
+
               _buildSubFab(
                 icon: Icons.receipt_long_rounded,
                 onTap: () {
@@ -316,13 +315,13 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
               const SizedBox(height: 16),
             ],
           ),
-          // ── Main + FAB (rotates 45° → × when open) ──
+
           GestureDetector(
             onTap: _toggleFab,
             child: AnimatedBuilder(
               animation: _fabController,
               builder: (ctx, child) => Transform.rotate(
-                angle: _fabController.value * 0.785398, // 45 degrees
+                angle: _fabController.value * 0.785398,
                 child: child,
               ),
               child: Container(
@@ -415,5 +414,3 @@ class _BottomCashflowSummary extends ConsumerWidget {
     );
   }
 }
-
-

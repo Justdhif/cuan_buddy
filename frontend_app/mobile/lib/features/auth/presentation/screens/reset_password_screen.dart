@@ -56,7 +56,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             newPassword: _newPasswordController.text,
           );
 
-      // If user was logged in (e.g., accessed from profile), log them out
       await ref.read(authNotifierProvider.notifier).logout();
 
       if (!mounted) return;

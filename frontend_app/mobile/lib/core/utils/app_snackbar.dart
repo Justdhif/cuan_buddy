@@ -177,7 +177,7 @@ class _ToastOverlayWidgetState extends State<_ToastOverlayWidget>
                 ),
                 child: Row(
                   children: [
-                    // Icon Badge
+
                     Container(
                       width: 40,
                       height: 40,
@@ -207,7 +207,6 @@ class _ToastOverlayWidgetState extends State<_ToastOverlayWidget>
                     ),
                     const SizedBox(width: 12),
 
-                    // Title & Message Text
                     Expanded(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -240,7 +239,6 @@ class _ToastOverlayWidgetState extends State<_ToastOverlayWidget>
 
                     const SizedBox(width: 8),
 
-                    // Dismiss Close Button
                     GestureDetector(
                       onTap: _dismiss,
                       child: Container(

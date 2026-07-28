@@ -56,7 +56,7 @@ class ProfileSetupStep1 extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Title Header
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
@@ -82,7 +82,6 @@ class ProfileSetupStep1 extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // Interactive Avatar Editor
         Center(
           child: Column(
             children: [
@@ -113,7 +112,6 @@ class ProfileSetupStep1 extends StatelessWidget {
         const SizedBox(height: 16),
         const Divider(height: 1, thickness: 0.5),
 
-        // Information Fields
         buildInfoTile(
           icon: Icons.badge_outlined,
           title: l10n.languageCode == 'id' ? 'Nama Lengkap' : 'Full Name',

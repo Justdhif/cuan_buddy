@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 
 enum CategoryIconShape {
   circle,
-  square, // Rounded square
-  hexagon, // Hexagonal (segi enam)
-  diamond, // Diamond / rhombus
-  sharp, // Sharp corners (square without rounding)
-  squircle, // Continuous rounded rectangle (like iOS)
+  square,
+  hexagon,
+  diamond,
+  sharp,
+  squircle,
 }
 
 extension CategoryIconShapeExtension on CategoryIconShape {
@@ -28,8 +28,6 @@ extension CategoryIconShapeExtension on CategoryIconShape {
     }
   }
 
-  /// Returns a [ShapeBorder] that represents this icon shape.
-  /// [size] is the diameter / side-length of the container.
   ShapeBorder toShapeBorder(double size) {
     switch (this) {
       case CategoryIconShape.circle:
@@ -54,7 +52,6 @@ extension CategoryIconShapeExtension on CategoryIconShape {
   }
 }
 
-// ─── Hexagon ShapeBorder ───────────────────────────────────────────────────────
 class _HexagonBorder extends ShapeBorder {
   const _HexagonBorder();
 
@@ -75,7 +72,7 @@ class _HexagonBorder extends ShapeBorder {
     final r = math.min(rect.width, rect.height) / 2;
     final path = Path();
     for (int i = 0; i < 6; i++) {
-      final angle = math.pi / 6 + (math.pi / 3) * i; // flat-top orientation
+      final angle = math.pi / 6 + (math.pi / 3) * i;
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
       if (i == 0) {
@@ -95,7 +92,6 @@ class _HexagonBorder extends ShapeBorder {
   ShapeBorder scale(double t) => this;
 }
 
-// ─── Diamond ShapeBorder ──────────────────────────────────────────────────────
 class _DiamondBorder extends ShapeBorder {
   const _DiamondBorder();
 
@@ -116,10 +112,10 @@ class _DiamondBorder extends ShapeBorder {
     final hw = rect.width / 2;
     final hh = rect.height / 2;
     return Path()
-      ..moveTo(cx, cy - hh) // top
-      ..lineTo(cx + hw, cy) // right
-      ..lineTo(cx, cy + hh) // bottom
-      ..lineTo(cx - hw, cy) // left
+      ..moveTo(cx, cy - hh)
+      ..lineTo(cx + hw, cy)
+      ..lineTo(cx, cy + hh)
+      ..lineTo(cx - hw, cy)
       ..close();
   }
 
@@ -129,4 +125,3 @@ class _DiamondBorder extends ShapeBorder {
   @override
   ShapeBorder scale(double t) => this;
 }
-

@@ -7,7 +7,7 @@ import '../providers/profile_provider.dart';
 
 class EditBirthdateScreen extends ConsumerStatefulWidget {
   const EditBirthdateScreen({super.key, required this.initialBirthdate});
-  final String? initialBirthdate; // ISO date string e.g. "1999-08-15"
+  final String? initialBirthdate;
 
   @override
   ConsumerState<EditBirthdateScreen> createState() =>
@@ -68,7 +68,6 @@ class _EditBirthdateScreenState extends ConsumerState<EditBirthdateScreen> {
       return;
     }
 
-    // Format to ISO date string YYYY-MM-DD
     final iso = _selectedDate!.toIso8601String().split('T').first;
 
     setState(() => _isLoading = true);

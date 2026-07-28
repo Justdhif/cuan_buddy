@@ -45,7 +45,7 @@ class ProfileSetupStep2 extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title & Subtitle for Step 2
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -109,7 +109,6 @@ class ProfileSetupStep2 extends StatelessWidget {
                 ),
               ),
 
-              // Inline OTP Pinput Area
               if (otpSent && !isPhoneVerified) ...[
                 const SizedBox(height: 20),
                 Text(

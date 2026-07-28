@@ -46,7 +46,6 @@ const dummyMembers = [
 async function seedSharedRooms() {
   console.log('🌱 Starting Shared Rooms Seeding process...');
 
-  // 1. Fetch or identify main user
   const allUsers = await db.select().from(schema.users);
   if (allUsers.length === 0) {
     console.error('❌ Tidak ada user di database! Silakan daftarkan user terlebih dahulu.');

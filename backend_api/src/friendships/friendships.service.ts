@@ -12,7 +12,7 @@ export class FriendshipsService {
   ) {}
 
   async sendRequest(senderId: string, usernameOrEmail: string) {
-    // 1. Find user by email or username
+
     let targetUser = await this.db.query.users.findFirst({
       where: eq(users.email, usernameOrEmail),
       with: { profile: true },
@@ -40,7 +40,6 @@ export class FriendshipsService {
       throw new BadRequestException('Cannot send friend request to yourself');
     }
 
-    // Get sender info for notification
     const senderProfile = await this.db.query.userProfiles.findFirst({
       where: eq(userProfiles.userId, senderId),
     });
@@ -49,7 +48,6 @@ export class FriendshipsService {
     });
     const senderName = senderProfile?.fullName || senderProfile?.username || senderUser?.email || 'Someone';
 
-    // 2. Check if friendship already exists
     const existing = await this.db.query.friendships.findFirst({
       where: or(
         and(eq(friendships.senderId, senderId), eq(friendships.receiverId, receiverId)),
@@ -68,7 +66,7 @@ export class FriendshipsService {
           throw new BadRequestException('You have a pending friend request from this user');
         }
       }
-      // If declined, reset to pending
+
       const [updated] = await this.db.update(friendships)
         .set({
           senderId,
@@ -94,7 +92,6 @@ export class FriendshipsService {
       return { message: 'Friend request sent successfully', friendship: updated };
     }
 
-    // 3. Create new friendship request
     const [newFriendship] = await this.db.insert(friendships).values({
       senderId,
       receiverId,
@@ -138,7 +135,6 @@ export class FriendshipsService {
       .where(eq(friendships.id, friendshipId))
       .returning();
 
-    // Send notification response back to the sender
     const receiverProfile = await this.db.query.userProfiles.findFirst({
       where: eq(userProfiles.userId, receiverId),
     });
@@ -159,7 +155,6 @@ export class FriendshipsService {
       status === 'accepted' ? 'friend_accepted' : 'friend_declined'
     );
 
-    // Mark original friend request notification received by receiver (B) as read
     try {
       const notifList = await this.db.query.notifications.findMany({
         where: and(
@@ -271,13 +266,13 @@ export class FriendshipsService {
     });
 
     const matchedUsers: any[] = [];
-    
+
     // Add those matched by profile
     for (const p of profiles) {
       const user = await this.db.query.users.findFirst({
         where: eq(users.id, p.userId),
       });
-      
+
       // Check friendship status if any
       const relation = await this.db.query.friendships.findFirst({
         where: or(

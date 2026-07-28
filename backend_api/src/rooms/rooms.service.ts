@@ -17,7 +17,6 @@ export class RoomsService {
       throw new BadRequestException('Room name is required');
     }
 
-    // 1. Create Room
     const [newRoom] = await this.db.insert(rooms).values({
       name,
       emojiIcon: emojiIcon || undefined,
@@ -27,14 +26,12 @@ export class RoomsService {
       createdBy: userId,
     }).returning();
 
-    // 2. Add creator as Owner
     await this.db.insert(roomMembers).values({
       roomId: newRoom.id,
       userId: userId,
       role: 'owner',
     });
 
-    // 3. Add members
     if (memberUserIds.length > 0) {
       const valuesToInsert = memberUserIds.map((mId) => ({
         roomId: newRoom.id,
@@ -43,7 +40,6 @@ export class RoomsService {
       }));
       await this.db.insert(roomMembers).values(valuesToInsert);
 
-      // Send notification to invited members
       const creatorProfile = await this.db.query.userProfiles.findFirst({
         where: eq(userProfiles.userId, userId),
       });
@@ -71,7 +67,7 @@ export class RoomsService {
   }
 
   async listRooms(userId: string) {
-    // Find all room ids where user is a member
+
     const memberships = await this.db.query.roomMembers.findMany({
       where: eq(roomMembers.userId, userId),
     });
@@ -82,7 +78,6 @@ export class RoomsService {
 
     const roomIds = memberships.map((m) => m.roomId);
 
-    // Get rooms details
     const roomsList = await this.db.query.rooms.findMany({
       where: inArray(rooms.id, roomIds),
     });
@@ -92,7 +87,7 @@ export class RoomsService {
       const membersCount = await this.db.select({ count: sql`count(*)` })
         .from(roomMembers)
         .where(eq(roomMembers.roomId, r.id));
-      
+
       const role = memberships.find((m) => m.roomId === r.id)?.role;
 
       result.push({
@@ -106,7 +101,7 @@ export class RoomsService {
   }
 
   async getRoomDetail(userId: string, roomId: string) {
-    // Verify membership
+
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
     });
@@ -123,7 +118,6 @@ export class RoomsService {
       throw new NotFoundException('Room not found');
     }
 
-    // Get members details
     const membersList = await this.db.query.roomMembers.findMany({
       where: eq(roomMembers.roomId, roomId),
     });
@@ -151,8 +145,6 @@ export class RoomsService {
       });
     }
 
-    // Calculate aggregated statistics for this room
-    // 1. Transactions Total (Income & Expense)
     const roomTransactions = await this.db.query.transactions.findMany({
       where: eq(transactions.roomId, roomId),
     });
@@ -169,12 +161,10 @@ export class RoomsService {
       }
     }
 
-    // 2. Budgets
     const roomBudgets = await this.db.query.budgets.findMany({
       where: eq(budgets.roomId, roomId),
     });
 
-    // 3. Savings Goals
     const roomSavings = await this.db.query.savingsGoals.findMany({
       where: eq(savingsGoals.roomId, roomId),
     });
@@ -204,18 +194,18 @@ export class RoomsService {
     }
 
     if (membership.role === 'owner') {
-      // Owner deletes the room
+
       await this.db.delete(rooms).where(eq(rooms.id, roomId));
       return { message: 'Room and all associated data deleted successfully' };
     } else {
-      // Member leaves the room
+
       await this.db.delete(roomMembers).where(and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)));
       return { message: 'You have left the room' };
     }
   }
 
   async inviteMember(userId: string, roomId: string, inviteeId: string) {
-    // Verify current user is member
+
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
     });
@@ -224,7 +214,6 @@ export class RoomsService {
       throw new ForbiddenException('You are not a member of this room');
     }
 
-    // Check room's invite permission setting
     const roomRecord = await this.db.query.rooms.findFirst({
       where: eq(rooms.id, roomId),
     });
@@ -233,7 +222,6 @@ export class RoomsService {
       throw new ForbiddenException('Only the room owner can invite members');
     }
 
-    // Verify invitee is not already in the room
     const inviteeMembership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, inviteeId)),
     });
@@ -242,9 +230,6 @@ export class RoomsService {
       throw new BadRequestException('User is already a member of this room');
     }
 
-    // Get room details (already fetched above if roomRecord exists)
-
-    // Get inviter details
     const inviterProfile = await this.db.query.userProfiles.findFirst({
       where: eq(userProfiles.userId, userId),
     });
@@ -253,14 +238,12 @@ export class RoomsService {
     });
     const inviterName = inviterProfile?.fullName || inviterProfile?.username || inviterUser?.email || 'Someone';
 
-    // Add member
     const [newMember] = await this.db.insert(roomMembers).values({
       roomId,
       userId: inviteeId,
       role: 'member',
     }).returning();
 
-    // Send notification to invitee
     void this.notificationsService.createAndBroadcast(
       inviteeId,
       'ROOM_INVITATION',
@@ -277,7 +260,7 @@ export class RoomsService {
   }
 
   async updateRoom(userId: string, roomId: string, body: { name?: string; emojiIcon?: string; colorCode?: string; description?: string; onlyOwnerCanInvite?: boolean }) {
-    // 1. Verify user is owner of the room
+
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
     });
@@ -311,9 +294,8 @@ export class RoomsService {
     return updatedRoom;
   }
 
-  // ─── Invite Code: private helper ────────────────────────────────────────────
   private async _generateUniqueInviteCode(): Promise<string> {
-    const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1 to avoid confusion
+    const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const LENGTH = 8;
     let attempts = 0;
     while (attempts < 10) {
@@ -321,7 +303,7 @@ export class RoomsService {
       for (let i = 0; i < LENGTH; i++) {
         code += CHARS[Math.floor(Math.random() * CHARS.length)];
       }
-      // Check uniqueness
+
       const existing = await this.db.query.rooms.findFirst({
         where: eq(rooms.inviteCode, code),
       });
@@ -331,7 +313,6 @@ export class RoomsService {
     throw new Error('Failed to generate unique invite code after 10 attempts');
   }
 
-  // ─── Invite Code: generate / regenerate ─────────────────────────────────────
   async generateInviteCode(userId: string, roomId: string) {
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
@@ -345,7 +326,7 @@ export class RoomsService {
     }
 
     const newCode = await this._generateUniqueInviteCode();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     const [updatedRoom] = await this.db.update(rooms)
       .set({ inviteCode: newCode, inviteCodeExpiresAt: expiresAt })
@@ -358,7 +339,6 @@ export class RoomsService {
     };
   }
 
-  // ─── Invite Code: delete (make room private again) ───────────────────────────
   async deleteInviteCode(userId: string, roomId: string) {
     const membership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, roomId), eq(roomMembers.userId, userId)),
@@ -378,7 +358,6 @@ export class RoomsService {
     return { message: 'Invite code deleted. Room is now private.' };
   }
 
-  // ─── Join room via invite code ────────────────────────────────────────────────
   async joinRoomByInviteCode(userId: string, code: string) {
     const cleanCode = code.trim().toUpperCase().replace(/-/g, '');
 
@@ -386,7 +365,6 @@ export class RoomsService {
       throw new BadRequestException('Invalid invite code');
     }
 
-    // Find room by invite code
     const room = await this.db.query.rooms.findFirst({
       where: eq(rooms.inviteCode, cleanCode),
     });
@@ -395,12 +373,10 @@ export class RoomsService {
       throw new NotFoundException('Room not found. The invite code may be invalid.');
     }
 
-    // Check expiry
     if (room.inviteCodeExpiresAt && new Date() > new Date(room.inviteCodeExpiresAt)) {
       throw new BadRequestException('This invite code has expired. Ask the room owner to generate a new one.');
     }
 
-    // Check if user is already a member
     const existing = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, room.id), eq(roomMembers.userId, userId)),
     });
@@ -409,14 +385,12 @@ export class RoomsService {
       throw new BadRequestException('You are already a member of this room');
     }
 
-    // Add user as member
     await this.db.insert(roomMembers).values({
       roomId: room.id,
       userId,
       role: 'member',
     });
 
-    // Notify room owner
     const ownerMembership = await this.db.query.roomMembers.findFirst({
       where: and(eq(roomMembers.roomId, room.id), eq(roomMembers.role, 'owner')),
     });

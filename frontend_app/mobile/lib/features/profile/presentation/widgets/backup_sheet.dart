@@ -8,13 +8,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../data/services/backup_worker.dart';
 import '../providers/profile_provider.dart';
 
-/// Bottom sheet shown when user taps "Backup" in the BackupRestoreScreen.
-/// Contains:
-///  - Auto-backup toggle (with animated frequency reveal)
-///  - Save settings button
-///  - List of backup files (stored in state, not directly on device)
-///  - Per-item download (→ device) and delete buttons
-///  - Manual backup button
 class BackupSheet extends ConsumerStatefulWidget {
   const BackupSheet({super.key});
 
@@ -98,10 +91,9 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
   Future<void> _doManualBackup() async {
     setState(() => _isBackingUp = true);
     try {
-      // Run backup in background
+
       ref.read(backupWorkerProvider).runBackupProcess();
 
-      // Add entry to the state list
       final now = DateTime.now();
       final dateStr =
           '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}_'
@@ -147,7 +139,7 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
 
   Future<void> _deleteFile(BackupFile file) async {
     ref.read(backupFilesProvider.notifier).setDeleting(file.id, true);
-    // Brief delay to show animation
+
     await Future.delayed(const Duration(milliseconds: 400));
     ref.read(backupFilesProvider.notifier).removeFile(file.id);
   }
@@ -224,7 +216,7 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ─────────────────────────────────────────────
+
               const SizedBox(height: 16),
               Text(
                 l10n.backupNow,
@@ -242,7 +234,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
               ),
               const SizedBox(height: 24),
 
-              // ── Auto-Backup Toggle Card ─────────────────────────────
               _ToggleCard(
                 enabled: enabled,
                 isDark: isDark,
@@ -251,7 +242,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
               ),
               const SizedBox(height: 16),
 
-              // ── Frequency Options (smooth animated reveal) ──────────
               SizeTransition(
                 sizeFactor: _freqAnim,
                 alignment: Alignment.topCenter,
@@ -282,7 +272,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
               ),
               const SizedBox(height: 16),
 
-              // ── Backup File List Header ─────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -309,7 +298,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
               ),
               const SizedBox(height: 12),
 
-              // ── File List ───────────────────────────────────────────
               if (files.isEmpty)
                 _EmptyBackupList(isDark: isDark, l10n: l10n)
               else
@@ -326,7 +314,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
 
               const SizedBox(height: 20),
 
-              // ── Manual Backup Button ────────────────────────────────
               AppButton(
                 label:
                     _isBackingUp ? l10n.backupInProgress : l10n.backupManualNow,
@@ -346,7 +333,6 @@ class _BackupSheetState extends ConsumerState<BackupSheet>
   }
 }
 
-// ─── Toggle Card ──────────────────────────────────────────────────────────────
 class _ToggleCard extends StatelessWidget {
   const _ToggleCard({
     required this.enabled,
@@ -445,7 +431,6 @@ class _ToggleCard extends StatelessWidget {
   }
 }
 
-// ─── Interval Option ──────────────────────────────────────────────────────────
 class _IntervalOption extends StatelessWidget {
   const _IntervalOption({
     required this.value,
@@ -525,7 +510,6 @@ class _IntervalOption extends StatelessWidget {
   }
 }
 
-// ─── Backup File Item ─────────────────────────────────────────────────────────
 class _BackupFileItem extends StatelessWidget {
   const _BackupFileItem({
     required this.file,
@@ -564,7 +548,7 @@ class _BackupFileItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // ── File icon ─────────────────────────────────────────
+
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -586,7 +570,7 @@ class _BackupFileItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // ── Label & filename ──────────────────────────────────
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,7 +598,7 @@ class _BackupFileItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // ── Download to device button ─────────────────────────
+
             _ActionBtn(
               isDark: isDark,
               isLoading: file.isDownloading,
@@ -623,7 +607,7 @@ class _BackupFileItem extends StatelessWidget {
               onTap: onDownload,
             ),
             const SizedBox(width: 6),
-            // ── Delete button ─────────────────────────────────────
+
             _ActionBtn(
               isDark: isDark,
               isLoading: file.isDeleting,
@@ -638,7 +622,6 @@ class _BackupFileItem extends StatelessWidget {
   }
 }
 
-// ─── Small icon action button with loading state ──────────────────────────────
 class _ActionBtn extends StatefulWidget {
   const _ActionBtn({
     required this.isDark,
@@ -696,7 +679,6 @@ class _ActionBtnState extends State<_ActionBtn> {
   }
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
 class _EmptyBackupList extends StatelessWidget {
   const _EmptyBackupList({required this.isDark, required this.l10n});
   final bool isDark;

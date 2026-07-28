@@ -34,7 +34,7 @@ class BackupRestoreScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          // ── Backup ──────────────────────────────────────────────────
+
           _buildTile(
             context: context,
             icon: Icons.cloud_upload_outlined,
@@ -46,7 +46,7 @@ class BackupRestoreScreen extends ConsumerWidget {
               builder: (_) => const BackupSheet(),
             ),
           ),
-          // ── Restore ─────────────────────────────────────────────────
+
           _buildTile(
             context: context,
             icon: Icons.history_outlined,
@@ -67,7 +67,7 @@ class BackupRestoreScreen extends ConsumerWidget {
               ),
             ),
           ),
-          // ── Export (Coming Soon) ─────────────────────────────────────
+
           _buildTile(
             context: context,
             icon: Icons.upload_file_outlined,
@@ -76,7 +76,7 @@ class BackupRestoreScreen extends ConsumerWidget {
             isComingSoon: true,
             onTap: () {},
           ),
-          // ── Import (Coming Soon) ─────────────────────────────────────
+
           _buildTile(
             context: context,
             icon: Icons.download_outlined,

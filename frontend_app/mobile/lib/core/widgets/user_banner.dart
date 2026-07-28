@@ -13,7 +13,7 @@ class UserBanner extends StatelessWidget {
   final String bannerColor;
   final String bannerType;
   final String? bannerImage;
-  final dynamic localFile; // Using dynamic because dart:io File can conflict if not imported properly
+  final dynamic localFile;
 
   Color _parseHexColor(String hexColor) {
     try {
@@ -46,9 +46,9 @@ class UserBanner extends StatelessWidget {
 
   Widget? _buildBannerContent(Color parsedBannerColor) {
     if (localFile != null) {
-      // Used for previewing local file in edit screen
+
       return Image.file(
-        localFile!, // Ensure it is passed as a dart:io File object
+        localFile!,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,

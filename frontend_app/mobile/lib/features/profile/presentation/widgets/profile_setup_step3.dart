@@ -59,7 +59,7 @@ class ProfileSetupStep3 extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title & Subtitle for Step 3
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -84,7 +84,7 @@ class ProfileSetupStep3 extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Row: Emoji Icon & Name Field
+
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -117,7 +117,6 @@ class ProfileSetupStep3 extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Palette Colors Selection
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
@@ -172,7 +171,6 @@ class ProfileSetupStep3 extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Wallet Type Dropdown
               DropdownButtonFormField<String>(
                 initialValue: walletType,
                 dropdownColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
@@ -205,7 +203,6 @@ class ProfileSetupStep3 extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Precision & Balance Stack Card
               Container(
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
@@ -214,7 +211,7 @@ class ProfileSetupStep3 extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    // Precision
+
                     InkWell(
                       onTap: onWalletDecimalPrecisionTap,
                       borderRadius: const BorderRadius.only(
@@ -257,7 +254,7 @@ class ProfileSetupStep3 extends StatelessWidget {
                       thickness: 1,
                       color: isDark ? Colors.white10 : Colors.black12,
                     ),
-                    // Balance Calculator
+
                     InkWell(
                       onTap: onWalletBalanceTap,
                       borderRadius: const BorderRadius.only(
@@ -300,7 +297,6 @@ class ProfileSetupStep3 extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // Supported Currencies Grid
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

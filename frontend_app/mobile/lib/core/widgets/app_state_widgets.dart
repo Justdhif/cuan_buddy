@@ -4,7 +4,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../l10n/app_localizations.dart';
 
-// ─── App Loading ─────────────────────────────────────────────────────────────
 class AppLoading extends StatelessWidget {
   const AppLoading({super.key, this.message});
 
@@ -37,7 +36,6 @@ class AppLoading extends StatelessWidget {
   }
 }
 
-// ─── App Empty State ─────────────────────────────────────────────────────────
 class AppEmptyState extends StatelessWidget {
   const AppEmptyState({
     super.key,
@@ -108,7 +106,6 @@ class AppEmptyState extends StatelessWidget {
   }
 }
 
-// ─── App Error State ──────────────────────────────────────────────────────────
 class AppErrorState extends StatelessWidget {
   const AppErrorState({
     super.key,
@@ -151,7 +148,6 @@ class AppErrorState extends StatelessWidget {
   }
 }
 
-// ─── Skeleton Card ─────────────────────────────────────────────────────────────
 class SkeletonCard extends StatelessWidget {
   const SkeletonCard({super.key, this.height = 100});
   final double height;
@@ -178,7 +174,6 @@ class SkeletonCard extends StatelessWidget {
   }
 }
 
-// ─── Skeleton List ─────────────────────────────────────────────────────────────
 class SkeletonList extends StatelessWidget {
   const SkeletonList({super.key, this.itemCount = 5});
   final int itemCount;
@@ -248,7 +243,6 @@ class SkeletonList extends StatelessWidget {
   }
 }
 
-// ─── Skeleton Card List ────────────────────────────────────────────────────────
 class SkeletonCardList extends StatelessWidget {
   const SkeletonCardList({super.key, this.itemCount = 3});
   final int itemCount;
@@ -374,7 +368,6 @@ class SkeletonCardList extends StatelessWidget {
   }
 }
 
-// ─── Financial Health Widget ──────────────────────────────────────────────────
 enum FinancialHealthState { happy, sweating, panic }
 
 class FinancialHealthWidget extends StatelessWidget {
@@ -434,7 +427,6 @@ class FinancialHealthWidget extends StatelessWidget {
   }
 }
 
-// ─── Summary Card Skeleton ───────────────────────────────────────────────────
 class SummaryCardSkeleton extends StatelessWidget {
   const SummaryCardSkeleton({super.key, required this.isDark});
   final bool isDark;

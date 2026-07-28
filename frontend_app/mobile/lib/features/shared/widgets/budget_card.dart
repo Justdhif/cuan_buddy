@@ -53,7 +53,6 @@ class BudgetCard extends ConsumerWidget {
         ? (tx['wallet']['decimalPrecision'] as num?)?.toInt()
         : null) ?? 2;
 
-    // Parse period start/end dates
     DateTime startDate;
     DateTime endDate;
     if (tx['periodStartDate'] != null) {
@@ -102,7 +101,6 @@ class BudgetCard extends ConsumerWidget {
       actionText = l10n.exceededOf;
     }
 
-    // Color theme from database
     final catHex =
         tx['category']?['colorCode'] as String? ?? tx['colorCode'] as String?;
     final baseColor =
@@ -128,7 +126,6 @@ class BudgetCard extends ConsumerWidget {
         tx['emojiIcon'] as String? ??
         '📦';
 
-    // Period badge label
     final periodLabel = periodCount > 1
         ? l10n.periodMonths(periodCount, startDay)
         : l10n.periodDate(startDay);
@@ -148,7 +145,7 @@ class BudgetCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // ─── Top Section: Gradient ───────────────────────────────────────
+
           GestureDetector(
             onTap: onTap ?? () => context.push('/budgets/form', extra: {'budget': tx}),
             child: Container(
@@ -193,7 +190,7 @@ class BudgetCard extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            // Wallet badge
+
                             if (tx['wallet']?['name'] != null)
                               Container(
                                 margin: const EdgeInsets.only(right: 6),
@@ -212,7 +209,7 @@ class BudgetCard extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                            // Period badge
+
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 3),
@@ -270,7 +267,6 @@ class BudgetCard extends ConsumerWidget {
             ),
           ),
 
-          // ─── Bottom Section: Solid ────────────────────────────────────
           Expanded(
             child: Container(
               width: double.infinity,
@@ -281,7 +277,7 @@ class BudgetCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Progress Bar & Dates Row
+
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -313,7 +309,7 @@ class BudgetCard extends ConsumerWidget {
                             child: Stack(
                               clipBehavior: Clip.none,
                               children: [
-                                // Progress Bar
+
                                 Positioned(
                                   bottom: 6,
                                   left: 0,
@@ -356,7 +352,6 @@ class BudgetCard extends ConsumerWidget {
                                   ),
                                 ),
 
-                                // Today indicator
                                 if (todayProgressFraction > 0.0 &&
                                     todayProgressFraction < 1.0)
                                   Positioned(
@@ -428,7 +423,6 @@ class BudgetCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Daily Allowance Info
                 Builder(
                   builder: (context) {
                     final String infoText;

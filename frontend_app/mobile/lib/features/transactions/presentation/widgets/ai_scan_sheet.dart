@@ -34,7 +34,7 @@ class _AiScanSheetState extends ConsumerState<AiScanSheet> {
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? image = await _picker.pickImage(
-        source: source, 
+        source: source,
         imageQuality: 70,
         maxWidth: 1024,
         maxHeight: 1024,
@@ -105,7 +105,6 @@ class _AiScanSheetState extends ConsumerState<AiScanSheet> {
 
       await dio.post('/transactions', data: payload);
 
-      // Invalidate providers
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(recentTransactionsProvider);
 
@@ -117,7 +116,7 @@ class _AiScanSheetState extends ConsumerState<AiScanSheet> {
           message: 'Transaction saved successfully',
           type: SnackbarType.success,
         );
-        Navigator.pop(context, true); // true indicates successful save
+        Navigator.pop(context, true);
       }
     } catch (e) {
       setState(() => _isSaving = false);

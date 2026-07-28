@@ -16,7 +16,7 @@ export class UserProfilesController {
   @Get('me')
   async getProfile(@Req() req) {
     const profile = await this.userProfilesService.getProfile(req.user.userId);
-    // Evaluasi achievement setiap kali user load profil (fire-and-forget, tidak blok response)
+
     this.userProfilesService.checkAndUnlockBorders(req.user.userId).catch(() => {});
     return profile;
   }
@@ -48,20 +48,19 @@ export class UserProfilesController {
       if (!file) {
         throw new BadRequestException('File is required');
       }
-      
+
       const result = await this.cloudinaryService.uploadImage(file).catch((err) => {
         console.error('Cloudinary Upload Error:', err);
         throw new BadRequestException('Failed to upload image to Cloudinary');
       });
-      
+
       const secureUrl = result.secure_url;
       if (!secureUrl) {
         throw new Error('Cloudinary response missing secure_url');
       }
-      
-      // Update the database
+
       await this.userProfilesService.updateAvatar(req.user.userId, { avatar: secureUrl });
-      
+
       return { avatar: secureUrl };
     } catch (error) {
       console.error('Avatar Upload Exception:', error);
@@ -79,23 +78,22 @@ export class UserProfilesController {
       if (!file) {
         throw new BadRequestException('File is required');
       }
-      
+
       const result = await this.cloudinaryService.uploadImage(file).catch((err) => {
         console.error('Cloudinary Upload Error:', err);
         throw new BadRequestException('Failed to upload image to Cloudinary');
       });
-      
+
       const secureUrl = result.secure_url;
       if (!secureUrl) {
         throw new Error('Cloudinary response missing secure_url');
       }
-      
-      // Update the database
+
       await this.userProfilesService.updateProfile(req.user.userId, {
         bannerImage: secureUrl,
         bannerType: 'image',
       });
-      
+
       return { bannerImage: secureUrl };
     } catch (error) {
       console.error('Banner Upload Exception:', error);
@@ -106,16 +104,11 @@ export class UserProfilesController {
     }
   }
 
-  // ─── Achievement Endpoints ─────────────────────────────────────────────────
-
-  /// Kembalikan list border ID yang sudah di-unlock oleh user ini secara permanen.
   @Get('unlocked-borders')
   getUnlockedBorders(@Req() req) {
     return this.userProfilesService.getUnlockedBorders(req.user.userId);
   }
 
-  /// Evaluasi ulang semua kondisi achievement dan unlock border baru jika ada.
-  /// Kembalikan { unlocked: string[], newlyUnlocked: string[] }
   @Post('check-achievements')
   checkAchievements(@Req() req) {
     return this.userProfilesService.checkAndUnlockBorders(req.user.userId);

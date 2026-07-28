@@ -4,13 +4,12 @@ import '../../../../core/services/currency_service.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
-// State model for budgets response
 class BudgetsState {
   final List<dynamic> budgets;
   final bool isLoading;
   final bool isInitialLoad;
   final String? error;
-  final String selectedMonthYear; // YYYY-MM
+  final String selectedMonthYear;
 
   BudgetsState({
     this.budgets = const [],
@@ -128,7 +127,6 @@ final budgetsNotifierProvider =
   return BudgetsNotifier(ref);
 });
 
-/// Monthly spending summary for the selected month
 final monthlyBudgetSummaryProvider =
     FutureProvider.autoDispose.family<Map<String, double>, String>((ref, monthYear) async {
   final budgetsState = ref.watch(budgetsNotifierProvider);
@@ -184,7 +182,6 @@ final monthlyBudgetSummaryProvider =
   };
 });
 
-// Keep old provider alias for backward compatibility (used nowhere but just in case)
 final convertedBudgetsSummaryProvider =
     FutureProvider.autoDispose.family<Map<String, double>, String>((ref, filter) async {
   return ref.watch(monthlyBudgetSummaryProvider(

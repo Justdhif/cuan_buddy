@@ -42,7 +42,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
     final now = DateTime.now();
     _selectedYear = now.year;
-    _selectedMonthIndex = now.month - 1; // 0-based for Jan-Dec
+    _selectedMonthIndex = now.month - 1;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedMonth(animate: false);
@@ -57,15 +57,14 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
   }
 
   void _scrollToSelectedMonth({bool animate = true}) {
-    // Each month tab is 90px wide, with 8px padding on each side
+
     const itemWidth = 90.0;
     const horizontalPadding = 8.0;
     final screenWidth = MediaQuery.of(context).size.width;
     final offset = horizontalPadding + (_selectedMonthIndex * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
-    
-    // Safety check in case scroll controller isn't attached yet
+
     if (!_monthScrollController.hasClients) return;
-    
+
     final clampedOffset = offset.clamp(0.0, _monthScrollController.position.maxScrollExtent);
     if (animate) {
       _monthScrollController.animateTo(
@@ -111,7 +110,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     final currentYear = DateTime.now().year;
     final years = List.generate(15, (i) => currentYear - 5 + i);
 
-    // Pre-scroll to selected year
     final initialScrollIndex = years.indexOf(_selectedYear).clamp(0, years.length - 1);
     final scrollController = ScrollController(
       initialScrollOffset: initialScrollIndex * 56.0,
@@ -123,7 +121,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Title
+
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
               child: Row(
@@ -138,7 +136,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
               ),
             ),
             const Divider(height: 1),
-            // Year list
+
             SizedBox(
               height: 300,
               child: ListView.builder(
@@ -213,7 +211,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
             color: AppColors.primary,
             child: _buildBody(context, ref, budgetsState, isDark, currencySymbol),
           ),
-          // ── Fixed AppScreenHeader ──────────────────────────────────────────
+
           Positioned(
             top: 0,
             left: 0,
@@ -248,17 +246,15 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
           const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       controller: _scrollController,
       slivers: [
-        // ── Top spacing for AppScreenHeader ─────────────────────────────
+
         SliverToBoxAdapter(
           child: SizedBox(height: MediaQuery.of(context).padding.top + 54),
         ),
 
-        // ── Month Scroller ─────────────────────────────────────────────
         SliverToBoxAdapter(
           child: _buildMonthScroller(isDark, fmt),
         ),
 
-        // ── Budget List ────────────────────────────────────────────────
         if (state.isInitialLoad)
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
@@ -308,7 +304,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
     );
   }
 
-  // ── Month Scroller ──────────────────────────────────────────────────────
   Widget _buildMonthScroller(bool isDark, NumberFormat fmt) {
     final localeCode = Localizations.localeOf(context).languageCode;
     final months = _months;
@@ -319,7 +314,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        // Year selector & Today button
+
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Row(
@@ -338,7 +333,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                     ),
                     const SizedBox(width: 4),
                     Icon(
-                      Icons.keyboard_arrow_down_rounded, 
+                      Icons.keyboard_arrow_down_rounded,
                       size: 24,
                       color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
@@ -352,7 +347,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                     border: Border.all(
-                      color: isTodaySelected 
+                      color: isTodaySelected
                           ? (isDark ? AppColors.borderDark.withValues(alpha: 0.3) : AppColors.borderLight.withValues(alpha: 0.4))
                           : (isDark ? AppColors.borderDark : AppColors.borderLight),
                     ),
@@ -375,7 +370,6 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
 
         const SizedBox(height: 4),
 
-        // Month tab row
         SizedBox(
           height: 52,
           child: ListView.builder(
@@ -397,7 +391,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Month label
+
                       AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
                         style: TextStyle(
@@ -416,7 +410,7 @@ class _BudgetsScreenState extends ConsumerState<BudgetsScreen> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      // Active indicator
+
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         height: 3,

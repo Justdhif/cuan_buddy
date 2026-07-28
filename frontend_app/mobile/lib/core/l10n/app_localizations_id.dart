@@ -3,7 +3,6 @@ import 'app_localizations.dart';
 class AppLocalizationsId extends AppLocalizations {
   const AppLocalizationsId();
 
-  // ─── Meta ─────────────────────────────────────────────────────────────────────
   @override
   String get languageCode => 'id';
   @override
@@ -11,7 +10,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get home => 'Beranda';
 
-  // ─── Auth — Login ─────────────────────────────────────────────────────────────
   @override
   String get welcomeBack => 'Selamat datang kembali';
   @override
@@ -41,7 +39,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get loginFailed => 'Login Gagal';
 
-  // ─── Auth — Register ──────────────────────────────────────────────────────────
   @override
   String get createAccount => 'Buat akun baru';
   @override
@@ -84,7 +81,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get error => 'Gagal';
 
-  // ─── Unsaved Changes Confirmation ──────────────────────────────────────────
   @override
   String get unsavedChangesTitle => 'Batalkan Perubahan?';
   @override
@@ -95,7 +91,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get keepEditing => 'Lanjut Edit';
 
-  // ─── Auth — Forgot Password ───────────────────────────────────────────────────
   @override
   String get forgotPasswordTitle => 'Lupa Kata Sandi? 🔐';
   @override
@@ -133,7 +128,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get info => 'Info';
 
-  // ─── Auth — Email Verification ────────────────────────────────────────────────
   @override
   String get verifyEmail => 'Verifikasi Email';
   @override
@@ -178,11 +172,9 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get success => 'Berhasil';
 
-  // ─── Splash ───────────────────────────────────────────────────────────────────
   @override
   String get splashTagline => 'Kelola keuanganmu dengan cerdas ✨';
 
-  // ─── Dashboard ────────────────────────────────────────────────────────────────
   @override
   String get hello => 'Halo, ';
   @override
@@ -242,7 +234,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get tryAgain => 'Coba Lagi';
 
-  // ─── Transactions ─────────────────────────────────────────────────────────────
   @override
   String get transactions => 'Transaksi';
   @override
@@ -322,7 +313,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get noCategories => 'Tidak ada kategori';
 
-  // ─── Budgets ──────────────────────────────────────────────────────────────────
   @override
   String get budgets => 'Anggaran';
   @override
@@ -394,7 +384,6 @@ class AppLocalizationsId extends AppLocalizations {
   String budgetExceededBy(String amount) =>
       'Anggaran telah terlampaui sebesar $amount';
 
-  // ─── Savings ──────────────────────────────────────────────────────────────────
   @override
   String get addSavingsGoal => 'Tambah Tujuan';
   @override
@@ -508,7 +497,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String updateGoalTitle(String name) => 'Perbarui $name';
 
-  // ─── Categories ───────────────────────────────────────────────────────────────
   @override
   String get manageCategories => 'Kelola Kategori';
   @override
@@ -543,7 +531,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get hexColor => 'Kode HEX';
 
-  // ─── Wallets ──────────────────────────────────────────────────────────────────
   @override
   String get manageWallets => 'Kelola Dompet';
   @override
@@ -592,7 +579,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get walletDecimalSetAmount => 'Atur jumlah';
 
-  // ─── Notifications ────────────────────────────────────────────────────────────
   @override
   String get notifications => 'Notifikasi';
   @override
@@ -604,13 +590,11 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get notification => 'Notifikasi';
 
-  // ─── AI Chat ──────────────────────────────────────────────────────────────────
   @override
   String get cuanBuddyAI => 'CuanBuddy AI';
   @override
   String get askAboutFinances => 'Tanya tentang keuanganmu...';
 
-  // ─── Analytics ────────────────────────────────────────────────────────────────
   @override
   String get analytics => 'Analitik';
   @override
@@ -628,7 +612,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get noAnalyticsData => 'Tidak ada data tersedia';
 
-  // ─── Profile ──────────────────────────────────────────────────────────────────
   @override
   String get profile => 'Profil';
   @override
@@ -654,7 +637,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get logOutConfirm => 'Apakah kamu yakin ingin keluar?';
 
-  // ─── Transaction Redesign ──────────────────────────────────────────────────
   @override
   String get totalCashflow => 'Total arus kas';
   @override
@@ -680,7 +662,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get selectLanguage => 'Pilih Bahasa';
 
-  // ─── Change Password & Phone ──────────────────────────────────────────────────
   @override
   String get changePassword => 'Ganti Password';
   @override
@@ -732,7 +713,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get changePhoneNumberLink => 'Ganti nomor telepon';
 
-  // ─── Edit Profile ─────────────────────────────────────────────────────────────
   @override
   String get chooseAvatar => 'Pilih Avatar';
   @override
@@ -937,7 +917,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get connectWithUs => 'Hubungi kami di:';
 
-  // ─── Backup & Restore ─────────────────────────────────────────────────────────
   @override
   String get backupSettings => 'Pengaturan Backup';
   @override
@@ -1031,8 +1010,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get backupDownloadedToDevice => 'Cadangan berhasil diunduh ke perangkat';
 
-
-  // ─── Profile Setup ────────────────────────────────────────────────────────────
   @override
   String get step1of2 => 'Langkah 1/2';
   @override
@@ -1083,7 +1060,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get saveAndFinishOnboarding => 'Simpan & Selesai';
 
-  // ─── Common ───────────────────────────────────────────────────────────────────
   @override
   String get retry => 'Coba Lagi';
   @override
@@ -1101,7 +1077,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String of_(String amount) => 'dari $amount';
 
-  // ─── Onboarding ──────────────────────────────────────────────────────────────
   @override
   String get onboardingTitle1 => 'Catat Pengeluaranmu';
   @override
@@ -1122,7 +1097,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get next => 'Lanjut';
 
-  // ─── AI Voice ───────────────────────────────────────────────────────────────
   @override
   String get aiVoiceTitle => 'Konfirmasi Transaksi';
   @override
@@ -1158,7 +1132,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get aiVoiceSuccess => 'Transaksi disimpan melalui AI Voice!';
 
-  // ─── Extra Fields ─────────────────────────────────────────────────────────────
   @override
   String get usernameHint => 'Masukkan username Anda';
   @override
@@ -1181,13 +1154,11 @@ class AppLocalizationsId extends AppLocalizations {
   String get changePasswordInfo =>
       'Silakan masukkan kata sandi saat ini untuk membuat kata sandi baru. Pastikan kata sandi barumu minimal 8 karakter.';
 
-  // ─── Export & Import ──────────────────────────────────────────────────────────
   @override
   String get exportData => 'Ekspor Data';
   @override
   String get importData => 'Impor Data';
 
-  // ─── Saving Detail ──────────────────────────────────────────────────────────
   @override
   String get transactionHistory => 'Riwayat Transaksi';
   @override
@@ -1195,7 +1166,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get perDayShort => '/hari';
 
-  // ─── Notifications ────────────────────────────────────────────────────────
   @override
   String get newTransactionRecorded => 'Transaksi Baru Tercatat';
   @override
@@ -1229,7 +1199,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get expenseNotification => 'pengeluaran';
 
-  // ─── Exceptions & Network Errors ──────────────────────────────────────────
   @override
   String get errInvalidData => 'Data tidak valid. Silakan periksa kembali 😊';
   @override
@@ -1285,7 +1254,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get sendFeedback => 'Kirim Masukan';
 
-  // Budget Screen Additions
   @override
   String get startMonth => 'Bulan Mulai';
   @override
@@ -1327,7 +1295,6 @@ class AppLocalizationsId extends AppLocalizations {
   String budgetActivePeriod(String startMonth, String endMonth) =>
       'Anggaran berlaku dari $startMonth hingga $endMonth.';
 
-  // ─── Savings Form (new fields) ─────────────────────────────────────────────
   @override
   String get selectWallet => 'Pilih Dompet';
   @override
@@ -1344,7 +1311,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get purchaseLinkHint => 'https://shopee.co.id/... atau Tokopedia';
 
-  // ─── Shared Space (Lobi, Room, Teman) ──────────────────────────────────────────
   @override
   String get sharedSpace => 'Shared Space';
   @override
@@ -1468,7 +1434,6 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get aiInsightBannerSubtitle => 'Dapatkan saran personalized untuk keuangan yang lebih baik bersama AI ✨';
 
-  // ─── Discord Style Shared Rooms ──────────────────────────────────────────────
   @override
   String get categoryInformation => 'INFORMASI';
   @override
@@ -1529,7 +1494,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get invitePermissionSettings => 'Izin Mengundang';
   @override
   String get onlyOwnerCanInviteError => 'Hanya pemilik room yang dapat mengundang anggota ke room ini';
-  // ─── Invite Code ─────────────────────────────────────────────────────────────
+
   @override
   String get inviteCode => 'Kode Undangan';
   @override

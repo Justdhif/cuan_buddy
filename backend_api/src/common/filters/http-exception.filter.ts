@@ -19,7 +19,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exceptionResponse;
     }
 
-    // Custom English Error Messages for common errors
     if (status === 401 && message === 'Unauthorized') {
       message = 'You are unauthenticated. Please log in to access this resource.';
     } else if (status === 403 && message === 'Forbidden resource') {

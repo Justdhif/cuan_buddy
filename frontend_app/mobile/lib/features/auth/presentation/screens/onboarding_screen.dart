@@ -69,7 +69,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header skip button
+
             Align(
               alignment: Alignment.topRight,
               child: Padding(
@@ -97,7 +97,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
 
-            // Page View
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -110,7 +109,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Glassmorphic/Neumorphic Floating Emoji Circle
+
                         Container(
                           width: 160,
                           height: 160,
@@ -139,7 +138,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         const SizedBox(height: 48),
 
-                        // Title
                         Text(
                           slide.title,
                           textAlign: TextAlign.center,
@@ -153,7 +151,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Description
                         Text(
                           slide.desc,
                           textAlign: TextAlign.center,
@@ -171,12 +168,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
             ),
 
-            // Bottom Navigation Indicators & Action Buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(32, 16, 32, 40),
               child: Column(
                 children: [
-                  // Dot Indicators
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(slides.length, (index) {
@@ -199,7 +195,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(height: 32),
 
-                  // Actions
                   AnimatedCrossFade(
                     firstChild: SizedBox(
                       width: double.infinity,
@@ -211,7 +206,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                     secondChild: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const SizedBox(width: 48), // Spacer to balance layout
+                        const SizedBox(width: 48),
                         FloatingActionButton(
                           onPressed: _nextPage,
                           backgroundColor: AppColors.primary,

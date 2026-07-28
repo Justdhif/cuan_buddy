@@ -69,8 +69,7 @@ class _EmailVerificationScreenState
 
       if (isActive) {
         setState(() => _isVerified = true);
-        
-        // Attempt to auto-login
+
         if (widget.password != null && widget.password!.isNotEmpty) {
           await ref.read(authNotifierProvider.notifier).login(
             email: widget.email!,
@@ -81,7 +80,7 @@ class _EmailVerificationScreenState
             AppSnackbar.show(
               context,
               title: l10n.success,
-              message: l10n.accountVerifiedRedirecting, // Or 'Auto-login successful'
+              message: l10n.accountVerifiedRedirecting,
               type: SnackbarType.success,
             );
             _redirectTimer = Timer(const Duration(seconds: 2), () {
@@ -97,8 +96,7 @@ class _EmailVerificationScreenState
             return;
           }
         }
-        
-        // Fallback if password is missing or login failed
+
         if (!mounted) return;
         AppSnackbar.show(
           context,

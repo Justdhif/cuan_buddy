@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 class AppBottomSheet {
-  /// Displays a custom bottom sheet with a seamless top bump containing a close button.
+
   static Future<T?> show<T>({
     required BuildContext context,
     required WidgetBuilder builder,
@@ -15,8 +15,8 @@ class AppBottomSheet {
       isScrollControlled: isScrollControlled,
       useSafeArea: useSafeArea,
       useRootNavigator: useRootNavigator,
-      backgroundColor: Colors.transparent, // We draw our own background
-      elevation: 0, // Disable default shadow since we use custom shape
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       builder: (context) {
         return _AppBottomSheetWrapper(
           child: builder(context),

@@ -10,13 +10,10 @@ final profileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return ref.watch(profileRepositoryProvider).getProfile();
 });
 
-// ─── Backup Settings Provider ─────────────────────────────────────────────────
 final backupSettingsProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
   return ref.watch(profileRepositoryProvider).getBackupSettings();
 });
-
-// ─── Backup File Model ─────────────────────────────────────────────────────────
 
 class BackupFile {
   const BackupFile({
@@ -50,7 +47,6 @@ class BackupFile {
   }
 }
 
-// ─── Backup Files Notifier ─────────────────────────────────────────────────────
 class BackupFilesNotifier extends Notifier<List<BackupFile>> {
   static const _storageKey = 'backup_files_list';
 
@@ -86,7 +82,6 @@ class BackupFilesNotifier extends Notifier<List<BackupFile>> {
     prefs.setStringList(_storageKey, listJson);
   }
 
-  /// Seed with mock data (replace with real API call)
   List<BackupFile> _mockBackupFiles() {
     final now = DateTime.now();
     return [
@@ -123,14 +118,12 @@ class BackupFilesNotifier extends Notifier<List<BackupFile>> {
     ];
   }
 
-  /// Add a new backup entry to the top of the list
   void addBackup(BackupFile file) {
     final newList = [file, ...state];
     state = newList;
     _saveToPrefs(newList);
   }
 
-  /// Mark download in progress
   void setDownloading(String id, bool value) {
     state = [
       for (final f in state)
@@ -138,14 +131,12 @@ class BackupFilesNotifier extends Notifier<List<BackupFile>> {
     ];
   }
 
-  /// Remove a file entry (after deletion confirmed)
   void removeFile(String id) {
     final newList = state.where((f) => f.id != id).toList();
     state = newList;
     _saveToPrefs(newList);
   }
 
-  /// Mark delete in progress
   void setDeleting(String id, bool value) {
     state = [
       for (final f in state)
@@ -153,7 +144,6 @@ class BackupFilesNotifier extends Notifier<List<BackupFile>> {
     ];
   }
 
-  /// Refresh from server (placeholder)
   Future<void> refresh() async {
     state = _mockBackupFiles();
     _saveToPrefs(state);

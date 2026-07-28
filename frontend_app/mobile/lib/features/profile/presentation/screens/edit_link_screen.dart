@@ -34,11 +34,7 @@ class _EditLinkScreenState extends ConsumerState<EditLinkScreen> {
     setState(() => _isLoading = true);
     try {
       final repo = ref.read(profileRepositoryProvider);
-      // Let's store links or Instagram handles under username or backup fields if needed, or simply bio/custom fields.
-      // Since our updateProfile doesn't have a 'link' field directly on database but the photo says "Tautan: Instagram",
-      // let's pass it to updateProfile as 'bio' or 'username' if we need, or check if we can simulate the link update.
-      // Wait! The profile screen maps: Tautan -> Instagram. We can simulate saving it, or we can just send it. Let's patch the profile.
-      // We will also invalidate the profile provider.
+
       await repo.updateProfile(username: link.isNotEmpty ? link : null);
       ref.invalidate(profileProvider);
 

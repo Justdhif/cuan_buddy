@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'home_shell.dart';
 import '../providers/core_providers.dart';
 
-// Auth
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -15,7 +14,6 @@ import '../../features/auth/presentation/screens/forgot_password_otp_screen.dart
 import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 
-// Profile Setup
 import '../../features/profile/presentation/screens/profile_setup_screen.dart';
 import '../../features/profile/presentation/screens/backup_restore_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
@@ -35,7 +33,6 @@ import '../../features/profile/presentation/screens/edit_gender_screen.dart';
 import '../../features/profile/presentation/screens/edit_list_background_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
 
-// Main Features
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_list_screen.dart';
 import '../../features/transactions/presentation/screens/transaction_form_screen.dart';
@@ -403,7 +400,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           );
         },
         branches: [
-          // Branch 0 – Dashboard (Home)
+
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/dashboard',
@@ -411,7 +408,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _buildPage(state, const DashboardScreen()),
             ),
           ]),
-          // Branch 1 – Transactions
+
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/transactions',
@@ -419,7 +416,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _buildPage(state, const TransactionListScreen()),
             ),
           ]),
-          // Branch 2 – Shared
+
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/shared',
@@ -427,7 +424,7 @@ final routerProvider = Provider<GoRouter>((ref) {
                   _buildPage(state, const SharedScreen()),
             ),
           ]),
-          // Branch 3 – Settings
+
           StatefulShellBranch(routes: [
             GoRoute(
               path: '/home/settings',
@@ -440,4 +437,3 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
-

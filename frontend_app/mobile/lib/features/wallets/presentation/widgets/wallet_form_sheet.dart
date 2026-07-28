@@ -483,7 +483,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
-                // ── Decimal Precision & Initial Balance Combined Card (Stacked vertically) ──
+
                 Container(
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
@@ -492,7 +492,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                   ),
                   child: Column(
                     children: [
-                      // Top hitbox: Decimal Precision (no left icon)
+
                       InkWell(
                         onTap: _showDecimalPrecisionSheet,
                         borderRadius: const BorderRadius.only(
@@ -530,13 +530,13 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                           ),
                         ),
                       ),
-                      // Horizontal Divider
+
                       Divider(
                         height: 1,
                         thickness: 1,
                         color: isDark ? Colors.white10 : Colors.black12,
                       ),
-                      // Bottom hitbox: Initial Balance (label + amount stacked, chevron right)
+
                       InkWell(
                         onTap: _showBalanceCalculatorSheet,
                         borderRadius: const BorderRadius.only(
@@ -583,7 +583,7 @@ class _WalletFormSheetState extends ConsumerState<WalletFormSheet> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                // ── Currency Selection Section ──
+
                 Builder(
                   builder: (context) {
                     final currencies = AppConstants.supportedCurrencies;
@@ -722,7 +722,7 @@ class _DecimalPrecisionSheet extends StatefulWidget {
 }
 
 class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
-  // null = no user input yet (show placeholder)
+
   String? _typedStr;
   String? _pressedKey;
 
@@ -738,9 +738,9 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
           _typedStr = next.isEmpty ? null : next;
         }
       } else if (key == ',') {
-        // Precision is integer only, ignore comma
+
       } else {
-        // Start fresh on first key press
+
         if (_typedStr == null) {
           _typedStr = key == '0' ? '0' : key;
         } else {
@@ -767,7 +767,7 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Header: Title + Description ──
+
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           child: Column(
@@ -790,7 +790,7 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
             ],
           ),
         ),
-        // ── Number Display (like calculator) ──
+
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
           child: Container(
@@ -810,7 +810,7 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
           ),
         ),
         const Divider(height: 1),
-        // ── Numpad Grid ──
+
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Container(
@@ -829,12 +829,12 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
             ),
           ),
         ),
-        // ── Action Buttons ──
+
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           child: Row(
             children: [
-              // Reset Button
+
               Expanded(
                 flex: 1,
                 child: ElevatedButton(
@@ -858,7 +858,7 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Save Button
+
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
@@ -893,7 +893,7 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
     return Row(
       children: keys.map((key) {
         if (key.isEmpty) {
-          // Empty placeholder cell
+
           return const Expanded(child: SizedBox(height: 64));
         }
         final isPressed = _pressedKey == key;

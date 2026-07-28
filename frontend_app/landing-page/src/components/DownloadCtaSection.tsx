@@ -8,7 +8,7 @@ export default function DownloadCtaSection() {
     <section id="download" className="py-24 bg-canvas dark:bg-[#0c0d24] transition-colors duration-300">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-br from-primary to-primary-deep text-on-primary rounded-[32px] p-8 md:p-16 text-center relative overflow-hidden shadow-level-2">
-          {/* Decorative shapes */}
+          {}
           <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full filter blur-3xl"></div>
           <div className="absolute bottom-0 right-0 w-64 h-64 bg-magenta/10 rounded-full filter blur-3xl"></div>
 
@@ -21,8 +21,8 @@ export default function DownloadCtaSection() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full sm:w-auto">
-              {/* App Store Button */}
-              <a 
+              {}
+              <a
                 href="#"
                 className="w-full sm:w-auto flex items-center justify-center gap-3 bg-white text-ink hover:bg-canvas-cream font-medium px-8 py-3.5 rounded-full shadow-md transition-all active:scale-95 duration-200"
               >
@@ -33,8 +33,8 @@ export default function DownloadCtaSection() {
                 </div>
               </a>
 
-              {/* Play Store Button */}
-              <a 
+              {}
+              <a
                 href="#"
                 className="w-full sm:w-auto flex items-center justify-center gap-3 bg-brand-dark-900 text-white hover:bg-brand-dark-900/90 font-medium px-8 py-3.5 rounded-full shadow-md transition-all active:scale-95 duration-200 border border-hairline/10"
               >

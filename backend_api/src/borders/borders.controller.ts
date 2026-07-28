@@ -3,7 +3,7 @@ import type { Request } from 'express';
 
 @Controller('borders')
 export class BordersController {
-  
+
   private getBaseUrl(req: Request): string {
     return `${req.protocol}://${req.get('host')}`;
   }
@@ -116,10 +116,3 @@ export class BordersController {
     ];
   }
 }
-
-
-
-
-
-
-

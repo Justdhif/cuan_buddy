@@ -11,13 +11,12 @@ export class FeedbackService {
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
 
   async createFeedback(userId: string, message: string) {
-    // 1. Save to Database
+
     const [feedback] = await this.db.insert(feedbacks).values({
       userId,
       message,
     }).returning();
 
-    // 2. Fetch User Profile & Account details
     let profile: any = null;
     let userDetail: any = null;
 
@@ -32,7 +31,6 @@ export class FeedbackService {
       this.logger.error('Failed to fetch user info for feedback enrichment', err);
     }
 
-    // 3. Send WhatsApp via Fonnte API
     const targetPhone = process.env.FONNTE_TARGET_PHONE;
     if (!targetPhone) {
       this.logger.warn('FONNTE_TARGET_PHONE is not defined in environment. WhatsApp notification skipped.');

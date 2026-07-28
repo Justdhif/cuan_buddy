@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/providers/core_providers.dart';
 
 class ChatMessage {
-  final String role; // 'user' or 'assistant'
+  final String role;
   final String content;
 
   ChatMessage({required this.role, required this.content});
@@ -87,7 +87,6 @@ class AiNotifier extends StateNotifier<AiState> {
       final response = await dio.post('/ai/voice-transaction', data: formData);
       state = state.copyWith(isLoading: false);
 
-      // Return the parsed data
       return response.data as Map<String, dynamic>;
     } catch (e) {
       state = state.copyWith(
@@ -110,7 +109,6 @@ class AiNotifier extends StateNotifier<AiState> {
       final response = await dio.post('/ai/scan-receipt', data: formData);
       state = state.copyWith(isLoading: false);
 
-      // Return the parsed data
       return response.data as Map<String, dynamic>;
     } catch (e) {
       state = state.copyWith(
@@ -139,4 +137,3 @@ final aiBudgetRecommendationProvider = FutureProvider<String>((ref) async {
   return response.data['recommendation'] as String? ??
       'No recommendations available.';
 });
-

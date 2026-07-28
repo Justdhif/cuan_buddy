@@ -67,15 +67,12 @@ export class BackupController {
     return this.backupService.markBackupCompleted(req.user.userId);
   }
 
-  // ─────────────────────────────────────────────
-  // VERCEL CRON ENDPOINT
-  // ─────────────────────────────────────────────
   @Get('process-cron')
   @ApiOperation({ summary: 'Vercel Cron Trigger (Requires CRON_SECRET)' })
   processCron(@Request() req: any) {
     const authHeader = req.headers.authorization;
     const expectedSecret = this.configService.get<string>('CRON_SECRET');
-    
+
     if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
       throw new UnauthorizedException('Invalid cron secret');
     }

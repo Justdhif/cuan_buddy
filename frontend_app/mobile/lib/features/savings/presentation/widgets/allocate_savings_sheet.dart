@@ -75,7 +75,7 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Update savings balance
+
       final goals = ref.read(savingsNotifierProvider).goals;
       final goal = goals.firstWhere(
         (g) => g['id'] == _selectedGoalId,
@@ -94,7 +94,6 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
             .read(savingsNotifierProvider.notifier)
             .updateBalance(_selectedGoalId!, newAmount);
 
-        // 2. Create expense transaction
         final categories = await ref.read(categoriesProvider.future);
         final savingsCategory = categories.firstWhere(
           (c) => c['name'].toString().toLowerCase() == 'others',
@@ -111,7 +110,6 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
           'date': DateTime.now().toUtc().toIso8601String(),
         });
 
-        // Invalidate transaction providers
         ref.invalidate(allTransactionsProvider);
         ref.invalidate(recentTransactionsProvider);
         ref.invalidate(analyticsSummaryProvider);
@@ -163,7 +161,6 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
           ),
           const SizedBox(height: 24),
 
-          // Goal Selection
           DropdownButtonFormField<String>(
             initialValue: _selectedGoalId,
             decoration: InputDecoration(
@@ -187,7 +184,6 @@ class _AllocateSavingsSheetState extends ConsumerState<_AllocateSavingsSheet> {
           ),
           const SizedBox(height: 16),
 
-          // ── Amount & Currency ─────────────────────────────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

@@ -9,7 +9,6 @@ import 'package:shimmer/shimmer.dart';
 import '../../../ai/presentation/providers/ai_provider.dart';
 import '../providers/dashboard_provider.dart';
 
-// ─── Finance Health Header Widget (No Card Box, No Title, No Info/Warning Icon) ───
 class FinanceHealthHeaderWidget extends ConsumerWidget {
   const FinanceHealthHeaderWidget({super.key});
 
@@ -27,16 +26,16 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
         String statusText;
         switch (status) {
           case 'warning':
-            statusColor = const Color(0xFFFBBF24); // Amber
+            statusColor = const Color(0xFFFBBF24);
             statusText = 'Warning!';
             break;
           case 'critical':
           case 'danger':
-            statusColor = const Color(0xFFF87171); // Light Red
+            statusColor = const Color(0xFFF87171);
             statusText = 'Critical!';
             break;
           default:
-            statusColor = const Color(0xFF34D399); // Emerald / Light Green
+            statusColor = const Color(0xFF34D399);
             statusText = l10n.financialHealthGood;
         }
 
@@ -200,7 +199,6 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
   }
 }
 
-// ─── AI Insight Standalone Card (Placed in Main Dashboard Body) ───────────────
 class AiInsightCard extends ConsumerWidget {
   const AiInsightCard({super.key});
 
@@ -223,7 +221,7 @@ class AiInsightCard extends ConsumerWidget {
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // ─── Background Watermark Mascot ──────────────────────────────────
+
           Positioned(
             right: -20,
             bottom: -16,
@@ -233,7 +231,6 @@ class AiInsightCard extends ConsumerWidget {
             ),
           ),
 
-          // ─── Content ───────────────────────────────────────────────────────
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -271,7 +268,7 @@ class AiInsightCard extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              // Action Button
+
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
@@ -454,7 +451,6 @@ class AiInsightCard extends ConsumerWidget {
   }
 }
 
-// ─── Custom Gauge Arc Painter ─────────────────────────────────────────────────
 class _GaugePainter extends CustomPainter {
   final double progress;
   final Color color;
@@ -502,7 +498,6 @@ class _GaugePainter extends CustomPainter {
   }
 }
 
-// ─── Custom Sparkline Painter ────────────────────────────────────────────────
 class _SparklinePainter extends CustomPainter {
   final Color color;
 

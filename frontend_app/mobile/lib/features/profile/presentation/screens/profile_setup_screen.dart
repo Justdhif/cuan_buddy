@@ -56,18 +56,15 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   AppLocalizations get l10n => AppLocalizations.of(context);
   final _formKey = GlobalKey<FormState>();
 
-  // Navigation state
-  int _currentStep = 1; // 1: Profile Details, 2: WhatsApp Number & OTP
+  int _currentStep = 1;
   late final PageController _pageController;
 
-  // State Variables
   String _fullName = '';
   String _username = '';
   String _bio = '';
   DateTime? _selectedDate;
   String? _selectedGender;
 
-  // Phone OTP State
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   bool _isSendingOtp = false;
@@ -75,14 +72,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _isVerifying = false;
   bool _isPhoneVerified = false;
 
-  // Avatar State
   String? _selectedAvatarUrl;
   File? _selectedLocalFile;
   late List<String> _avatarOptions;
 
   bool _isSaving = false;
 
-  // Wallet state variables
   final _walletNameController = TextEditingController(text: 'Main Wallet');
   String _walletType = 'cash';
   String _walletCurrency = 'IDR';
@@ -100,7 +95,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     const Color(0xFF7E57C2),
   ];
 
-  // Countdown Timer
   int _secondsRemaining = 0;
   Timer? _timer;
 
@@ -145,11 +139,10 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  // ─── Timer Logic ──────────────────────────────────────────────────────────
   void _startTimer() {
     _timer?.cancel();
     setState(() {
-      _secondsRemaining = 300; // 5 minutes
+      _secondsRemaining = 300;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsRemaining > 0) {
@@ -168,7 +161,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  // ─── Avatar Bottom Sheet ───────────────────────────────────────────────────
   Future<void> _pickAvatarAndCrop() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(
@@ -229,18 +221,16 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ── Judul ──
+
                     Text(
                       l10n.profilePhoto,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 24),
 
-                    // ── Preview avatar ──
                     Center(child: buildAvatarPreview()),
                     const SizedBox(height: 24),
 
-                    // ── Section: Pilih Avatar ──
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
@@ -297,7 +287,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ── Upload foto ──
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -322,7 +311,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ── Tombol Pilih / Done ──
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -351,7 +339,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  // ─── Input Bottom Sheets ───────────────────────────────────────────────────
   void _showEditNameSheet() {
     final controller = TextEditingController(text: _fullName);
     final formKey = GlobalKey<FormState>();
@@ -536,7 +523,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  // ─── Birthdate Logic ───────────────────────────────────────────────────────
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -562,8 +548,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-
-  // ─── Gender Bottom Sheet ───────────────────────────────────────────────────
   Widget _buildGenderOption({
     required String value,
     required String label,
@@ -700,7 +684,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
-  // ─── OTP / Phone Verification Logic ────────────────────────────────────────
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
     if (phone.isEmpty) {
@@ -793,7 +776,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  // ─── Save & Submit ─────────────────────────────────────────────────────────
   Future<void> _saveProfile() async {
     if (_fullName.trim().isEmpty) {
       AppSnackbar.show(
@@ -842,7 +824,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         phoneNumber: _isPhoneVerified ? _phoneController.text.trim() : null,
       );
 
-      // Create Main Wallet
       final walletName = _walletNameController.text.trim();
       final colorCode = _colorToHex(_walletColor);
       final walletNotifier = ref.read(walletsProvider.notifier);
@@ -861,7 +842,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         throw Exception(walletError);
       }
 
-      // Save base currency in Preferences
       final prefs = ref.read(preferencesServiceProvider);
       await prefs.setCurrencyCode(_walletCurrency);
       await prefs.setProfileComplete(true);
@@ -959,7 +939,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     }
   }
 
-  // ─── Info ListTile Builder ─────────────────────────────────────────────────
   Widget _buildInfoTile({
     required IconData icon,
     required String title,
@@ -1018,17 +997,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hintColor = isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight;
     final fallback = l10n.notSet;
-    
-    // Eagerly watch unlocked borders provider
+
     ref.watch(unlockedBordersProvider);
 
-    // Formatting date display
     String birthdateDisplay = fallback;
     if (_selectedDate != null) {
       birthdateDisplay = '${_selectedDate!.day} ${l10n.shortMonths[_selectedDate!.month - 1]} ${_selectedDate!.year}';
     }
 
-    // Gender display
     String genderDisplay = fallback;
     if (_selectedGender == 'male') {
       genderDisplay = l10n.genderMale;
@@ -1053,7 +1029,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       ),
     );
 
-    // ─── Dynamic Button Logic (Matches Save Button in transaction_form_screen) ───
     final bool isNameMissing = _fullName.trim().isEmpty;
     final bool isUsernameMissing = _username.trim().isEmpty;
 
@@ -1092,7 +1067,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         isButtonEnabled = true;
       }
     } else {
-      // Step 3
+
       buttonText = l10n.saveAndFinishOnboarding;
       buttonAction = _isSaving ? null : _saveProfile;
       isButtonEnabled = _walletNameController.text.trim().isNotEmpty;
@@ -1118,7 +1093,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      // ─── Premium Dynamic Bottom Navigation Bar ───
+
       bottomNavigationBar: GestureDetector(
         onTap: buttonAction,
         child: Container(
@@ -1160,7 +1135,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top step progress indicator (statically placed at the top of the body)
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: Row(
@@ -1193,7 +1168,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Horizontal Slide PageView
             Expanded(
               child: Form(
                 key: _formKey,
@@ -1312,7 +1286,7 @@ class _DecimalPrecisionSheetState extends State<_DecimalPrecisionSheet> {
           _typedStr = next.isEmpty ? null : next;
         }
       } else if (key == ',') {
-        // Precision is integer only, ignore
+
       } else {
         if (_typedStr == null) {
           _typedStr = key == '0' ? '0' : key;

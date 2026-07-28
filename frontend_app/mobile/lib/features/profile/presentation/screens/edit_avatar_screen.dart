@@ -196,7 +196,7 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen> {
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                // Preview Avatar
+
                 Center(
                   child: Hero(
                     tag: 'avatar',
@@ -212,7 +212,6 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Action Upload Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -239,7 +238,6 @@ class _EditAvatarScreenState extends ConsumerState<EditAvatarScreen> {
                 const Divider(),
                 const SizedBox(height: 16),
 
-                // Preset Avatars Selector
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(

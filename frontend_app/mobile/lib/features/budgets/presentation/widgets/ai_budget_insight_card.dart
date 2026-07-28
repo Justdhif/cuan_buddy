@@ -23,7 +23,7 @@ class AiBudgetInsightCard extends ConsumerWidget {
   }
 
   Widget _buildMarquee(BuildContext context, String insight, bool isDark) {
-    // Clean text: Marquee requires a single line, so replace newlines with bullets
+
     final cleanInsight = insight.replaceAll(RegExp(r'\n+'), '   •   ');
 
     return Container(

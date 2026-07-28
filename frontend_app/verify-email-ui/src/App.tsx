@@ -17,8 +17,7 @@ function App() {
         if (response.ok) {
           setStatus("success");
           setMessage(data.message || "Your account has been successfully verified!");
-          
-          // Auto-login flow: redirect back to the app with the tokens
+
           if (data.accessToken && data.refreshToken) {
             setTimeout(() => {
               window.location.href = `cuanbuddy://verify?accessToken=${data.accessToken}&refreshToken=${data.refreshToken}`;
@@ -34,7 +33,6 @@ function App() {
       }
     };
 
-    // Add artificial delay for aesthetic loading effect
     setTimeout(() => {
       verifyEmail();
     }, 1500);
@@ -42,24 +40,20 @@ function App() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-background-dark font-sans text-text-primary-dark relative overflow-hidden px-4">
-      {/* Premium Dynamic Background Effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-primary/20 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-secondary/10 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDuration: '6s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-160 h-160 bg-primary/20 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDuration: '4s' }} />
+      <div className="absolute bottom-[-10%] right-[-10%] w-160 h-160 bg-secondary/10 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDuration: '6s' }} />
 
-      {/* Main Glassmorphism Container */}
       <div className="relative w-full max-w-md backdrop-blur-2xl bg-surface-dark/60 border border-border-dark/50 rounded-3xl p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col items-center text-center transition-all duration-700 ease-out transform translate-y-0 hover:shadow-[0_20px_60px_rgba(167,139,250,0.1)]">
-        
-        {/* Transparent Logo Icon */}
+
         <div className="mb-6 relative group">
           <div className="absolute inset-0 bg-primary blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 rounded-full"></div>
-          <img 
-            src="/app_icon_transparent.png" 
-            alt="CuanBuddy Logo" 
+          <img
+            src="/app_icon_transparent.png"
+            alt="CuanBuddy Logo"
             className="w-20 h-20 md:w-24 md:h-24 object-contain relative z-10 drop-shadow-[0_0_15px_rgba(167,139,250,0.4)] transition-transform duration-500 hover:scale-105"
           />
         </div>
 
-        {/* Status Indicators */}
         <div className="mb-8 relative h-16 flex items-center justify-center">
           {status === "loading" && (
             <div className="flex flex-col items-center">
@@ -72,7 +66,6 @@ function App() {
               <svg className="w-7 h-7 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
               </svg>
-              {/* Sparkle effects */}
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-success rounded-full animate-ping" />
               <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-success rounded-full animate-ping delay-150" />
             </div>
@@ -95,8 +88,7 @@ function App() {
           )}
         </div>
 
-        {/* Content */}
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-gradient-to-r from-white via-primary-light to-secondary-light drop-shadow-sm">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-3 text-transparent bg-clip-text bg-linear-to-r from-white via-primary-light to-secondary-light drop-shadow-sm">
           {status === 'loading' && 'Authenticating...'}
           {status === 'success' && 'Verification Complete'}
           {status === 'error' && 'Verification Failed'}
@@ -125,7 +117,6 @@ function App() {
           </div>
         )}
 
-        {/* Decorative footer */}
         <div className="mt-10 flex items-center justify-center space-x-2 text-xs text-text-secondary-dark/60 font-semibold tracking-widest uppercase">
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>

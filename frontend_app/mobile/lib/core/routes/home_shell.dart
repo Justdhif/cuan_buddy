@@ -32,7 +32,7 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _fadeController.forward(from: 1.0); // Start fully visible
+    _fadeController.forward(from: 1.0);
   }
 
   @override
@@ -41,7 +41,7 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
     if (widget.navigationShell.currentIndex != oldWidget.navigationShell.currentIndex) {
       final targetIndex = widget.navigationShell.currentIndex;
       if (!_isPageChangingFromSwipe) {
-        // Page changed programmatically or via nav click: jump immediately and trigger fade animation
+
         if (_pageController.hasClients) {
           _pageController.jumpToPage(targetIndex);
         }
@@ -93,7 +93,6 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
   }
 }
 
-// ─── Floating Telegram-Style Capsule Bottom Navigation Bar ─────────────────────
 class _CuanBuddyNavBar extends ConsumerWidget {
   const _CuanBuddyNavBar({
     required this.currentIndex,
@@ -185,7 +184,7 @@ class _CuanBuddyNavBar extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Active Pill Container behind icon (Telegram style)
+
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 220),
                             curve: Curves.easeOutCubic,

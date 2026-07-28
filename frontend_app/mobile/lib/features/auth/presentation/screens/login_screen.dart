@@ -77,7 +77,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const SizedBox(height: 52),
 
-              // ─── App Icon ─────────────────────────────────────────
               Center(
                 child: Container(
                   width: 90,
@@ -105,7 +104,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               const SizedBox(height: 36),
 
-              // ─── Heading ─────────────────────────────────────────
               Text(
                 l10n.welcomeBack,
                 style: AppTypography.textTheme.headlineMedium?.copyWith(
@@ -124,12 +122,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              // ─── Form ─────────────────────────────────────────────
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Email
+
                     _DarkTextField(
                       controller: _emailController,
                       hint: l10n.emailHint,
@@ -150,7 +147,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password
                     _DarkTextField(
                       controller: _passwordController,
                       hint: l10n.passwordHint,
@@ -184,7 +180,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     const SizedBox(height: 24),
 
-                    // Login button
                     AppButton(
                       label: l10n.loginButton,
                       onPressed: _login,
@@ -225,7 +220,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-// ─── Reusable dark-themed text field ─────────────────────────────────────────
 class _DarkTextField extends StatefulWidget {
   const _DarkTextField({
     required this.controller,

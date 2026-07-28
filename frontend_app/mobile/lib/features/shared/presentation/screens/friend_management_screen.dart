@@ -157,7 +157,7 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
                               final String avatarUrl = match['avatar'] ?? '';
                               final String name = match['fullName'] ?? match['username'] ?? match['email'];
                               final String? rawUsername = match['username'];
-                              
+
                               final String status = match['friendshipStatus'] ?? 'none';
                               final bool isSender = match['isSender'] ?? false;
 
@@ -211,8 +211,6 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
   }
 }
 
-// ─── Friend List Skeleton ──────────────────────────────────────────────────────
-/// Shimmer-style placeholder rows while search results are loading.
 class _FriendListSkeleton extends StatefulWidget {
   const _FriendListSkeleton({required this.isDark});
   final bool isDark;
@@ -271,7 +269,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
               ),
               child: Row(
                 children: [
-                  // Avatar circle placeholder
+
                   Container(
                     width: 52,
                     height: 52,
@@ -285,7 +283,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Username placeholder
+
                         Container(
                           height: 11,
                           width: 80,
@@ -295,7 +293,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
                           ),
                         ),
                         const SizedBox(height: 6),
-                        // Full name placeholder
+
                         Container(
                           height: 15,
                           width: 140,
@@ -308,7 +306,7 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Action button placeholder
+
                   Container(
                     width: 72,
                     height: 32,
@@ -326,4 +324,3 @@ class _FriendListSkeletonState extends State<_FriendListSkeleton>
     );
   }
 }
-

@@ -13,7 +13,7 @@ class CustomEmojiPickerSheet {
       context: context,
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         return SizedBox(
           height: 350,
           child: Column(

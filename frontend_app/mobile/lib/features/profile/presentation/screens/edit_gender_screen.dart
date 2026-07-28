@@ -7,7 +7,7 @@ import '../providers/profile_provider.dart';
 
 class EditGenderScreen extends ConsumerStatefulWidget {
   const EditGenderScreen({super.key, required this.initialGender});
-  final String? initialGender; // 'male', 'female', or null
+  final String? initialGender;
 
   @override
   ConsumerState<EditGenderScreen> createState() => _EditGenderScreenState();

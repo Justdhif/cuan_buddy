@@ -10,8 +10,7 @@ final analyticsSummaryProvider =
   final dio = ref.watch(dioClientProvider).dio;
   final currencyService = ref.watch(currencyServiceProvider);
 
-  // We need to get the user's base currency to convert transactions properly
-  String baseCurrency = 'IDR'; // fallback
+  String baseCurrency = 'IDR';
   try {
     final profileRes = await dio.get('/profiles/me');
     if (profileRes.data != null && profileRes.data['currency'] != null) {
@@ -19,7 +18,6 @@ final analyticsSummaryProvider =
     }
   } catch (_) {}
 
-  // Fetch all transactions to calculate the accurate converted summary
   Map<String, dynamic> queryParams = {'limit': 10000};
 
   final txRes = await dio.get('/transactions', queryParameters: queryParams);
@@ -66,7 +64,7 @@ final financialHealthProvider =
 
 final recentTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   final dio = ref.watch(dioClientProvider).dio;
-  
+
   Map<String, dynamic> queryParams = {'limit': 5};
 
   final response = await dio.get('/transactions', queryParameters: queryParams);

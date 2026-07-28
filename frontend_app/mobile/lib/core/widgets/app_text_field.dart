@@ -88,7 +88,6 @@ class _AppTextFieldState extends State<AppTextField> {
   }
 }
 
-// ─── Password Strength Indicator ─────────────────────────────────────────────
 class PasswordStrengthIndicator extends StatelessWidget {
   const PasswordStrengthIndicator({super.key, required this.password});
 

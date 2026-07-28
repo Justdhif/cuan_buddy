@@ -9,8 +9,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../data/services/backup_worker.dart';
 import '../providers/profile_provider.dart';
 
-/// Bottom sheet for restore flow.
-/// Designed to match BackupSheet with file selection, restore button, sync options, and file list.
 class RestoreSheet extends ConsumerStatefulWidget {
   const RestoreSheet({
     super.key,
@@ -99,7 +97,7 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
 
   Future<void> _deleteFile(BackupFile file) async {
     ref.read(backupFilesProvider.notifier).setDeleting(file.id, true);
-    // Brief delay to show animation
+
     await Future.delayed(const Duration(milliseconds: 400));
     ref.read(backupFilesProvider.notifier).removeFile(file.id);
   }
@@ -148,7 +146,7 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ─────────────────────────────────────────────
+
               const SizedBox(height: 16),
               Text(
                 l10n.restoreData,
@@ -166,7 +164,6 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
               ),
               const SizedBox(height: 24),
 
-              // ── File Selection Card ─────────────────────────────────
               GestureDetector(
                 onTap: _selectedFilePath != null ? null : _pickFile,
                 child: AnimatedContainer(
@@ -261,7 +258,6 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
               ),
               const SizedBox(height: 24),
 
-              // ── Restore Button ──────────────────────────────────────
               AppButton(
                 label: _isRestoring ? (l10n.languageCode == 'id' ? 'Memulihkan...' : 'Restoring...') : l10n.restore,
                 onPressed: _selectedFilePath == null || _isRestoring ? null : _doRestore,
@@ -270,7 +266,6 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
               ),
               const SizedBox(height: 32),
 
-              // ── Backup File List Header ─────────────────────────────
               Row(
                 children: [
                   Expanded(
@@ -297,7 +292,6 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
               ),
               const SizedBox(height: 12),
 
-              // ── File List ───────────────────────────────────────────
               if (files.isEmpty)
                 _EmptyBackupList(isDark: isDark, l10n: l10n)
               else
@@ -321,7 +315,6 @@ class _RestoreSheetState extends ConsumerState<RestoreSheet> {
   }
 }
 
-// ─── Backup File Item ─────────────────────────────────────────────────────────
 class _BackupFileItem extends StatelessWidget {
   const _BackupFileItem({
     required this.file,
@@ -360,7 +353,7 @@ class _BackupFileItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // ── File icon ─────────────────────────────────────────
+
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -382,7 +375,7 @@ class _BackupFileItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // ── Label & filename ──────────────────────────────────
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,16 +403,16 @@ class _BackupFileItem extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // ── Sync button ───────────────────────────────────────
+
             _ActionBtn(
               isDark: isDark,
-              isLoading: file.isDownloading, // reuse downloading animation
+              isLoading: file.isDownloading,
               icon: Icons.sync_rounded,
               color: AppColors.secondary,
               onTap: onSync,
             ),
             const SizedBox(width: 6),
-            // ── Delete button ─────────────────────────────────────
+
             _ActionBtn(
               isDark: isDark,
               isLoading: file.isDeleting,
@@ -434,7 +427,6 @@ class _BackupFileItem extends StatelessWidget {
   }
 }
 
-// ─── Small icon action button with loading state ──────────────────────────────
 class _ActionBtn extends StatefulWidget {
   const _ActionBtn({
     required this.isDark,
@@ -492,7 +484,6 @@ class _ActionBtnState extends State<_ActionBtn> {
   }
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
 class _EmptyBackupList extends StatelessWidget {
   const _EmptyBackupList({required this.isDark, required this.l10n});
   final bool isDark;

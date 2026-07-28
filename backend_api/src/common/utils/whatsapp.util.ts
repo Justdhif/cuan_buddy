@@ -5,13 +5,6 @@ export interface SendWaOptions {
   imageUrl?: string;
 }
 
-/**
- * Sends a WhatsApp message via Fonnte API with a standardized format:
- * - Image (using default fallback if none provided)
- * - Bold Title
- * - Description
- * - Footer with App Name & Version
- */
 export async function sendWhatsAppMessage({
   phone,
   title,
@@ -23,7 +16,6 @@ export async function sendWhatsAppMessage({
     return { success: false, reason: 'FONNTE_API_KEY is not defined in environment.' };
   }
 
-  // Application Name + Version
   const appVersion = process.env.CUAN_BUDDY_VERSION || '1.0.0';
   const appFooter = `CuanBuddy v${appVersion}`;
 

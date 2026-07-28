@@ -8,18 +8,18 @@ export default function SharedFinanceSection() {
     <section className="py-24 bg-canvas-soft dark:bg-brand-dark-900/40 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Left Text / Info Column - 6 cols */}
+
+          {}
           <div className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-bg-subdued-hover/40 border border-primary/20 text-primary-deep dark:text-primary-soft text-[11px] font-semibold tracking-wider uppercase">
               <Users2 size={12} />
               Fitur Unggulan • Featured Feature
             </div>
-            
+
             <h2 className="font-display-xl text-ink dark:text-canvas text-3xl sm:text-4xl leading-tight">
               {t('shared_finance.title')}
             </h2>
-            
+
             <p className="text-[16px] text-ink-secondary dark:text-canvas-soft/80 leading-relaxed font-light">
               {t('shared_finance.subtitle')}
             </p>
@@ -41,7 +41,7 @@ export default function SharedFinanceSection() {
           {/* Right Visual Room Mockup Column - 6 cols */}
           <div className="lg:col-span-6">
             <div className="bg-canvas dark:bg-[#0d0e26] border border-hairline dark:border-hairline/10 rounded-[24px] p-6 shadow-level-2 transition-all duration-300 hover:shadow-xl">
-              
+
               {/* Room Card Header */}
               <div className="flex justify-between items-center border-b border-hairline dark:border-hairline/10 pb-4 mb-6">
                 <div className="flex items-center gap-3">

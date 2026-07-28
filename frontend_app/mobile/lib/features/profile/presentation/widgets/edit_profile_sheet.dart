@@ -157,7 +157,7 @@ class _EditProfileSheetState extends ConsumerState<EditProfileSheet> {
                   label: 'Email',
                   hint: 'Email address',
                   readOnly: true,
-                  // We add a little helper text or visual cue that it's read-only
+
                 ),
                 const SizedBox(height: 8),
                 Text(

@@ -9,15 +9,12 @@ class PreferencesService {
 
   final SharedPreferences _prefs;
 
-  // ─── Theme ────────────────────────────────────────────────────────────────────
-  /// Raw stored string for AppThemeMode (includes 'sunrise').
   String? get appThemeModeString => _prefs.getString(AppConstants.themeModeKey);
 
   Future<void> setAppThemeMode(AppThemeMode mode) async {
     await _prefs.setString(AppConstants.themeModeKey, mode.toStorageString());
   }
 
-  // ─── Accent Color ───────────────────────────────────────────────────────────
   Color get accentColor {
     final value = _prefs.getString(AppConstants.accentColorKey);
     return AppColors.colorFromHex(
@@ -30,7 +27,6 @@ class PreferencesService {
     await _prefs.setString(AppConstants.accentColorKey, _colorToHex(color));
   }
 
-  // ─── Icon Shape ───────────────────────────────────────────────────────────────
   CategoryIconShape get categoryIconShape {
     final value = _prefs.getString(AppConstants.categoryIconShapeKey);
     switch (value) {
@@ -62,7 +58,6 @@ class PreferencesService {
     await _prefs.setString(AppConstants.categoryIconShapeKey, value);
   }
 
-  // ─── Currency ────────────────────────────────────────────────────────────────
   String get currencyCode =>
       _prefs.getString(AppConstants.currencyCodeKey) ??
       AppConstants.defaultCurrency;
@@ -71,7 +66,6 @@ class PreferencesService {
     await _prefs.setString(AppConstants.currencyCodeKey, code);
   }
 
-  // ─── Language ─────────────────────────────────────────────────────────────────
   String get languageCode =>
       _prefs.getString(AppConstants.languageKey) ??
       AppConstants.defaultLanguage;
@@ -80,7 +74,6 @@ class PreferencesService {
     await _prefs.setString(AppConstants.languageKey, code);
   }
 
-  // ─── Notifications ───────────────────────────────────────────────────────────
   bool get notificationsEnabled =>
       _prefs.getBool(AppConstants.notificationsEnabledKey) ?? true;
 
@@ -88,7 +81,6 @@ class PreferencesService {
     await _prefs.setBool(AppConstants.notificationsEnabledKey, enabled);
   }
 
-  // ─── Onboarding Flags ────────────────────────────────────────────────────────
   bool get profileComplete =>
       _prefs.getBool(AppConstants.profileCompleteKey) ?? false;
 

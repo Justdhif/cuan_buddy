@@ -86,8 +86,8 @@ export const rooms = pgTable('rooms', {
   colorCode: text('color_code').default('#6C63FF'),
   description: text('description'),
   onlyOwnerCanInvite: boolean('only_owner_can_invite').default(true).notNull(),
-  inviteCode: text('invite_code').unique(),        // null = private, value = public (joinable via code)
-  inviteCodeExpiresAt: timestamp('invite_code_expires_at'), // null = no expiry set yet
+  inviteCode: text('invite_code').unique(),
+  inviteCodeExpiresAt: timestamp('invite_code_expires_at'),
   createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
@@ -96,7 +96,7 @@ export const roomMembers = pgTable('room_members', {
   id: uuid('id').primaryKey().defaultRandom(),
   roomId: uuid('room_id').notNull().references(() => rooms.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text('role').default('member').notNull(), // owner, member
+  role: text('role').default('member').notNull(),
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
 });
 
@@ -130,9 +130,9 @@ export const budgets = pgTable('budgets', {
   categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'cascade' }),
   walletId: uuid('wallet_id').references(() => wallets.id, { onDelete: 'set null' }),
   limitAmount: decimal('limit_amount', { precision: 19, scale: 2 }).notNull(),
-  periodCount: integer('period_count').default(1).notNull(), // how many months this budget spans
-  startDay: integer('start_day').default(1).notNull(),       // which day of month the period starts
-  monthYear: text('month_year').notNull(), // format YYYY-MM (start month)
+  periodCount: integer('period_count').default(1).notNull(),
+  startDay: integer('start_day').default(1).notNull(),
+  monthYear: text('month_year').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -148,7 +148,7 @@ export const savingsGoals = pgTable('savings_goals', {
   targetAmount: decimal('target_amount', { precision: 19, scale: 2 }).notNull(),
   currentAmount: decimal('current_amount', { precision: 19, scale: 2 }).default('0').notNull(),
   targetDate: timestamp('target_date'),
-  status: text('status').default('in_progress'), // in_progress, completed
+  status: text('status').default('in_progress'),
   isPin: boolean('is_pin').default(false).notNull(),
   link: text('link'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -169,7 +169,7 @@ export const backupSettings = pgTable('backup_settings', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
   isEnabled: boolean('is_enabled').default(false).notNull(),
-  interval: text('interval').default('7d').notNull(), // '24h', '7d', '1m'
+  interval: text('interval').default('7d').notNull(),
   lastBackupAt: timestamp('last_backup_at'),
   nextBackupAt: timestamp('next_backup_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -182,5 +182,3 @@ export const feedbacks = pgTable('feedbacks', {
   message: text('message').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
-
-

@@ -156,4 +156,3 @@ export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
     references: [users.id],
   }),
 }));
-

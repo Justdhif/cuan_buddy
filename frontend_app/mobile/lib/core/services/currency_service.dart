@@ -22,7 +22,6 @@ class CurrencyService {
     final lastFetch = prefs.getString(dateKey);
     final cachedRates = prefs.getString(cacheKey);
 
-    // If we have cached rates and they are less than 24 hours old, use them
     if (lastFetch != null && cachedRates != null) {
       final fetchDate = DateTime.parse(lastFetch);
       if (DateTime.now().difference(fetchDate).inHours < 24) {
@@ -30,21 +29,19 @@ class CurrencyService {
       }
     }
 
-    // Otherwise, fetch from API
     try {
       final response =
           await _dio.get('https://open.er-api.com/v6/latest/$baseCurrency');
       if (response.statusCode == 200 && response.data['result'] == 'success') {
         final rates = response.data['rates'] as Map<String, dynamic>;
 
-        // Cache the result
         await prefs.setString(cacheKey, jsonEncode(rates));
         await prefs.setString(dateKey, DateTime.now().toIso8601String());
 
         return rates;
       }
     } catch (e) {
-      // If network fails, return cached rates if available
+
       if (cachedRates != null) {
         return jsonDecode(cachedRates);
       }
@@ -56,21 +53,18 @@ class CurrencyService {
       double amount, String fromCurrency, String toCurrency) async {
     if (fromCurrency == toCurrency) return amount;
 
-    // We fetch rates based on the `fromCurrency`
     final rates = await getRates(fromCurrency);
     if (rates != null && rates.containsKey(toCurrency)) {
       final rate = (rates[toCurrency] as num).toDouble();
       return amount * rate;
     }
 
-    // If exact base fails, try reverse
     final reverseRates = await getRates(toCurrency);
     if (reverseRates != null && reverseRates.containsKey(fromCurrency)) {
       final reverseRate = (reverseRates[fromCurrency] as num).toDouble();
       return amount / reverseRate;
     }
 
-    // If both fail, return original amount as fallback
     return amount;
   }
 }

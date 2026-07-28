@@ -1,4 +1,4 @@
-// Auth state using Dart 3 sealed classes (no code generation needed)
+
 sealed class AuthState {
   const AuthState();
 }

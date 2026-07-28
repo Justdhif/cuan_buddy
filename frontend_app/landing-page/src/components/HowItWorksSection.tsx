@@ -20,7 +20,7 @@ export default function HowItWorksSection() {
         </div>
 
         <div className="relative pt-10">
-          {/* Stripe-style horizontal connector line (desktop only) */}
+          {}
           <div className="hidden md:block absolute top-[44px] left-[10%] right-[10%] h-[1px] bg-hairline"></div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">

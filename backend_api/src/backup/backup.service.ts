@@ -12,9 +12,6 @@ export class BackupService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  // ─────────────────────────────────────────────
-  // SETTINGS
-  // ─────────────────────────────────────────────
   async getSettings(userId: string) {
     let settings = await this.db.query.backupSettings.findFirst({
       where: eq(backupSettings.userId, userId),
@@ -32,7 +29,7 @@ export class BackupService {
 
   async updateSettings(userId: string, isEnabled?: boolean, interval?: '24h' | '7d' | '1m') {
     let settings = await this.getSettings(userId);
-    
+
     const updateData: any = { updatedAt: new Date() };
     if (isEnabled !== undefined) updateData.isEnabled = isEnabled;
     if (interval !== undefined) updateData.interval = interval;
@@ -60,11 +57,8 @@ export class BackupService {
     return next;
   }
 
-  // ─────────────────────────────────────────────
-  // EXPORT (SQL Database Dump)
-  // ─────────────────────────────────────────────
   async exportDatabaseSql(userId: string, res: Response) {
-    // Fetch all user records
+
     const userCategories = await this.db.query.categories.findMany({ where: eq(categories.userId, userId) });
     const userWallets = await this.db.query.wallets.findMany({ where: eq(wallets.userId, userId) });
     const userSavingsGoals = await this.db.query.savingsGoals.findMany({ where: eq(savingsGoals.userId, userId) });
@@ -182,7 +176,7 @@ export class BackupService {
   // ─────────────────────────────────────────────
   async processScheduledBackups() {
     const now = new Date();
-    
+
     const dueBackups = await this.db.query.backupSettings.findMany({
       where: and(
         eq(backupSettings.isEnabled, true),
@@ -211,15 +205,15 @@ export class BackupService {
   async markBackupCompleted(userId: string) {
     const settings = await this.getSettings(userId);
     if (!settings.isEnabled) return settings;
-    
+
     const now = new Date();
     const nextDate = this.calculateNextBackupDate(settings.interval as any);
-    
+
     const [updated] = await this.db.update(backupSettings)
       .set({ lastBackupAt: now, nextBackupAt: nextDate, updatedAt: new Date() })
       .where(eq(backupSettings.userId, userId))
       .returning();
-      
+
     return updated;
   }
 }

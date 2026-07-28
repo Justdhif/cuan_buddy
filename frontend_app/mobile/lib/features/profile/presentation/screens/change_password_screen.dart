@@ -57,9 +57,8 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
           type: SnackbarType.success,
         );
 
-        // Log out immediately upon success
         ref.read(authNotifierProvider.notifier).logout();
-        // Go Router will naturally redirect to login because of auth state change
+
       }
     } catch (e) {
       if (mounted) {
@@ -112,7 +111,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ─── Old Password ─────────────────────────────────────────────
               AppTextField(
                 controller: _oldPasswordController,
                 label: l10n.oldPassword,
@@ -127,7 +125,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ─── Forgot Password Link ─────────────────────────────────────
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
@@ -143,7 +140,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ─── New Password ─────────────────────────────────────────────
               AppTextField(
                 controller: _newPasswordController,
                 label: l10n.newPassword,
@@ -157,7 +153,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ─── Confirm New Password ─────────────────────────────────────
               AppTextField(
                 controller: _confirmPasswordController,
                 label: l10n.confirmPassword,
@@ -175,7 +170,6 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
               ),
               const SizedBox(height: 40),
 
-              // ─── Submit Button ────────────────────────────────────────────
               AppButton(
                 label: l10n.changePassword,
                 onPressed: _submit,

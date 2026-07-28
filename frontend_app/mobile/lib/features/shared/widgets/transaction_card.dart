@@ -33,7 +33,6 @@ class TransactionCard extends ConsumerWidget {
   final bool hideSavingsGoal;
   final EdgeInsetsGeometry contentPadding;
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -74,14 +73,14 @@ class TransactionCard extends ConsumerWidget {
         ? AppColors.colorFromHex(category['colorCode'] as String?,
             fallback: defaultCatColor)
         : defaultCatColor;
-        
+
     final walletName = wallet is Map ? wallet['name'] as String? : null;
     final walletEmoji = wallet is Map ? wallet['emojiIcon'] as String? ?? '💼' : '💼';
     final walletColor = wallet is Map ? AppColors.colorFromHex(wallet['colorCode'] as String?, fallback: AppColors.primary) : AppColors.primary;
-    
+
     final savingsEmoji = savingsGoal is Map ? savingsGoal['emojiIcon'] as String? ?? '🎯' : '🎯';
     final savingsColor = savingsGoal is Map ? AppColors.colorFromHex(savingsGoal['colorCode'] as String?, fallback: AppColors.success) : AppColors.success;
-    
+
     final iconShape = ref.watch(categoryIconShapeProvider);
 
     final baseAmountRaw = tx['baseAmount'];
@@ -114,7 +113,7 @@ class TransactionCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ─── Top Row: Icon | Title + Timestamp | Amount ──────────────────
+
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -133,7 +132,7 @@ class TransactionCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
-                // Middle: Title & Timestamp
+
                 Expanded(
                   child: GestureDetector(
                     onTap: onTitleTap,
@@ -168,7 +167,7 @@ class TransactionCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                // Far Right: Amount
+
                 GestureDetector(
                   onTap: onAmountTap,
                   behavior: HitTestBehavior.opaque,
@@ -229,7 +228,6 @@ class TransactionCard extends ConsumerWidget {
               ],
             ),
 
-            // ─── Bottom Row: Badges (Horizontal Scrollable List) ─────────────
             if (hasBadges) ...[
               const SizedBox(height: 8),
               Padding(

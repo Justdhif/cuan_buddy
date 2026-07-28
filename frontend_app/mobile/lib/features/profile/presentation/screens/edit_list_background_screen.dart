@@ -97,7 +97,7 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
       body: SafeArea(
         child: Column(
           children: [
-            // Preview section
+
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -207,10 +207,10 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
           itemBuilder: (context, index) {
             final wp = kAllWallpapers[index];
             final isNoWallpaper = wp.id == 'none';
-            final isSelected = !isNoWallpaper && _selectedListBackground == wp.asset || 
+            final isSelected = !isNoWallpaper && _selectedListBackground == wp.asset ||
                                isNoWallpaper && (_selectedListBackground == null || _selectedListBackground!.isEmpty);
             final isUnlocked = wp.isGlobal || unlockedBorders.contains(wp.id);
-            
+
             return GestureDetector(
               onTap: () {
                 if (!isUnlocked) {
@@ -325,4 +325,3 @@ class _EditListBackgroundScreenState extends ConsumerState<EditListBackgroundScr
     );
   }
 }
-

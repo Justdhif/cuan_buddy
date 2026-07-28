@@ -32,10 +32,10 @@ class TransactionFormScreen extends ConsumerStatefulWidget {
     this.lockedSavingsGoal = false,
   });
 
-  final String initialType; // 'income' or 'expense'
+  final String initialType;
   final Map<String, dynamic>? initialTransaction;
-  final String? initialSavingsGoalId; // pre-select a savings goal
-  final bool lockedSavingsGoal; // cannot be changed when true
+  final String? initialSavingsGoalId;
+  final bool lockedSavingsGoal;
 
   @override
   ConsumerState<TransactionFormScreen> createState() =>
@@ -65,7 +65,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     _type = widget.initialType;
     _titleController.addListener(_onFormFieldChanged);
     _amountController.addListener(_onFormFieldChanged);
-    // Pre-select a locked savings goal if provided
+
     if (widget.initialSavingsGoalId != null) {
       _selectedSavingsGoalId = widget.initialSavingsGoalId;
     }
@@ -178,7 +178,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         await dio.post('/transactions', data: payload);
       }
 
-      // Invalidate all relevant providers to refresh data
       ref.invalidate(allTransactionsProvider);
       ref.invalidate(recentTransactionsProvider);
       ref.invalidate(analyticsSummaryProvider);
@@ -389,24 +388,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final iconShape = ref.watch(categoryIconShapeProvider);
     final walletsState = ref.watch(walletsProvider);
 
-    // Auto-select first wallet if none selected
     if (widget.initialTransaction == null && _selectedWalletId == null && walletsState is AsyncData && walletsState.value != null && walletsState.value!.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
          if (mounted) setState(() => _selectedWalletId = walletsState.value!.first['id']);
       });
     }
 
-    // Auto-update currency based on wallet
     String? currentWalletCurrency;
     if (_selectedWalletId != null && walletsState is AsyncData && walletsState.value != null) {
        try {
          final wallet = walletsState.value!.firstWhere((w) => w['id'] == _selectedWalletId);
          currentWalletCurrency = wallet['currency'];
-       } catch (e) {
-         // Ignore if wallet is not found
-       }
+       } catch (_) {}
     }
-    
+
     if (currentWalletCurrency != null && currentWalletCurrency != _selectedCurrency) {
        WidgetsBinding.instance.addPostFrameCallback((_) {
          if (mounted) setState(() => _selectedCurrency = currentWalletCurrency!);
@@ -490,7 +485,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Top Integrated Block (scrolls with page) ─────────────────
+
                 Container(
                   color: isDark ? const Color(0xFF232838) : AppColors.primary.withValues(alpha: 0.05),
                   child: Column(
@@ -532,7 +527,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           final amount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
                           final categoryEmoji = selectedCategoryObj?['emojiIcon'] as String?;
                           final categoryColorHex = selectedCategoryObj?['colorCode'] as String?;
-                          final categoryColor = categoryColorHex != null 
+                          final categoryColor = categoryColorHex != null
                               ? AppColors.colorFromHex(categoryColorHex)
                               : const Color(0xFF121212);
 
@@ -555,13 +550,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   ),
                 ),
 
-                // ── Form Fields ──────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Budget Info for selected category (above Date Picker) ──
+
                       if (_selectedCategoryId != null && _type == 'expense') ...[
                         Builder(builder: (context) {
                           final budget = budgetsState.budgets.cast<Map<String, dynamic>?>().firstWhere(
@@ -575,7 +569,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           final limitAmount = rawL is num ? rawL.toDouble() : double.tryParse(rawL?.toString() ?? '0') ?? 0;
                           final rawS = budget['spentAmount'];
                           final spentAmount = rawS is num ? rawS.toDouble() : double.tryParse(rawS?.toString() ?? '0') ?? 0;
-                          
+
                           final budgetCurrency = budget['currency'] as String? ?? AppConstants.defaultCurrency;
                           final enteredAmount = double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0;
 
@@ -688,11 +682,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         }),
                       ],
 
-                      // ── Date & Time Picker ─────────────────────────────────
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Left: Date
+
                           Row(
                             children: [
                               const Icon(Icons.calendar_today_rounded, size: 20),
@@ -722,7 +715,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               ),
                             ],
                           ),
-                          // Right: Time
+
                           InkWell(
                             onTap: _pickTime,
                             child: Row(
@@ -740,7 +733,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // ── Wallet Selector ──────────────────────────────────────
                       Builder(builder: (context) {
                         final wallets = walletsState.valueOrNull ?? [];
                         final isLoading = walletsState.isLoading;
@@ -756,7 +748,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             separatorBuilder: (context, index) => const SizedBox(width: 8),
                             itemBuilder: (context, index) {
                               if (index == 0) {
-                                // 1. Button plus (First item on the left)
+
                                 return GestureDetector(
                                   onTap: () => context.push('/manage-wallets'),
                                   child: AnimatedContainer(
@@ -774,7 +766,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 );
                               }
 
-                              // 2. Data wallet or Skeleton loader
                               if (isLoading) {
                                 return _SkeletonChip(isDark: isDark);
                               }
@@ -842,7 +833,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       }),
                       const SizedBox(height: 12),
 
-                      // ── Savings Goals ──────────────────────────────────────
                       if (widget.lockedSavingsGoal && _selectedSavingsGoalId != null) ...[
                         Builder(builder: (context) {
                           final goal = savingsState.goals.cast<Map<String, dynamic>?>().firstWhere(
@@ -922,7 +912,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             final goalWalletId = g['walletId'] as String? ?? g['wallet']?['id'] as String?;
                             return goalWalletId == null || goalWalletId == _selectedWalletId;
                           }).toList();
-                          
+
                           return SizedBox(
                             height: 36,
                             child: ListView.separated(
@@ -934,7 +924,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               separatorBuilder: (context, index) => const SizedBox(width: 8),
                               itemBuilder: (context, index) {
                                 if (index == 0) {
-                                  // 1. Button plus (First item on the left)
+
                                   return GestureDetector(
                                     onTap: () => context.push('/savings/form'),
                                     child: AnimatedContainer(
@@ -951,7 +941,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     ),
                                   );
                                 } else if (index == 1) {
-                                  // 2. No saving goals (Tidak ada)
+
                                   final isSelected = _selectedSavingsGoalId == null;
                                   return GestureDetector(
                                     onTap: () => setState(() => _selectedSavingsGoalId = null),
@@ -979,7 +969,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     ),
                                   );
                                 } else {
-                                  // 3. Data saving or Skeleton loader
+
                                   if (savingsState.isLoading) {
                                     return _SkeletonChip(isDark: isDark);
                                   }
@@ -1033,7 +1023,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         const SizedBox(height: 12),
                       ],
 
-                      // ── Budgets (standalone only) ──────────────────────────
                       Builder(builder: (context) {
                         final allBudgets = budgetsState.budgets;
                         final standaloneBudgets = allBudgets.where((b) {
@@ -1054,7 +1043,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                                 itemBuilder: (context, index) {
                                   if (index == 0) {
-                                    // 1. Button plus (First item on the left)
+
                                     return GestureDetector(
                                       onTap: () => context.push('/budgets/form'),
                                       child: AnimatedContainer(
@@ -1071,7 +1060,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       ),
                                     );
                                   } else if (index == 1) {
-                                    // 2. Fallback: No budget (Tanpa Anggaran / No Budget)
+
                                     final isSelected = _selectedBudgetId == null;
                                     return GestureDetector(
                                       onTap: () => setState(() => _selectedBudgetId = null),
@@ -1099,7 +1088,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       ),
                                     );
                                   } else {
-                                    // 3. Data budget or Skeleton loader
+
                                     if (budgetsState.isLoading) {
                                       return _SkeletonChip(isDark: isDark);
                                     }
@@ -1153,7 +1142,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         );
                       }),
 
-                      // ── Title & Notes Area ─────────────────────────────────
                       AppTextField(
                         controller: _noteController,
                         label: l10n.noteOptional,
@@ -1258,7 +1246,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     final l10n = AppLocalizations.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final sheetController = TextEditingController(text: _titleController.text);
-    
+
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
@@ -1574,7 +1562,7 @@ class TransactionFormHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Title Area (Top)
+
           InkWell(
             onTap: onTitleTap,
             child: Padding(
@@ -1607,13 +1595,12 @@ class TransactionFormHeader extends StatelessWidget {
               ),
             ),
           ),
-          
-          // Emoji & Amount Area (Bottom)
+
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Category Hitbox (Left Side)
+
                 InkWell(
                   onTap: onCategoryTap,
                   child: Padding(
@@ -1622,7 +1609,7 @@ class TransactionFormHeader extends StatelessWidget {
                       width: 64,
                       height: 64,
                       decoration: ShapeDecoration(
-                        color: categoryEmoji == null 
+                        color: categoryEmoji == null
                             ? (isDark ? const Color(0xFF0F172A) : const Color(0xFF1E293B))
                             : (categoryColor ?? typeColor).withValues(alpha: 0.2),
                         shape: iconShape.toShapeBorder(64),
@@ -1635,8 +1622,7 @@ class TransactionFormHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                
-                // Amount Hitbox (Right Side)
+
                 Expanded(
                   child: InkWell(
                     onTap: onAmountTap,

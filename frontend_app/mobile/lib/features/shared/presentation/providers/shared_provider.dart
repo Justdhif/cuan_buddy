@@ -76,8 +76,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
   Future<void> fetchLobbyData() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      // Run all fetches in parallel but collect results atomically
-      // to prevent race condition where later copyWith overwrites earlier data
+
       final results = await Future.wait([
         _dioClient.dio.get('/friendships'),
         _dioClient.dio.get('/friendships/pending'),
@@ -161,7 +160,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
       });
       if (res.statusCode == 201 || res.statusCode == 200) {
         await fetchPendingRequests(silent: true);
-        return null; // Success
+        return null;
       }
       return res.data['message'] ?? 'Failed to send friend request';
     } catch (e) {
@@ -177,7 +176,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
       });
       if (res.statusCode == 200 || res.statusCode == 201) {
         await fetchLobbyData();
-        return null; // Success
+        return null;
       }
       return res.data['message'] ?? 'Failed to respond to request';
     } catch (e) {
@@ -205,7 +204,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
       });
       if (res.statusCode == 201) {
         await fetchRooms(silent: true);
-        return null; // Success
+        return null;
       }
       return res.data['message'] ?? 'Failed to create room';
     } catch (e) {
@@ -232,7 +231,7 @@ class SharedNotifier extends StateNotifier<SharedState> {
       if (res.statusCode == 200 || res.statusCode == 201) {
         await fetchRoomDetails(roomId);
         await fetchRooms(silent: true);
-        return null; // Success
+        return null;
       }
       return res.data['message'] ?? 'Failed to update room details';
     } catch (e) {

@@ -27,12 +27,11 @@ class SharedScreen extends ConsumerStatefulWidget {
 }
 
 class _SharedScreenState extends ConsumerState<SharedScreen> {
-  // _selectedRoomId == null represents Manage Friends mode (Initial Active View)
+
   String? _selectedRoomId;
   final TextEditingController _friendSearchCtrl = TextEditingController();
   String _friendSearchQuery = '';
 
-  // Category collapsed states
   bool _infoExpanded = true;
   bool _txExpanded = true;
 
@@ -308,7 +307,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // ─── Invite Permission Toggle ─────────────────
+
                       Container(
                         decoration: BoxDecoration(
                           color: isDark
@@ -626,7 +625,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Option 1: Buat Room Baru
+
               InkWell(
                 onTap: () {
                   Navigator.pop(context);
@@ -701,7 +700,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              // Option 2: Gabung Room
+
               InkWell(
                 onTap: () {
                   Navigator.pop(context);
@@ -884,7 +883,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -897,7 +895,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     return Scaffold(
       body: Column(
         children: [
-          // Header with Profile & Notification icons removed as requested (showActions: false)
+
           AppScreenHeader(
             title: l10n.sharedSpace,
             isScrolled: false,
@@ -907,10 +905,9 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
           Expanded(
             child: Row(
               children: [
-                // 1. Column 1: Left Room Icon Sidebar Rail
+
                 _buildIconSidebar(context, state, isDark),
 
-                // 2. Column 2: Active View (Manage Friends by default OR Room Channel Navigation)
                 Expanded(
                   child: state.isLoading ||
                           (state.isRoomLoading && !isFriendsMode)
@@ -958,7 +955,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     );
   }
 
-  // ─── 1. Left Icon Sidebar Rail (Room Icons & Friends Active Button) ───────────
   Widget _buildIconSidebar(
       BuildContext context, SharedState state, bool isDark) {
     final bg = isDark ? AppColors.backgroundDark : const Color(0xFFEEF2F6);
@@ -972,7 +968,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 12),
         children: [
-          // Add Room Icon Button at top above Manage Friends
+
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
             child: Center(
@@ -996,7 +992,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             ),
           ),
 
-          // Manage Friends Button
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Stack(
@@ -1064,7 +1059,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             ),
           ),
 
-          // Rooms List Icons
           if (state.isLoading && state.rooms.isEmpty)
             ...List.generate(3, (index) {
               return Padding(
@@ -1162,14 +1156,13 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     );
   }
 
-  // ─── 2. Initial Active Panel: Manage Friends ────────────────────────────────
   Widget _buildFriendManagementPanel(
     BuildContext context,
     SharedState state,
     bool isDark,
     AppLocalizations l10n,
   ) {
-    // Seamless matching background color
+
     final bg = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
 
     final String query = _friendSearchQuery.toLowerCase();
@@ -1185,7 +1178,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Title & Total Friends Count
+
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
@@ -1221,7 +1214,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             ),
           ),
 
-          // Search Bar for Friends List
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Container(
@@ -1269,7 +1261,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
           ),
           const SizedBox(height: 4),
 
-          // Pending Friend Requests Badge if any
           if (state.pendingRequests.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -1308,7 +1299,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             const SizedBox(height: 8),
           ],
 
-          // Friends List View matching RoomFormScreen UserListTile design
           Expanded(
             child: filteredFriends.isEmpty
                 ? Center(
@@ -1388,7 +1378,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     );
   }
 
-  // ─── 3. Room Channel Navigation Drawer ─────────────────────────────────────
   Widget _buildChannelDrawer(
     BuildContext context,
     SharedState state,
@@ -1396,7 +1385,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     bool isDark,
     AppLocalizations l10n,
   ) {
-    // Seamless background matching main app background
+
     final bg = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
     final String roomId = room['id'];
     final String rawRoomName = room['name'] ?? 'Room';
@@ -1415,7 +1404,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Room Title Header (Clean Title Only, Full Width Border)
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1446,24 +1435,22 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             ),
           ),
 
-          // Clean Channel Navigation List under Categories
           Expanded(
             child: ListView(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               children: [
-                // ── Invite Code Card (Owner: manage | Member: info only) ─────
+
                 Padding(
                   padding: const EdgeInsets.fromLTRB(6, 0, 6, 12),
                   child: _buildInviteCodeCard(room, isDark, l10n),
                 ),
 
-                // ── Circular Quick Action Buttons (Invite Friend, Edit Room, Delete/Leave Room) ──
                 Padding(
                   padding: const EdgeInsets.fromLTRB(6, 4, 6, 12),
                   child: Row(
                     children: [
-                      // 1. Add / Invite Friend Button (hidden for non-owner if onlyOwnerCanInvite)
+
                       if (room['role'] == 'owner' ||
                           room['onlyOwnerCanInvite'] != true) ...[
                         Tooltip(
@@ -1489,7 +1476,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                         const SizedBox(width: 10),
                       ],
 
-                      // 2. Edit Room Button (Owner only)
                       if (room['role'] == 'owner') ...[
                         Tooltip(
                           message: l10n.languageCode == 'id'
@@ -1518,7 +1504,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                         const SizedBox(width: 10),
                       ],
 
-                      // 3. Delete / Leave Room Button
                       Tooltip(
                         message: room['role'] == 'owner'
                             ? (l10n.languageCode == 'id'
@@ -1551,8 +1536,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                   ),
                 ),
 
-
-                // ── Category 1: INFORMASI & SYNC ──────────────────────────
                 _buildCategoryHeader(
                   title: l10n.categoryInformation,
                   isExpanded: _infoExpanded,
@@ -1579,7 +1562,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 ],
                 const SizedBox(height: 12),
 
-                // ── Category 2: TRANSAKSI & PERENCANAAN ───────────────────────
                 _buildCategoryHeader(
                   title: l10n.categoryTransactions,
                   isExpanded: _txExpanded,
@@ -1709,7 +1691,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     Widget? customTrailing,
     required bool isDark,
   }) {
-    // Soft secondary text color (NOT harsh glaring stark white)
+
     final textCol = isDark
         ? const Color(0xFFCBD5E1)
         : const Color(0xFF475569);
@@ -2013,7 +1995,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
   }
 }
 
-// ─── Shadcn-Style Overlapping Avatar Group Component ──────────────────────────
 class _ShadcnAvatarGroup extends StatelessWidget {
   final List members;
   final bool isDark;
@@ -2103,7 +2084,6 @@ class _ShadcnAvatarGroup extends StatelessWidget {
   }
 }
 
-// ─── Pure Shimmer Skeleton Loader ─────────────────────────────────────────────
 class _SharedNavigationSkeleton extends StatelessWidget {
   final bool isDark;
   const _SharedNavigationSkeleton({required this.isDark});
@@ -2186,4 +2166,3 @@ class _SharedNavigationSkeleton extends StatelessWidget {
   }
 
 }
-

@@ -59,7 +59,6 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  /// Mengambil list ID border/wallpaper yang telah di-unlock secara permanen oleh user dari server.
   Future<List<String>> getUnlockedBorders() async {
     final response = await _dio.get('/profiles/unlocked-borders');
     if (response.data is List) {
@@ -68,7 +67,6 @@ class ProfileRepository {
     return [];
   }
 
-  /// Meminta server untuk mengevaluasi ulang pencapaian user.
   Future<Map<String, dynamic>> checkAchievements() async {
     final response = await _dio.post('/profiles/check-achievements');
     return response.data as Map<String, dynamic>;

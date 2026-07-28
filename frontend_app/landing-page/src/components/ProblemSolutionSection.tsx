@@ -15,7 +15,7 @@ export default function ProblemSolutionSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
-          {/* Problem Card */}
+          {}
           <div className="bg-canvas dark:bg-brand-dark-900 border border-ruby/20 dark:border-ruby/10 rounded-[20px] p-8 md:p-10 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-lg">
             <div className="absolute top-0 right-0 w-24 h-24 bg-ruby/5 dark:bg-ruby/2 rounded-full filter blur-xl"></div>
             <div>
@@ -26,7 +26,7 @@ export default function ProblemSolutionSection() {
               <p className="text-lg md:text-xl text-ink dark:text-canvas mb-8 leading-relaxed font-light">
                 {t('problem_solution.problem_desc')}
               </p>
-              
+
               <ul className="space-y-4">
                 <li className="flex items-start gap-3">
                   <XCircle className="w-5 h-5 text-ruby shrink-0 mt-0.5" />
@@ -44,7 +44,7 @@ export default function ProblemSolutionSection() {
             </div>
           </div>
 
-          {/* Solution Card - Polarity flip with electric indigo styling */}
+          {}
           <div className="bg-gradient-to-br from-primary to-primary-deep text-on-primary rounded-[20px] p-8 md:p-10 flex flex-col justify-between shadow-level-2 relative overflow-hidden transition-all duration-300 hover:shadow-xl">
             <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full filter blur-2xl"></div>
             <div>
@@ -55,7 +55,7 @@ export default function ProblemSolutionSection() {
               <p className="text-lg md:text-xl text-white mb-8 leading-relaxed font-light">
                 {t('problem_solution.solution_desc')}
               </p>
-              
+
               <ul className="space-y-4 text-white/90">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-white shrink-0 mt-0.5 animate-pulse" />

@@ -112,7 +112,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Text(
-                  'v1.0.0', // Hardcoded version
+                  'v1.0.0',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.brightness == Brightness.dark

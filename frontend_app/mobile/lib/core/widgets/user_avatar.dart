@@ -1,4 +1,4 @@
-/// Widget reusable untuk menampilkan avatar pengguna.
+
 library;
 
 import 'dart:io';
@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_colors.dart';
 
-/// Widget avatar bulat (lingkaran).
 class UserAvatar extends StatelessWidget {
   const UserAvatar({
     super.key,
@@ -18,22 +17,16 @@ class UserAvatar extends StatelessWidget {
     this.heroTag,
   });
 
-  /// Ukuran total widget dalam logical pixels (width & height sama).
   final double size;
 
-  /// URL foto profil dari server.
   final String? avatarUrl;
 
-  /// File lokal foto profil (misalnya setelah user crop foto baru sebelum disimpan).
   final File? localFile;
 
-  /// Nama atau teks fallback. Huruf pertama akan ditampilkan jika tidak ada foto.
   final String fallbackName;
 
-  /// Callback ketika widget ditekan. Jika null, widget tidak interaktif.
   final VoidCallback? onTap;
 
-  /// Tag unik untuk animasi Hero. Jika null, tidak menggunakan Hero.
   final Object? heroTag;
 
   @override
@@ -64,9 +57,8 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
-  /// Membangun konten foto: lokal > URL > initial huruf.
   Widget _buildImage(double imgSize) {
-    // 1. File lokal (baru dipilih dari galeri, belum di-upload)
+
     if (localFile != null) {
       return Image.file(
         localFile!,
@@ -76,7 +68,6 @@ class UserAvatar extends StatelessWidget {
       );
     }
 
-    // 2. Foto dari URL server
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: avatarUrl!,
@@ -88,11 +79,9 @@ class UserAvatar extends StatelessWidget {
       );
     }
 
-    // 3. Initial huruf (fallback)
     return _buildFallback(imgSize);
   }
 
-  /// Skeleton loading placeholder sementara foto dimuat.
   Widget _buildSkeleton(double imgSize) {
     return Container(
       width: imgSize,
@@ -111,7 +100,6 @@ class UserAvatar extends StatelessWidget {
     );
   }
 
-  /// Fallback: lingkaran dengan warna aksen dari setting dan initial huruf.
   Widget _buildFallback(double imgSize) {
     final initial = fallbackName.isNotEmpty
         ? fallbackName.trim()[0].toUpperCase()

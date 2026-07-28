@@ -14,16 +14,13 @@ export class AiService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  // ─────────────────────────────────────────────
-  // 1. FINANCIAL ADVISOR CHAT
-  // ─────────────────────────────────────────────
   async chat(userId: string, message: string): Promise<{ reply: string }> {
-    // Fetch only minimal data needed — 3 parallel SQL queries
+
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
     const [summary, recentTxs, goals] = await Promise.all([
-      // 1. Financial summary via aggregate (single query)
+
       this.db
         .select({
           totalIncome: sql<number>`COALESCE(SUM(CASE WHEN type='income' THEN amount::numeric ELSE 0 END),0)`,
@@ -33,7 +30,6 @@ export class AiService {
         .where(and(eq(transactions.userId, userId), gte(transactions.date, threeMonthsAgo)))
         .then((r: any[]) => r[0]),
 
-      // 2. Last 5 transactions only (LIMIT to save bandwidth)
       this.db
         .select({
           type: transactions.type,
@@ -46,7 +42,6 @@ export class AiService {
         .orderBy(desc(transactions.date))
         .limit(5),
 
-      // 3. Savings goals summary
       this.db
         .select({
           name: savingsGoals.name,
@@ -63,7 +58,6 @@ export class AiService {
     const expense = Number(summary.totalExpense);
     const balance = income - expense;
 
-    // Build concise context — fewer tokens = cheaper + faster
     const context = [
       `Last 3 months summary: Income ${formatCurrency(income)}, Expenses ${formatCurrency(expense)}, Balance ${formatCurrency(balance)}.`,
       recentTxs.length
@@ -329,7 +323,7 @@ ${spendingData}`;
   async processVoiceTransaction(userId: string, audioBuffer: Buffer, originalName: string): Promise<any> {
     // 1. Transcribe audio to text using Whisper
     const text = await this.groqService.transcribeAudio(audioBuffer, originalName);
-    
+
     if (!text || text.trim().length === 0) {
       throw new Error('Suara tidak terdengar jelas atau kosong.');
     }
@@ -389,12 +383,12 @@ Do not add any explanations or markdown formatting.`;
 
     // Find category ID (similar/exact match)
     const normalizedParsedName = parsed.category?.trim().toLowerCase();
-    const catMatch = cats.find((c: any) => 
+    const catMatch = cats.find((c: any) =>
       c.name.trim().toLowerCase() === normalizedParsedName ||
       c.name.trim().toLowerCase().includes(normalizedParsedName) ||
       (normalizedParsedName && normalizedParsedName.includes(c.name.trim().toLowerCase()))
     );
-    
+
     let categoryId = catMatch ? catMatch.id : null;
 
     if (!categoryId && parsed.category && parsed.category.toLowerCase() !== 'uncategorized') {
@@ -473,12 +467,12 @@ Do not add any explanations or markdown formatting.`;
 
     // Find category ID (similar/exact match)
     const normalizedParsedName = parsed.category?.trim().toLowerCase();
-    const catMatch = cats.find((c: any) => 
+    const catMatch = cats.find((c: any) =>
       c.name.trim().toLowerCase() === normalizedParsedName ||
       c.name.trim().toLowerCase().includes(normalizedParsedName) ||
       (normalizedParsedName && normalizedParsedName.includes(c.name.trim().toLowerCase()))
     );
-    
+
     let categoryId = catMatch ? catMatch.id : null;
 
     if (!categoryId && parsed.category && parsed.category.toLowerCase() !== 'uncategorized') {

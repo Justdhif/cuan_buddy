@@ -6,15 +6,15 @@ export default function AppShowcase() {
 
   return (
     <section className="bg-white text-apple-ink transition-colors duration-300">
-      
-      {/* Title Header Section - Always Light */}
+
+      {}
       <div className="py-16 text-center max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="font-sans text-apple-ink font-semibold tracking-tight text-3xl sm:text-4xl md:text-[40px] leading-tight mb-2">
           {t('screenshots.title')}
         </h2>
       </div>
 
-      {/* Tile 1: Dashboard Overview (Apple Light Tile style) */}
+      {}
       <div className="bg-white py-16 border-b border-hairline/60 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5 space-y-4 text-left">
@@ -31,13 +31,13 @@ export default function AppShowcase() {
               </a>
             </div>
           </div>
-          
-          {/* Mock Mobile App screen using image */}
+
+          {}
           <div className="lg:col-span-7 flex justify-center">
             <div className="w-[300px] h-[550px] rounded-[32px] bg-apple-ink border-[8px] border-apple-ink shadow-apple-product overflow-hidden relative">
-              <img 
-                src="/app_screen_mockup.png" 
-                alt="Dashboard Screen Mockup" 
+              <img
+                src="/app_screen_mockup.png"
+                alt="Dashboard Screen Mockup"
                 className="w-full h-full object-cover rounded-[24px]"
                 onError={(e) => { e.currentTarget.src = "/app_icon_transparent.png"; }}
               />
@@ -46,23 +46,23 @@ export default function AppShowcase() {
         </div>
       </div>
 
-      {/* Tile 2: Budget Monitor (Apple Parchment Tile style) */}
+      {}
       <div className="bg-apple-canvas-parchment py-16 border-b border-hairline/60 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* Mock Mobile App screen using image */}
+
+          {}
           <div className="lg:col-span-7 flex justify-center order-2 lg:order-1">
             <div className="w-[300px] h-[550px] rounded-[32px] bg-apple-ink border-[8px] border-apple-ink shadow-apple-product overflow-hidden relative">
-              <img 
-                src="/app_screen_mockup.png" 
-                alt="Budget Screen Mockup" 
+              <img
+                src="/app_screen_mockup.png"
+                alt="Budget Screen Mockup"
                 className="w-full h-full object-cover rounded-[24px]"
                 onError={(e) => { e.currentTarget.src = "/app_icon_transparent.png"; }}
               />
             </div>
           </div>
 
-          {/* Text on right */}
+          {}
           <div className="lg:col-span-5 space-y-4 text-left order-1 lg:order-2">
             <span className="text-[12px] font-semibold text-apple-primary tracking-widest uppercase">LIMITS</span>
             <h3 className="font-sans text-apple-ink font-semibold text-[32px] sm:text-[40px] leading-tight tracking-tight">
@@ -80,7 +80,7 @@ export default function AppShowcase() {
         </div>
       </div>
 
-      {/* Tile 3: Saving Goals Tracker (Apple Light Tile style) */}
+      {}
       <div className="bg-white py-16 border-b border-hairline/60 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-5 space-y-4 text-left">
@@ -97,13 +97,13 @@ export default function AppShowcase() {
               </a>
             </div>
           </div>
-          
-          {/* Mock Mobile App screen using image */}
+
+          {}
           <div className="lg:col-span-7 flex justify-center">
             <div className="w-[300px] h-[550px] rounded-[32px] bg-apple-ink border-[8px] border-apple-ink shadow-apple-product overflow-hidden relative">
-              <img 
-                src="/app_screen_mockup.png" 
-                alt="Savings Screen Mockup" 
+              <img
+                src="/app_screen_mockup.png"
+                alt="Savings Screen Mockup"
                 className="w-full h-full object-cover rounded-[24px]"
                 onError={(e) => { e.currentTarget.src = "/app_icon_transparent.png"; }}
               />

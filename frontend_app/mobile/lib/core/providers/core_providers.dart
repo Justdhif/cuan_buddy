@@ -5,7 +5,6 @@ import '../services/auth_service.dart';
 import '../services/preferences_service.dart';
 import '../services/socket_service.dart';
 
-// ─── Core Services ────────────────────────────────────────────────────────────
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
@@ -17,14 +16,12 @@ final preferencesServiceProvider = Provider<PreferencesService>((ref) {
   return PreferencesService(prefs);
 });
 
-// ─── Network ──────────────────────────────────────────────────────────────────
 final dioClientProvider = Provider<DioClient>((ref) {
   final authService = ref.watch(authServiceProvider);
   final prefs = ref.watch(preferencesServiceProvider);
   return DioClient(authService: authService, prefs: prefs);
 });
 
-// ─── Socket.IO (Real-time) ────────────────────────────────────────────────────
 final socketServiceProvider = Provider<SocketService>((ref) {
   final authService = ref.watch(authServiceProvider);
   final socket = SocketService(authService: authService);

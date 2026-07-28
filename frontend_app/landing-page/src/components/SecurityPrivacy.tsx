@@ -25,15 +25,15 @@ export default function SecurityPrivacy() {
   return (
     <section className="py-24 bg-[#f6f9fc] border-b border-hairline/60 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Stripe Header */}
+
+        {}
         <div className="text-center mb-20 max-w-3xl mx-auto">
           <span className="text-[13px] font-semibold text-primary uppercase tracking-widest block mb-3">TRUST & INFRASTRUCTURE</span>
           <h2 className="text-3xl md:text-[38px] font-extrabold text-ink tracking-tight mb-4">{t('security.title')}</h2>
           <p className="text-lg text-ink-mute leading-relaxed font-light">{t('security.subtitle')}</p>
         </div>
 
-        {/* Stripe-style High-Trust Cards */}
+        {}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {securityFeatures.map((feat, i) => (
             <div key={i} className="bg-white border border-hairline rounded-[12px] p-8 shadow-level-1 hover:shadow-level-2 transition-all duration-300">

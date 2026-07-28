@@ -8,16 +8,14 @@ import { ZodValidationPipe } from 'nestjs-zod';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    // Disable verbose logs in production to reduce I/O overhead
+
     logger: process.env.NODE_ENV === 'production'
       ? ['error', 'warn']
       : ['log', 'error', 'warn', 'debug', 'verbose'],
   });
 
-  // Compression: reduces response payload by ~60-80%, saves network transfer & CPU on client
   app.use(compression());
 
-  // Global validation pipe — enforces DTO constraints (Zod)
   app.useGlobalPipes(new ZodValidationPipe());
 
   app.enableCors();
@@ -26,7 +24,6 @@ async function bootstrap() {
     exclude: [{ path: '/', method: RequestMethod.GET }],
   });
 
-  // Only expose Swagger in non-production to avoid overhead
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('CuanBuddy API')

@@ -6,6 +6,6 @@ import { GroqService } from './groq.service';
 @Module({
   controllers: [AiController],
   providers: [AiService, GroqService],
-  exports: [AiService], // Export so TransactionsModule can use detectAnomaly
+  exports: [AiService],
 })
 export class AiModule {}

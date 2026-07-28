@@ -9,8 +9,7 @@ import * as os from 'os';
 export class GroqService {
   private readonly logger = new Logger(GroqService.name);
   private readonly client: Groq;
-  
-  // Default active models on Groq
+
   private readonly defaultTextModel: string;
   private readonly defaultVisionModel: string;
   private readonly defaultAudioModel: string;
@@ -28,10 +27,6 @@ export class GroqService {
       this.configService.get<string>('GROQ_AUDIO_MODEL') || 'whisper-large-v3-turbo';
   }
 
-  /**
-   * Send messages to Groq and return the text response.
-   * Includes automatic fallback if primary model is unavailable.
-   */
   async chat(
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
     maxTokens = 512,

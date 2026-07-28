@@ -40,7 +40,6 @@ class WidgetSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
 
-          // Balance Widget Tile
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -86,7 +85,6 @@ class WidgetSettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
 
-          // Savings Widget Tile
           Consumer(
             builder: (context, ref, _) {
               final savingsState = ref.watch(savingsNotifierProvider);
@@ -97,9 +95,7 @@ class WidgetSettingsScreen extends ConsumerWidget {
                 try {
                   selectedGoalName = savingsState.goals
                       .firstWhere((g) => g['id'] == selectedGoalId)['name'];
-                } catch (e) {
-                  // Not found
-                }
+                } catch (_) {}
               }
 
               return GestureDetector(
@@ -228,7 +224,6 @@ class WidgetSettingsScreen extends ConsumerWidget {
                                         .notifier)
                                     .setSelectedSavingsId(goal['id'] as String);
 
-                                // Push immediately
                                 final rawT = goal['targetAmount'];
                                 final rawS = goal['savedAmount'];
                                 final target = rawT is num

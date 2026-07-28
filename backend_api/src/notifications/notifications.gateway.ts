@@ -8,10 +8,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   server: Server;
 
   private readonly logger = new Logger(NotificationsGateway.name);
-  private userSockets = new Map<string, Set<string>>(); // Maps userId -> Set of socketIds
+  private userSockets = new Map<string, Set<string>>();
 
   handleConnection(client: Socket) {
-    // Expected: client connects with ?userId=123
+
     const userId = client.handshake.query.userId as string;
     if (userId) {
       if (!this.userSockets.has(userId)) {
