@@ -10,7 +10,7 @@ export class FeedbackService {
 
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
 
-  async createFeedback(userId: string, message: string) {
+  async createFeedback(userId: string, message: string, imageUrl?: string) {
 
     const [feedback] = await this.db.insert(feedbacks).values({
       userId,
@@ -43,10 +43,13 @@ export class FeedbackService {
       `*Time:* ${new Date().toUTCString()}\n\n` +
       `*Message:*\n"${message}"`;
 
+    const finalImageUrl = imageUrl || process.env.FEEDBACK_BANNER_URL;
+
     const result = await sendWhatsAppMessage({
       phone: targetPhone,
       title: 'NEW USER FEEDBACK',
       description: waDescription,
+      imageUrl: finalImageUrl,
     });
 
     if (!result.success) {

@@ -22,14 +22,21 @@ export async function sendWhatsAppMessage({
   // Bold title and double space for application footer
   const messageText = `*${title}*\n${description}\n\n${appFooter}`;
 
-  // Standard fallback image URL (financial workspace)
-  const finalImageUrl = imageUrl || 'https://picsum.photos/500/300.jpg';
+  // Clean phone number (remove spaces, +, -, etc.)
+  let cleanPhone = phone.replace(/[^0-9]/g, '');
+  if (cleanPhone.startsWith('0')) {
+    cleanPhone = '62' + cleanPhone.slice(1);
+  }
 
   try {
     const params = new URLSearchParams();
-    params.append('target', phone);
+    params.append('target', cleanPhone);
     params.append('message', messageText);
-    params.append('url', finalImageUrl);
+    
+    // Only send url if explicitly provided to prevent Fonnte media download errors
+    if (imageUrl) {
+      params.append('url', imageUrl);
+    }
 
     const response = await fetch('https://api.fonnte.com/send', {
       method: 'POST',
@@ -41,11 +48,11 @@ export async function sendWhatsAppMessage({
 
     const resData = await response.json();
     if (!response.ok || !resData.status) {
-      return { success: false, reason: resData.reason || JSON.stringify(resData) };
+      return { success: false, reason: resData.reason || resData.detail || JSON.stringify(resData) };
     }
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     return { success: false, reason: error.message || error.toString() };
   }
 }
