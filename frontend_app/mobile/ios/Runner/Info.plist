@@ -51,5 +51,7 @@
 	<string>This app requires access to the camera to take an avatar image.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires access to the microphone for video recording.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CuanBuddy uses your location to show local weather information on the dashboard.</string>
 </dict>
 </plist>

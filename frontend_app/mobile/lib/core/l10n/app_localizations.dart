@@ -763,6 +763,16 @@ abstract class AppLocalizations {
   String get roomPrivate;
   String get roomPublicDesc;
   String get roomPrivateDesc;
+
+  // ─── Dashboard Header: Greeting + DateTime + Weather ───
+  String get greetingMorning;
+  String get greetingAfternoon;
+  String get greetingEvening;
+  String get greetingNight;
+  String get weatherLoading;
+  String get weatherUnavailable;
+  String get weatherFeelsLike;
+  String greetingWithName(String name);
 }
 
 class AppLocalizationsScope extends InheritedWidget {

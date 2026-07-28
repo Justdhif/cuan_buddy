@@ -30,6 +30,8 @@ import '../../../../core/providers/language_provider.dart';
 import '../../../transactions/presentation/widgets/ai_voice_sheet.dart';
 import '../../../transactions/presentation/widgets/ai_scan_sheet.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart';
+import '../../../../core/providers/weather_provider.dart';
+import '../../../../core/services/weather_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -157,6 +159,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ref
                       .read(analyticsNotifierProvider.notifier)
                       .fetchAllAnalytics();
+                  ref.invalidate(weatherProvider);
                 },
                 color: AppColors.primary,
                 child: CustomScrollView(
@@ -591,29 +594,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const Spacer(),
           GestureDetector(
-            onTap: () => context.push('/home/profile'),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _isScrolled
-                    ? (isDark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.05))
-                    : Colors.white.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person_outline_rounded,
-                size: 20,
-                color: _isScrolled
-                    ? (isDark ? Colors.white : AppColors.textPrimaryLight)
-                    : Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
             onTap: () => context.push('/notifications'),
             child: Container(
               width: 36,
@@ -733,6 +713,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                _buildGreetingDateWeather(context, ref, profileAsync),
+                const SizedBox(height: 16),
                 if (summaryAsync.isLoading && !summaryAsync.hasValue)
                   const SkeletonCard(height: 60)
                 else ...[
@@ -799,6 +781,148 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const FinanceHealthHeaderWidget(),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGreetingDateWeather(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<Map<String, dynamic>> profileAsync,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final hour = now.hour;
+
+    // Time-based greeting
+    String greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = l10n.greetingMorning;
+    } else if (hour >= 12 && hour < 15) {
+      greeting = l10n.greetingAfternoon;
+    } else if (hour >= 15 && hour < 19) {
+      greeting = l10n.greetingEvening;
+    } else {
+      greeting = l10n.greetingNight;
+    }
+
+    // Get first name from profile
+    final fullName =
+        profileAsync.valueOrNull?['name'] as String? ?? '';
+    final firstName = fullName.split(' ').first;
+    final greetingText = firstName.isNotEmpty
+        ? '$greeting, $firstName! \ud83d\udc4b'
+        : '$greeting! \ud83d\udc4b';
+
+    // Date format based on language
+    final dateFormat = l10n.languageCode == 'id'
+        ? DateFormat('EEEE, d MMMM yyyy', 'id')
+        : DateFormat('EEEE, MMMM d, yyyy', 'en');
+    final dateStr = dateFormat.format(now);
+
+    // Weather
+    final weatherAsync = ref.watch(weatherProvider);
+
+    return GestureDetector(
+      onTap: () => context.push('/home/profile'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Greeting
+          Text(
+            greetingText,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Date + Weather row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Date
+              Text(
+                dateStr,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.78),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              // Weather (only if available)
+              weatherAsync.when(
+                data: (weather) {
+                  if (weather == null) return const SizedBox.shrink();
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Container(
+                          width: 3,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        weather.weatherEmoji,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${weather.temp.round()}\u00b0C  ${weather.description}',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.78),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Container(
+                        width: 3,
+                        height: 3,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.weatherLoading,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ],
           ),
         ],
       ),

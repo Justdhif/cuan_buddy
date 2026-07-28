@@ -61,6 +61,7 @@ dependencies:
   flutter_colorpicker: ^1.1.0
   pinput: ^6.0.2
   url_launcher: ^6.3.2
+  geolocator: ^13.0.2
 
 dev_dependencies:
   flutter_test:

@@ -1535,4 +1535,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roomPublicDesc => 'Anyone with the invite code can join';
   @override
   String get roomPrivateDesc => 'Only invited members can join';
+
+  // ─── Dashboard Header: Greeting + DateTime + Weather ───
+  @override
+  String get greetingMorning => 'Good Morning';
+  @override
+  String get greetingAfternoon => 'Good Afternoon';
+  @override
+  String get greetingEvening => 'Good Evening';
+  @override
+  String get greetingNight => 'Good Night';
+  @override
+  String get weatherLoading => 'Loading weather...';
+  @override
+  String get weatherUnavailable => 'Weather unavailable';
+  @override
+  String get weatherFeelsLike => 'Feels like';
+  @override
+  String greetingWithName(String name) => 'Hi, $name! 👋';
 }

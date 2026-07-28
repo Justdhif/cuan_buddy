@@ -1541,4 +1541,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get roomPublicDesc => 'Siapapun dengan kode undangan bisa bergabung';
   @override
   String get roomPrivateDesc => 'Hanya anggota yang diundang yang bisa bergabung';
+
+  // ─── Dashboard Header: Greeting + DateTime + Weather ───
+  @override
+  String get greetingMorning => 'Selamat Pagi';
+  @override
+  String get greetingAfternoon => 'Selamat Siang';
+  @override
+  String get greetingEvening => 'Selamat Sore';
+  @override
+  String get greetingNight => 'Selamat Malam';
+  @override
+  String get weatherLoading => 'Memuat cuaca...';
+  @override
+  String get weatherUnavailable => 'Cuaca tidak tersedia';
+  @override
+  String get weatherFeelsLike => 'Terasa seperti';
+  @override
+  String greetingWithName(String name) => 'Hai, $name! 👋';
 }
