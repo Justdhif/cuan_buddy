@@ -3,10 +3,157 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../providers/dashboard_provider.dart';
 
 class FinanceHealthHeaderWidget extends ConsumerWidget {
   const FinanceHealthHeaderWidget({super.key});
+
+  void _showHealthDetailSheet(
+    BuildContext context, {
+    required int index,
+    required int score,
+    required String status,
+    required String message,
+    required String dateStr,
+    required bool isCurrent,
+  }) {
+    Color statusColor;
+    String statusTitle;
+    IconData statusIcon;
+
+    if (score >= 80) {
+      statusColor = const Color(0xFF34D399); // Green
+      statusTitle = 'Keuangan Sangat Sehat';
+      statusIcon = Icons.sentiment_very_satisfied_rounded;
+    } else if (score >= 50) {
+      statusColor = const Color(0xFFFBBF24); // Yellow/Amber
+      statusTitle = 'Keuangan Cukup Sehat';
+      statusIcon = Icons.sentiment_satisfied_rounded;
+    } else {
+      statusColor = const Color(0xFFF87171); // Red
+      statusTitle = 'Perlu Perhatian Keuangan';
+      statusIcon = Icons.warning_amber_rounded;
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CustomPaint(
+                          size: const Size(64, 64),
+                          painter: _GaugePainter(
+                            progress: score.clamp(0, 100) / 100.0,
+                            color: statusColor,
+                          ),
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$score',
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Text(
+                              '/100',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: isDark
+                                    ? Colors.white70
+                                    : Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(statusIcon, color: statusColor, size: 20),
+                            const SizedBox(width: 6),
+                            Text(
+                              statusTitle,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          message.isNotEmpty
+                              ? message
+                              : 'Informasi Financial Health skor pada periode ini.',
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.black87,
+                            fontSize: 13,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,19 +166,63 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
         final status = healthData['status'] as String? ?? 'healthy';
 
         final rawHistory = healthData['scoreHistory'] as List?;
-        final List<int> scores = [];
+        final List<Map<String, dynamic>> historyItems = [];
+
         if (rawHistory != null && rawHistory.isNotEmpty) {
           for (var item in rawHistory) {
-            if (item is Map && item['score'] != null) {
-              scores.add((item['score'] as num).toInt());
+            if (item is Map) {
+              historyItems.add({
+                'score': (item['score'] as num? ?? 50).toInt(),
+                'date': item['date']?.toString() ?? '',
+                'status': item['status']?.toString() ?? 'healthy',
+                'message': item['message']?.toString() ?? '',
+              });
             } else if (item is num) {
-              scores.add(item.toInt());
+              historyItems.add({
+                'score': item.toInt(),
+                'date': '',
+                'status': 'healthy',
+                'message': '',
+              });
             }
           }
         }
-        if (scores.isEmpty) {
-          scores.addAll([20, 90, 50]);
+
+        // Adjust historyItems array to exactly 7 points with the current score at position 7 (index 6)
+        if (historyItems.length < 7) {
+          while (historyItems.length < 6) {
+            historyItems.insert(0, {
+              'score': 50,
+              'date': '',
+              'status': 'healthy',
+              'message': 'Data finansial stabil.',
+            });
+          }
+          historyItems.add({
+            'score': score,
+            'date': 'Hari ini',
+            'status': status,
+            'message': healthData['message']?.toString() ?? '',
+          });
+        } else if (historyItems.length > 7) {
+          historyItems.removeRange(0, historyItems.length - 7);
+          historyItems[6] = {
+            'score': score,
+            'date': 'Hari ini',
+            'status': status,
+            'message': healthData['message']?.toString() ?? '',
+          };
+        } else {
+          historyItems[6] = {
+            'score': score,
+            'date': 'Hari ini',
+            'status': status,
+            'message': healthData['message']?.toString() ?? '',
+          };
         }
+
+        final List<int> scores =
+            historyItems.map((e) => e['score'] as int).toList();
 
         Color statusColor;
         String statusText;
@@ -86,12 +277,36 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 14),
-            SizedBox(
-              height: 48,
-              width: double.infinity,
-              child: CustomPaint(
-                painter: _DynamicScoreSparklinePainter(scores: scores),
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (details) {
+                    final width = constraints.maxWidth;
+                    final stepX = width / (scores.length - 1);
+                    final tapX = details.localPosition.dx;
+                    int selectedIndex = (tapX / stepX).round().clamp(0, scores.length - 1);
+
+                    final item = historyItems[selectedIndex];
+                    _showHealthDetailSheet(
+                      context,
+                      index: selectedIndex,
+                      score: item['score'] as int,
+                      status: item['status'] as String,
+                      message: item['message'] as String,
+                      dateStr: item['date'] as String,
+                      isCurrent: selectedIndex == 6,
+                    );
+                  },
+                  child: SizedBox(
+                    height: 48,
+                    width: double.infinity,
+                    child: CustomPaint(
+                      painter: _DynamicScoreSparklinePainter(scores: scores),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         );
@@ -263,33 +478,17 @@ class _DynamicScoreSparklinePainter extends CustomPainter {
         ? size.width / (scores.length - 1)
         : size.width;
 
-    // Draw baseline dotted line at score 50 (y = size.height * 0.5)
-    final baselineY = size.height * 0.5;
-    final baselinePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.18)
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
+    // Convert score (0 - 100) to Canvas Y coordinates:
+    // Score 50  => baseline Y = size.height * 0.5 (y_math = 0)
+    // Score >50 => positive delta => moves UP towards top (y_canvas = height*0.5 - delta)
+    // Score <50 => negative delta => moves DOWN towards bottom (y_canvas = height*0.5 + |delta|)
+    final double halfHeight = size.height * 0.5;
+    final double maxAmplitude = halfHeight * 0.84;
 
-    const double dashWidth = 4.0;
-    const double dashSpace = 4.0;
-    double startX = 0;
-    while (startX < size.width) {
-      canvas.drawLine(
-        Offset(startX, baselineY),
-        Offset((startX + dashWidth).clamp(0, size.width), baselineY),
-        baselinePaint,
-      );
-      startX += dashWidth + dashSpace;
-    }
-
-    // Convert score (0 - 100) to Y coordinates
-    // Score 50 = baselineY (size.height * 0.5)
-    // Score 100 = top padding (size.height * 0.08)
-    // Score 0 = bottom padding (size.height * 0.92)
     for (int i = 0; i < scores.length; i++) {
       final score = scores[i].clamp(0, 100);
-      final normalized = 1.0 - (score / 100.0); // 0.0 at 100, 1.0 at 0
-      final y = size.height * 0.08 + (normalized * (size.height * 0.84));
+      final deltaScore = score - 50; // Range: -50 to +50
+      final y = halfHeight - (deltaScore / 50.0) * maxAmplitude;
       final x = (i * stepX).clamp(0.0, size.width);
       points.add(Offset(x, y));
     }

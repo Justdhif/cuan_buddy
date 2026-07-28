@@ -164,10 +164,29 @@ export class AnalyticsService {
       .groupBy(sql`TO_CHAR(date, 'YYYY-MM-DD')`)
       .orderBy(sql`TO_CHAR(date, 'YYYY-MM-DD') ASC`);
 
+    const getStatusAndMessage = (sc: number) => {
+      if (sc >= 80) {
+        return {
+          status: 'excellent',
+          message: 'Keuangan sangat sehat! Tabungan teralokasi dengan baik.',
+        };
+      } else if (sc >= 50) {
+        return {
+          status: 'healthy',
+          message: 'Kondisi keuangan stabil. Pertahankan kebiasaan hemat.',
+        };
+      } else {
+        return {
+          status: 'warning',
+          message: 'Rasio pengeluaran tinggi atau anggaran melampaui batas.',
+        };
+      }
+    };
+
     if (dailyTransactions.length >= 3) {
       let runningBalance = summary.balance;
       const reversedDays = [...dailyTransactions].reverse();
-      const points: Array<{ date: string; score: number }> = [];
+      const points: Array<{ date: string; score: number; status: string; message: string }> = [];
       
       for (const dayData of reversedDays) {
         let dayScore = 50;
@@ -183,14 +202,20 @@ export class AnalyticsService {
         }
         if (overspentCount > 0) dayScore -= 10;
         
+        const finalScore = Math.min(Math.max(dayScore, 10), 100);
+        const { status: sStatus, message: sMsg } = getStatusAndMessage(finalScore);
         points.unshift({
           date: dayData.day,
-          score: Math.min(Math.max(dayScore, 10), 100),
+          score: finalScore,
+          status: sStatus,
+          message: sMsg,
         });
       }
       // Guarantee current score as final point
       if (points.length > 0) {
         points[points.length - 1].score = currentScore;
+        points[points.length - 1].status = status;
+        points[points.length - 1].message = message;
       }
       scoreHistory.push(...points);
     } else {
@@ -209,9 +234,16 @@ export class AnalyticsService {
         else if (i === 1) calculatedScore = Math.max(45, currentScore - 5);
         else calculatedScore = currentScore;
 
+        const finalScore = Math.min(Math.max(calculatedScore, 0), 100);
+        const { status: sStatus, message: sMsg } = i === 0 
+          ? { status, message }
+          : getStatusAndMessage(finalScore);
+
         scoreHistory.push({
           date: dateStr,
-          score: Math.min(Math.max(calculatedScore, 0), 100),
+          score: finalScore,
+          status: sStatus,
+          message: sMsg,
         });
       }
     }
