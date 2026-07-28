@@ -10,8 +10,7 @@ export class FeedbackService {
 
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
 
-  async createFeedback(userId: string, message: string, imageUrl?: string) {
-
+  async createFeedback(userId: string, message: string) {
     const [feedback] = await this.db.insert(feedbacks).values({
       userId,
       message,
@@ -43,23 +42,10 @@ export class FeedbackService {
       `*Time:* ${new Date().toUTCString()}\n\n` +
       `*Message:*\n"${message}"`;
 
-    // Construct backend public URL dynamically
-    let baseUrl = process.env.APP_BASE_URL;
-    if (!baseUrl && process.env.VERCEL_URL) {
-      baseUrl = `https://${process.env.VERCEL_URL}`;
-    }
-    if (!baseUrl) {
-      baseUrl = 'https://cuan-buddy-api.vercel.app';
-    }
-
-    const defaultPublicBanner = `${baseUrl.replace(/\/$/, '')}/images/feedback_banner.jpg`;
-    const finalImageUrl = imageUrl || process.env.FEEDBACK_BANNER_URL || defaultPublicBanner;
-
     const result = await sendWhatsAppMessage({
       phone: targetPhone,
       title: 'NEW USER FEEDBACK',
       description: waDescription,
-      imageUrl: finalImageUrl,
     });
 
     if (!result.success) {

@@ -1,16 +1,12 @@
 import { Controller, Post, Body, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 class CreateFeedbackDto {
   @IsString()
   @IsNotEmpty()
   message: string;
-
-  @IsOptional()
-  @IsString()
-  imageUrl?: string;
 }
 
 @UseGuards(JwtAuthGuard)
@@ -23,6 +19,6 @@ export class FeedbackController {
     if (!body.message || body.message.trim() === '') {
       throw new BadRequestException('Message is required');
     }
-    return this.feedbackService.createFeedback(req.user.userId, body.message, body.imageUrl);
+    return this.feedbackService.createFeedback(req.user.userId, body.message);
   }
 }
