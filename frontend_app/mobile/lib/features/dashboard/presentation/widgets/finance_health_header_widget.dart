@@ -4,150 +4,194 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/dashboard_provider.dart';
 
 class FinanceHealthHeaderWidget extends ConsumerWidget {
   const FinanceHealthHeaderWidget({super.key});
 
+  Color _getColorForScore(int score, String status) {
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      return const Color(0xFFF87171); // Red
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      return const Color(0xFFFBBF24); // Yellow/Amber
+    } else {
+      return const Color(0xFF34D399); // Green
+    }
+  }
+
+  String _getStatusTitle(int score, String status, AppLocalizations l10n) {
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      return 'Critical!';
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      return 'Warning!';
+    } else {
+      return l10n.financialHealthGood;
+    }
+  }
+
+  String _getStatusSubtitle(
+      int score, String status, String message, AppLocalizations l10n) {
+    if (message.trim().isNotEmpty) {
+      return message;
+    }
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      return l10n.languageCode == 'id'
+          ? 'Pengeluaran tinggi atau rasio tabungan rendah.'
+          : 'High expenses or low savings rate detected.';
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      return l10n.languageCode == 'id'
+          ? 'Kondisi keuanganmu butuh perhatian.'
+          : 'Your financial health needs attention.';
+    } else {
+      return l10n.financialHealthGoodSubtitle;
+    }
+  }
+
   void _showHealthDetailSheet(
     BuildContext context, {
-    required int index,
     required int score,
     required String status,
     required String message,
-    required String dateStr,
-    required bool isCurrent,
+    required AppLocalizations l10n,
   }) {
-    Color statusColor;
-    String statusTitle;
-    IconData statusIcon;
+    final statusColor = _getColorForScore(score, status);
+    final statusTitle = _getStatusTitle(score, status, l10n);
+    final statusSubtitle = _getStatusSubtitle(score, status, message, l10n);
 
-    if (score >= 80) {
-      statusColor = const Color(0xFF34D399); // Green
-      statusTitle = 'Keuangan Sangat Sehat';
-      statusIcon = Icons.sentiment_very_satisfied_rounded;
-    } else if (score >= 50) {
-      statusColor = const Color(0xFFFBBF24); // Yellow/Amber
-      statusTitle = 'Keuangan Cukup Sehat';
-      statusIcon = Icons.sentiment_satisfied_rounded;
-    } else {
-      statusColor = const Color(0xFFF87171); // Red
-      statusTitle = 'Perlu Perhatian Keuangan';
+    IconData statusIcon;
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      statusIcon = Icons.error_outline_rounded;
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
       statusIcon = Icons.warning_amber_rounded;
+    } else {
+      statusIcon = Icons.sentiment_very_satisfied_rounded;
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showModalBottomSheet(
+    AppBottomSheet.show(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(28),
-              topRight: Radius.circular(28),
-            ),
-          ),
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-              const SizedBox(height: 16),
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(
-                    width: 64,
-                    height: 64,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CustomPaint(
-                          size: const Size(64, 64),
-                          painter: _GaugePainter(
-                            progress: score.clamp(0, 100) / 100.0,
-                            color: statusColor,
-                          ),
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$score',
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              '/100',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: isDark
-                                    ? Colors.white70
-                                    : Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  Text(
+                    l10n.languageCode == 'id'
+                        ? 'Detail Kesehatan Keuangan'
+                        : 'Financial Health Detail',
+                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(statusIcon, color: statusColor, size: 20),
-                            const SizedBox(width: 6),
-                            Text(
-                              statusTitle,
-                              style: TextStyle(
-                                color: statusColor,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          message.isNotEmpty
-                              ? message
-                              : 'Informasi Financial Health skor pada periode ini.',
-                          style: TextStyle(
-                            color: isDark ? Colors.white70 : Colors.black87,
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
-                        ),
-                      ],
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 22),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.surfaceDark
+                      : AppColors.surfaceLight,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: statusColor.withValues(alpha: 0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CustomPaint(
+                            size: const Size(60, 60),
+                            painter: _GaugePainter(
+                              progress: score.clamp(0, 100) / 100.0,
+                              color: statusColor,
+                            ),
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '$score',
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              Text(
+                                '/100',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(statusIcon, color: statusColor, size: 20),
+                              const SizedBox(width: 6),
+                              Text(
+                                statusTitle,
+                                style: AppTypography.textTheme.titleSmall?.copyWith(
+                                  color: statusColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            statusSubtitle,
+                            style: AppTypography.textTheme.bodyMedium?.copyWith(
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
             ],
           ),
         );
@@ -164,6 +208,7 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
       data: (healthData) {
         final score = (healthData['score'] as num? ?? 82).toInt();
         final status = healthData['status'] as String? ?? 'healthy';
+        final message = healthData['message'] as String? ?? '';
 
         final rawHistory = healthData['scoreHistory'] as List?;
         final List<Map<String, dynamic>> historyItems = [];
@@ -195,51 +240,39 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
               'score': 50,
               'date': '',
               'status': 'healthy',
-              'message': 'Data finansial stabil.',
+              'message': '',
             });
           }
           historyItems.add({
             'score': score,
-            'date': 'Hari ini',
+            'date': '',
             'status': status,
-            'message': healthData['message']?.toString() ?? '',
+            'message': message,
           });
         } else if (historyItems.length > 7) {
           historyItems.removeRange(0, historyItems.length - 7);
           historyItems[6] = {
             'score': score,
-            'date': 'Hari ini',
+            'date': '',
             'status': status,
-            'message': healthData['message']?.toString() ?? '',
+            'message': message,
           };
         } else {
           historyItems[6] = {
             'score': score,
-            'date': 'Hari ini',
+            'date': '',
             'status': status,
-            'message': healthData['message']?.toString() ?? '',
+            'message': message,
           };
         }
 
         final List<int> scores =
             historyItems.map((e) => e['score'] as int).toList();
 
-        Color statusColor;
-        String statusText;
-        switch (status) {
-          case 'warning':
-            statusColor = const Color(0xFFFBBF24);
-            statusText = 'Warning!';
-            break;
-          case 'critical':
-          case 'danger':
-            statusColor = const Color(0xFFF87171);
-            statusText = 'Critical!';
-            break;
-          default:
-            statusColor = const Color(0xFF34D399);
-            statusText = l10n.financialHealthGood;
-        }
+        // Exact matching title, subtitle, and color for header amount
+        final statusColor = _getColorForScore(score, status);
+        final statusText = _getStatusTitle(score, status, l10n);
+        final statusSubtitle = _getStatusSubtitle(score, status, message, l10n);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +295,7 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        l10n.financialHealthGoodSubtitle,
+                        statusSubtitle,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 12,
@@ -285,17 +318,16 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
                     final width = constraints.maxWidth;
                     final stepX = width / (scores.length - 1);
                     final tapX = details.localPosition.dx;
-                    int selectedIndex = (tapX / stepX).round().clamp(0, scores.length - 1);
+                    int selectedIndex =
+                        (tapX / stepX).round().clamp(0, scores.length - 1);
 
                     final item = historyItems[selectedIndex];
                     _showHealthDetailSheet(
                       context,
-                      index: selectedIndex,
                       score: item['score'] as int,
                       status: item['status'] as String,
                       message: item['message'] as String,
-                      dateStr: item['date'] as String,
-                      isCurrent: selectedIndex == 6,
+                      l10n: l10n,
                     );
                   },
                   child: SizedBox(

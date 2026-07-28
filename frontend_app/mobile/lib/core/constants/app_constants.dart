@@ -20,6 +20,7 @@ class AppConstants {
   static const String onboardingCompleteKey = 'onboarding_complete';
   static const String categoryIconShapeKey = 'category_icon_shape';
   static const String accentColorKey = 'accent_color';
+  static const String bottomNavBehaviorKey = 'bottom_nav_behavior';
 
   static const String defaultCurrency = 'IDR';
   static const String defaultCurrencySymbol = 'Rp';

@@ -140,17 +140,17 @@ export class AnalyticsService {
 
     const currentScore = Math.min(Math.max(score, 0), 100);
 
-    // Calculate scoreHistory for past 7 sample intervals over the last 14 days
-    const scoreHistory: Array<{ date: string; score: number }> = [];
+    // Calculate scoreHistory for past 7 months
+    const scoreHistory: Array<{ date: string; score: number; status: string; message: string }> = [];
     const now = new Date();
     
-    // Fetch historical daily aggregations for the past 14 days
-    const fourteenDaysAgo = new Date();
-    fourteenDaysAgo.setDate(now.getDate() - 14);
+    // Fetch historical monthly aggregations for the past 7 months
+    const sevenMonthsAgo = new Date();
+    sevenMonthsAgo.setMonth(now.getMonth() - 7);
 
-    const dailyTransactions = await this.db
+    const monthlyTransactions = await this.db
       .select({
-        day: sql<string>`TO_CHAR(date, 'YYYY-MM-DD')`,
+        month: sql<string>`TO_CHAR(date, 'YYYY-MM')`,
         income: sql<number>`COALESCE(SUM(CASE WHEN type = 'income' THEN amount::numeric ELSE 0 END), 0)`,
         expense: sql<number>`COALESCE(SUM(CASE WHEN type = 'expense' THEN amount::numeric ELSE 0 END), 0)`,
       })
@@ -158,11 +158,11 @@ export class AnalyticsService {
       .where(
         and(
           eq(transactions.userId, userId),
-          sql`date >= ${fourteenDaysAgo.toISOString()}`
+          sql`date >= ${sevenMonthsAgo.toISOString()}`
         )
       )
-      .groupBy(sql`TO_CHAR(date, 'YYYY-MM-DD')`)
-      .orderBy(sql`TO_CHAR(date, 'YYYY-MM-DD') ASC`);
+      .groupBy(sql`TO_CHAR(date, 'YYYY-MM')`)
+      .orderBy(sql`TO_CHAR(date, 'YYYY-MM') ASC`);
 
     const getStatusAndMessage = (sc: number) => {
       if (sc >= 80) {
@@ -183,47 +183,42 @@ export class AnalyticsService {
       }
     };
 
-    if (dailyTransactions.length >= 3) {
-      let runningBalance = summary.balance;
-      const reversedDays = [...dailyTransactions].reverse();
-      const points: Array<{ date: string; score: number; status: string; message: string }> = [];
-      
-      for (const dayData of reversedDays) {
-        let dayScore = 50;
-        const dayInc = Number(dayData.income);
-        const dayExp = Number(dayData.expense);
-        if (dayInc > 0 || dayExp > 0) {
-          const ratio = dayInc > 0 ? ((dayInc - dayExp) / dayInc) * 100 : -20;
-          if (ratio > 20) dayScore += 35;
-          else if (ratio > 0) dayScore += 15;
-          else dayScore -= 25;
+    if (monthlyTransactions.length >= 3) {
+      for (const monthData of monthlyTransactions) {
+        let mScore = 50;
+        const mInc = Number(monthData.income);
+        const mExp = Number(monthData.expense);
+        if (mInc > 0 || mExp > 0) {
+          const ratio = mInc > 0 ? ((mInc - mExp) / mInc) * 100 : -20;
+          if (ratio > 20) mScore += 35;
+          else if (ratio > 0) mScore += 15;
+          else mScore -= 25;
         } else {
-          dayScore = currentScore;
+          mScore = currentScore;
         }
-        if (overspentCount > 0) dayScore -= 10;
+        if (overspentCount > 0) mScore -= 10;
         
-        const finalScore = Math.min(Math.max(dayScore, 10), 100);
+        const finalScore = Math.min(Math.max(mScore, 10), 100);
         const { status: sStatus, message: sMsg } = getStatusAndMessage(finalScore);
-        points.unshift({
-          date: dayData.day,
+        scoreHistory.push({
+          date: monthData.month,
           score: finalScore,
           status: sStatus,
           message: sMsg,
         });
       }
-      // Guarantee current score as final point
-      if (points.length > 0) {
-        points[points.length - 1].score = currentScore;
-        points[points.length - 1].status = status;
-        points[points.length - 1].message = message;
+      // Guarantee current month's score as final point
+      if (scoreHistory.length > 0) {
+        scoreHistory[scoreHistory.length - 1].score = currentScore;
+        scoreHistory[scoreHistory.length - 1].status = status;
+        scoreHistory[scoreHistory.length - 1].message = message;
       }
-      scoreHistory.push(...points);
     } else {
-      // Fallback 7-period dynamic progression leading to current score
+      // Fallback 7-month dynamic progression leading to current month's score
       for (let i = 6; i >= 0; i--) {
         const d = new Date();
-        d.setDate(now.getDate() - i * 2);
-        const dateStr = d.toISOString().slice(0, 10);
+        d.setMonth(now.getMonth() - i);
+        const monthStr = d.toISOString().slice(0, 7);
         
         let calculatedScore = currentScore;
         if (i === 6) calculatedScore = Math.max(15, currentScore - 30);
@@ -240,7 +235,7 @@ export class AnalyticsService {
           : getStatusAndMessage(finalScore);
 
         scoreHistory.push({
-          date: dateStr,
+          date: monthStr,
           score: finalScore,
           status: sStatus,
           message: sMsg,

@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_colors.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/bottom_nav_behavior_provider.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({
@@ -24,6 +27,10 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
   late AnimationController _fadeController;
   bool _isPageChangingFromSwipe = false;
 
+  bool _isNavBarVisible = true;
+  bool _isChevronVisible = false;
+  Timer? _pauseTimer;
+
   @override
   void initState() {
     super.initState();
@@ -41,53 +48,224 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
     if (widget.navigationShell.currentIndex != oldWidget.navigationShell.currentIndex) {
       final targetIndex = widget.navigationShell.currentIndex;
       if (!_isPageChangingFromSwipe) {
-
         if (_pageController.hasClients) {
           _pageController.jumpToPage(targetIndex);
         }
         _fadeController.forward(from: 0.0);
       }
       _isPageChangingFromSwipe = false;
+      setState(() {
+        _isNavBarVisible = true;
+        _isChevronVisible = false;
+      });
     }
   }
 
   @override
   void dispose() {
+    _pauseTimer?.cancel();
     _pageController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
 
+  void _onScrollNotification(ScrollNotification notification, BottomNavBehavior behavior) {
+    if (behavior == BottomNavBehavior.alwaysVisible) {
+      if (!_isNavBarVisible || _isChevronVisible) {
+        setState(() {
+          _isNavBarVisible = true;
+          _isChevronVisible = false;
+        });
+      }
+      return;
+    }
+
+    final metrics = notification.metrics;
+    if (metrics.axis != Axis.vertical) return;
+
+    final isAtEdge = metrics.atEdge ||
+        metrics.pixels <= metrics.minScrollExtent ||
+        metrics.pixels >= metrics.maxScrollExtent;
+
+    if (isAtEdge) {
+      _pauseTimer?.cancel();
+      if (!_isNavBarVisible || _isChevronVisible) {
+        setState(() {
+          _isNavBarVisible = true;
+          _isChevronVisible = false;
+        });
+      }
+      return;
+    }
+
+    if (notification is ScrollUpdateNotification) {
+      final scrollDelta = notification.scrollDelta ?? 0.0;
+      if (scrollDelta.abs() > 2.0) {
+        _pauseTimer?.cancel();
+
+        if (behavior == BottomNavBehavior.autoShowOnPause) {
+          if (_isNavBarVisible || _isChevronVisible) {
+            setState(() {
+              _isNavBarVisible = false;
+              _isChevronVisible = false;
+            });
+          }
+
+          _pauseTimer = Timer(const Duration(seconds: 5), () {
+            if (mounted) {
+              setState(() {
+                _isNavBarVisible = true;
+                _isChevronVisible = false;
+              });
+            }
+          });
+        } else if (behavior == BottomNavBehavior.manualChevron) {
+          if (_isNavBarVisible) {
+            setState(() {
+              _isNavBarVisible = false;
+              _isChevronVisible = true;
+            });
+          } else if (!_isChevronVisible) {
+            setState(() {
+              _isChevronVisible = true;
+            });
+          }
+        }
+      }
+    } else if (notification is UserScrollNotification) {
+      if (notification.direction == ScrollDirection.idle &&
+          behavior == BottomNavBehavior.autoShowOnPause) {
+        _pauseTimer?.cancel();
+        _pauseTimer = Timer(const Duration(seconds: 5), () {
+          if (mounted) {
+            setState(() {
+              _isNavBarVisible = true;
+              _isChevronVisible = false;
+            });
+          }
+        });
+      }
+    }
+  }
+
+  void _toggleChevron() {
+    setState(() {
+      _isNavBarVisible = !_isNavBarVisible;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final navBehavior = ref.watch(bottomNavBehaviorProvider);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final double bottomMargin = bottomPadding > 0 ? bottomPadding : 12;
+
+    final showNavBar = navBehavior == BottomNavBehavior.alwaysVisible || _isNavBarVisible;
+    final showChevron = navBehavior == BottomNavBehavior.manualChevron && _isChevronVisible;
+
     return Scaffold(
       extendBody: true,
-      body: FadeTransition(
-        opacity: _fadeController,
-        child: PageView(
-          controller: _pageController,
-          onPageChanged: (index) {
-            if (index != widget.navigationShell.currentIndex) {
-              _isPageChangingFromSwipe = true;
-              widget.navigationShell.goBranch(
-                index,
-                initialLocation: index == widget.navigationShell.currentIndex,
-              );
-            }
-          },
-          children: widget.children,
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          _onScrollNotification(notification, navBehavior);
+          return false;
+        },
+        child: FadeTransition(
+          opacity: _fadeController,
+          child: PageView(
+            controller: _pageController,
+            onPageChanged: (index) {
+              if (index != widget.navigationShell.currentIndex) {
+                _isPageChangingFromSwipe = true;
+                widget.navigationShell.goBranch(
+                  index,
+                  initialLocation: index == widget.navigationShell.currentIndex,
+                );
+              }
+            },
+            children: widget.children,
+          ),
         ),
       ),
-      bottomNavigationBar: _CuanBuddyNavBar(
-        currentIndex: widget.navigationShell.currentIndex,
-        onTap: (index) {
-          if (index != widget.navigationShell.currentIndex) {
-            widget.navigationShell.goBranch(
-              index,
-              initialLocation: index == widget.navigationShell.currentIndex,
-            );
-          }
-        },
+      bottomNavigationBar: Stack(
+        alignment: Alignment.bottomCenter,
+        clipBehavior: Clip.none,
+        children: [
+
+          AnimatedSlide(
+            duration: const Duration(milliseconds: 280),
+            curve: Curves.easeInOutCubic,
+            offset: showNavBar ? Offset.zero : const Offset(0, 1.5),
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 220),
+              opacity: showNavBar ? 1.0 : 0.0,
+              child: _CuanBuddyNavBar(
+                currentIndex: widget.navigationShell.currentIndex,
+                onTap: (index) {
+                  if (index != widget.navigationShell.currentIndex) {
+                    widget.navigationShell.goBranch(
+                      index,
+                      initialLocation: index == widget.navigationShell.currentIndex,
+                    );
+                  }
+                },
+              ),
+            ),
+          ),
+
+          if (navBehavior == BottomNavBehavior.manualChevron)
+            Positioned(
+              bottom: showNavBar ? (64 + bottomMargin + 10) : (bottomMargin + 6),
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeInOutCubic,
+                offset: showChevron ? Offset.zero : const Offset(0, 2.5),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 220),
+                  opacity: showChevron ? 1.0 : 0.0,
+                  child: Material(
+                    color: Colors.transparent,
+                    elevation: 6,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: _toggleChevron,
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF1E2A38).withValues(alpha: 0.90)
+                              : Colors.white.withValues(alpha: 0.95),
+                          border: Border.all(
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Colors.white.withValues(alpha: 0.25)
+                                : Colors.black.withValues(alpha: 0.12),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.20),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          showNavBar
+                              ? Icons.keyboard_arrow_down_rounded
+                              : Icons.keyboard_arrow_up_rounded,
+                          color: AppColors.primary,
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -184,7 +362,6 @@ class _CuanBuddyNavBar extends ConsumerWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 220),
                             curve: Curves.easeOutCubic,

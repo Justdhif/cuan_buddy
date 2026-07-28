@@ -7,6 +7,7 @@ import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/providers/bottom_nav_behavior_provider.dart';
 import '../../../../core/widgets/color_picker_sheet.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 
@@ -95,6 +96,24 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
     );
   }
 
+  Future<void> _showBottomNavBehaviorPicker(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    final isIndonesian = l10n.languageCode == 'id';
+    final currentBehavior = ref.read(bottomNavBehaviorProvider);
+    await AppBottomSheet.show<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => _BottomNavBehaviorPickerSheet(
+        currentBehavior: currentBehavior,
+        isIndonesian: isIndonesian,
+        onSelect: (behavior) async {
+          Navigator.pop(ctx);
+          await ref.read(bottomNavBehaviorProvider.notifier).setBehavior(behavior);
+        },
+      ),
+    );
+  }
+
   Future<void> _showAccentPicker(BuildContext context) async {
     final currentColor = ref.read(accentColorProvider);
     final pickedColor = await showCustomColorPicker(
@@ -123,9 +142,11 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final isIndonesian = l10n.languageCode == 'id';
     final themeMode = ref.watch(themeModeProvider);
     final accentColor = ref.watch(accentColorProvider);
     final shapeMode = ref.watch(categoryIconShapeProvider);
+    final navBehavior = ref.watch(bottomNavBehaviorProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -229,6 +250,29 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
               ),
             ),
           ),
+          _buildListTile(
+            context: context,
+            icon: Icons.navigation_rounded,
+            title: isIndonesian ? 'Interaksi Navigasi Bawah' : 'Bottom Bar Interaction',
+            subtitle: navBehavior.getDisplayName(isIndonesian: isIndonesian),
+            onTap: () => _showBottomNavBehaviorPicker(context),
+            trailing: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isDark ? Colors.white24 : Colors.black12,
+                ),
+              ),
+              child: Icon(
+                Icons.unfold_more_rounded,
+                size: 16,
+                color: accentColor,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -282,6 +326,110 @@ class _ThemeLanguageScreenState extends ConsumerState<ThemeLanguageScreen> {
               const SizedBox(width: 12),
               trailing,
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavBehaviorPickerSheet extends StatelessWidget {
+  const _BottomNavBehaviorPickerSheet({
+    required this.currentBehavior,
+    required this.isIndonesian,
+    required this.onSelect,
+  });
+
+  final BottomNavBehavior currentBehavior;
+  final bool isIndonesian;
+  final ValueChanged<BottomNavBehavior> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final options = BottomNavBehavior.values;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isIndonesian ? 'Pilih Gaya Navigasi Bawah' : 'Bottom Bar Interaction',
+              style: AppTypography.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 20),
+            ...options.map((behavior) {
+              final isSelected = behavior == currentBehavior;
+              return GestureDetector(
+                onTap: () => onSelect(behavior),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.primary.withValues(alpha: 0.12)
+                        : (isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withValues(alpha: 0.3)),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color:
+                          isSelected ? AppColors.primary : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        behavior == BottomNavBehavior.alwaysVisible
+                            ? Icons.visibility_rounded
+                            : (behavior == BottomNavBehavior.autoShowOnPause
+                                ? Icons.auto_awesome_rounded
+                                : Icons.touch_app_rounded),
+                        size: 28,
+                        color: isSelected ? AppColors.primary : null,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              behavior.getDisplayName(isIndonesian: isIndonesian),
+                              style: AppTypography.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? AppColors.primary : null,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              behavior.getDescription(isIndonesian: isIndonesian),
+                              style: AppTypography.textTheme.bodySmall?.copyWith(
+                                color: isSelected
+                                    ? AppColors.primary.withValues(alpha: 0.8)
+                                    : (isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isSelected)
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.primary,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
           ],
         ),
       ),

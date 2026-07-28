@@ -102,6 +102,13 @@ class PreferencesService {
     await _prefs.setBool(AppConstants.onboardingCompleteKey, complete);
   }
 
+  String get bottomNavBehavior =>
+      _prefs.getString(AppConstants.bottomNavBehaviorKey) ?? 'autoShowOnPause';
+
+  Future<void> setBottomNavBehavior(String value) async {
+    await _prefs.setString(AppConstants.bottomNavBehaviorKey, value);
+  }
+
   Future<void> clearAll() async {
     await _prefs.clear();
   }
