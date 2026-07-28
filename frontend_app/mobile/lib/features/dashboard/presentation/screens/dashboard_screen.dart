@@ -360,9 +360,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Expanded(
             child: _buildRedesignedAiButton(
               context: context,
-              title: isId ? 'Scan & Foto Struk' : 'Scan & Photo Receipt',
-              subtitle: isId ? 'Foto atau Upload' : 'Photo or Upload',
-              badgeText: isId ? 'Scan / Foto' : 'Scan / Photo',
+              title: isId ? 'Scan Struk' : 'Scan Receipt',
+              subtitle: isId ? 'Pindai Struk Belanja' : 'Scan Expense Receipt',
+              badgeText: isId ? 'Scan' : 'Scan',
               icon: Icons.document_scanner_rounded,
               gradientColors: isDark
                   ? [const Color(0xFF059669), const Color(0xFF0D9488)]
@@ -594,6 +594,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const Spacer(),
           GestureDetector(
+            onTap: () => context.push('/home/profile'),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _isScrolled
+                    ? (isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.05))
+                    : Colors.white.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person_outline_rounded,
+                size: 20,
+                color: _isScrolled
+                    ? (isDark ? Colors.white : AppColors.textPrimaryLight)
+                    : Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
             onTap: () => context.push('/notifications'),
             child: Container(
               width: 36,
@@ -713,7 +736,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildGreetingDateWeather(context, ref, profileAsync),
+                _buildDateWeather(context, ref),
                 const SizedBox(height: 16),
                 if (summaryAsync.isLoading && !summaryAsync.hasValue)
                   const SkeletonCard(height: 60)
@@ -787,34 +810,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildGreetingDateWeather(
+  Widget _buildDateWeather(
     BuildContext context,
     WidgetRef ref,
-    AsyncValue<Map<String, dynamic>> profileAsync,
   ) {
     final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
-    final hour = now.hour;
-
-    // Time-based greeting
-    String greeting;
-    if (hour >= 5 && hour < 12) {
-      greeting = l10n.greetingMorning;
-    } else if (hour >= 12 && hour < 15) {
-      greeting = l10n.greetingAfternoon;
-    } else if (hour >= 15 && hour < 19) {
-      greeting = l10n.greetingEvening;
-    } else {
-      greeting = l10n.greetingNight;
-    }
-
-    // Get first name from profile
-    final fullName =
-        profileAsync.valueOrNull?['name'] as String? ?? '';
-    final firstName = fullName.split(' ').first;
-    final greetingText = firstName.isNotEmpty
-        ? '$greeting, $firstName! \ud83d\udc4b'
-        : '$greeting! \ud83d\udc4b';
 
     // Date format based on language
     final dateFormat = l10n.languageCode == 'id'
@@ -825,107 +826,87 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Weather
     final weatherAsync = ref.watch(weatherProvider);
 
-    return GestureDetector(
-      onTap: () => context.push('/home/profile'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Greeting
-          Text(
-            greetingText,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.2,
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Date
+        Text(
+          dateStr,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.78),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 4),
-          // Date + Weather row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+        ),
+        // Weather (only if available)
+        weatherAsync.when(
+          data: (weather) {
+            if (weather == null) return const SizedBox.shrink();
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Container(
+                    width: 3,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                Text(
+                  weather.weatherEmoji,
+                  style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '${weather.temp.round()}°C  ${weather.description}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.78),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Date
-              Text(
-                dateStr,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.78),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Container(
+                  width: 3,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
                 ),
               ),
-              // Weather (only if available)
-              weatherAsync.when(
-                data: (weather) {
-                  if (weather == null) return const SizedBox.shrink();
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Container(
-                          width: 3,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        weather.weatherEmoji,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${weather.temp.round()}\u00b0C  ${weather.description}',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.78),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                loading: () => Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Container(
-                        width: 3,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      l10n.weatherLoading,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+              SizedBox(
+                width: 10,
+                height: 10,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: Colors.white.withValues(alpha: 0.6),
                 ),
-                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                l10n.weatherLoading,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
-        ],
-      ),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 
