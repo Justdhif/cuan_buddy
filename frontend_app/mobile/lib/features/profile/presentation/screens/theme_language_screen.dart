@@ -388,9 +388,7 @@ class _BottomNavBehaviorPickerSheet extends StatelessWidget {
                       Icon(
                         behavior == BottomNavBehavior.alwaysVisible
                             ? Icons.visibility_rounded
-                            : (behavior == BottomNavBehavior.autoShowOnPause
-                                ? Icons.auto_awesome_rounded
-                                : Icons.touch_app_rounded),
+                            : Icons.swap_vert_rounded,
                         size: 28,
                         color: isSelected ? AppColors.primary : null,
                       ),

@@ -1,6 +1,5 @@
 ﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/weather_service.dart';
-import '../l10n/app_localizations.dart';
 import 'language_provider.dart';
 
 final weatherServiceProvider = Provider<WeatherService>((ref) {

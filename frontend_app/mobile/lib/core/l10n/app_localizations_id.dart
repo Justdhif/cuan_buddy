@@ -906,7 +906,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get appearanceMenu => 'Tampilan';
   @override
-  String get appearanceMenuDesc => 'Tema, bahasa aplikasi';
+  String get appearanceMenuDesc => 'Tema, warna, bahasa & preferensi aplikasi';
   @override
   String get manageCategoriesDesc => 'Kelola kategori transaksi';
   @override

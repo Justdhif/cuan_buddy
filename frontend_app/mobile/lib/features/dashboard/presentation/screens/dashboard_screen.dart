@@ -31,7 +31,6 @@ import '../../../transactions/presentation/widgets/ai_voice_sheet.dart';
 import '../../../transactions/presentation/widgets/ai_scan_sheet.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart';
 import '../../../../core/providers/weather_provider.dart';
-import '../../../../core/services/weather_service.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});

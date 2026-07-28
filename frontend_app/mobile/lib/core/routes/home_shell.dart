@@ -28,7 +28,6 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
   bool _isPageChangingFromSwipe = false;
 
   bool _isNavBarVisible = true;
-  bool _isChevronVisible = false;
   Timer? _pauseTimer;
 
   @override
@@ -56,7 +55,6 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
       _isPageChangingFromSwipe = false;
       setState(() {
         _isNavBarVisible = true;
-        _isChevronVisible = false;
       });
     }
   }
@@ -71,10 +69,9 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
 
   void _onScrollNotification(ScrollNotification notification, BottomNavBehavior behavior) {
     if (behavior == BottomNavBehavior.alwaysVisible) {
-      if (!_isNavBarVisible || _isChevronVisible) {
+      if (!_isNavBarVisible) {
         setState(() {
           _isNavBarVisible = true;
-          _isChevronVisible = false;
         });
       }
       return;
@@ -89,10 +86,9 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
 
     if (isAtEdge) {
       _pauseTimer?.cancel();
-      if (!_isNavBarVisible || _isChevronVisible) {
+      if (!_isNavBarVisible) {
         setState(() {
           _isNavBarVisible = true;
-          _isChevronVisible = false;
         });
       }
       return;
@@ -104,10 +100,9 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
         _pauseTimer?.cancel();
 
         if (behavior == BottomNavBehavior.autoShowOnPause) {
-          if (_isNavBarVisible || _isChevronVisible) {
+          if (_isNavBarVisible) {
             setState(() {
               _isNavBarVisible = false;
-              _isChevronVisible = false;
             });
           }
 
@@ -115,21 +110,9 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
             if (mounted) {
               setState(() {
                 _isNavBarVisible = true;
-                _isChevronVisible = false;
               });
             }
           });
-        } else if (behavior == BottomNavBehavior.manualChevron) {
-          if (_isNavBarVisible) {
-            setState(() {
-              _isNavBarVisible = false;
-              _isChevronVisible = true;
-            });
-          } else if (!_isChevronVisible) {
-            setState(() {
-              _isChevronVisible = true;
-            });
-          }
         }
       }
     } else if (notification is UserScrollNotification) {
@@ -140,7 +123,6 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
           if (mounted) {
             setState(() {
               _isNavBarVisible = true;
-              _isChevronVisible = false;
             });
           }
         });
@@ -148,20 +130,11 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
     }
   }
 
-  void _toggleChevron() {
-    setState(() {
-      _isNavBarVisible = !_isNavBarVisible;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final navBehavior = ref.watch(bottomNavBehaviorProvider);
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final double bottomMargin = bottomPadding > 0 ? bottomPadding : 12;
 
     final showNavBar = navBehavior == BottomNavBehavior.alwaysVisible || _isNavBarVisible;
-    final showChevron = navBehavior == BottomNavBehavior.manualChevron && _isChevronVisible;
 
     return Scaffold(
       extendBody: true,
@@ -174,79 +147,21 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
               _onScrollNotification(notification, navBehavior);
               return false;
             },
-            child: FadeTransition(
-              opacity: _fadeController,
-              child: PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  if (index != widget.navigationShell.currentIndex) {
-                    _isPageChangingFromSwipe = true;
-                    widget.navigationShell.goBranch(
-                      index,
-                      initialLocation: index == widget.navigationShell.currentIndex,
-                    );
-                  }
-                },
-                children: widget.children,
-              ),
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (index) {
+                if (index != widget.navigationShell.currentIndex) {
+                  _isPageChangingFromSwipe = true;
+                  widget.navigationShell.goBranch(
+                    index,
+                    initialLocation: index == widget.navigationShell.currentIndex,
+                  );
+                }
+              },
+              children: widget.children,
             ),
           ),
-
-          if (navBehavior == BottomNavBehavior.manualChevron)
-            Positioned(
-              bottom: showNavBar ? (64 + bottomMargin + 12) : (bottomMargin + 12),
-              child: IgnorePointer(
-                ignoring: !showChevron,
-                child: AnimatedSlide(
-                  duration: const Duration(milliseconds: 280),
-                  curve: Curves.easeInOutCubic,
-                  offset: showChevron ? Offset.zero : const Offset(0, 2.5),
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 220),
-                    opacity: showChevron ? 1.0 : 0.0,
-                    child: Material(
-                      color: Colors.transparent,
-                      elevation: 8,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        onTap: _toggleChevron,
-                        customBorder: const CircleBorder(),
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Theme.of(context).brightness == Brightness.dark
-                                ? const Color(0xFF1E2A38).withValues(alpha: 0.95)
-                                : Colors.white.withValues(alpha: 0.98),
-                            border: Border.all(
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white.withValues(alpha: 0.3)
-                                  : Colors.black.withValues(alpha: 0.15),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.25),
-                                blurRadius: 14,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            showNavBar
-                                ? Icons.keyboard_arrow_down_rounded
-                                : Icons.keyboard_arrow_up_rounded,
-                            color: AppColors.primary,
-                            size: 28,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
       bottomNavigationBar: AnimatedSlide(

@@ -753,8 +753,8 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                             const SizedBox(height: 2),
                             Text(
                               l10n.languageCode == 'id'
-                                  ? 'Masukkan UUID / kode akses ruangan'
-                                  : 'Enter room UUID to join',
+                                  ? 'Masukkan Kode Undangan / Kode Room'
+                                  : 'Enter Invite Code / Room Code',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: isDark

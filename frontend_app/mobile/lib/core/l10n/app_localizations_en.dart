@@ -901,7 +901,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get appearanceMenu => 'Appearance';
   @override
-  String get appearanceMenuDesc => 'Theme, app language';
+  String get appearanceMenuDesc => 'Theme, color, language & app preferences';
   @override
   String get manageCategoriesDesc => 'Manage transaction categories';
   @override

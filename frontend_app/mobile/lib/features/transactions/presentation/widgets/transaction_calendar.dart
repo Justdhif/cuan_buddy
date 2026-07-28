@@ -688,21 +688,23 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
                         textDirection: TextDirection.ltr,
                       )..layout(minWidth: 0, maxWidth: double.infinity);
 
-                      if (textPainter.size.width > constraints.maxWidth) {
+                      final isOverflowing = (textPainter.size.width + 4.0) > constraints.maxWidth;
+
+                      if (isOverflowing && constraints.maxWidth > 0) {
                         return SizedBox(
-                          height: textPainter.size.height,
+                          height: 18,
                           width: constraints.maxWidth,
                           child: Marquee(
                             text: amount,
                             style: amountStyle,
                             scrollAxis: Axis.horizontal,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            blankSpace: 20.0,
-                            velocity: 30.0,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            blankSpace: 12.0,
+                            velocity: 25.0,
                             pauseAfterRound: const Duration(seconds: 1),
-                            accelerationDuration: const Duration(milliseconds: 500),
+                            accelerationDuration: const Duration(milliseconds: 300),
                             accelerationCurve: Curves.linear,
-                            decelerationDuration: const Duration(milliseconds: 500),
+                            decelerationDuration: const Duration(milliseconds: 300),
                             decelerationCurve: Curves.easeOut,
                           ),
                         );

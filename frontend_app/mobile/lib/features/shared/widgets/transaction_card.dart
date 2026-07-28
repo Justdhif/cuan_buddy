@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -238,12 +238,10 @@ class TransactionCard extends ConsumerWidget {
 
             if (hasBadges) ...[
               const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 62),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Row(
                     children: [
                       _buildBadge(
                         text: catName ?? l10n.transaction,
@@ -290,8 +288,7 @@ class TransactionCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
           ],
         ),
       ),

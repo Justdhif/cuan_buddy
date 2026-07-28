@@ -3,8 +3,7 @@ import 'core_providers.dart';
 
 enum BottomNavBehavior {
   alwaysVisible,
-  autoShowOnPause,
-  manualChevron;
+  autoShowOnPause;
 
   String toStorageString() {
     switch (this) {
@@ -12,8 +11,6 @@ enum BottomNavBehavior {
         return 'alwaysVisible';
       case BottomNavBehavior.autoShowOnPause:
         return 'autoShowOnPause';
-      case BottomNavBehavior.manualChevron:
-        return 'manualChevron';
     }
   }
 
@@ -21,8 +18,6 @@ enum BottomNavBehavior {
     switch (value) {
       case 'alwaysVisible':
         return BottomNavBehavior.alwaysVisible;
-      case 'manualChevron':
-        return BottomNavBehavior.manualChevron;
       case 'autoShowOnPause':
       default:
         return BottomNavBehavior.autoShowOnPause;
@@ -35,12 +30,8 @@ enum BottomNavBehavior {
         return isIndonesian ? 'Selalu Tampil' : 'Always Visible';
       case BottomNavBehavior.autoShowOnPause:
         return isIndonesian
-            ? 'Otomatis Saat Pause'
-            : 'Auto Show on Pause';
-      case BottomNavBehavior.manualChevron:
-        return isIndonesian
-            ? 'Manual Chevron'
-            : 'Manual Chevron';
+            ? 'Sembunyikan Saat Scroll'
+            : 'Hide on Scroll';
     }
   }
 
@@ -52,12 +43,8 @@ enum BottomNavBehavior {
             : 'Bottom bar stays fixed at the bottom of the screen.';
       case BottomNavBehavior.autoShowOnPause:
         return isIndonesian
-            ? 'Bottom bar hilang saat scroll, dan otomatis muncul kembali saat Anda berhenti scroll atau mentok di ujung.'
-            : 'Bottom bar hides while scrolling and appears automatically when you pause or reach the end.';
-      case BottomNavBehavior.manualChevron:
-        return isIndonesian
-            ? 'Bottom bar hilang saat scroll. Tombol chevron digunakan untuk buka/tutup (otomatis muncul saat mentok atas/bawah).'
-            : 'Bottom bar hides while scrolling. Chevron button toggles it (auto-shows at top/bottom).';
+            ? 'Bottom bar otomatis sembunyi saat Anda scroll dan muncul kembali saat berhenti.'
+            : 'Bottom bar automatically hides when you scroll and reappears when you stop.';
     }
   }
 }

@@ -182,32 +182,18 @@ class _AiInsightCardState extends ConsumerState<AiInsightCard> {
                     ),
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.edit_note_rounded,
-                            size: 18,
-                            color: isDark ? Colors.white70 : Colors.black87,
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              currentSentence,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white
-                                    : AppColors.textPrimaryLight,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                height: 1.35,
-                              ),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                      child: Text(
+                        currentSentence,
+                        style: TextStyle(
+                          color: isDark
+                              ? Colors.white
+                              : AppColors.textPrimaryLight,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          height: 1.35,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
