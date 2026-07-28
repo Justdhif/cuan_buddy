@@ -98,10 +98,20 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
         _selectedDate = DateTime.tryParse(targetDateStr);
       }
     }
+    _nameController.addListener(_onFormFieldChanged);
+    _amountController.addListener(_onFormFieldChanged);
+  }
+
+  void _onFormFieldChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_onFormFieldChanged);
+    _amountController.removeListener(_onFormFieldChanged);
     _nameController.dispose();
     _amountController.dispose();
     _linkController.dispose();
@@ -366,6 +376,69 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
           _amountController.text.trim() != origAmount ||
           _selectedEmoji != origEmoji;
     }
+  }
+
+  bool get _isNameFilled => _nameController.text.trim().isNotEmpty;
+  bool get _isAmountFilled =>
+      (double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0) > 0;
+  bool get _isWalletSelected => _selectedWalletId != null;
+
+  String _getGuidanceButtonText(AppLocalizations l10n) {
+    if (!_isNameFilled) {
+      return l10n.languageCode == 'id'
+          ? 'Isi Nama Target Tabungan'
+          : 'Fill Savings Goal Name';
+    }
+    if (!_isAmountFilled) {
+      return l10n.languageCode == 'id'
+          ? 'Isi Target Nominal'
+          : 'Fill Target Amount';
+    }
+    if (!_isWalletSelected) {
+      return l10n.languageCode == 'id' ? 'Pilih Dompet' : 'Select Wallet';
+    }
+    return l10n.saveGoal;
+  }
+
+  IconData _getGuidanceButtonIcon() {
+    if (!_isNameFilled) {
+      return Icons.edit_note_rounded;
+    }
+    if (!_isAmountFilled) {
+      return Icons.calculate_rounded;
+    }
+    if (!_isWalletSelected) {
+      return Icons.account_balance_wallet_rounded;
+    }
+    return Icons.check_circle_rounded;
+  }
+
+  void _onGuidanceButtonTap(AppLocalizations l10n) {
+    if (_isSaving) return;
+
+    if (!_isNameFilled) {
+      _showNameInputSheet();
+      return;
+    }
+    if (!_isAmountFilled) {
+      _showAmountCalculatorSheet();
+      return;
+    }
+    if (!_isWalletSelected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.languageCode == 'id'
+                ? 'Silakan pilih dompet terlebih dahulu'
+                : 'Please select a wallet first',
+          ),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    _save();
   }
 
   @override
@@ -706,7 +779,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
         ),
       ),
       bottomNavigationBar: GestureDetector(
-        onTap: _isSaving ? null : _save,
+        onTap: () => _onGuidanceButtonTap(l10n),
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
@@ -725,12 +798,24 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                       ),
                     )
                   : Center(
-                      child: Text(
-                        l10n.saveGoal,
-                        style: AppTypography.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _getGuidanceButtonIcon(),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _getGuidanceButtonText(l10n),
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
             ),

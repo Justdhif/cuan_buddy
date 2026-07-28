@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/network/api_exceptions.dart';
 import '../../../../core/providers/core_providers.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'auth_state.dart';
@@ -125,17 +127,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   String _extractMessage(Object e) {
-    final msg = e.toString();
-    if (msg.contains('DioException')) {
-      // Extract friendly message from DioException
-      final match = RegExp(r'message: (.+?)[\)\]|$]').firstMatch(msg);
-      if (match != null) return match.group(1)!.trim();
+    if (e is DioException) {
+      if (e.error is AppException) {
+        return (e.error as AppException).message;
+      }
+      if (e.response?.data is Map<String, dynamic>) {
+        final data = e.response!.data as Map<String, dynamic>;
+        final msg = data['message'] ?? data['error'] ?? data['detail'];
+        if (msg != null && msg.toString().isNotEmpty) {
+          return msg.toString();
+        }
+      }
+      if (e.message != null && e.message!.isNotEmpty) {
+        return e.message!;
+      }
     }
-    // Try extracting from AppException format
+    if (e is AppException) {
+      return e.message;
+    }
+    final msg = e.toString();
     if (msg.contains('AppException:')) {
       return msg.replaceAll('AppException: ', '').split('(code:').first.trim();
     }
-    return 'An error occurred. Please try again 😅';
+    return 'Terjadi kesalahan. Silakan coba lagi 😅';
   }
 }
 

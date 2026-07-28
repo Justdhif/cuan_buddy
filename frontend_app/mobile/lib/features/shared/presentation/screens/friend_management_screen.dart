@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/widgets/user_list_tile.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../providers/shared_provider.dart';
@@ -81,7 +80,6 @@ class _FriendManagementScreenState extends ConsumerState<FriendManagementScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(sharedNotifierProvider);
-    final textTheme = AppTypography.textTheme;
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(

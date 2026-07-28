@@ -113,13 +113,25 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
       if (_startDay > daysInMonth) {
         _startDay = daysInMonth;
       }
+      _nameController.addListener(_onFormFieldChanged);
+      _amountController.addListener(_onFormFieldChanged);
     } else if (widget.initialCategoryId != null) {
       _selectedCategoryIds = {widget.initialCategoryId!};
+    }
+    _nameController.addListener(_onFormFieldChanged);
+    _amountController.addListener(_onFormFieldChanged);
+  }
+
+  void _onFormFieldChanged() {
+    if (mounted) {
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_onFormFieldChanged);
+    _amountController.removeListener(_onFormFieldChanged);
     _amountController.dispose();
     _nameController.dispose();
     super.dispose();
@@ -379,6 +391,68 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
           _amountController.text.trim() != origAmount ||
           _selectedEmoji != origEmoji;
     }
+  }
+
+  bool get _isNameFilled => _nameController.text.trim().isNotEmpty;
+  bool get _isAmountFilled =>
+      (double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0) > 0;
+  bool get _isCategorySelectionValid =>
+      _budgetType == 'standalone' || _selectedCategoryIds.isNotEmpty;
+
+  String _getGuidanceButtonText(AppLocalizations l10n) {
+    if (!_isNameFilled) {
+      return l10n.languageCode == 'id' ? 'Isi Nama Budget' : 'Fill Budget Name';
+    }
+    if (!_isAmountFilled) {
+      return l10n.languageCode == 'id' ? 'Isi Batas Budget' : 'Fill Budget Limit';
+    }
+    if (!_isCategorySelectionValid) {
+      return l10n.languageCode == 'id'
+          ? 'Pilih Kategori Budget'
+          : 'Select Budget Category';
+    }
+    return l10n.saveBudget;
+  }
+
+  IconData _getGuidanceButtonIcon() {
+    if (!_isNameFilled) {
+      return Icons.edit_note_rounded;
+    }
+    if (!_isAmountFilled) {
+      return Icons.calculate_rounded;
+    }
+    if (!_isCategorySelectionValid) {
+      return Icons.category_rounded;
+    }
+    return Icons.check_circle_rounded;
+  }
+
+  void _onGuidanceButtonTap() {
+    if (_isSaving) return;
+
+    if (!_isNameFilled) {
+      _showNameInputSheet();
+      return;
+    }
+    if (!_isAmountFilled) {
+      _showAmountCalculatorSheet();
+      return;
+    }
+    if (!_isCategorySelectionValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            l10n.languageCode == 'id'
+                ? 'Silakan pilih setidaknya satu kategori'
+                : 'Please select at least one category',
+          ),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    _save();
   }
 
   @override
@@ -1048,7 +1122,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
         ),
       ),
       bottomNavigationBar: GestureDetector(
-        onTap: _isSaving ? null : _save,
+        onTap: _onGuidanceButtonTap,
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
@@ -1070,13 +1144,24 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                       ),
                     )
                   : Center(
-                      child: Text(
-                        l10n.saveBudget,
-                        style:
-                            AppTypography.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _getGuidanceButtonIcon(),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _getGuidanceButtonText(l10n),
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
             ),

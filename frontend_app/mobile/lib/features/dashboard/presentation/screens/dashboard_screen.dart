@@ -195,6 +195,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                     ),
+                    SliverToBoxAdapter(
+                      child: _buildAiTransactionButtons(context, isDark),
+                    ),
                     transactionsAsync.when(
                       skipLoadingOnReload: true,
                       data: (transactions) {
@@ -330,8 +333,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildQuickActionsRow(BuildContext context, bool isDark) {
     final l10n = AppLocalizations.of(context);
-    final voiceLabel = l10n.languageCode == 'id' ? 'Voice AI' : 'Voice AI';
-    final scanLabel = l10n.languageCode == 'id' ? 'Scan Struk' : 'Scan Receipt';
+    final isId = l10n.languageCode == 'id';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
@@ -340,36 +342,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Expanded(
             child: _buildQuickActionButton(
               context: context,
-              icon: Icons.mic_rounded,
-              label: voiceLabel,
+              icon: Icons.add_rounded,
+              label: isId ? 'Tambah' : 'Add',
               color: AppColors.primary,
               isDark: isDark,
-              onTap: () async {
-                final result = await showAiVoiceSheet(context);
-                if (result == true) {
-                  ref.invalidate(analyticsSummaryProvider);
-                  ref.invalidate(recentTransactionsProvider);
-                  ref.invalidate(allTransactionsProvider);
-                }
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildQuickActionButton(
-              context: context,
-              icon: Icons.document_scanner_rounded,
-              label: scanLabel,
-              color: const Color(0xFF10B981),
-              isDark: isDark,
-              onTap: () async {
-                final result = await showAiScanSheet(context);
-                if (result == true) {
-                  ref.invalidate(analyticsSummaryProvider);
-                  ref.invalidate(recentTransactionsProvider);
-                  ref.invalidate(allTransactionsProvider);
-                }
-              },
+              onTap: () => context.push('/transactions/form?type=expense'),
             ),
           ),
           const SizedBox(width: 8),
@@ -394,7 +371,207 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onTap: () => context.push('/home/savings'),
             ),
           ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildQuickActionButton(
+              context: context,
+              icon: Icons.account_balance_wallet_rounded,
+              label: isId ? 'Dompet' : 'Wallets',
+              color: const Color(0xFF0D9488),
+              isDark: isDark,
+              onTap: () => context.push('/manage-wallets'),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAiTransactionButtons(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context);
+    final isId = l10n.languageCode == 'id';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildRedesignedAiButton(
+              context: context,
+              title: isId ? 'Voice AI' : 'Voice AI',
+              subtitle: isId ? 'Input Bicara' : 'Voice Input',
+              badgeText: 'AI Voice',
+              icon: Icons.mic_rounded,
+              gradientColors: isDark
+                  ? [const Color(0xFF4F46E5), const Color(0xFF7C3AED)]
+                  : [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+              shadowColor:
+                  const Color(0xFF6366F1).withValues(alpha: isDark ? 0.35 : 0.25),
+              isDark: isDark,
+              onTap: () async {
+                final result = await showAiVoiceSheet(context);
+                if (result == true) {
+                  ref.invalidate(analyticsSummaryProvider);
+                  ref.invalidate(recentTransactionsProvider);
+                  ref.invalidate(allTransactionsProvider);
+                }
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildRedesignedAiButton(
+              context: context,
+              title: isId ? 'Scan Struk' : 'Scan Receipt',
+              subtitle: isId ? 'Ekstrak Struk' : 'Auto Extract',
+              badgeText: 'AI Scan',
+              icon: Icons.document_scanner_rounded,
+              gradientColors: isDark
+                  ? [const Color(0xFF059669), const Color(0xFF0D9488)]
+                  : [const Color(0xFF10B981), const Color(0xFF14B8A6)],
+              shadowColor:
+                  const Color(0xFF10B981).withValues(alpha: isDark ? 0.35 : 0.25),
+              isDark: isDark,
+              onTap: () async {
+                final result = await showAiScanSheet(context);
+                if (result == true) {
+                  ref.invalidate(analyticsSummaryProvider);
+                  ref.invalidate(recentTransactionsProvider);
+                  ref.invalidate(allTransactionsProvider);
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRedesignedAiButton({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required String badgeText,
+    required IconData icon,
+    required List<Color> gradientColors,
+    required Color shadowColor,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradientColors,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: shadowColor,
+                blurRadius: 12,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -12,
+                top: -12,
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 10,
+                              color: Colors.amberAccent,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              badgeText,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    title,
+                    style: AppTypography.textTheme.titleSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.82),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

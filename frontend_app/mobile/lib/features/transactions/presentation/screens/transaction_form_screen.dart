@@ -63,6 +63,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   void initState() {
     super.initState();
     _type = widget.initialType;
+    _titleController.addListener(_onFormFieldChanged);
+    _amountController.addListener(_onFormFieldChanged);
     // Pre-select a locked savings goal if provided
     if (widget.initialSavingsGoalId != null) {
       _selectedSavingsGoalId = widget.initialSavingsGoalId;
@@ -87,8 +89,16 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  void _onFormFieldChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
+    _titleController.removeListener(_onFormFieldChanged);
+    _amountController.removeListener(_onFormFieldChanged);
     _titleController.dispose();
     _amountController.dispose();
     _noteController.dispose();
@@ -296,6 +306,80 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  bool get _isTitleFilled => _titleController.text.trim().isNotEmpty;
+  bool get _isCategorySelected => _selectedCategoryId != null;
+  bool get _isAmountFilled =>
+      (double.tryParse(_amountController.text.replaceAll(',', '')) ?? 0.0) > 0;
+  bool get _isWalletSelected => _selectedWalletId != null;
+
+  String _getGuidanceButtonText(AppLocalizations l10n) {
+    if (!_isTitleFilled) {
+      return l10n.languageCode == 'id'
+          ? 'Isi Judul Transaksi'
+          : 'Fill Transaction Title';
+    }
+    if (!_isCategorySelected) {
+      return l10n.selectCategoryAction;
+    }
+    if (!_isAmountFilled) {
+      return l10n.languageCode == 'id'
+          ? 'Isi Nominal Transaksi'
+          : 'Fill Transaction Amount';
+    }
+    if (!_isWalletSelected) {
+      return l10n.languageCode == 'id' ? 'Pilih Dompet' : 'Select Wallet';
+    }
+    return l10n.saveTransaction;
+  }
+
+  IconData _getGuidanceButtonIcon() {
+    if (!_isTitleFilled) {
+      return Icons.edit_note_rounded;
+    }
+    if (!_isCategorySelected) {
+      return Icons.category_rounded;
+    }
+    if (!_isAmountFilled) {
+      return Icons.calculate_rounded;
+    }
+    if (!_isWalletSelected) {
+      return Icons.account_balance_wallet_rounded;
+    }
+    return Icons.check_circle_rounded;
+  }
+
+  void _onGuidanceButtonTap(
+    BuildContext context,
+    bool isDark,
+    AsyncValue<List<dynamic>> categoriesAsync,
+  ) {
+    if (_isSaving) return;
+
+    if (!_isTitleFilled) {
+      _showTitleInputSheet();
+      return;
+    }
+    if (!_isCategorySelected) {
+      _showCategoryPickerSheet(context, isDark, categoriesAsync);
+      return;
+    }
+    if (!_isAmountFilled) {
+      _showAmountCalculatorSheet();
+      return;
+    }
+    if (!_isWalletSelected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan pilih dompet terlebih dahulu'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
+    _save();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -354,15 +438,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         ],
       ),
       bottomNavigationBar: GestureDetector(
-        onTap: _selectedCategoryId == null
-            ? () => _showCategoryPickerSheet(context, isDark, categoriesAsync)
-            : _isSaving ? null : _save,
+        onTap: () => _onGuidanceButtonTap(context, isDark, categoriesAsync),
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            color: _selectedCategoryId == null
-                ? (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9))
-                : AppColors.primary,
+            color: AppColors.primary,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
           ),
           child: SafeArea(
@@ -377,12 +457,24 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       ),
                     )
                   : Center(
-                      child: Text(
-                        _selectedCategoryId == null ? l10n.selectCategoryAction : l10n.saveTransaction,
-                        style: AppTypography.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _getGuidanceButtonIcon(),
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _getGuidanceButtonText(l10n),
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
             ),

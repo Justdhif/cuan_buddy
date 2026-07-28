@@ -45,7 +45,7 @@ class ApiExceptionMapper {
         );
       case 401:
         return AuthException(
-          message: l10n.errAuthFailed,
+          message: serverMessage ?? l10n.errAuthFailed,
           statusCode: statusCode,
         );
       case 403:
@@ -53,12 +53,12 @@ class ApiExceptionMapper {
           message: serverMessage?.contains('verifikasi') == true ||
                   serverMessage?.toLowerCase().contains('verify') == true
               ? l10n.errUnverifiedAccount
-              : l10n.errNoAccess,
+              : (serverMessage ?? l10n.errNoAccess),
           statusCode: statusCode,
         );
       case 404:
         return NetworkException(
-          message: l10n.errDataNotFound,
+          message: serverMessage ?? l10n.errDataNotFound,
           statusCode: statusCode,
         );
       case 409:

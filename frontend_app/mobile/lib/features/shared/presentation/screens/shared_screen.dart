@@ -8,7 +8,6 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
-import '../../../../core/providers/theme_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -48,9 +47,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       setState(() {
         _friendSearchQuery = _friendSearchCtrl.text.trim();
       });
-      ref
-          .read(sharedNotifierProvider.notifier)
-          .searchUsers(_friendSearchQuery);
     });
   }
 
@@ -393,7 +389,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                                   setModalState(
                                       () => modalOnlyOwnerCanInvite = val);
                                 },
-                                activeColor: AppColors.primary,
+                                activeTrackColor: AppColors.primary,
                               ),
                             ],
                           ),
@@ -528,7 +524,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: inviteableFriends.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => const SizedBox(height: 0),
                         itemBuilder: (context, idx) {
                           final friend = inviteableFriends[idx];
                           final String friendId = friend['userId'];
@@ -545,6 +541,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                             avatarUrl: avatarUrl,
                             listBackground: listBackground,
                             isDark: isDark,
+                            backgroundColor: Colors.transparent,
                             actionWidget: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
@@ -891,7 +888,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accentColor = ref.watch(accentColorProvider);
     final state = ref.watch(sharedNotifierProvider);
     final l10n = AppLocalizations.of(context);
 
@@ -916,7 +912,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
 
                 // 2. Column 2: Active View (Manage Friends by default OR Room Channel Navigation)
                 Expanded(
-                  child: (state.isLoading && state.rooms.isEmpty) ||
+                  child: state.isLoading ||
                           (state.isRoomLoading && !isFriendsMode)
                       ? _SharedNavigationSkeleton(isDark: isDark)
                       : isFriendsMode
@@ -1446,43 +1442,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: roomId));
-                    AppSnackbar.show(
-                      context,
-                      title: l10n.languageCode == 'id' ? 'Berhasil' : 'Success',
-                      message: l10n.languageCode == 'id'
-                          ? 'UUID Room berhasil disalin'
-                          : 'Room UUID copied to clipboard',
-                      type: SnackbarType.success,
-                    );
-                  },
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'UUID: $roomId',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.copy_rounded,
-                        size: 12,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -1493,33 +1452,42 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
               children: [
+                // ── Invite Code Card (Owner: manage | Member: info only) ─────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 0, 6, 12),
+                  child: _buildInviteCodeCard(room, isDark, l10n),
+                ),
+
                 // ── Circular Quick Action Buttons (Invite Friend, Edit Room, Delete/Leave Room) ──
                 Padding(
                   padding: const EdgeInsets.fromLTRB(6, 4, 6, 12),
                   child: Row(
                     children: [
-                      // 1. Add / Invite Friend Button
-                      Tooltip(
-                        message: l10n.inviteFriendToRoom,
-                        child: InkWell(
-                          onTap: () => _showInviteMemberBottomSheet(room),
-                          borderRadius: BorderRadius.circular(22),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.person_add_rounded,
-                              color: AppColors.primary,
-                              size: 20,
+                      // 1. Add / Invite Friend Button (hidden for non-owner if onlyOwnerCanInvite)
+                      if (room['role'] == 'owner' ||
+                          room['onlyOwnerCanInvite'] != true) ...[
+                        Tooltip(
+                          message: l10n.inviteFriendToRoom,
+                          child: InkWell(
+                            onTap: () => _showInviteMemberBottomSheet(room),
+                            borderRadius: BorderRadius.circular(22),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.person_add_rounded,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
+                        const SizedBox(width: 10),
+                      ],
 
                       // 2. Edit Room Button (Owner only)
                       if (room['role'] == 'owner') ...[
@@ -1583,11 +1551,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                   ),
                 ),
 
-                // ── Invite Code Card (Owner: manage | Member: info only) ─────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 0, 6, 12),
-                  child: _buildInviteCodeCard(room, isDark, l10n),
-                ),
 
                 // ── Category 1: INFORMASI & SYNC ──────────────────────────
                 _buildCategoryHeader(
@@ -1811,6 +1774,243 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       ),
     );
   }
+  Widget _buildInviteCodeCard(Map<String, dynamic> room, bool isDark, AppLocalizations l10n) {
+    final String? inviteCode = room['inviteCode'];
+    final String? expiresAtStr = room['inviteCodeExpiresAt'];
+    final bool isOwner = room['role'] == 'owner';
+
+    DateTime? expiresAt;
+    if (expiresAtStr != null) {
+      try {
+        expiresAt = DateTime.parse(expiresAtStr);
+      } catch (_) {}
+    }
+
+    final bool isExpired = expiresAt != null && DateTime.now().isAfter(expiresAt);
+    final String displayCode = inviteCode != null
+        ? '-'
+        : '';
+
+    int daysRemaining = 0;
+    if (expiresAt != null) {
+      daysRemaining = expiresAt.difference(DateTime.now()).inDays;
+      if (daysRemaining < 0) daysRemaining = 0;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF3F5FC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? const Color(0xFF2E2E4E) : const Color(0xFFE2E8FF),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                inviteCode == null ? Icons.lock_rounded : Icons.public_rounded,
+                size: 14,
+                color: inviteCode == null ? Colors.amber : Colors.green,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                inviteCode == null ? l10n.roomPrivate : l10n.roomPublic,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white70 : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            inviteCode == null ? l10n.roomPrivateDesc : l10n.roomPublicDesc,
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark ? Colors.white54 : Colors.black54,
+            ),
+          ),
+          if (inviteCode != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.black26 : Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.black12,
+                      ),
+                    ),
+                    child: Text(
+                      isExpired ? 'EXPIRED' : displayCode,
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        letterSpacing: 1.5,
+                        color: isExpired
+                            ? AppColors.danger
+                            : (isDark ? Colors.white : Colors.black87),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (!isExpired)
+                  IconButton(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: displayCode));
+                      AppSnackbar.show(
+                        context,
+                        title: l10n.success,
+                        message: l10n.inviteCodeCopied,
+                        type: SnackbarType.success,
+                      );
+                    },
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      foregroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            if (!isExpired && expiresAt != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                ':  ',
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+          if (isOwner) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                if (inviteCode == null || isExpired)
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await ref
+                            .read(sharedNotifierProvider.notifier)
+                            .generateInviteCode(room['id']);
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 14),
+                      label: Text(
+                        l10n.generateInviteCode,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  )
+                else ...[
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final bool? confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: Text(l10n.regenerateConfirmTitle),
+                            content: Text(l10n.regenerateConfirmMessage),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: Text(l10n.languageCode == 'id' ? 'Ya' : 'Yes'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ref
+                              .read(sharedNotifierProvider.notifier)
+                              .generateInviteCode(room['id']);
+                        }
+                      },
+                      icon: const Icon(Icons.sync_rounded, size: 14),
+                      label: Text(
+                        l10n.regenerateInviteCode,
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () async {
+                      final bool? confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(l10n.deleteInviteCode),
+                          content: Text(l10n.deleteInviteCodeConfirm),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: Text(l10n.languageCode == 'id' ? 'Hapus' : 'Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        await ref
+                            .read(sharedNotifierProvider.notifier)
+                            .deleteInviteCode(room['id']);
+                      }
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.danger.withValues(alpha: 0.1),
+                      foregroundColor: AppColors.danger,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 // ─── Shadcn-Style Overlapping Avatar Group Component ──────────────────────────
@@ -1985,246 +2185,5 @@ class _SharedNavigationSkeleton extends StatelessWidget {
     );
   }
 
-  Widget _buildInviteCodeCard(Map<String, dynamic> room, bool isDark, AppLocalizations l10n) {
-    final String? inviteCode = room['inviteCode'];
-    final String? expiresAtStr = room['inviteCodeExpiresAt'];
-    final bool isOwner = room['role'] == 'owner';
-
-    DateTime? expiresAt;
-    if (expiresAtStr != null) {
-      try {
-        expiresAt = DateTime.parse(expiresAtStr);
-      } catch (_) {}
-    }
-
-    final bool isExpired = expiresAt != null && DateTime.now().isAfter(expiresAt);
-    final String displayCode = inviteCode != null
-        ? '${inviteCode.substring(0, 4)}-${inviteCode.substring(4)}'
-        : '';
-
-    // Calculate days remaining
-    int daysRemaining = 0;
-    if (expiresAt != null) {
-      daysRemaining = expiresAt.difference(DateTime.now()).inDays;
-      if (daysRemaining < 0) daysRemaining = 0;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF3F5FC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? const Color(0xFF2E2E4E) : const Color(0xFFE2E8FF),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                inviteCode == null ? Icons.lock_rounded : Icons.public_rounded,
-                size: 14,
-                color: inviteCode == null ? Colors.amber : Colors.green,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                inviteCode == null ? l10n.roomPrivate : l10n.roomPublic,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            inviteCode == null ? l10n.roomPrivateDesc : l10n.roomPublicDesc,
-            style: TextStyle(
-              fontSize: 10,
-              color: isDark ? Colors.white54 : Colors.black54,
-            ),
-          ),
-          if (inviteCode != null) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.black26 : Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.black12,
-                      ),
-                    ),
-                    child: Text(
-                      isExpired ? 'EXPIRED' : displayCode,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        letterSpacing: 1.5,
-                        color: isExpired
-                            ? AppColors.danger
-                            : (isDark ? Colors.white : Colors.black87),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (!isExpired)
-                  IconButton(
-                    onPressed: () {
-                      Navigator.of(context); // dummy to ensure context is safe
-                      Clipboard.setData(
-                        ClipboardData(text: displayCode),
-                      );
-                      AppSnackbar.show(
-                        context,
-                        title: l10n.success,
-                        message: l10n.inviteCodeCopied,
-                        type: SnackbarType.success,
-                      );
-                    },
-                    icon: const Icon(Icons.copy_rounded, size: 18),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      foregroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            if (!isExpired && expiresAt != null) ...[
-              const SizedBox(height: 6),
-              Text(
-                '${l10n.inviteCodeExpiry}: $daysRemaining ${l10n.languageCode == 'id' ? 'hari' : 'days'}',
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ],
-          if (isOwner) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (inviteCode == null || isExpired)
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        await ref
-                            .read(sharedNotifierProvider.notifier)
-                            .generateInviteCode(room['id']);
-                      },
-                      icon: const Icon(Icons.add_rounded, size: 14),
-                      label: Text(
-                        l10n.generateInviteCode,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  )
-                else ...[
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final bool? confirm = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text(l10n.regenerateConfirmTitle),
-                            content: Text(l10n.regenerateConfirmMessage),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: Text(l10n.languageCode == 'id' ? 'Ya' : 'Yes'),
-                              ),
-                            ],
-                          ),
-                        );
-                        if (confirm == true) {
-                          await ref
-                              .read(sharedNotifierProvider.notifier)
-                              .generateInviteCode(room['id']);
-                        }
-                      },
-                      icon: const Icon(Icons.sync_rounded, size: 14),
-                      label: Text(
-                        l10n.regenerateInviteCode,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () async {
-                      final bool? confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: Text(l10n.deleteInviteCode),
-                          content: Text(l10n.deleteInviteCodeConfirm),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: Text(l10n.languageCode == 'id' ? 'Batal' : 'Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              child: Text(l10n.languageCode == 'id' ? 'Hapus' : 'Delete'),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirm == true) {
-                        await ref
-                            .read(sharedNotifierProvider.notifier)
-                            .deleteInviteCode(room['id']);
-                      }
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.danger.withValues(alpha: 0.1),
-                      foregroundColor: AppColors.danger,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 

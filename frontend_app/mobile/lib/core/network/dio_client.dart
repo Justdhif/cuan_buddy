@@ -91,9 +91,11 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    // 401 dari endpoint selain /auth/refresh → coba refresh lalu retry
-    if (err.response?.statusCode == 401 &&
-        !err.requestOptions.path.endsWith('/auth/refresh')) {
+    // 401 dari endpoint biasa (bukan endpoint /auth/*) → coba refresh lalu retry
+    final path = err.requestOptions.path;
+    final isAuthEndpoint = path.contains('/auth/');
+
+    if (err.response?.statusCode == 401 && !isAuthEndpoint) {
       final refreshed = await _doRefresh();
       if (refreshed) {
         try {

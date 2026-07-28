@@ -407,7 +407,7 @@ class _RoomDetailsScreenState extends ConsumerState<RoomDetailsScreen> {
                                     setState(
                                         () => _onlyOwnerCanInvite = val);
                                   },
-                                  activeColor: AppColors.primary,
+                                  activeTrackColor: AppColors.primary,
                                 ),
                               ],
                             ),

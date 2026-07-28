@@ -76,12 +76,24 @@ class SharedNotifier extends StateNotifier<SharedState> {
   Future<void> fetchLobbyData() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      await Future.wait([
-        fetchFriends(silent: true),
-        fetchPendingRequests(silent: true),
-        fetchRooms(silent: true),
+      // Run all fetches in parallel but collect results atomically
+      // to prevent race condition where later copyWith overwrites earlier data
+      final results = await Future.wait([
+        _dioClient.dio.get('/friendships'),
+        _dioClient.dio.get('/friendships/pending'),
+        _dioClient.dio.get('/rooms'),
       ]);
-      state = state.copyWith(isLoading: false);
+
+      final friendsRes = results[0];
+      final pendingRes = results[1];
+      final roomsRes = results[2];
+
+      state = state.copyWith(
+        friends: friendsRes.statusCode == 200 ? (friendsRes.data as List) : state.friends,
+        pendingRequests: pendingRes.statusCode == 200 ? (pendingRes.data as List) : state.pendingRequests,
+        rooms: roomsRes.statusCode == 200 ? (roomsRes.data as List) : state.rooms,
+        isLoading: false,
+      );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
