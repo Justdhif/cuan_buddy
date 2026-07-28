@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import 'package:fl_chart/fl_chart.dart';
+
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -18,9 +18,12 @@ import '../providers/dashboard_provider.dart';
 import '../../../profile/data/services/backup_worker.dart';
 import '../../../../core/services/widget_service.dart';
 import '../widgets/ai_insight_card.dart';
+import '../widgets/finance_health_header_widget.dart';
 import '../../../shared/widgets/transaction_card.dart';
 import '../../../budgets/presentation/providers/budgets_provider.dart';
 import '../../../shared/widgets/budget_card.dart';
+import '../../../savings/presentation/providers/savings_provider.dart';
+import '../../../shared/widgets/savings_goal_card.dart';
 import '../../../../core/services/notification_service.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/language_provider.dart';
@@ -40,6 +43,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   late ScrollController _scrollController;
   late PageController _budgetPageController;
+  late PageController _savingsPageController;
   bool _showBalance = true;
   bool _isScrolled = false;
 
@@ -49,6 +53,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _budgetPageController = PageController(viewportFraction: 0.93);
+    _savingsPageController = PageController(viewportFraction: 0.93);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final profile = await ref.read(profileProvider.future);
       final userId = profile['userId'] as String? ?? profile['id'] as String?;
@@ -99,6 +104,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _budgetPageController.dispose();
+    _savingsPageController.dispose();
     super.dispose();
   }
 
@@ -107,8 +113,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final summaryAsync = ref.watch(analyticsSummaryProvider);
     final transactionsAsync = ref.watch(recentTransactionsProvider);
     final profileAsync = ref.watch(profileProvider);
-    final analyticsState = ref.watch(analyticsNotifierProvider);
     final budgetsState = ref.watch(budgetsNotifierProvider);
+    final savingsState = ref.watch(savingsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final notificationsState = ref.watch(notificationsNotifierProvider);
     final unreadCount = notificationsState.notifications
@@ -164,9 +170,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         profileAsync,
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: _buildQuickActionsRow(context, isDark),
-                    ),
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
@@ -175,39 +178,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
 
                     SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              l10n.languageCode == 'id'
-                                  ? 'Transaksi Terbaru'
-                                  : 'Recent Transactions',
-                              style: AppTypography.textTheme.titleMedium,
-                            ),
-                            TextButton(
-                              onPressed: () => context.push('/home/transactions'),
-                              child: Text(l10n.seeAll),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
                       child: _buildAiTransactionButtons(context, isDark),
                     ),
                     transactionsAsync.when(
                       skipLoadingOnReload: true,
                       data: (transactions) {
                         if (transactions.isEmpty) {
-                          return SliverToBoxAdapter(
-                            child: AppEmptyState(
-                              icon: Icons.receipt_long_outlined,
-                              title: l10n.noTransactionsYetTitle,
-                              subtitle: l10n.noTransactionsYetSubtitle,
-                            ),
-                          );
+                          return const SliverToBoxAdapter(child: SizedBox.shrink());
                         }
                         return SliverList(
                           delegate: SliverChildBuilderDelegate(
@@ -225,17 +202,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ),
 
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                        child: Text(
-                          l10n.languageCode == 'id'
-                              ? 'Anggaran Terbaru'
-                              : 'Recent Budget',
-                          style: AppTypography.textTheme.titleMedium,
-                        ),
-                      ),
-                    ),
+                    // ─── Budget Section ────────────────────────────────────
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
                     if (budgetsState.isInitialLoad)
                       const SliverToBoxAdapter(
                         child: Padding(
@@ -283,34 +251,60 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
 
-                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                        child: Text(l10n.monthlyTrend,
-                            style: AppTypography.textTheme.titleMedium),
-                      ),
-                    ),
-                    if (analyticsState.isLoading &&
-                        analyticsState.monthlyTrend.isEmpty)
+                    // ─── Savings Goals Section ─────────────────────────────
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                    if (savingsState.isInitialLoad)
                       const SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20),
-                          child: SkeletonCard(height: 220),
+                          padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                          child: SkeletonCard(height: 165),
                         ),
                       )
                     else
                       SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildMonthlyTrendChart(
-                            context,
-                            analyticsState.monthlyTrend,
-                            profileAsync,
+                        child: SizedBox(
+                          height: 165,
+                          child: PageView.builder(
+                            controller: _savingsPageController,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: savingsState.goals.isEmpty
+                                ? 1
+                                : savingsState.goals.length + 1,
+                            itemBuilder: (context, index) {
+                              Widget card;
+                              if (index == savingsState.goals.length) {
+                                card = _buildAddSavingsCard(context, isDark);
+                              } else {
+                                final currencyCode = profileAsync
+                                        .valueOrNull?['currency'] as String? ??
+                                    AppConstants.defaultCurrency;
+                                final currencySymbol =
+                                    AppConstants.getCurrencySymbol(
+                                        currencyCode);
+                                card = SavingsGoalCard(
+                                  goal: savingsState.goals[index],
+                                  isDark: isDark,
+                                  currencySymbol: currencySymbol,
+                                );
+                              }
+                              return Align(
+                                alignment: Alignment.topCenter,
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 6),
+                                  child: card,
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
+
+                    // ─── Bottom Navigation Buttons Group ───────────────────
+                    SliverToBoxAdapter(
+                      child: _buildBottomNavigationGroup(context, isDark),
+                    ),
+
                     const SliverToBoxAdapter(child: SizedBox(height: 120)),
                   ],
                 ),
@@ -324,62 +318,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsRow(BuildContext context, bool isDark) {
-    final l10n = AppLocalizations.of(context);
-    final isId = l10n.languageCode == 'id';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildQuickActionButton(
-              context: context,
-              icon: Icons.add_rounded,
-              label: isId ? 'Tambah' : 'Add',
-              color: AppColors.primary,
-              isDark: isDark,
-              onTap: () => context.push('/transactions/form?type=expense'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildQuickActionButton(
-              context: context,
-              icon: Icons.pie_chart_rounded,
-              label: l10n.budgets,
-              color: Colors.purple,
-              isDark: isDark,
-              onTap: () => context.push('/home/budgets'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildQuickActionButton(
-              context: context,
-              icon: Icons.savings_rounded,
-              label: l10n.savingsGoals,
-              color: Colors.orange,
-              isDark: isDark,
-              onTap: () => context.push('/home/savings'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildQuickActionButton(
-              context: context,
-              icon: Icons.account_balance_wallet_rounded,
-              label: isId ? 'Dompet' : 'Wallets',
-              color: const Color(0xFF0D9488),
-              isDark: isDark,
-              onTap: () => context.push('/manage-wallets'),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -455,182 +393,143 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required bool isDark,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: gradientColors,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: shadowColor,
-                blurRadius: 12,
-                offset: const Offset(0, 5),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: shadowColor,
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -12,
-                top: -12,
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.12),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Stack(
+              children: [
+                // Background Gradient
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: gradientColors,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.22),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          icon,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+
+                // Seperempat Lingkaran Dekorasi di Pojok Kanan Atas
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(70),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.auto_awesome_rounded,
-                              size: 10,
-                              color: Colors.amberAccent,
+                    ),
+                  ),
+                ),
+
+                // Content Column
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(width: 3),
-                            Text(
-                              badgeText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
+                            child: Icon(
+                              icon,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.3),
+                                width: 0.8,
                               ),
                             ),
-                          ],
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  size: 10,
+                                  color: Colors.amberAccent,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  badgeText,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        title,
+                        style: AppTypography.textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    title,
-                    style: AppTypography.textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.82),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildQuickActionButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required Color color,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.05)
-                : Colors.black.withValues(alpha: 0.04),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: AppTypography.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildFixedTopHeader(
     BuildContext context,
@@ -906,6 +805,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  Widget _buildAddSavingsCard(BuildContext context, bool isDark) {
+    return GestureDetector(
+      onTap: () => context.push('/savings/form'),
+      child: Container(
+        height: 160,
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isDark
+              ? AppColors.surfaceDark.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.secondary.withValues(alpha: 0.4),
+            style: BorderStyle.solid,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.add_rounded,
+                color: AppColors.secondary,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              l10n.addSavingsGoal,
+              style: AppTypography.textTheme.titleMedium?.copyWith(
+                color: AppColors.secondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAddBudgetCard(BuildContext context, bool isDark) {
     return GestureDetector(
       onTap: () => context.push('/budgets/form'),
@@ -953,218 +899,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildMonthlyTrendChart(
-    BuildContext context,
-    List<dynamic> monthlyTrend,
-    AsyncValue<Map<String, dynamic>> profileAsync,
-  ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currencyCode = profileAsync.valueOrNull?['currency'] as String? ??
-        AppConstants.defaultCurrency;
-    final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
+  Widget _buildBottomNavigationGroup(BuildContext context, bool isDark) {
+    final isId = l10n.languageCode == 'id';
 
-    List<dynamic> data = [];
-    if (monthlyTrend.isEmpty) {
-      final now = DateTime.now();
-      for (int i = 5; i >= 0; i--) {
-        final d = DateTime(now.year, now.month - i);
-        data.add({
-          'month': '${d.year}-${d.month.toString().padLeft(2, '0')}',
-          'income': 0,
-          'expense': 0
-        });
-      }
-    } else {
-      data = monthlyTrend.length > 6
-          ? monthlyTrend.sublist(monthlyTrend.length - 6)
-          : monthlyTrend;
-    }
-
-    double maxVal = 0;
-    for (final row in data) {
-      final inc = (row['income'] as num?)?.toDouble() ?? 0;
-      final exp = (row['expense'] as num?)?.toDouble() ?? 0;
-      if (inc > maxVal) maxVal = inc;
-      if (exp > maxVal) maxVal = exp;
-    }
-    final yMax = maxVal == 0 ? 100.0 : maxVal * 1.25;
-
-    final incomeSpots = data.asMap().entries.map((entry) {
-      final val = (entry.value['income'] as num?)?.toDouble() ?? 0;
-      return FlSpot(entry.key.toDouble(), val);
-    }).toList();
-
-    final expenseSpots = data.asMap().entries.map((entry) {
-      final val = (entry.value['expense'] as num?)?.toDouble() ?? 0;
-      return FlSpot(entry.key.toDouble(), val);
-    }).toList();
-
-    String shortMonth(String ym) {
-      final parts = ym.split('-');
-      if (parts.length < 2) return ym;
-      final dt = DateTime(int.parse(parts[0]), int.parse(parts[1]));
-      return DateFormat('MMM').format(dt);
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Row(
         children: [
-          Row(
-            children: [
-              _trendLegendDot(AppColors.success, l10n.incomeType),
-              const SizedBox(width: 16),
-              _trendLegendDot(AppColors.danger, l10n.expenseType),
-            ],
+          Expanded(
+            child: _buildSideNavButton(
+              context: context,
+              icon: Icons.receipt_long_rounded,
+              label: isId ? 'Transaksi' : 'Transactions',
+              subtitle: isId ? 'Lihat Semua' : 'View All',
+              isDark: isDark,
+              onTap: () => context.push('/home/transactions'),
+            ),
           ),
-          const SizedBox(height: 20),
-          SizedBox(
-            height: 200,
-            child: LineChart(
-              LineChartData(
-                maxY: yMax,
-                minY: 0,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: incomeSpots,
-                    isCurved: true,
-                    color: AppColors.success,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppColors.success.withValues(alpha: 0.1),
-                    ),
-                  ),
-                  LineChartBarData(
-                    spots: expenseSpots,
-                    isCurved: true,
-                    color: AppColors.danger,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: AppColors.danger.withValues(alpha: 0.1),
-                    ),
-                  ),
-                ],
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: true,
-                  horizontalInterval: yMax / 4,
-                  verticalInterval: 1,
-                  getDrawingHorizontalLine: (_) => FlLine(
-                    color:
-                        isDark ? AppColors.borderDark : AppColors.borderLight,
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
-                  ),
-                  getDrawingVerticalLine: (_) => FlLine(
-                    color:
-                        isDark ? AppColors.borderDark : AppColors.borderLight,
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) =>
-                        isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        final val = spot.y;
-                        final isIncome = spot.barIndex == 0;
-                        final label =
-                            isIncome ? l10n.incomeType : l10n.expenseType;
-                        final color =
-                            isIncome ? AppColors.success : AppColors.danger;
-                        return LineTooltipItem(
-                          '$label\n${CurrencyFormatter.formatAmount(val, symbol: currencySymbol)}',
-                          TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 48,
-                      interval: yMax / 4,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0 || value == yMax) {
-                          return const SizedBox.shrink();
-                        }
-                        final label = value >= 1000000
-                            ? '${(value / 1000000).toStringAsFixed(1)}M'
-                            : value >= 1000
-                                ? '${(value / 1000).toStringAsFixed(0)}K'
-                                : value.toStringAsFixed(0);
-                        return Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx < 0 || idx >= data.length) {
-                          return const SizedBox.shrink();
-                        }
-                        final month = (data[idx]
-                                as Map<String, dynamic>)['month'] as String? ??
-                            '';
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(
-                            shortMonth(month),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.textSecondaryDark
-                                  : AppColors.textSecondaryLight,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _buildSideNavButton(
+              context: context,
+              icon: Icons.pie_chart_rounded,
+              label: isId ? 'Anggaran' : 'Budgets',
+              subtitle: isId ? 'Lihat Semua' : 'View All',
+              isDark: isDark,
+              onTap: () => context.push('/home/budgets'),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _buildSideNavButton(
+              context: context,
+              icon: Icons.savings_rounded,
+              label: isId ? 'Tabungan' : 'Savings',
+              subtitle: isId ? 'Lihat Semua' : 'View All',
+              isDark: isDark,
+              onTap: () => context.push('/home/savings'),
             ),
           ),
         ],
@@ -1172,23 +943,88 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _trendLegendDot(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: AppTypography.textTheme.labelMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+  Widget _buildSideNavButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.25),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 10,
+                    color: AppColors.primary,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

@@ -109,6 +109,10 @@ abstract class AppLocalizations {
   String get expense;
   String get recentActivities;
   String get seeAll;
+  String get viewAllTransactions;
+  String get viewAllBudgets;
+  String get viewAllSavings;
+  String get recentTransactionsTitle;
   String get spendingByCategory;
   String get budgetDetails;
 

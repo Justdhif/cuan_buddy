@@ -192,6 +192,14 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get seeAll => 'Lihat Semua';
   @override
+  String get viewAllTransactions => 'Lihat Semua Transaksi';
+  @override
+  String get viewAllBudgets => 'Lihat Semua Anggaran';
+  @override
+  String get viewAllSavings => 'Lihat Semua Tabungan';
+  @override
+  String get recentTransactionsTitle => 'Transaksi Terbaru';
+  @override
   String get spendingByCategory => 'Pengeluaran per Kategori';
   @override
   String get budgetDetails => 'Detail Anggaran';

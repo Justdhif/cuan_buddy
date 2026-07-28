@@ -190,6 +190,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get seeAll => 'See All';
   @override
+  String get viewAllTransactions => 'View All Transactions';
+  @override
+  String get viewAllBudgets => 'View All Budgets';
+  @override
+  String get viewAllSavings => 'View All Savings';
+  @override
+  String get recentTransactionsTitle => 'Recent Transactions';
+  @override
   String get spendingByCategory => 'Spending by Category';
   @override
   String get budgetDetails => 'Budget Details';

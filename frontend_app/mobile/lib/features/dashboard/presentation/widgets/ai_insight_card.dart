@@ -1,197 +1,219 @@
-import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
-import 'package:shimmer/shimmer.dart';
-import '../../../ai/presentation/providers/ai_provider.dart';
-import '../providers/dashboard_provider.dart';
 
-class FinanceHealthHeaderWidget extends ConsumerWidget {
-  const FinanceHealthHeaderWidget({super.key});
+class AiInsightCard extends ConsumerStatefulWidget {
+  const AiInsightCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final healthAsync = ref.watch(financialHealthProvider);
+  ConsumerState<AiInsightCard> createState() => _AiInsightCardState();
+}
+
+class _AiInsightCardState extends ConsumerState<AiInsightCard> {
+  Timer? _timer;
+  int _currentSentenceIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startSentenceTimer();
+  }
+
+  void _startSentenceTimer() {
+    _timer = Timer.periodic(const Duration(milliseconds: 3500), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentSentenceIndex++;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  List<String> _getSentences(bool isId) {
+    if (isId) {
+      return [
+        'Pengeluaran kamu bulan ini masih dalam batas aman! 👍',
+        'Alokasikan sisa dana dingin ke Tabungan Impian kamu 🎯',
+        'Tips Cuan: Rutin catat pengeluaran kecil agar arus kas rapi! 💡',
+        'Keuangan sehat! Selalu periksa sisa anggaran bulanan kamu 👌',
+        'Ingat prinsip 50/30/20 untuk alokasi gaji dan tabungan 📊',
+        'Hindari belanja impulsif, evaluasi skala prioritas kebutuhan 🛒',
+        'Disiplin finansial hari ini adalah investasi masa depan kamu 🚀',
+        'Pantau laporan transaksi harian untuk kontrol pengeluaran 📈',
+      ];
+    } else {
+      return [
+        'Your spending this month is well within safe limits! 👍',
+        'Consider allocating extra funds to your Savings Goals 🎯',
+        'Cuan Tip: Record small expenses daily to keep cashflow clear! 💡',
+        'Financial health is looking great! Check your monthly budget 👌',
+        'Remember the 50/30/20 rule for budgeting and savings 📊',
+        'Avoid impulsive buys; prioritize your essential needs 🛒',
+        'Financial discipline today is an investment for tomorrow 🚀',
+        'Track daily transactions regularly for smart money moves 📈',
+      ];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final l10n = AppLocalizations.of(context);
+    final isId = l10n.languageCode == 'id';
 
-    return healthAsync.when(
-      data: (healthData) {
-        final score = (healthData['score'] as num? ?? 82).toInt();
-        final status = healthData['status'] as String? ?? 'healthy';
+    final sentences = _getSentences(isId);
+    final sentenceIndex = _currentSentenceIndex % sentences.length;
+    final currentSentence = sentences[sentenceIndex];
 
-        Color statusColor;
-        String statusText;
-        switch (status) {
-          case 'warning':
-            statusColor = const Color(0xFFFBBF24);
-            statusText = 'Warning!';
-            break;
-          case 'critical':
-          case 'danger':
-            statusColor = const Color(0xFFF87171);
-            statusText = 'Critical!';
-            break;
-          default:
-            statusColor = const Color(0xFF34D399);
-            statusText = l10n.financialHealthGood;
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left Column: Mascot Illustration with Overlaid Chat Button
+          SizedBox(
+            width: 70,
+            height: 76,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topCenter,
               children: [
-                _buildGaugeRing(score, statusColor),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        statusText,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
-                        ),
+                // Direct AI Illustration (No background circle)
+                Positioned(
+                  top: 0,
+                  child: Image.asset(
+                    'assets/illustrations/ai-illustration.png',
+                    width: 62,
+                    height: 62,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.smart_toy_rounded,
+                      color: AppColors.primary,
+                      size: 48,
+                    ),
+                  ),
+                ),
+
+                // Button overlaid on bottom of illustration
+                Positioned(
+                  bottom: 0,
+                  child: GestureDetector(
+                    onTap: () => context.push('/ai-chat'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        l10n.financialHealthGoodSubtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          height: 1.35,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 10,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            isId ? 'Tanya AI' : 'Ask AI',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 24,
-              width: double.infinity,
-              child: CustomPaint(
-                painter: _SparklinePainter(color: statusColor),
-              ),
-            ),
-          ],
-        );
-      },
-      loading: () => _buildFinanceHealthHeaderSkeleton(),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
+          ),
 
-  Widget _buildFinanceHealthHeaderSkeleton() {
-    return Shimmer.fromColors(
-      baseColor: Colors.white.withValues(alpha: 0.12),
-      highlightColor: Colors.white.withValues(alpha: 0.28),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 54,
-                height: 54,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 90,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      height: 11,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      width: 130,
-                      height: 11,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            height: 14,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(width: 4),
 
-  Widget _buildGaugeRing(int score, Color statusColor) {
-    return SizedBox(
-      width: 54,
-      height: 54,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: const Size(54, 54),
-            painter: _GaugePainter(
-              progress: (score.clamp(0, 100)) / 100.0,
-              color: statusColor,
+          // Right: Speech Bubble wrapping the entire AnimatedSwitcher
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 450),
+                switchInCurve: Curves.easeOutBack,
+                switchOutCurve: Curves.easeIn,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(
+                      scale: Tween<double>(begin: 0.94, end: 1.0)
+                          .animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: GestureDetector(
+                  key: ValueKey<int>(sentenceIndex),
+                  onTap: () => context.push('/ai-chat'),
+                  child: CustomPaint(
+                    painter: _SpeechBubblePainter(
+                      backgroundColor:
+                          isDark ? const Color(0xFF1E293B) : Colors.white,
+                      borderColor: AppColors.primary.withValues(alpha: 0.35),
+                      isDark: isDark,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.edit_note_rounded,
+                            size: 18,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              currentSentence,
+                              style: TextStyle(
+                                color: isDark
+                                    ? Colors.white
+                                    : AppColors.textPrimaryLight,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                height: 1.35,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '$score',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
-                ),
-              ),
-              Text(
-                '/100',
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -199,340 +221,81 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
   }
 }
 
-class AiInsightCard extends ConsumerWidget {
-  const AiInsightCard({super.key});
+class _SpeechBubblePainter extends CustomPainter {
+  final Color backgroundColor;
+  final Color borderColor;
+  final bool isDark;
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final insightsAsync = ref.watch(aiInsightsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final l10n = AppLocalizations.of(context);
-
-    if (insightsAsync.isLoading && !insightsAsync.hasValue) {
-      return _buildAiCardSkeleton(isDark);
-    }
-
-    final rawInsight = insightsAsync.valueOrNull ?? '';
-    final shortInsight = _shortenInsightText(rawInsight, l10n);
-
-    return _buildGlassContainer(
-      isDark: isDark,
-      onTap: () => context.push('/ai-chat'),
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-
-          Positioned(
-            right: -20,
-            bottom: -16,
-            child: Opacity(
-              opacity: isDark ? 0.35 : 0.45,
-              child: _build3DRobotMascot(size: 120),
-            ),
-          ),
-
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    size: 18,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    l10n.aiInsight,
-                    style: AppTypography.textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.only(right: 75),
-                child: Text(
-                  shortInsight,
-                  style: AppTypography.textTheme.bodySmall?.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? AppColors.primary.withValues(alpha: 0.18)
-                      : AppColors.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n.askAiChatbot,
-                      style: AppTypography.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.primary,
-                        size: 15,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGlassContainer({
-    required Widget child,
-    required bool isDark,
-    VoidCallback? onTap,
-  }) {
-    Widget box = ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceDark.withValues(alpha: 0.8)
-                : Colors.white.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isDark
-                  ? AppColors.borderDark.withValues(alpha: 0.6)
-                  : AppColors.borderLight.withValues(alpha: 0.9),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: child,
-        ),
-      ),
-    );
-
-    if (onTap != null) {
-      return GestureDetector(onTap: onTap, child: box);
-    }
-    return box;
-  }
-
-  Widget _build3DRobotMascot({double size = 80}) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Image.asset(
-        'assets/illustrations/ai-illustration.png',
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Icon(
-            Icons.smart_toy_rounded,
-            size: size * 0.8,
-            color: AppColors.primary.withValues(alpha: 0.6),
-          );
-        },
-      ),
-    );
-  }
-
-  String _shortenInsightText(String rawText, AppLocalizations l10n) {
-    if (rawText.isEmpty ||
-        rawText.contains('Unable to connect') ||
-        rawText.contains('failed')) {
-      return l10n.aiInsightBannerSubtitle;
-    }
-    final cleaned = rawText
-        .replaceAll(RegExp(r'[\*\#\_•\n]+'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    final sentences = cleaned.split(RegExp(r'(?<=[.!?])\s+'));
-    if (sentences.isNotEmpty) {
-      final firstSentence = sentences.first;
-      if (firstSentence.length > 85) {
-        return '${firstSentence.substring(0, 82)}...';
-      }
-      return firstSentence;
-    }
-    return cleaned.length > 85 ? '${cleaned.substring(0, 82)}...' : cleaned;
-  }
-
-  Widget _buildAiCardSkeleton(bool isDark) {
-    return _buildGlassContainer(
-      isDark: isDark,
-      child: Shimmer.fromColors(
-        baseColor: isDark
-            ? Colors.white.withValues(alpha: 0.08)
-            : const Color(0xFFE2E8F0),
-        highlightColor: isDark
-            ? Colors.white.withValues(alpha: 0.2)
-            : const Color(0xFFF8FAFC),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 80,
-              height: 14,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(7),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              width: 180,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Container(
-              width: 100,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _GaugePainter extends CustomPainter {
-  final double progress;
-  final Color color;
-
-  _GaugePainter({required this.progress, required this.color});
+  _SpeechBubblePainter({
+    required this.backgroundColor,
+    required this.borderColor,
+    required this.isDark,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = 5.5;
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.width - strokeWidth) / 2;
+    final radius = 18.0;
+    final tailWidth = 10.0;
+    final tailHeight = 12.0;
+    final tailTop = ((size.height - tailHeight) / 2)
+        .clamp(radius, size.height - radius - tailHeight);
 
-    final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.2)
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final fgPaint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.25 * 3.14159,
-      1.5 * 3.14159,
-      false,
-      bgPaint,
-    );
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.25 * 3.14159,
-      1.5 * 3.14159 * progress.clamp(0.05, 1.0),
-      false,
-      fgPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _GaugePainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
-  }
-}
-
-class _SparklinePainter extends CustomPainter {
-  final Color color;
-
-  _SparklinePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
     final path = Path();
-    final points = [
-      Offset(0, size.height * 0.7),
-      Offset(size.width * 0.2, size.height * 0.8),
-      Offset(size.width * 0.35, size.height * 0.4),
-      Offset(size.width * 0.5, size.height * 0.6),
-      Offset(size.width * 0.7, size.height * 0.5),
-      Offset(size.width * 0.85, size.height * 0.55),
-      Offset(size.width - 2, size.height * 0.2),
-    ];
 
-    path.moveTo(points[0].dx, points[0].dy);
-    for (int i = 1; i < points.length; i++) {
-      path.lineTo(points[i].dx, points[i].dy);
-    }
+    // Top edge starting after tail
+    path.moveTo(tailWidth + radius, 0);
+    path.lineTo(size.width - radius, 0);
+    path.arcToPoint(Offset(size.width, radius),
+        radius: Radius.circular(radius));
 
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 2.0
+    // Right edge
+    path.lineTo(size.width, size.height - radius);
+    path.arcToPoint(Offset(size.width - radius, size.height),
+        radius: Radius.circular(radius));
+
+    // Bottom edge
+    path.lineTo(tailWidth + radius, size.height);
+    path.arcToPoint(Offset(tailWidth, size.height - radius),
+        radius: Radius.circular(radius));
+
+    // Left edge up to bottom of tail
+    path.lineTo(tailWidth, tailTop + tailHeight);
+
+    // Speech Tail pointing left
+    path.lineTo(0, tailTop + (tailHeight / 2));
+    path.lineTo(tailWidth, tailTop);
+
+    // Left edge up to top-left corner
+    path.lineTo(tailWidth, radius);
+    path.arcToPoint(Offset(tailWidth + radius, 0),
+        radius: Radius.circular(radius));
+
+    path.close();
+
+    // Shadow
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: isDark ? 0.25 : 0.06)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawPath(path.shift(const Offset(0, 3)), shadowPaint);
+
+    // Fill
+    final paintFill = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, paintFill);
+
+    // Border
+    final paintBorder = Paint()
+      ..color = borderColor
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawPath(path, linePaint);
-
-    final dotPaint = Paint()..color = color;
-    canvas.drawCircle(points.last, 3.5, dotPaint);
+      ..strokeWidth = 1.2;
+    canvas.drawPath(path, paintBorder);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _SpeechBubblePainter oldDelegate) {
+    return oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.borderColor != borderColor ||
+        oldDelegate.isDark != isDark;
+  }
 }
