@@ -487,7 +487,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               children: [
 
                 Container(
-                  color: isDark ? const Color(0xFF232838) : AppColors.primary.withValues(alpha: 0.05),
+                  color: isDark ? const Color(0xFF232838) : Colors.black.withValues(alpha: 0.03),
                   child: Column(
                     children: [
                       Row(
@@ -496,7 +496,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             context: context,
                             targetType: 'expense',
                             label: l10n.expenseType,
-                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withValues(alpha: 0.1),
+                            activeColor: isDark ? const Color(0xFF2A3043) : Colors.white,
                             isDark: isDark,
                             icon: Icons.arrow_drop_down_rounded,
                             iconColor: AppColors.danger,
@@ -505,7 +505,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             context: context,
                             targetType: 'income',
                             label: l10n.incomeType,
-                            activeColor: isDark ? const Color(0xFF2A3043) : AppColors.primary.withValues(alpha: 0.1),
+                            activeColor: isDark ? const Color(0xFF2A3043) : Colors.white,
                             isDark: isDark,
                             icon: Icons.arrow_drop_up_rounded,
                             iconColor: AppColors.success,
@@ -854,18 +854,18 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      color: isDark ? Colors.white12 : Colors.black12,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(Icons.lock_rounded, size: 11, color: AppColors.primary),
+                                        Icon(Icons.lock_rounded, size: 11, color: isDark ? Colors.white70 : Colors.black54),
                                         const SizedBox(width: 4),
                                         Text(
                                           'Terkunci',
                                           style: AppTypography.textTheme.labelSmall?.copyWith(
-                                            color: AppColors.primary,
+                                            color: isDark ? Colors.white70 : Colors.black87,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -881,7 +881,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     decoration: BoxDecoration(
                                       color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                                      border: Border.all(color: AppColors.primary, width: 2),
+                                      border: Border.all(color: isDark ? Colors.white38 : Colors.black26, width: 1.5),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Row(
@@ -1069,9 +1069,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                         height: 36,
                                         padding: const EdgeInsets.symmetric(horizontal: 12),
                                         decoration: BoxDecoration(
-                                          color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                          color: isSelected ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08)) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                           border: Border.all(
-                                            color: isSelected ? AppColors.primary : Colors.transparent,
+                                            color: isSelected ? (isDark ? Colors.white70 : Colors.black87) : Colors.transparent,
                                             width: 1.5,
                                           ),
                                           borderRadius: BorderRadius.circular(12),
@@ -1081,7 +1081,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                             l10n.noBudget,
                                             style: AppTypography.textTheme.labelMedium?.copyWith(
                                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                              color: isSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                              color: isDark ? Colors.white : Colors.black87,
                                             ),
                                           ),
                                         ),
@@ -1365,7 +1365,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     itemCount: filtered.length + 1,
                     itemBuilder: (context, index) {
                       if (index == filtered.length) {
-                        final catColor = AppColors.primary;
+                        final catColor = isDark ? Colors.white70 : Colors.black87;
                         return GestureDetector(
                           onTap: () {
                             Navigator.pop(ctx);

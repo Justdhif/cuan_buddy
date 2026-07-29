@@ -104,17 +104,23 @@ class TransactionCard extends ConsumerWidget {
         roomName != null ||
         (tx['user'] != null && tx['user']['profile'] != null);
 
+    final currentUserId = ref.watch(profileProvider).valueOrNull?['userId'] ?? ref.watch(profileProvider).valueOrNull?['id'];
+    final txUserId = tx['userId'] as String?;
+    final isOwner = txUserId == null || currentUserId == null || txUserId == currentUserId;
+
     return InkWell(
-      onTap: onTap ??
-          () {
-            context.push(
-              '/transactions/form',
-              extra: {
-                'initialType': tx['type'] as String? ?? 'expense',
-                'initialTransaction': tx,
-              },
-            );
-          },
+      onTap: isOwner
+          ? (onTap ??
+              () {
+                context.push(
+                  '/transactions/form',
+                  extra: {
+                    'initialType': tx['type'] as String? ?? 'expense',
+                    'initialTransaction': tx,
+                  },
+                );
+              })
+          : null,
       child: Padding(
         padding: contentPadding,
         child: Column(

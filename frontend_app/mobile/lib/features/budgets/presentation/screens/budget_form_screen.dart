@@ -533,7 +533,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                 Container(
                   color: isDark
                       ? const Color(0xFF232838)
-                      : AppColors.primary.withValues(alpha: 0.05),
+                      : Colors.black.withValues(alpha: 0.03),
                   child: AnimatedBuilder(
                     animation: _amountController,
                     builder: (context, _) {
@@ -585,7 +585,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                   shape: BoxShape.circle,
                                   border: !_presetColors.contains(_selectedColor)
                                       ? Border.all(
-                                          color: isDark ? Colors.white : AppColors.primary,
+                                          color: isDark ? Colors.white : Colors.black87,
                                           width: 3,
                                         )
                                       : null,
@@ -612,7 +612,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     shape: BoxShape.circle,
                                     border: isSelected
                                         ? Border.all(
-                                            color: isDark ? Colors.white : AppColors.primary,
+                                            color: isDark ? Colors.white : Colors.black87,
                                             width: 3,
                                           )
                                         : null,
@@ -776,7 +776,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.remove_circle_outline),
-                                      color: AppColors.primary,
+                                      color: isDark ? Colors.white70 : Colors.black87,
                                       onPressed: _periodCount > 1
                                           ? () => setState(() => _periodCount--)
                                           : null,
@@ -787,7 +787,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.add_circle_outline),
-                                      color: AppColors.primary,
+                                      color: isDark ? Colors.white70 : Colors.black87,
                                       onPressed: () => setState(() => _periodCount++),
                                     ),
                                   ],
@@ -815,17 +815,17 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.1),
+                                      color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.calendar_month_rounded, size: 16, color: AppColors.primary),
+                                        Icon(Icons.calendar_month_rounded, size: 16, color: isDark ? Colors.white70 : Colors.black87),
                                         const SizedBox(width: 8),
                                         Text(
                                           DateFormat('MMM yyyy').format(_selectedDate),
                                           style: AppTypography.textTheme.bodyMedium?.copyWith(
-                                            color: AppColors.primary,
+                                            color: isDark ? Colors.white : Colors.black87,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -877,10 +877,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: _budgetType == 'standalone' ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  color: _budgetType == 'standalone' ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08)) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: _budgetType == 'standalone' ? AppColors.primary : Colors.transparent,
+                                    color: _budgetType == 'standalone' ? (isDark ? Colors.white70 : Colors.black87) : Colors.transparent,
                                   ),
                                 ),
                                 child: Center(
@@ -888,7 +888,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     l10n.budgetTypeStandalone,
                                     style: TextStyle(
                                       fontWeight: _budgetType == 'standalone' ? FontWeight.bold : FontWeight.normal,
-                                      color: _budgetType == 'standalone' ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                      color: _budgetType == 'standalone' ? (isDark ? Colors.white : Colors.black87) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
                                 ),
@@ -903,10 +903,10 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                 duration: const Duration(milliseconds: 200),
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
-                                  color: _budgetType == 'category' ? AppColors.primary.withValues(alpha: 0.15) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                  color: _budgetType == 'category' ? (isDark ? Colors.white.withValues(alpha: 0.15) : Colors.black.withValues(alpha: 0.08)) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: _budgetType == 'category' ? AppColors.primary : Colors.transparent,
+                                    color: _budgetType == 'category' ? (isDark ? Colors.white70 : Colors.black87) : Colors.transparent,
                                   ),
                                 ),
                                 child: Center(
@@ -914,7 +914,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                     l10n.budgetTypeSpecific,
                                     style: TextStyle(
                                       fontWeight: _budgetType == 'category' ? FontWeight.bold : FontWeight.normal,
-                                      color: _budgetType == 'category' ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                      color: _budgetType == 'category' ? (isDark ? Colors.white : Colors.black87) : (isDark ? Colors.white70 : Colors.black87),
                                     ),
                                   ),
                                 ),
@@ -974,11 +974,11 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                               height: 56,
                                               alignment: Alignment.center,
                                               decoration: ShapeDecoration(
-                                                color: isAllSelected ? AppColors.primary.withValues(alpha: 0.2) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+                                                color: isAllSelected ? (isDark ? Colors.white.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.08)) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
                                                 shape: iconShape.toShapeBorder(56),
                                                 shadows: isAllSelected ? [
                                                   BoxShadow(
-                                                    color: AppColors.primary.withValues(alpha: 0.3),
+                                                    color: Colors.black.withValues(alpha: 0.15),
                                                     blurRadius: 8,
                                                     spreadRadius: -2,
                                                   )
@@ -993,11 +993,11 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                                 child: Container(
                                                   padding: const EdgeInsets.all(2),
                                                   decoration: BoxDecoration(
-                                                    color: AppColors.primary,
+                                                    color: isDark ? Colors.white : Colors.black87,
                                                     shape: BoxShape.circle,
                                                     border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 2),
                                                   ),
-                                                  child: const Icon(Icons.check, size: 12, color: Colors.white),
+                                                  child: Icon(Icons.check, size: 12, color: isDark ? Colors.black87 : Colors.white),
                                                 ),
                                               ),
                                           ],
@@ -1010,7 +1010,7 @@ class _BudgetFormScreenState extends ConsumerState<BudgetFormScreen> {
                                           overflow: TextOverflow.ellipsis,
                                           style: AppTypography.textTheme.labelSmall?.copyWith(
                                             fontWeight: isAllSelected ? FontWeight.bold : FontWeight.normal,
-                                            color: isAllSelected ? (isDark ? Colors.white : AppColors.primary) : (isDark ? Colors.white70 : Colors.black87),
+                                            color: isDark ? Colors.white : Colors.black87,
                                           ),
                                         ),
                                       ],

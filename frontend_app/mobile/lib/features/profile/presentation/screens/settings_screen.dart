@@ -282,7 +282,10 @@ class _FeedbackSheetWidgetState extends ConsumerState<_FeedbackSheetWidget> {
 
     if (message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.feedbackEmptyError)),
+        SnackBar(
+          content: Text(l10n.feedbackEmptyError),
+          backgroundColor: AppColors.danger,
+        ),
       );
       return;
     }
@@ -294,14 +297,20 @@ class _FeedbackSheetWidgetState extends ConsumerState<_FeedbackSheetWidget> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.feedbackSentSuccess)),
+          SnackBar(
+            content: Text(l10n.feedbackSentSuccess),
+            backgroundColor: AppColors.success,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: AppColors.danger,
+          ),
         );
       }
     }

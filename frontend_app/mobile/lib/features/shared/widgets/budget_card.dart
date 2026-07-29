@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../profile/presentation/providers/profile_provider.dart';
 class BudgetCard extends ConsumerWidget {
   const BudgetCard({
     super.key,
@@ -130,6 +131,10 @@ class BudgetCard extends ConsumerWidget {
         ? l10n.periodMonths(periodCount, startDay)
         : l10n.periodDate(startDay);
 
+    final currentUserId = ref.watch(profileProvider).valueOrNull?['userId'] ?? ref.watch(profileProvider).valueOrNull?['id'];
+    final budgetUserId = tx['userId'] as String?;
+    final isOwner = budgetUserId == null || currentUserId == null || budgetUserId == currentUserId;
+
     return Container(
       height: 204,
       margin: const EdgeInsets.only(bottom: 16),
@@ -147,7 +152,7 @@ class BudgetCard extends ConsumerWidget {
         children: [
 
           GestureDetector(
-            onTap: onTap ?? () => context.push('/budgets/form', extra: {'budget': tx}),
+            onTap: isOwner ? (onTap ?? () => context.push('/budgets/form', extra: {'budget': tx})) : null,
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(

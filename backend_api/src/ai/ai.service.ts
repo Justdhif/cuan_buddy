@@ -1,7 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { eq, and, gte, sql, desc } from 'drizzle-orm';
+import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
+import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { transactions, categories, savingsGoals, wallets } from '../database/schema';
+import { transactions, categories, savingsGoals, wallets, userProfiles, budgets, aiConversations, aiMessages } from '../database/schema';
 import { GroqService } from './groq.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { formatCurrency } from '../common/utils/formatter.util';
@@ -14,81 +14,386 @@ export class AiService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async chat(userId: string, message: string): Promise<{ reply: string }> {
+  // ─────────────────────────────────────────────
+  // MULTI-CONVERSATION MANAGEMENT (MAX 10)
+  // ─────────────────────────────────────────────
+  async getConversations(userId: string) {
+    const list = await this.db
+      .select({
+        id: aiConversations.id,
+        title: aiConversations.title,
+        createdAt: aiConversations.createdAt,
+        updatedAt: aiConversations.updatedAt,
+      })
+      .from(aiConversations)
+      .where(eq(aiConversations.userId, userId))
+      .orderBy(desc(aiConversations.updatedAt));
 
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    return {
+      conversations: list,
+      count: list.length,
+      maxLimit: 10,
+    };
+  }
 
-    const [summary, recentTxs, goals] = await Promise.all([
+  async createConversation(userId: string, initialTitle?: string) {
+    const existing = await this.db
+      .select({ id: aiConversations.id })
+      .from(aiConversations)
+      .where(eq(aiConversations.userId, userId));
 
-      this.db
-        .select({
-          totalIncome: sql<number>`COALESCE(SUM(CASE WHEN type='income' THEN amount::numeric ELSE 0 END),0)`,
-          totalExpense: sql<number>`COALESCE(SUM(CASE WHEN type='expense' THEN amount::numeric ELSE 0 END),0)`,
+    if (existing.length >= 10) {
+      throw new BadRequestException(
+        'Batas maksimal 10 percakapan AI telah tercapai. Silakan hapus salah satu percakapan untuk membuat yang baru.',
+      );
+    }
+
+    const title = initialTitle || `Percakapan ${existing.length + 1}`;
+    const [newConv] = await this.db
+      .insert(aiConversations)
+      .values({
+        userId,
+        title,
+      })
+      .returning();
+
+    return newConv;
+  }
+
+  async getConversationMessages(userId: string, conversationId: string) {
+    const [conv] = await this.db
+      .select({ id: aiConversations.id, title: aiConversations.title })
+      .from(aiConversations)
+      .where(and(eq(aiConversations.id, conversationId), eq(aiConversations.userId, userId)));
+
+    if (!conv) {
+      throw new NotFoundException('Percakapan tidak ditemukan.');
+    }
+
+    const messagesList = await this.db
+      .select({
+        id: aiMessages.id,
+        role: aiMessages.role,
+        content: aiMessages.content,
+        createdAt: aiMessages.createdAt,
+      })
+      .from(aiMessages)
+      .where(eq(aiMessages.conversationId, conversationId))
+      .orderBy(asc(aiMessages.createdAt));
+
+    return {
+      conversation: conv,
+      messages: messagesList,
+    };
+  }
+
+  async updateConversationTitle(userId: string, conversationId: string, title: string) {
+    const [updated] = await this.db
+      .update(aiConversations)
+      .set({ title, updatedAt: new Date() })
+      .where(and(eq(aiConversations.id, conversationId), eq(aiConversations.userId, userId)))
+      .returning();
+
+    if (!updated) {
+      throw new NotFoundException('Percakapan tidak ditemukan.');
+    }
+
+    return updated;
+  }
+
+  async deleteConversation(userId: string, conversationId: string) {
+    const [deleted] = await this.db
+      .delete(aiConversations)
+      .where(and(eq(aiConversations.id, conversationId), eq(aiConversations.userId, userId)))
+      .returning();
+
+    if (!deleted) {
+      throw new NotFoundException('Percakapan tidak ditemukan.');
+    }
+
+    return { message: 'Percakapan berhasil dihapus.' };
+  }
+
+  async chat(userId: string, message: string, conversationId?: string): Promise<{ conversationId: string; reply: string }> {
+    let targetConvId = conversationId;
+
+    if (targetConvId) {
+      const [conv] = await this.db
+        .select({ id: aiConversations.id })
+        .from(aiConversations)
+        .where(and(eq(aiConversations.id, targetConvId), eq(aiConversations.userId, userId)));
+
+      if (!conv) {
+        throw new NotFoundException('Percakapan tidak ditemukan.');
+      }
+    } else {
+      const existing = await this.db
+        .select({ id: aiConversations.id })
+        .from(aiConversations)
+        .where(eq(aiConversations.userId, userId));
+
+      if (existing.length >= 10) {
+        throw new BadRequestException(
+          'Batas maksimal 10 percakapan AI telah tercapai. Silakan hapus salah satu percakapan untuk membuat yang baru.',
+        );
+      }
+
+      const generatedTitle = message.length > 30 ? message.substring(0, 30) + '...' : message;
+      const [newConv] = await this.db
+        .insert(aiConversations)
+        .values({
+          userId,
+          title: generatedTitle,
         })
-        .from(transactions)
-        .where(and(eq(transactions.userId, userId), gte(transactions.date, threeMonthsAgo)))
-        .then((r: any[]) => r[0]),
+        .returning();
 
-      this.db
-        .select({
-          type: transactions.type,
-          amount: transactions.amount,
-          note: transactions.note,
-          date: transactions.date,
-        })
-        .from(transactions)
-        .where(eq(transactions.userId, userId))
-        .orderBy(desc(transactions.date))
-        .limit(5),
+      targetConvId = newConv.id;
+    }
 
-      this.db
-        .select({
-          name: savingsGoals.name,
-          target: savingsGoals.targetAmount,
-          current: savingsGoals.currentAmount,
-          status: savingsGoals.status,
-        })
-        .from(savingsGoals)
-        .where(eq(savingsGoals.userId, userId))
-        .limit(5),
-    ]);
+    // Fetch history (last 10 messages)
+    const history = await this.db
+      .select({ role: aiMessages.role, content: aiMessages.content })
+      .from(aiMessages)
+      .where(eq(aiMessages.conversationId, targetConvId!))
+      .orderBy(desc(aiMessages.createdAt))
+      .limit(10);
 
-    const income = Number(summary.totalIncome);
-    const expense = Number(summary.totalExpense);
-    const balance = income - expense;
+    const chronologicalHistory = history.reverse();
 
-    const context = [
-      `Last 3 months summary: Income ${formatCurrency(income)}, Expenses ${formatCurrency(expense)}, Balance ${formatCurrency(balance)}.`,
-      recentTxs.length
-        ? `Last 5 transactions: ${recentTxs.map((t: any) => `${t.type} ${formatCurrency(t.amount)}${t.note ? ` (${t.note})` : ''}`).join('; ')}.`
-        : '',
-      goals.length
-        ? `Savings goals: ${goals.map((g: any) => `${g.name} ${formatCurrency(g.current)}/${formatCurrency(g.target)} (${g.status})`).join(', ')}.`
-        : '',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    // Save user message to database
+    await this.db.insert(aiMessages).values({
+      conversationId: targetConvId!,
+      role: 'user',
+      content: message,
+    });
 
-    const systemPrompt = `You are CuanBuddy AI, a friendly and practical personal finance assistant.
-IMPORTANT: Detect the language of the user's message and always respond in the SAME language.
-If the user writes in Indonesian (Bahasa Indonesia), respond in Indonesian.
-If the user writes in English, respond in English.
-Answer concisely and provide concrete, actionable advice.
-Maximum 3 short paragraphs. No filler words.
+    const databaseContext = await this.getUserFinancialDatabaseContext(userId);
 
-User financial data:
-${context}`;
+    const systemPrompt = `You are a Senior Financial Consultant & Certified Financial Planner (CFP) AI for CuanBuddy.
+You have COMPLETE DIRECT ACCESS to the user's financial database records provided below.
 
-    const reply = await this.groqService.chat(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: message },
-      ],
-      400, // Keep reply concise to save tokens
-    );
+### PERSONA & ROLE:
+- You are a Senior Financial Consultant with deep expertise in personal finance, wealth management, cash flow analysis, budgeting, and investment strategies.
+- You provide professional, highly actionable, empathetic, and data-backed financial guidance.
+- ALWAYS analyze the user's REAL database figures (wallets, total net worth, income, expenses, category spending, budgets, savings goals, recent transactions) to give exact, customized advice.
 
-    return { reply };
+### LANGUAGE MATCHING MANDATE (CRITICAL - MUST FOLLOW STRICTLY):
+- You MUST automatically detect the language of the user's prompt ("${message}").
+- IF THE USER PROMPT IS IN ENGLISH: You MUST reply 100% in English.
+- IF THE USER PROMPT IS IN INDONESIAN (Bahasa Indonesia): You MUST reply 100% in Bahasa Indonesia.
+- ALWAYS respond strictly in the SAME language as the user's prompt. Do NOT switch or mix languages.
+
+### FINANCIAL CONSULTING STANDARDS:
+- Reference specific numbers from their database records when answering.
+- Utilize recognized financial benchmarks such as the 50/30/20 budgeting rule (50% Needs, 30% Wants, 20% Savings/Investment), Emergency Fund recommendations (3-6x monthly expenses), and debt reduction strategies where relevant.
+- Structure your response cleanly with bullet points, bold key figures, and concise actionable steps.
+
+User Financial Database Context:
+${databaseContext}`;
+
+    const llmPayload: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+      ...chronologicalHistory.map((m: any) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+      { role: 'user', content: message },
+    ];
+
+    const reply = await this.groqService.chat(llmPayload, 800);
+
+    // Save assistant reply to database
+    await this.db.insert(aiMessages).values({
+      conversationId: targetConvId!,
+      role: 'assistant',
+      content: reply,
+    });
+
+    // Update conversation updatedAt
+    await this.db
+      .update(aiConversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(aiConversations.id, targetConvId!));
+
+    return { conversationId: targetConvId!, reply };
+  }
+
+  /**
+   * Fetches comprehensive user financial database context across all tables.
+   */
+  private async getUserFinancialDatabaseContext(userId: string): Promise<string> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    try {
+      const [
+        profileResult,
+        userWallets,
+        monthlySummary,
+        topCategories,
+        userBudgets,
+        userGoals,
+        recentTxs,
+      ] = await Promise.all([
+        // 1. Profile
+        this.db
+          .select({
+            fullName: userProfiles.fullName,
+            username: userProfiles.username,
+            streak: userProfiles.recordingStreakCount,
+          })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, userId))
+          .then((r: any[]) => r[0]),
+
+        // 2. Wallets
+        this.db
+          .select({
+            name: wallets.name,
+            type: wallets.type,
+            currency: wallets.currency,
+            balance: wallets.balance,
+            isBaseCurrency: wallets.isBaseCurrency,
+          })
+          .from(wallets)
+          .where(eq(wallets.userId, userId)),
+
+        // 3. Monthly Cash Flow Summary (Current Month)
+        this.db
+          .select({
+            income: sql<number>`COALESCE(SUM(CASE WHEN type='income' THEN amount::numeric ELSE 0 END),0)`,
+            expense: sql<number>`COALESCE(SUM(CASE WHEN type='expense' THEN amount::numeric ELSE 0 END),0)`,
+          })
+          .from(transactions)
+          .where(and(eq(transactions.userId, userId), gte(transactions.date, startOfMonth)))
+          .then((r: any[]) => r[0]),
+
+        // 4. Expense by Category (Current Month)
+        this.db
+          .select({
+            categoryName: sql<string>`COALESCE(c.name, 'Uncategorized')`,
+            total: sql<number>`SUM(t.amount::numeric)`,
+          })
+          .from(sql`${transactions} t`)
+          .leftJoin(sql`categories c ON c.id = t.category_id`)
+          .where(sql`t.user_id = ${userId} AND t.type = 'expense' AND t.date >= ${startOfMonth}`)
+          .groupBy(sql`COALESCE(c.name, 'Uncategorized')`)
+          .orderBy(sql`SUM(t.amount::numeric) DESC`)
+          .limit(8),
+
+        // 5. Budgets
+        this.db
+          .select({
+            name: budgets.name,
+            limitAmount: budgets.limitAmount,
+            monthYear: budgets.monthYear,
+            categoryName: categories.name,
+          })
+          .from(budgets)
+          .leftJoin(categories, eq(budgets.categoryId, categories.id))
+          .where(eq(budgets.userId, userId)),
+
+        // 6. Savings Goals
+        this.db
+          .select({
+            name: savingsGoals.name,
+            target: savingsGoals.targetAmount,
+            current: savingsGoals.currentAmount,
+            targetDate: savingsGoals.targetDate,
+            status: savingsGoals.status,
+          })
+          .from(savingsGoals)
+          .where(eq(savingsGoals.userId, userId)),
+
+        // 7. Recent Transactions (Last 15)
+        this.db
+          .select({
+            title: transactions.title,
+            type: transactions.type,
+            amount: transactions.amount,
+            date: transactions.date,
+            note: transactions.note,
+            categoryName: sql<string>`COALESCE(c.name, 'Uncategorized')`,
+            walletName: sql<string>`COALESCE(w.name, 'Wallet')`,
+          })
+          .from(sql`${transactions} t`)
+          .leftJoin(sql`categories c ON c.id = t.category_id`)
+          .leftJoin(sql`wallets w ON w.id = t.wallet_id`)
+          .where(sql`t.user_id = ${userId}`)
+          .orderBy(desc(transactions.date))
+          .limit(15),
+      ]);
+
+      let totalNetWorth = 0;
+      const walletLines = (userWallets || []).map((w: any) => {
+        const bal = Number(w.balance);
+        totalNetWorth += bal;
+        return `- ${w.name} (${w.type.toUpperCase()}, ${w.currency}): ${formatCurrency(bal)}`;
+      });
+
+      const income = Number(monthlySummary?.income ?? 0);
+      const expense = Number(monthlySummary?.expense ?? 0);
+      const netCashFlow = income - expense;
+      const savingsRate = income > 0 ? ((netCashFlow / income) * 100).toFixed(1) : '0';
+
+      const categoryLines = (topCategories || []).map((c: any) => {
+        const total = Number(c.total);
+        const pct = expense > 0 ? ((total / expense) * 100).toFixed(1) : '0';
+        return `- ${c.categoryName}: ${formatCurrency(total)} (${pct}% of monthly expenses)`;
+      });
+
+      const budgetLines = (userBudgets || []).map((b: any) => {
+        const limit = Number(b.limitAmount);
+        const label = b.name || b.categoryName || 'General Budget';
+        return `- ${label}: Limit ${formatCurrency(limit)} (${b.monthYear})`;
+      });
+
+      const goalLines = (userGoals || []).map((g: any) => {
+        const current = Number(g.current);
+        const target = Number(g.target);
+        const pct = target > 0 ? ((current / target) * 100).toFixed(1) : '0';
+        const targetDateStr = g.targetDate ? new Date(g.targetDate).toISOString().split('T')[0] : 'No deadline';
+        return `- ${g.name}: ${formatCurrency(current)} / ${formatCurrency(target)} (${pct}%, target date: ${targetDateStr}, status: ${g.status})`;
+      });
+
+      const recentTxLines = (recentTxs || []).map((t: any) => {
+        const dateStr = t.date ? new Date(t.date).toISOString().split('T')[0] : '';
+        const title = t.title || t.note || 'Untitled';
+        return `- [${dateStr}] [${t.type.toUpperCase()}] ${title}: ${formatCurrency(Number(t.amount))} (Cat: ${t.categoryName}, Wallet: ${t.walletName})`;
+      });
+
+      const userName = profileResult?.fullName || profileResult?.username || 'Valued User';
+
+      return `
+=== USER DATABASE FINANCIAL PROFILE ===
+User Name: ${userName}
+Streak Count: ${profileResult?.streak ?? 0} days
+
+1. WALLETS & TOTAL NET WORTH:
+- Total Net Worth: ${formatCurrency(totalNetWorth)}
+${walletLines.length ? walletLines.join('\n') : '- No wallets recorded.'}
+
+2. MONTHLY CASH FLOW SUMMARY (Current Month):
+- Total Income: ${formatCurrency(income)}
+- Total Expenses: ${formatCurrency(expense)}
+- Net Cash Flow: ${formatCurrency(netCashFlow)}
+- Savings Rate: ${savingsRate}%
+
+3. EXPENSES BY CATEGORY (Current Month):
+${categoryLines.length ? categoryLines.join('\n') : '- No expense records this month.'}
+
+4. BUDGETS:
+${budgetLines.length ? budgetLines.join('\n') : '- No active budgets set.'}
+
+5. SAVINGS GOALS:
+${goalLines.length ? goalLines.join('\n') : '- No active savings goals set.'}
+
+6. RECENT TRANSACTIONS (Last 15):
+${recentTxLines.length ? recentTxLines.join('\n') : '- No recent transactions found.'}
+======================================`;
+    } catch (error) {
+      return `Error fetching database context: ${error?.message || error}`;
+    }
   }
 
   // ─────────────────────────────────────────────

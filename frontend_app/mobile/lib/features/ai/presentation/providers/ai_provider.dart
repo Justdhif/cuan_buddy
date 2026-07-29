@@ -2,50 +2,179 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/providers/core_providers.dart';
 
+class AiConversation {
+  final String id;
+  final String title;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  AiConversation({
+    required this.id,
+    required this.title,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory AiConversation.fromJson(Map<String, dynamic> json) {
+    return AiConversation(
+      id: json['id'],
+      title: json['title'] ?? 'Chat',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : DateTime.now(),
+    );
+  }
+}
+
 class ChatMessage {
+  final String? id;
   final String role;
   final String content;
 
-  ChatMessage({required this.role, required this.content});
+  ChatMessage({this.id, required this.role, required this.content});
 }
 
 class AiState {
+  final List<AiConversation> conversations;
+  final String? currentConversationId;
   final List<ChatMessage> messages;
   final bool isLoading;
+  final bool isConversationsLoading;
   final String? error;
+  final bool isLimitReached;
 
   AiState({
+    this.conversations = const [],
+    this.currentConversationId,
     this.messages = const [],
     this.isLoading = false,
+    this.isConversationsLoading = false,
     this.error,
+    this.isLimitReached = false,
   });
 
   AiState copyWith({
+    List<AiConversation>? conversations,
+    String? currentConversationId,
+    bool clearCurrentConv = false,
     List<ChatMessage>? messages,
     bool? isLoading,
+    bool? isConversationsLoading,
     String? error,
+    bool? isLimitReached,
   }) {
     return AiState(
+      conversations: conversations ?? this.conversations,
+      currentConversationId: clearCurrentConv
+          ? null
+          : (currentConversationId ?? this.currentConversationId),
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
+      isConversationsLoading:
+          isConversationsLoading ?? this.isConversationsLoading,
       error: error,
+      isLimitReached: isLimitReached ?? this.isLimitReached,
     );
   }
 }
 
 class AiNotifier extends StateNotifier<AiState> {
+  static final ChatMessage defaultGreeting = ChatMessage(
+    role: 'assistant',
+    content:
+        'Halo! Saya CuanBuddy AI, Konsultan Keuangan Senior (Certified Financial Planner) Anda 💼\n\nSaya memiliki akses penuh ke seluruh database keuangan Anda (dompet, net worth, transaksi, anggaran, & target tabungan).\n\nAda yang ingin Anda konsultasikan hari ini? Silakan pilih template pertanyaan populer di bawah atau ketik pertanyaan Anda sendiri!',
+  );
+
   AiNotifier(this.ref)
-      : super(AiState(messages: [
-          ChatMessage(
-            role: 'assistant',
-            content:
-                'Hi! I am CuanBuddy AI. You can ask me anything about your finances, budget recommendations, or spending habits.',
-          )
-        ]));
+      : super(AiState(messages: [defaultGreeting])) {
+    fetchConversations();
+  }
 
   final Ref ref;
 
+  Future<void> fetchConversations() async {
+    state = state.copyWith(isConversationsLoading: true);
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      final response = await dio.get('/ai/conversations');
+
+      final listJson = response.data['conversations'] as List? ?? [];
+      final conversationsList =
+          listJson.map((e) => AiConversation.fromJson(e)).toList();
+
+      final count = response.data['count'] as int? ?? conversationsList.length;
+
+      state = state.copyWith(
+        conversations: conversationsList,
+        isLimitReached: count >= 10,
+        isConversationsLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(isConversationsLoading: false);
+    }
+  }
+
+  Future<void> selectConversation(String conversationId) async {
+    state = state.copyWith(
+      currentConversationId: conversationId,
+      isLoading: true,
+      error: null,
+    );
+
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      final response =
+          await dio.get('/ai/conversations/$conversationId/messages');
+
+      final messagesJson = response.data['messages'] as List? ?? [];
+      final fetchedMessages = messagesJson
+          .map((m) => ChatMessage(
+                id: m['id'],
+                role: m['role'],
+                content: m['content'],
+              ))
+          .toList();
+
+      state = state.copyWith(
+        messages: fetchedMessages.isEmpty ? [defaultGreeting] : fetchedMessages,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: e.toString(),
+        isLoading: false,
+      );
+    }
+  }
+
+  bool startNewChat() {
+    if (state.conversations.length >= 10) {
+      state = state.copyWith(isLimitReached: true);
+      return false;
+    }
+
+    state = state.copyWith(
+      clearCurrentConv: true,
+      messages: [defaultGreeting],
+      error: null,
+    );
+    return true;
+  }
+
   Future<void> sendMessage(String text) async {
+    // If not in a conversation and limit is reached, block
+    if (state.currentConversationId == null && state.conversations.length >= 10) {
+      state = state.copyWith(
+        error:
+            'Batas maksimal 10 percakapan tercapai. Silakan hapus salah satu percakapan untuk memulai yang baru.',
+        isLimitReached: true,
+      );
+      return;
+    }
+
     final userMsg = ChatMessage(role: 'user', content: text);
     state = state.copyWith(
       messages: [...state.messages, userMsg],
@@ -55,23 +184,74 @@ class AiNotifier extends StateNotifier<AiState> {
 
     try {
       final dio = ref.read(dioClientProvider).dio;
-      final response = await dio.post('/ai/chat', data: {'message': text});
+      final payload = {
+        'message': text,
+        if (state.currentConversationId != null)
+          'conversationId': state.currentConversationId,
+      };
+
+      final response = await dio.post('/ai/chat', data: payload);
 
       final replyText = response.data['reply'] as String? ??
-          'Sorry, I could not process that.';
+          'Maaf, saya tidak dapat memproses tanggapan tersebut.';
+      final newConvId = response.data['conversationId'] as String?;
+
       final aiMsg = ChatMessage(role: 'assistant', content: replyText);
 
       state = state.copyWith(
+        currentConversationId: newConvId ?? state.currentConversationId,
         messages: [...state.messages, aiMsg],
         isLoading: false,
       );
+
+      // Re-fetch conversations list to update sidebar/titles
+      await fetchConversations();
     } catch (e) {
-      state = state.copyWith(error: e.toString(), isLoading: false, messages: [
-        ...state.messages,
-        ChatMessage(
+      String errMessage = 'Oops! Gagal terhubung ke server.';
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response?.data;
+        if (data is Map && data['message'] != null) {
+          errMessage = data['message'].toString();
+        }
+      }
+
+      state = state.copyWith(
+        error: errMessage,
+        isLoading: false,
+        messages: [
+          ...state.messages,
+          ChatMessage(
             role: 'assistant',
-            content: 'Oops! I am having trouble connecting to the server.')
-      ]);
+            content: '⚠️ $errMessage',
+          ),
+        ],
+      );
+    }
+  }
+
+  Future<void> deleteConversation(String conversationId) async {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.delete('/ai/conversations/$conversationId');
+
+      final wasCurrent = state.currentConversationId == conversationId;
+      await fetchConversations();
+
+      if (wasCurrent) {
+        startNewChat();
+      }
+    } catch (e) {
+      state = state.copyWith(error: 'Gagal menghapus percakapan');
+    }
+  }
+
+  Future<void> renameConversation(String conversationId, String newTitle) async {
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      await dio.patch('/ai/conversations/$conversationId', data: {'title': newTitle});
+      await fetchConversations();
+    } catch (e) {
+      state = state.copyWith(error: 'Gagal mengedit nama percakapan');
     }
   }
 

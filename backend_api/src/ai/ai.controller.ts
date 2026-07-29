@@ -3,6 +3,9 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
+  Delete,
+  Param,
   Body,
   UseGuards,
   Request,
@@ -19,7 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AiService } from './ai.service';
-import { AiChatDto, AiCategorizeDto } from './dto/ai.dto';
+import { AiChatDto, AiCategorizeDto, UpdateConversationDto } from './dto/ai.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -28,6 +31,55 @@ import { AiChatDto, AiCategorizeDto } from './dto/ai.dto';
 export class AiController {
   constructor(private readonly aiService: AiService) {}
 
+  @Get('conversations')
+  @ApiOperation({
+    summary: '💬 List AI Conversations',
+    description: 'Dapatkan daftar semua percakapan AI pengguna (maksimal 10).',
+  })
+  getConversations(@Request() req: any) {
+    return this.aiService.getConversations(req.user.userId);
+  }
+
+  @Post('conversations')
+  @ApiOperation({
+    summary: '➕ Create New AI Conversation',
+    description: 'Buat percakapan AI baru (maksimal 10 per user).',
+  })
+  createConversation(@Request() req: any, @Body('title') title?: string) {
+    return this.aiService.createConversation(req.user.userId, title);
+  }
+
+  @Get('conversations/:id/messages')
+  @ApiOperation({
+    summary: '📜 Get Conversation Messages',
+    description: 'Dapatkan riwayat pesan dalam satu percakapan tertentu.',
+  })
+  getConversationMessages(@Request() req: any, @Param('id') id: string) {
+    return this.aiService.getConversationMessages(req.user.userId, id);
+  }
+
+  @Patch('conversations/:id')
+  @ApiOperation({
+    summary: '✏️ Update Conversation Title',
+    description: 'Ubah judul percakapan AI.',
+  })
+  updateConversationTitle(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() dto: UpdateConversationDto,
+  ) {
+    return this.aiService.updateConversationTitle(req.user.userId, id, dto.title);
+  }
+
+  @Delete('conversations/:id')
+  @ApiOperation({
+    summary: '🗑️ Delete Conversation',
+    description: 'Hapus satu percakapan AI beserta pesannya.',
+  })
+  deleteConversation(@Request() req: any, @Param('id') id: string) {
+    return this.aiService.deleteConversation(req.user.userId, id);
+  }
+
   @Post('chat')
   @ApiOperation({
     summary: '💬 Financial Advisor Chat',
@@ -35,7 +87,7 @@ export class AiController {
   })
   @ApiResponse({ status: 201, description: 'AI reply berhasil digenerate' })
   chat(@Request() req: any, @Body() dto: AiChatDto) {
-    return this.aiService.chat(req.user.userId, dto.message);
+    return this.aiService.chat(req.user.userId, dto.message, dto.conversationId);
   }
 
   @Get('insights')

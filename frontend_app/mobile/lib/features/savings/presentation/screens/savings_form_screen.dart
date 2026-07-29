@@ -499,7 +499,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                 Container(
                   color: isDark
                       ? const Color(0xFF232838)
-                      : AppColors.primary.withValues(alpha: 0.05),
+                      : Colors.black.withValues(alpha: 0.03),
                   child: AnimatedBuilder(
                     animation: Listenable.merge([_amountController, _nameController]),
                     builder: (context, _) {
@@ -547,7 +547,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                                   shape: BoxShape.circle,
                                   border: !_presetColors.contains(_selectedColor)
                                       ? Border.all(
-                                          color: isDark ? Colors.white : AppColors.primary,
+                                          color: isDark ? Colors.white : Colors.black87,
                                           width: 3,
                                         )
                                       : null,
@@ -574,7 +574,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                                     shape: BoxShape.circle,
                                     border: isSelected
                                         ? Border.all(
-                                            color: isDark ? Colors.white : AppColors.primary,
+                                            color: isDark ? Colors.white : Colors.black87,
                                             width: 3,
                                           )
                                         : null,
@@ -740,7 +740,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                             children: [
                               Icon(
                                 _isPin ? Icons.push_pin : Icons.push_pin_outlined,
-                                color: _isPin ? AppColors.primary : (isDark ? Colors.white60 : Colors.black54),
+                                color: _isPin ? (isDark ? Colors.white : Colors.black87) : (isDark ? Colors.white60 : Colors.black54),
                               ),
                               const SizedBox(width: 12),
                               Text(l10n.pinGoal),
@@ -748,7 +748,7 @@ class _SavingsFormScreenState extends ConsumerState<SavingsFormScreen> {
                           ),
                           value: _isPin,
                           onChanged: (val) => setState(() => _isPin = val),
-                          activeTrackColor: AppColors.primary,
+                          activeTrackColor: isDark ? Colors.white70 : Colors.black87,
                         ),
                       ),
                       const SizedBox(height: 32),
