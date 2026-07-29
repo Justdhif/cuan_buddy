@@ -183,6 +183,12 @@ You have COMPLETE DIRECT ACCESS to the user's financial database records provide
 - IF THE USER PROMPT IS IN INDONESIAN (Bahasa Indonesia): You MUST reply 100% in Bahasa Indonesia.
 - ALWAYS respond strictly in the SAME language as the user's prompt. Do NOT switch or mix languages.
 
+### FORMATTING INSTRUCTIONS (STRICT PLAIN TEXT MANDATE):
+- DO NOT use markdown symbols such as double or triple asterisks (**, ***, *), bold markdown, or raw hash tags (#).
+- Write clean, beautifully formatted plain text.
+- Use clean bullet points (•) or numbered lists (1., 2., 3.).
+- Ensure all output is 100% free of raw asterisks (*) or markdown symbols.
+
 ### FINANCIAL CONSULTING STANDARDS:
 - Reference specific numbers from their database records when answering.
 - Utilize recognized financial benchmarks such as the 50/30/20 budgeting rule (50% Needs, 30% Wants, 20% Savings/Investment), Emergency Fund recommendations (3-6x monthly expenses), and debt reduction strategies where relevant.
@@ -200,7 +206,8 @@ ${databaseContext}`;
       { role: 'user', content: message },
     ];
 
-    const reply = await this.groqService.chat(llmPayload, 800);
+    const rawReply = await this.groqService.chat(llmPayload, 800);
+    const reply = this.cleanTextResponse(rawReply);
 
     // Save assistant reply to database
     await this.db.insert(aiMessages).values({
@@ -216,6 +223,16 @@ ${databaseContext}`;
       .where(eq(aiConversations.id, targetConvId!));
 
     return { conversationId: targetConvId!, reply };
+  }
+
+  private cleanTextResponse(text: string): string {
+    if (!text) return '';
+    return text
+      .replace(/\*\*\*/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/^#+\s+/gm, '')
+      .trim();
   }
 
   /**
@@ -271,14 +288,20 @@ ${databaseContext}`;
         // 4. Expense by Category (Current Month)
         this.db
           .select({
-            categoryName: sql<string>`COALESCE(c.name, 'Uncategorized')`,
-            total: sql<number>`SUM(t.amount::numeric)`,
+            categoryName: sql<string>`COALESCE(${categories.name}, 'Uncategorized')`,
+            total: sql<number>`SUM(${transactions.amount}::numeric)`,
           })
-          .from(sql`${transactions} t`)
-          .leftJoin(sql`categories c ON c.id = t.category_id`)
-          .where(sql`t.user_id = ${userId} AND t.type = 'expense' AND t.date >= ${startOfMonth}`)
-          .groupBy(sql`COALESCE(c.name, 'Uncategorized')`)
-          .orderBy(sql`SUM(t.amount::numeric) DESC`)
+          .from(transactions)
+          .leftJoin(categories, eq(transactions.categoryId, categories.id))
+          .where(
+            and(
+              eq(transactions.userId, userId),
+              eq(transactions.type, 'expense'),
+              gte(transactions.date, startOfMonth),
+            ),
+          )
+          .groupBy(categories.name)
+          .orderBy(sql`SUM(${transactions.amount}::numeric) DESC`)
           .limit(8),
 
         // 5. Budgets
@@ -313,13 +336,13 @@ ${databaseContext}`;
             amount: transactions.amount,
             date: transactions.date,
             note: transactions.note,
-            categoryName: sql<string>`COALESCE(c.name, 'Uncategorized')`,
-            walletName: sql<string>`COALESCE(w.name, 'Wallet')`,
+            categoryName: sql<string>`COALESCE(${categories.name}, 'Uncategorized')`,
+            walletName: sql<string>`COALESCE(${wallets.name}, 'Wallet')`,
           })
-          .from(sql`${transactions} t`)
-          .leftJoin(sql`categories c ON c.id = t.category_id`)
-          .leftJoin(sql`wallets w ON w.id = t.wallet_id`)
-          .where(sql`t.user_id = ${userId}`)
+          .from(transactions)
+          .leftJoin(categories, eq(transactions.categoryId, categories.id))
+          .leftJoin(wallets, eq(transactions.walletId, wallets.id))
+          .where(eq(transactions.userId, userId))
           .orderBy(desc(transactions.date))
           .limit(15),
       ]);

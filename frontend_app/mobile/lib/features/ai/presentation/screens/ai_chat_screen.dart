@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -5,18 +6,144 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../providers/ai_provider.dart';
 
-class PromptTemplate {
-  final String icon;
-  final String title;
-  final String subtitle;
-  final String prompt;
+class TypewriterText extends StatefulWidget {
+  final String text;
+  final TextStyle? style;
+  final Duration speed;
+  final VoidCallback? onTick;
 
-  const PromptTemplate({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.prompt,
+  const TypewriterText({
+    super.key,
+    required this.text,
+    this.style,
+    this.speed = const Duration(milliseconds: 16),
+    this.onTick,
   });
+
+  @override
+  State<TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<TypewriterText> {
+  int _charCount = 0;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant TypewriterText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _timer?.cancel();
+      _charCount = 0;
+      _startAnimation();
+    }
+  }
+
+  void _startAnimation() {
+    if (widget.text.isEmpty) return;
+    _timer = Timer.periodic(widget.speed, (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_charCount < widget.text.length) {
+        setState(() {
+          _charCount = (_charCount + 3).clamp(0, widget.text.length);
+        });
+        widget.onTick?.call();
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayText = widget.text.substring(0, _charCount);
+    return Text(
+      displayText,
+      style: widget.style,
+    );
+  }
+}
+
+class BouncingDotsIndicator extends StatefulWidget {
+  final Color color;
+  final double size;
+
+  const BouncingDotsIndicator({
+    super.key,
+    this.color = const Color(0xFF60A5FA),
+    this.size = 8.0,
+  });
+
+  @override
+  State<BouncingDotsIndicator> createState() => _BouncingDotsIndicatorState();
+}
+
+class _BouncingDotsIndicatorState extends State<BouncingDotsIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final delay = index * 0.2;
+            final value = (_controller.value - delay) % 1.0;
+            final offsetY = value >= 0 && value <= 0.5
+                ? -6.0 * (1 - (value * 2 - 0.5).abs() * 2)
+                : 0.0;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Transform.translate(
+                offset: Offset(0, offsetY.clamp(-6.0, 0.0)),
+                child: Container(
+                  width: widget.size,
+                  height: widget.size,
+                  decoration: BoxDecoration(
+                    color: widget.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
 }
 
 class EmptyQuestionItem {
@@ -55,86 +182,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     super.dispose();
   }
 
-  List<PromptTemplate> _getQuestionTemplates(bool isEnglish) {
-    if (isEnglish) {
-      return const [
-        PromptTemplate(
-          icon: '📊',
-          title: 'Financial Health',
-          subtitle: 'Check this month\'s financial health',
-          prompt: 'How is my financial status this month?',
-        ),
-        PromptTemplate(
-          icon: '💡',
-          title: 'Top Expenses',
-          subtitle: 'Find your highest spending category',
-          prompt: 'Which category ate up most of my money this month?',
-        ),
-        PromptTemplate(
-          icon: '⚖️',
-          title: 'Budget Track',
-          subtitle: 'Evaluate budget vs actual spending',
-          prompt: 'Am I on track with my budget this month?',
-        ),
-        PromptTemplate(
-          icon: '🎯',
-          title: 'Savings Tips',
-          subtitle: 'Personalized tips to save more',
-          prompt: 'What tips can help me save more money?',
-        ),
-        PromptTemplate(
-          icon: '💰',
-          title: 'Projection',
-          subtitle: 'End-of-month balance prediction',
-          prompt: 'What is my financial projection till month-end?',
-        ),
-        PromptTemplate(
-          icon: '📉',
-          title: 'Financial Advice',
-          subtitle: 'Get top advice for overall health',
-          prompt: 'Give me personalized financial advice',
-        ),
-      ];
-    } else {
-      return const [
-        PromptTemplate(
-          icon: '📊',
-          title: 'Analisis Keuangan',
-          subtitle: 'Cek kesehatan finansial bulan ini',
-          prompt: 'Bagaimana kondisi keuanganku bulan ini?',
-        ),
-        PromptTemplate(
-          icon: '💡',
-          title: 'Pengeluaran Terbesar',
-          subtitle: 'Lihat kategori pengeluaran terbesar',
-          prompt: 'Kategori apa yang paling banyak menghabiskan uangku bulan ini?',
-        ),
-        PromptTemplate(
-          icon: '⚖️',
-          title: 'Aturan 50/30/20',
-          subtitle: 'Evaluasi alokasi Kebutuhan & Tabungan',
-          prompt: 'Apakah aku sudah on track dengan budget bulan ini?',
-        ),
-        PromptTemplate(
-          icon: '🎯',
-          title: 'Target Tabungan',
-          subtitle: 'Strategi capai goal tepat waktu',
-          prompt: 'Tips apa yang bisa membantuku menabung lebih banyak?',
-        ),
-        PromptTemplate(
-          icon: '💰',
-          title: 'Proyeksi Keuangan',
-          subtitle: 'Prediksi saldo berdasarkan transaksi',
-          prompt: 'Berapa proyeksi keuanganku sampai akhir bulan?',
-        ),
-        PromptTemplate(
-          icon: '📉',
-          title: 'Saran Finansial',
-          subtitle: 'Saran umum untuk kesehatan keuanganmu',
-          prompt: 'Beri saran finansial untukku',
-        ),
-      ];
-    }
+  String _cleanText(String text) {
+    if (text.isEmpty) return text;
+    return text
+        .replaceAll('***', '')
+        .replaceAll('**', '')
+        .replaceAll('*', '')
+        .replaceAll(RegExp(r'^#+\s+', multiLine: true), '')
+        .trim();
   }
 
   List<EmptyQuestionItem> _getEmptyQuestionItems(bool isEnglish) {
@@ -248,7 +303,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
         );
       }
@@ -637,89 +692,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     return '${dt.day}/${dt.month}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
-  void _showTemplateModal(BuildContext context, bool isDark) {
-    final l10n = AppLocalizations.of(context);
-    final isEnglish = l10n.languageCode == 'en';
-    final templates = _getQuestionTemplates(isEnglish);
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[700] : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Text(
-                      isEnglish ? 'Select Question Template' : 'Pilih Template Pertanyaan',
-                      style: AppTypography.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: templates.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final t = templates[index];
-                      return ListTile(
-                        onTap: () {
-                          Navigator.pop(context);
-                          _sendTemplate(t.prompt);
-                        },
-                        leading: Text(t.icon, style: const TextStyle(fontSize: 24)),
-                        title: Text(
-                          t.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(t.subtitle),
-                        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                          ),
-                        ),
-                        tileColor: isDark
-                            ? Theme.of(context).scaffoldBackgroundColor
-                            : AppColors.surfaceLight,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -731,7 +703,7 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       (c) => c.id == aiState.currentConversationId,
       orElse: () => AiConversation(
         id: '',
-        title: isEnglish ? 'New Conversation' : 'Percakapan Baru',
+        title: l10n.cuanBuddyAI,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
@@ -743,34 +715,47 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
       }
     });
 
-    final bool isEmptyConversation = aiState.messages.length <= 1;
+    final bool isEmptyConversation = aiState.messages.isEmpty;
 
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('💼', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    aiState.currentConversationId != null
-                        ? activeConv.title
-                        : l10n.cuanBuddyAI,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    'Senior Finance Consultant (CFP)',
-                    style: TextStyle(
-                        fontSize: 10.5,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/illustrations/ai-illustration.png',
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withAlpha(30),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.smart_toy_rounded,
+                        size: 20,
                         color: AppColors.primary,
-                        fontWeight: FontWeight.w600),
-                  ),
-                ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                aiState.currentConversationId != null
+                    ? activeConv.title
+                    : l10n.cuanBuddyAI,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -786,11 +771,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             tooltip: isEnglish ? 'New Conversation' : 'Percakapan Baru',
             onPressed: () => _handleStartNewChat(context, isDark),
           ),
-          IconButton(
-            icon: Icon(Icons.lightbulb_outline_rounded, color: AppColors.primary),
-            tooltip: isEnglish ? 'Question Templates' : 'Template Pertanyaan',
-            onPressed: () => _showTemplateModal(context, isDark),
-          ),
         ],
       ),
       body: Column(
@@ -801,10 +781,45 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: aiState.messages.length,
+                    itemCount: aiState.messages.length + (aiState.isLoading ? 1 : 0),
                     itemBuilder: (context, index) {
+                      // Render animated 3-dot bouncing typing bubble for AI loading state
+                      if (aiState.isLoading && index == aiState.messages.length) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.surfaceDark
+                                  : AppColors.surfaceLight,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(16),
+                                topRight: Radius.circular(16),
+                                bottomLeft: Radius.circular(4),
+                                bottomRight: Radius.circular(16),
+                              ),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.borderDark
+                                    : AppColors.borderLight,
+                              ),
+                            ),
+                            child: BouncingDotsIndicator(
+                              color: AppColors.primary,
+                              size: 8.0,
+                            ),
+                          ),
+                        );
+                      }
+
                       final msg = aiState.messages[index];
                       final isUser = msg.role == 'user';
+                      final displayContent = _cleanText(msg.content);
+                      final isLatestAssistantMessage =
+                          !isUser && index == aiState.messages.length - 1;
 
                       return Align(
                         alignment:
@@ -835,47 +850,29 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                         ? AppColors.borderDark
                                         : AppColors.borderLight),
                           ),
-                          child: Text(
-                            msg.content,
-                            style: AppTypography.textTheme.bodyMedium?.copyWith(
-                              color: isUser
-                                  ? Colors.white
-                                  : (isDark ? Colors.white : Colors.black87),
-                              height: 1.5,
-                            ),
-                          ),
+                          child: isLatestAssistantMessage
+                              ? TypewriterText(
+                                  text: displayContent,
+                                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                    color: isDark ? Colors.white : Colors.black87,
+                                    height: 1.5,
+                                  ),
+                                  onTick: _scrollToBottom,
+                                )
+                              : Text(
+                                  displayContent,
+                                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                                    color: isUser
+                                        ? Colors.white
+                                        : (isDark ? Colors.white : Colors.black87),
+                                    height: 1.5,
+                                  ),
+                                ),
                         ),
                       );
                     },
                   ),
           ),
-          if (aiState.isLoading)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isEnglish
-                        ? 'Analyzing database & drafting advice...'
-                        : 'Menganalisis database & menyusun saran...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          
-          if (!isEmptyConversation) _buildHorizontalPromptChips(isDark, isEnglish),
-
           SafeArea(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -890,11 +887,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
               ),
               child: Row(
                 children: [
-                  IconButton(
-                    icon: Icon(Icons.auto_awesome_rounded, color: AppColors.primary),
-                    tooltip: isEnglish ? 'Question Templates' : 'Template Pertanyaan',
-                    onPressed: () => _showTemplateModal(context, isDark),
-                  ),
                   Expanded(
                     child: TextField(
                       controller: _controller,
@@ -946,46 +938,6 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildHorizontalPromptChips(bool isDark, bool isEnglish) {
-    final templates = _getQuestionTemplates(isEnglish);
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: templates.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final t = templates[index];
-          return ActionChip(
-            avatar: Text(t.icon, style: const TextStyle(fontSize: 13)),
-            label: Text(
-              t.title,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : AppColors.primary,
-              ),
-            ),
-            backgroundColor: isDark
-                ? AppColors.surfaceDark
-                : AppColors.primary.withAlpha(20),
-            side: BorderSide(
-              color: isDark
-                  ? AppColors.borderDark
-                  : AppColors.primary.withAlpha(50),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            onPressed: () => _sendTemplate(t.prompt),
-          );
-        },
       ),
     );
   }

@@ -82,14 +82,8 @@ class AiState {
 }
 
 class AiNotifier extends StateNotifier<AiState> {
-  static final ChatMessage defaultGreeting = ChatMessage(
-    role: 'assistant',
-    content:
-        'Halo! Saya CuanBuddy AI, Konsultan Keuangan Senior (Certified Financial Planner) Anda 💼\n\nSaya memiliki akses penuh ke seluruh database keuangan Anda (dompet, net worth, transaksi, anggaran, & target tabungan).\n\nAda yang ingin Anda konsultasikan hari ini? Silakan pilih template pertanyaan populer di bawah atau ketik pertanyaan Anda sendiri!',
-  );
-
   AiNotifier(this.ref)
-      : super(AiState(messages: [defaultGreeting])) {
+      : super(AiState(messages: const [])) {
     fetchConversations();
   }
 
@@ -139,7 +133,7 @@ class AiNotifier extends StateNotifier<AiState> {
           .toList();
 
       state = state.copyWith(
-        messages: fetchedMessages.isEmpty ? [defaultGreeting] : fetchedMessages,
+        messages: fetchedMessages,
         isLoading: false,
       );
     } catch (e) {
@@ -158,7 +152,7 @@ class AiNotifier extends StateNotifier<AiState> {
 
     state = state.copyWith(
       clearCurrentConv: true,
-      messages: [defaultGreeting],
+      messages: const [],
       error: null,
     );
     return true;
