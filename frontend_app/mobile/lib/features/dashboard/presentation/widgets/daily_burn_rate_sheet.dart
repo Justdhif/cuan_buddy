@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/l10n/app_localizations.dart';
@@ -10,17 +9,34 @@ import '../providers/dashboard_provider.dart';
 
 class DailyBurnRateSheet extends ConsumerStatefulWidget {
   final String monthYear;
+  final int? score;
+  final String? status;
+  final String? message;
 
   const DailyBurnRateSheet({
     super.key,
     required this.monthYear,
+    this.score,
+    this.status,
+    this.message,
   });
 
-  static Future<void> show(BuildContext context, {required String monthYear}) {
+  static Future<void> show(
+    BuildContext context, {
+    required String monthYear,
+    int? score,
+    String? status,
+    String? message,
+  }) {
     return AppBottomSheet.show(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DailyBurnRateSheet(monthYear: monthYear),
+      builder: (context) => DailyBurnRateSheet(
+        monthYear: monthYear,
+        score: score,
+        status: status,
+        message: message,
+      ),
     );
   }
 
@@ -30,6 +46,47 @@ class DailyBurnRateSheet extends ConsumerStatefulWidget {
 
 class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
   int? _selectedDayIndex;
+
+  Color _getColorForScore(int score, String status) {
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      return const Color(0xFFF87171); // Red
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      return const Color(0xFFFBBF24); // Yellow/Amber
+    } else {
+      return const Color(0xFF34D399); // Green
+    }
+  }
+
+  String _getStatusTitle(int score, String status, AppLocalizations l10n) {
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      return 'Critical!';
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      return 'Warning!';
+    } else {
+      return l10n.financialHealthGood;
+    }
+  }
+
+  String _getStatusSubtitle(
+      int score, String status, String message, AppLocalizations l10n) {
+    if (message.trim().isNotEmpty) {
+      return message;
+    }
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      return l10n.languageCode == 'id'
+          ? 'Pengeluaran tinggi atau rasio tabungan rendah.'
+          : 'High expenses or low savings rate detected.';
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      return l10n.languageCode == 'id'
+          ? 'Kondisi keuanganmu butuh perhatian.'
+          : 'Your financial health needs attention.';
+    } else {
+      return l10n.financialHealthGoodSubtitle;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,8 +119,8 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                   children: [
                     Text(
                       l10n.languageCode == 'id'
-                          ? 'Analisis Cash Flow & Burn Rate'
-                          : 'Cash Flow & Burn Rate',
+                          ? 'Detail Keuangan & Burn Rate'
+                          : 'Financial Detail & Burn Rate',
                       style: AppTypography.textTheme.titleMedium?.copyWith(
                         color: isDark
                             ? AppColors.textPrimaryDark
@@ -136,6 +193,110 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
     );
   }
 
+  Widget _buildHealthCard(BuildContext context, bool isDark, AppLocalizations l10n) {
+    final score = widget.score ?? 80;
+    final status = widget.status ?? 'healthy';
+    final message = widget.message ?? '';
+
+    final statusColor = _getColorForScore(score, status);
+    final statusTitle = _getStatusTitle(score, status, l10n);
+    final statusSubtitle = _getStatusSubtitle(score, status, message, l10n);
+
+    IconData statusIcon;
+    final st = status.toLowerCase();
+    if (st == 'critical' || st == 'danger' || score < 50) {
+      statusIcon = Icons.error_outline_rounded;
+    } else if (st == 'warning' || (score >= 50 && score < 80)) {
+      statusIcon = Icons.warning_amber_rounded;
+    } else {
+      statusIcon = Icons.sentiment_very_satisfied_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 60,
+            height: 60,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: const Size(60, 60),
+                  painter: _GaugePainter(
+                    progress: score.clamp(0, 100) / 100.0,
+                    color: statusColor,
+                  ),
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$score',
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      '/100',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(statusIcon, color: statusColor, size: 20),
+                    const SizedBox(width: 6),
+                    Text(
+                      statusTitle,
+                      style: AppTypography.textTheme.titleSmall?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  statusSubtitle,
+                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildContent(
     BuildContext context,
     Map<String, dynamic> data,
@@ -164,7 +325,10 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Daily Safe Spend Card
+        // 1. Financial Health Score Card (if score provided)
+        if (widget.score != null) _buildHealthCard(context, isDark, l10n),
+
+        // 2. Daily Safe Spend Card
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -235,7 +399,7 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
         ),
         const SizedBox(height: 20),
 
-        // Line Chart Header
+        // 3. Line Chart Header
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -317,7 +481,7 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
         ),
         const SizedBox(height: 24),
 
-        // Peak Spending Heatmap Section
+        // 4. Peak Spending Heatmap Section
         Text(
           l10n.languageCode == 'id'
               ? 'Heatmap Hari Tersering Belanja (Peak Days)'
@@ -430,6 +594,44 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
         ],
       ],
     );
+  }
+}
+
+class _GaugePainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _GaugePainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width - 6) / 2;
+
+    final bgPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.15)
+      ..strokeWidth = 5.0
+      ..style = PaintingStyle.stroke;
+
+    final progressPaint = Paint()
+      ..color = color
+      ..strokeWidth = 5.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius, bgPaint);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -1.5708,
+      6.28318 * progress,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GaugePainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
 

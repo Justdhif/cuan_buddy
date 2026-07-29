@@ -399,7 +399,11 @@ class _FinanceHealthHeaderWidgetState
                     DailyBurnRateSheet.show(
                       context,
                       monthYear: monthStr,
+                      score: item['score'] as int?,
+                      status: item['status'] as String?,
+                      message: item['message'] as String?,
                     ).then((_) {
+
                       if (mounted) {
                         _animateToActiveIndex(currentMonthIndex);
                       }
