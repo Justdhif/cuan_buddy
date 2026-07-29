@@ -271,4 +271,167 @@ export class AnalyticsService {
       status: goal.status,
     }));
   }
+
+  async getDailyBurnRate(userId: string, requestedMonthYear?: string) {
+    const currentMonthStr = new Date().toISOString().slice(0, 7);
+    const targetMonthYear = requestedMonthYear || currentMonthStr;
+
+    const [yearStr, monthStr] = targetMonthYear.split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const totalDays = new Date(year, month, 0).getDate();
+
+    const userBudgets = await this.db.query.budgets.findMany({
+      where: and(eq(budgets.userId, userId), eq(budgets.monthYear, targetMonthYear)),
+    });
+
+    const totalBudget = userBudgets.reduce(
+      (sum: number, b: any) => sum + Number(b.limitAmount),
+      0
+    );
+    const dailySafeLimit = totalBudget > 0 ? Math.round(totalBudget / totalDays) : 0;
+
+    const dailyTransactions = await this.db
+      .select({
+        day: sql<number>`EXTRACT(DAY FROM date)::int`,
+        expense: sql<number>`COALESCE(SUM(CASE WHEN type = 'expense' THEN amount::numeric ELSE 0 END), 0)`,
+        income: sql<number>`COALESCE(SUM(CASE WHEN type = 'income' THEN amount::numeric ELSE 0 END), 0)`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          sql`TO_CHAR(date, 'YYYY-MM') = ${targetMonthYear}`
+        )
+      )
+      .groupBy(sql`EXTRACT(DAY FROM date)`);
+
+    const dailyMap = new Map<number, { expense: number; income: number }>();
+    let totalExpense = 0;
+    let totalIncome = 0;
+
+    dailyTransactions.forEach((row: any) => {
+      const exp = Number(row.expense);
+      const inc = Number(row.income);
+      dailyMap.set(row.day, { expense: exp, income: inc });
+      totalExpense += exp;
+      totalIncome += inc;
+    });
+
+    let cumulativeExpense = 0;
+    const daysResult: any[] = [];
+
+
+    for (let d = 1; d <= totalDays; d++) {
+      const dayRecord = dailyMap.get(d) || { expense: 0, income: 0 };
+      cumulativeExpense += dayRecord.expense;
+      const idealCumulativeSpend = dailySafeLimit * d;
+
+      daysResult.push({
+        day: d,
+        date: `${targetMonthYear}-${String(d).padStart(2, '0')}`,
+        dailyExpense: dayRecord.expense,
+        dailyExpenseFormatted: formatCurrency(dayRecord.expense),
+        dailyIncome: dayRecord.income,
+        dailyIncomeFormatted: formatCurrency(dayRecord.income),
+        cumulativeExpense,
+        cumulativeExpenseFormatted: formatCurrency(cumulativeExpense),
+        idealCumulativeSpend,
+        idealCumulativeSpendFormatted: formatCurrency(idealCumulativeSpend),
+      });
+    }
+
+    const now = new Date();
+    const today = now.getDate();
+    const isCurrentMonth = targetMonthYear === currentMonthStr;
+    const remainingDays = isCurrentMonth
+      ? Math.max(totalDays - today + 1, 1)
+      : totalDays;
+    const remainingBudget = Math.max(totalBudget - totalExpense, 0);
+    const remainingSafeLimit =
+      totalBudget > 0 ? Math.round(remainingBudget / remainingDays) : 0;
+
+    const dowTransactions = await this.db
+      .select({
+        isodow: sql<number>`EXTRACT(ISODOW FROM date)::int`,
+        expense: sql<number>`COALESCE(SUM(CASE WHEN type = 'expense' THEN amount::numeric ELSE 0 END), 0)`,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          eq(transactions.type, 'expense'),
+          sql`TO_CHAR(date, 'YYYY-MM') = ${targetMonthYear}`
+        )
+      )
+      .groupBy(sql`EXTRACT(ISODOW FROM date)`);
+
+    const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const dowMap = new Map<number, number>();
+    dowTransactions.forEach((row: any) => {
+      dowMap.set(row.isodow, Number(row.expense));
+    });
+
+    let weekdayExpense = 0;
+    let weekendExpense = 0;
+
+    const peakSpendingDays = dayNames.map((name, idx) => {
+      const isoDow = idx + 1; // 1 = Mon, ..., 7 = Sun
+      const exp = dowMap.get(isoDow) || 0;
+      if (isoDow === 6 || isoDow === 7) {
+        weekendExpense += exp;
+      } else {
+        weekdayExpense += exp;
+      }
+      return {
+        dayIndex: isoDow,
+        dayName: name,
+        totalExpense: exp,
+        totalExpenseFormatted: formatCurrency(exp),
+        percentage: totalExpense > 0 ? Math.round((exp / totalExpense) * 100) : 0,
+      };
+    });
+
+    const weekendPercentage =
+      totalExpense > 0 ? Math.round((weekendExpense / totalExpense) * 100) : 0;
+    const weekdayPercentage =
+      totalExpense > 0 ? Math.round((weekdayExpense / totalExpense) * 100) : 0;
+
+    let insightMessage = 'Pengeluaran terdistribusi merata sepanjang minggu.';
+    if (totalExpense > 0) {
+      if (weekendPercentage > 45) {
+        insightMessage = `Pengeluaran kamu cenderung melonjak tinggi di akhir pekan (${weekendPercentage}%).`;
+      } else if (weekdayPercentage > 75) {
+        insightMessage = `Sebagian besar pengeluaran kamu terjadi pada hari kerja (${weekdayPercentage}%).`;
+      }
+    }
+
+    return {
+      monthYear: targetMonthYear,
+      totalDays,
+      totalIncome,
+      totalIncomeFormatted: formatCurrency(totalIncome),
+      totalExpense,
+      totalExpenseFormatted: formatCurrency(totalExpense),
+      totalBudget,
+      totalBudgetFormatted: formatCurrency(totalBudget),
+      dailySafeLimit,
+      dailySafeLimitFormatted: formatCurrency(dailySafeLimit),
+      remainingDays,
+      remainingSafeLimit,
+      remainingSafeLimitFormatted: formatCurrency(remainingSafeLimit),
+      days: daysResult,
+      peakSpendingDays,
+      weekendVsWeekday: {
+        weekendExpense,
+        weekendExpenseFormatted: formatCurrency(weekendExpense),
+        weekdayExpense,
+        weekdayExpenseFormatted: formatCurrency(weekdayExpense),
+        weekendPercentage,
+        weekdayPercentage,
+        insight: insightMessage,
+      },
+    };
+  }
 }
+

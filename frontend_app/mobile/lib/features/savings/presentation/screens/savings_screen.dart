@@ -9,6 +9,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
 import '../../../../core/widgets/app_screen_header.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../providers/savings_provider.dart';
 import '../../../shared/widgets/savings_goal_card.dart';
 
@@ -45,6 +46,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             AppConstants.defaultCurrency;
     final currencySymbol = AppConstants.getCurrencySymbol(currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = ref.watch(accentColorProvider);
 
     return Scaffold(
       body: Stack(
@@ -53,7 +55,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             onRefresh: () =>
                 ref.read(savingsNotifierProvider.notifier).fetchGoals(),
             color: AppColors.primary,
-            child: _buildBody(context, ref, savingsState, isDark, currencySymbol),
+            child: _buildBody(context, ref, savingsState, isDark, currencySymbol, accentColor),
           ),
 
           Positioned(
@@ -71,7 +73,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, SavingsState state,
-      bool isDark, String currencySymbol) {
+      bool isDark, String currencySymbol, Color accentColor) {
     final fmt = NumberFormat.currency(
       locale: 'en_US',
       symbol: currencySymbol,
@@ -248,6 +250,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
                       onTap: () => context.push('/savings/form'),
                       title: l10n.addSavingsGoal,
                       isDark: isDark,
+                      accentColor: accentColor,
                     );
                   }
                   final goal = filteredGoals[index];
@@ -308,7 +311,11 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
     );
   }
 
-  Widget _buildAddCard(BuildContext context, {required VoidCallback onTap, required String title, required bool isDark}) {
+  Widget _buildAddCard(BuildContext context,
+      {required VoidCallback onTap,
+      required String title,
+      required bool isDark,
+      required Color accentColor}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -319,7 +326,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
           color: isDark ? AppColors.surfaceDark.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: accentColor.withValues(alpha: 0.35),
             style: BorderStyle.solid,
             width: 2,
           ),
@@ -330,12 +337,12 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: accentColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.add_rounded,
-                color: AppColors.primary,
+                color: accentColor,
                 size: 24,
               ),
             ),
@@ -343,7 +350,7 @@ class _SavingsScreenState extends ConsumerState<SavingsScreen> {
             Text(
               title,
               style: AppTypography.textTheme.titleMedium?.copyWith(
-                color: AppColors.primary,
+                color: accentColor,
                 fontWeight: FontWeight.w700,
               ),
             ),

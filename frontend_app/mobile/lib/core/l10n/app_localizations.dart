@@ -622,6 +622,26 @@ abstract class AppLocalizations {
   String get feedbackEmptyError;
   String get feedbackInstruction;
   String get sendFeedback;
+  String get yourRating;
+  String get feedbackCategory;
+  String get yourMessage;
+  String get ratingVeryPoor;
+  String get ratingPoor;
+  String get ratingAverage;
+  String get ratingGood;
+  String get ratingVeryGood;
+  String get categoryGeneral;
+  String get categoryBug;
+  String get categoryFeatureRequest;
+  String get categoryUiUx;
+  String get categoryQuestion;
+  String get hintBug;
+  String get hintFeatureRequest;
+  String get hintUiUx;
+  String get hintQuestion;
+  String get feedbackCardTitle;
+  String get feedbackCardSubtitle;
+  String get feedbackBadgeTitle;
 
   String get startDate;
   String get periodStartsOnWhatDate;

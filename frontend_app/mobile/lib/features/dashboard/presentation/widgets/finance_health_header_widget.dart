@@ -7,9 +7,54 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../providers/dashboard_provider.dart';
+import 'daily_burn_rate_sheet.dart';
 
-class FinanceHealthHeaderWidget extends ConsumerWidget {
+
+class FinanceHealthHeaderWidget extends ConsumerStatefulWidget {
   const FinanceHealthHeaderWidget({super.key});
+
+  @override
+  ConsumerState<FinanceHealthHeaderWidget> createState() =>
+      _FinanceHealthHeaderWidgetState();
+}
+
+class _FinanceHealthHeaderWidgetState
+    extends ConsumerState<FinanceHealthHeaderWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  Animation<double>? _activeIndexAnimation;
+  double _currentActiveIndex = 6.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _animateToActiveIndex(double targetIndex) {
+    _activeIndexAnimation = Tween<double>(
+      begin: _currentActiveIndex,
+      end: targetIndex,
+    ).animate(CurvedAnimation(
+      parent: _animController,
+      curve: Curves.fastOutSlowIn,
+    ));
+
+    _animController.forward(from: 0.0).then((_) {
+      if (mounted) {
+        _currentActiveIndex = targetIndex;
+      }
+    });
+  }
 
   Color _getColorForScore(int score, String status) {
     final st = status.toLowerCase();
@@ -52,7 +97,7 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
     }
   }
 
-  void _showHealthDetailSheet(
+  Future<void> _showHealthDetailSheet(
     BuildContext context, {
     required int score,
     required String status,
@@ -75,7 +120,7 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    AppBottomSheet.show(
+    return AppBottomSheet.show(
       context: context,
       builder: (context) {
         return Padding(
@@ -200,7 +245,7 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final healthAsync = ref.watch(financialHealthProvider);
     final l10n = AppLocalizations.of(context);
 
@@ -269,6 +314,12 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
         final List<int> scores =
             historyItems.map((e) => e['score'] as int).toList();
 
+        final currentMonthIndex = (scores.length - 1).toDouble();
+        if (_activeIndexAnimation == null) {
+          _currentActiveIndex = currentMonthIndex;
+          _activeIndexAnimation = AlwaysStoppedAnimation(_currentActiveIndex);
+        }
+
         // Exact matching title, subtitle, and color for header amount
         final statusColor = _getColorForScore(score, status);
         final statusText = _getStatusTitle(score, status, l10n);
@@ -277,38 +328,50 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                _buildGaugeRing(score, statusColor),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        statusText,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
+            GestureDetector(
+              onTap: () {
+                _showHealthDetailSheet(
+                  context,
+                  score: score,
+                  status: status,
+                  message: message,
+                  l10n: l10n,
+                );
+              },
+              child: Row(
+                children: [
+                  _buildGaugeRing(score, statusColor),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        statusSubtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                          height: 1.35,
+                        const SizedBox(height: 3),
+                        Text(
+                          statusSubtitle,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            height: 1.35,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+
             const SizedBox(height: 14),
             LayoutBuilder(
               builder: (context, constraints) {
@@ -318,23 +381,44 @@ class FinanceHealthHeaderWidget extends ConsumerWidget {
                     final width = constraints.maxWidth;
                     final stepX = width / (scores.length - 1);
                     final tapX = details.localPosition.dx;
-                    int selectedIndex =
+                    int tappedIndex =
                         (tapX / stepX).round().clamp(0, scores.length - 1);
 
-                    final item = historyItems[selectedIndex];
-                    _showHealthDetailSheet(
+                    _animateToActiveIndex(tappedIndex.toDouble());
+
+                    final item = historyItems[tappedIndex];
+                    String monthStr = item['date']?.toString() ?? '';
+                    if (monthStr.isEmpty) {
+                      final now = DateTime.now();
+                      final monthOffset = (scores.length - 1) - tappedIndex;
+                      final targetDate = DateTime(now.year, now.month - monthOffset, 1);
+                      monthStr =
+                          '${targetDate.year}-${targetDate.month.toString().padLeft(2, '0')}';
+                    }
+
+                    DailyBurnRateSheet.show(
                       context,
-                      score: item['score'] as int,
-                      status: item['status'] as String,
-                      message: item['message'] as String,
-                      l10n: l10n,
-                    );
+                      monthYear: monthStr,
+                    ).then((_) {
+                      if (mounted) {
+                        _animateToActiveIndex(currentMonthIndex);
+                      }
+                    });
                   },
+
                   child: SizedBox(
                     height: 48,
                     width: double.infinity,
-                    child: CustomPaint(
-                      painter: _DynamicScoreSparklinePainter(scores: scores),
+                    child: AnimatedBuilder(
+                      animation: _animController,
+                      builder: (context, child) {
+                        return CustomPaint(
+                          painter: _DynamicScoreSparklinePainter(
+                            scores: scores,
+                            activeIndex: _activeIndexAnimation?.value ?? currentMonthIndex,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -488,8 +572,12 @@ class _GaugePainter extends CustomPainter {
 
 class _DynamicScoreSparklinePainter extends CustomPainter {
   final List<int> scores;
+  final double activeIndex;
 
-  _DynamicScoreSparklinePainter({required this.scores});
+  _DynamicScoreSparklinePainter({
+    required this.scores,
+    required this.activeIndex,
+  });
 
   Color _getColorForScore(int score) {
     if (score >= 80) {
@@ -501,6 +589,21 @@ class _DynamicScoreSparklinePainter extends CustomPainter {
     }
   }
 
+  Offset _computeCubicPoint(
+      Offset p0, Offset c1, Offset c2, Offset p1, double t) {
+    final u = 1 - t;
+    final tt = t * t;
+    final uu = u * u;
+    final uuu = uu * u;
+    final ttt = tt * t;
+
+    final x =
+        uuu * p0.dx + 3 * uu * t * c1.dx + 3 * u * tt * c2.dx + ttt * p1.dx;
+    final y =
+        uuu * p0.dy + 3 * uu * t * c1.dy + 3 * u * tt * c2.dy + ttt * p1.dy;
+    return Offset(x, y);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (scores.isEmpty) return;
@@ -510,22 +613,17 @@ class _DynamicScoreSparklinePainter extends CustomPainter {
         ? size.width / (scores.length - 1)
         : size.width;
 
-    // Convert score (0 - 100) to Canvas Y coordinates:
-    // Score 50  => baseline Y = size.height * 0.5 (y_math = 0)
-    // Score >50 => positive delta => moves UP towards top (y_canvas = height*0.5 - delta)
-    // Score <50 => negative delta => moves DOWN towards bottom (y_canvas = height*0.5 + |delta|)
     final double halfHeight = size.height * 0.5;
     final double maxAmplitude = halfHeight * 0.84;
 
     for (int i = 0; i < scores.length; i++) {
       final score = scores[i].clamp(0, 100);
-      final deltaScore = score - 50; // Range: -50 to +50
+      final deltaScore = score - 50;
       final y = halfHeight - (deltaScore / 50.0) * maxAmplitude;
       final x = (i * stepX).clamp(0.0, size.width);
       points.add(Offset(x, y));
     }
 
-    // Construct path with smooth curves
     final path = Path();
     path.moveTo(points[0].dx, points[0].dy);
 
@@ -543,7 +641,6 @@ class _DynamicScoreSparklinePainter extends CustomPainter {
       }
     }
 
-    // Create multi-stop gradient based on node scores along the X-axis
     final List<Color> colors = [];
     final List<double> stops = [];
 
@@ -567,7 +664,6 @@ class _DynamicScoreSparklinePainter extends CustomPainter {
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
 
-    // Draw shadow path
     final shadowPaint = Paint()
       ..shader = ui.Gradient.linear(
         Offset(0, 0),
@@ -582,30 +678,95 @@ class _DynamicScoreSparklinePainter extends CustomPainter {
     canvas.drawPath(path, shadowPaint);
     canvas.drawPath(path, linePaint);
 
+    // Compute exact position and color along the cubic spline curve for activeIndex
+    final clampedActive =
+        activeIndex.clamp(0.0, (points.length - 1).toDouble());
+    final floorIdx = clampedActive.floor().clamp(0, points.length - 1);
+    final ceilIdx = clampedActive.ceil().clamp(0, points.length - 1);
+    final t = clampedActive - floorIdx;
+
+    Offset activePt;
+    Color activeColor;
+
+    if (floorIdx == ceilIdx || points.length == 1) {
+      activePt = points[floorIdx];
+      activeColor = _getColorForScore(scores[floorIdx]);
+    } else {
+      final p0 = points[floorIdx];
+      final p1 = points[ceilIdx];
+      final c1 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p0.dy);
+      final c2 = Offset(p0.dx + (p1.dx - p0.dx) / 2, p1.dy);
+
+      activePt = _computeCubicPoint(p0, c1, c2, p1, t);
+      final colorFloor = _getColorForScore(scores[floorIdx]);
+      final colorCeil = _getColorForScore(scores[ceilIdx]);
+      activeColor = Color.lerp(colorFloor, colorCeil, t) ?? colorFloor;
+    }
+
+    // Draw vertical guideline for active point
+    final verticalGuidePaint = Paint()
+      ..color = activeColor.withValues(alpha: 0.35)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    final double startY = activePt.dy + 8;
+    final double endY = size.height;
+    double y = startY;
+    while (y < endY) {
+      canvas.drawLine(
+        Offset(activePt.dx, y),
+        Offset(activePt.dx, (y + 4).clamp(startY, endY)),
+        verticalGuidePaint,
+      );
+      y += 7;
+    }
+
     // Draw node dots at each point
     for (int i = 0; i < points.length; i++) {
       final pt = points[i];
       final nodeColor = _getColorForScore(scores[i]);
 
       final glowPaint = Paint()
-        ..color = nodeColor.withValues(alpha: 0.35)
+        ..color = nodeColor.withValues(alpha: 0.20)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(pt, 6.0, glowPaint);
+      canvas.drawCircle(pt, 4.5, glowPaint);
 
       final outerDot = Paint()
-        ..color = Colors.white
+        ..color = Colors.white.withValues(alpha: 0.80)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(pt, 4.0, outerDot);
+      canvas.drawCircle(pt, 3.0, outerDot);
 
       final innerDot = Paint()
-        ..color = nodeColor
+        ..color = nodeColor.withValues(alpha: 0.85)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(pt, 2.5, innerDot);
+      canvas.drawCircle(pt, 1.8, innerDot);
     }
+
+    // Draw active traveling dot over the spline curve!
+    final ambientGlow = Paint()
+      ..color = activeColor.withValues(alpha: 0.28)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(activePt, 11.5, ambientGlow);
+
+    final pulseRing = Paint()
+      ..color = activeColor.withValues(alpha: 0.65)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(activePt, 8.0, pulseRing);
+
+    final outerWhite = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(activePt, 5.5, outerWhite);
+
+    final innerCore = Paint()
+      ..color = activeColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(activePt, 3.5, innerCore);
   }
 
   @override
   bool shouldRepaint(covariant _DynamicScoreSparklinePainter oldDelegate) {
+    if (oldDelegate.activeIndex != activeIndex) return true;
     if (oldDelegate.scores.length != scores.length) return true;
     for (int i = 0; i < scores.length; i++) {
       if (oldDelegate.scores[i] != scores[i]) return true;

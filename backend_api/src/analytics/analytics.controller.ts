@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, Query } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -31,4 +31,10 @@ export class AnalyticsController {
   getSavingsProgress(@Req() req) {
     return this.analyticsService.getSavingsProgress(req.user.userId);
   }
+
+  @Get('daily-burn-rate')
+  getDailyBurnRate(@Req() req, @Query('monthYear') monthYear?: string) {
+    return this.analyticsService.getDailyBurnRate(req.user.userId, monthYear);
+  }
 }
+

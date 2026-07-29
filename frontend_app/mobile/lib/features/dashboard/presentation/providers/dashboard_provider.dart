@@ -73,3 +73,16 @@ final recentTransactionsProvider = FutureProvider<List<dynamic>>((ref) async {
   if (data is Map && data['data'] is List) return data['data'] as List;
   return [];
 });
+
+final dailyBurnRateFamilyProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((ref, monthYear) async {
+  final dio = ref.watch(dioClientProvider).dio;
+  final response = await dio.get(
+    '/analytics/daily-burn-rate',
+    queryParameters: {
+      if (monthYear.isNotEmpty) 'monthYear': monthYear,
+    },
+  );
+  return response.data as Map<String, dynamic>;
+});
+

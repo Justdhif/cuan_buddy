@@ -1261,6 +1261,49 @@ class AppLocalizationsId extends AppLocalizations {
       'Bantu kami meningkatkan CuanBuddy dengan mengirimkan saran atau laporan masalah Anda.';
   @override
   String get sendFeedback => 'Kirim Masukan';
+  @override
+  String get yourRating => 'Tingkat Kepuasan Anda';
+  @override
+  String get feedbackCategory => 'Kategori Masukan';
+  @override
+  String get yourMessage => 'Pesan / Masukan';
+  @override
+  String get ratingVeryPoor => 'Sangat Buruk';
+  @override
+  String get ratingPoor => 'Buruk';
+  @override
+  String get ratingAverage => 'Biasa Saja';
+  @override
+  String get ratingGood => 'Baik';
+  @override
+  String get ratingVeryGood => 'Sangat Baik';
+  @override
+  String get categoryGeneral => 'Umum';
+  @override
+  String get categoryBug => 'Bug / Error';
+  @override
+  String get categoryFeatureRequest => 'Fitur Baru';
+  @override
+  String get categoryUiUx => 'UI / Tampilan';
+  @override
+  String get categoryQuestion => 'Bantuan';
+  @override
+  String get hintBug => 'Jelaskan masalah atau error yang kamu alami...';
+  @override
+  String get hintFeatureRequest =>
+      'Ceritakan ide atau fitur baru yang kamu inginkan...';
+  @override
+  String get hintUiUx =>
+      'Berikan masukan terkait tampilan atau kenyamanan aplikasi...';
+  @override
+  String get hintQuestion => 'Tuliskan pertanyaan atau kendala penggunaan kamu...';
+  @override
+  String get feedbackCardTitle => 'Ada Saran / Kendala?';
+  @override
+  String get feedbackCardSubtitle =>
+      'Bantu kami buat CuanBuddy lebih oke untukmu!';
+  @override
+  String get feedbackBadgeTitle => 'Masukan & Saran';
 
   @override
   String get startMonth => 'Bulan Mulai';

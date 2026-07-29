@@ -8,7 +8,6 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
-import '../../../../core/providers/bottom_nav_behavior_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -36,6 +35,54 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
 
   bool _infoExpanded = true;
   bool _txExpanded = true;
+  bool _isAddFriendMode = false;
+
+  void _sendFriendRequest(String target) async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(sharedNotifierProvider.notifier);
+    final error = await notifier.sendFriendRequest(target);
+    if (mounted) {
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.friendRequestSentSuccess),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        _friendSearchCtrl.clear();
+        notifier.clearSearch();
+        setState(() {});
+      }
+    }
+  }
+
+  void _respondRequest(String friendshipId, String action) async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(sharedNotifierProvider.notifier);
+    final error = await notifier.respondFriendRequest(friendshipId, action);
+    if (mounted) {
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: AppColors.danger),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(action == 'accept'
+                ? l10n.friendRequestAccepted
+                : l10n.friendRequestDeclined),
+            backgroundColor: action == 'accept'
+                ? AppColors.success
+                : AppColors.textSecondaryDark,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -890,7 +937,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(sharedNotifierProvider);
     final l10n = AppLocalizations.of(context);
-    final isNavBarVisible = ref.watch(bottomNavVisibilityProvider);
 
     final activeRoom = state.activeRoom;
     final bool isFriendsMode = _selectedRoomId == null;
@@ -927,37 +973,8 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: isFriendsMode
-          ? AnimatedPadding(
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeInOutCubic,
-              padding: EdgeInsets.only(bottom: isNavBarVisible ? 86.0 : 16.0),
-              child: GestureDetector(
-                onTap: () => context.push('/shared/friends'),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.person_add_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-              ),
-            )
-          : null,
+      floatingActionButtonLocation: const _FixedEndFloatFabLocation(),
+      floatingActionButton: null,
     );
   }
 
@@ -1168,7 +1185,6 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     bool isDark,
     AppLocalizations l10n,
   ) {
-
     final bg = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
 
     final String query = _friendSearchQuery.toLowerCase();
@@ -1179,18 +1195,237 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       return name.contains(query) || username.contains(query);
     }).toList();
 
+    Widget bodyContent;
+    if (_isAddFriendMode) {
+      if (state.isSearchLoading) {
+        bodyContent = Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        );
+      } else if (_friendSearchQuery.isEmpty) {
+        bodyContent = Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.person_search_rounded,
+                  size: 48, color: AppColors.primary.withValues(alpha: 0.6)),
+              const SizedBox(height: 10),
+              Text(
+                l10n.languageCode == 'id'
+                    ? 'Cari Teman Baru'
+                    : 'Search New Friends',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  l10n.languageCode == 'id'
+                      ? 'Masukkan nama pengguna atau email mereka untuk mulai berteman.'
+                      : 'Enter their username or email address to start adding them.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        );
+      } else if (state.searchResults.isEmpty) {
+        bodyContent = Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off_outlined,
+                  size: 48, color: Colors.grey.withValues(alpha: 0.5)),
+              const SizedBox(height: 10),
+              Text(
+                l10n.languageCode == 'id'
+                    ? 'Pengguna tidak ditemukan'
+                    : 'No users found',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.languageCode == 'id'
+                    ? 'Coba cari dengan username atau email lain.'
+                    : 'Try searching for a different username or email.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      } else {
+        bodyContent = ListView.separated(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 88, top: 4),
+          itemCount: state.searchResults.length,
+          separatorBuilder: (_, __) => const Divider(height: 1, thickness: 0.5),
+          itemBuilder: (context, index) {
+            final match = state.searchResults[index];
+            final String avatarUrl = match['avatar'] ?? '';
+            final String name =
+                match['fullName'] ?? match['username'] ?? match['email'];
+            final String? rawUsername = match['username'];
+
+            final String status = match['friendshipStatus'] ?? 'none';
+            final bool isSender = match['isSender'] ?? false;
+
+            Widget actionBtn;
+            if (status == 'accepted') {
+              actionBtn = Text(l10n.friend,
+                  style: TextStyle(
+                      color: AppColors.success, fontWeight: FontWeight.bold));
+            } else if (status == 'pending') {
+              actionBtn = isSender
+                  ? Text(l10n.pending,
+                      style: TextStyle(
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight))
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        minimumSize: Size.zero,
+                      ),
+                      onPressed: () =>
+                          _respondRequest(match['friendshipId'], 'accept'),
+                      child: Text(l10n.accept,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 12)),
+                    );
+            } else {
+              actionBtn = ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => _sendFriendRequest(match['email']),
+                child: Text(
+                  l10n.languageCode == 'id' ? 'Tambah' : 'Add',
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              );
+            }
+
+            return UserListTile(
+              key: ValueKey(match['id'] ?? match['email']),
+              name: name,
+              username: rawUsername,
+              avatarUrl: avatarUrl,
+              listBackground: match['listBackground'],
+              heroTag: 'avatar_search_',
+              actionWidget: actionBtn,
+              isDark: isDark,
+              onTap: () =>
+                  context.push('/shared/public-profile', extra: match),
+            );
+          },
+        );
+      }
+    } else {
+      if (filteredFriends.isEmpty) {
+        bodyContent = Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.people_outline_rounded,
+                  size: 48, color: Colors.grey.withValues(alpha: 0.5)),
+              const SizedBox(height: 10),
+              Text(
+                _friendSearchQuery.isNotEmpty
+                    ? (l10n.languageCode == 'id'
+                        ? 'Tidak ada teman yang cocok'
+                        : 'No matching friends found')
+                    : l10n.noFriendsYet,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _friendSearchQuery.isNotEmpty
+                    ? (l10n.languageCode == 'id'
+                        ? 'Coba gunakan kata kunci pencarian yang lain.'
+                        : 'Try using a different search keyword.')
+                    : (l10n.languageCode == 'id'
+                        ? 'Klik tombol + di sebelah search bar untuk mencari teman.'
+                        : 'Click + button next to search bar to search friends.'),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      } else {
+        bodyContent = ListView.builder(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 88),
+          itemCount: filteredFriends.length,
+          itemBuilder: (context, idx) {
+            final friend = filteredFriends[idx];
+            final String name =
+                friend['fullName'] ?? friend['username'] ?? friend['email'] ?? 'Friend';
+            final String? username = friend['username'];
+            final avatarUrl = friend['avatar'];
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                UserListTile(
+                  key: ValueKey(friend['id'] ?? friend['email']),
+                  name: name,
+                  username: username,
+                  avatarUrl: avatarUrl,
+                  listBackground: friend['listBackground'],
+                  isDark: isDark,
+                  onTap: () =>
+                      context.push('/shared/public-profile', extra: friend),
+                ),
+                const Divider(height: 1, thickness: 0.5),
+              ],
+            );
+          },
+        );
+      }
+    }
+
     return Container(
       color: bg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
                 Text(
-                  l10n.friends,
+                  _isAddFriendMode
+                      ? (l10n.languageCode == 'id'
+                          ? 'Cari Teman Baru'
+                          : 'Add New Friends')
+                      : l10n.friends,
                   style: AppTypography.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black87,
@@ -1198,76 +1433,155 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withValues(alpha: 0.08)
-                        : Colors.black.withValues(alpha: 0.05),
+                    color: _isAddFriendMode
+                        ? AppColors.primary.withValues(alpha: 0.15)
+                        : (isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.05)),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
-                    '${filteredFriends.length} ${l10n.friends}',
+                    _isAddFriendMode
+                        ? (l10n.languageCode == 'id' ? 'Global' : 'Search')
+                        : '${filteredFriends.length} ${l10n.friends}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                      color: _isAddFriendMode
+                          ? AppColors.primary
+                          : (isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withValues(alpha: 0.06)
-                    : Colors.black.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TextField(
-                controller: _friendSearchCtrl,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: l10n.languageCode == 'id' ? 'Cari teman...' : 'Search friends...',
-                  hintStyle: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            child: Row(
+              children: [
+                Tooltip(
+                  message: _isAddFriendMode
+                      ? (l10n.languageCode == 'id'
+                          ? 'Kembali ke Daftar Teman'
+                          : 'Back to Friends List')
+                      : (l10n.languageCode == 'id'
+                          ? 'Tambah Teman Baru'
+                          : 'Add New Friend'),
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isAddFriendMode = !_isAddFriendMode;
+                        _friendSearchCtrl.clear();
+                        _friendSearchQuery = '';
+                        ref.read(sharedNotifierProvider.notifier).clearSearch();
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: _isAddFriendMode
+                            ? AppColors.primary
+                            : (isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : AppColors.primary.withValues(alpha: 0.12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _isAddFriendMode
+                            ? Icons.arrow_back_rounded
+                            : Icons.person_add_rounded,
+                        size: 20,
+                        color:
+                            _isAddFriendMode ? Colors.white : AppColors.primary,
+                      ),
+                    ),
                   ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    size: 18,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                  ),
-                  suffixIcon: _friendSearchQuery.isNotEmpty
-                      ? GestureDetector(
-                          onTap: () {
-                            _friendSearchCtrl.clear();
-                          },
-                          child: Icon(
-                            Icons.close_rounded,
-                            size: 16,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                          ),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : Colors.black.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextField(
+                      controller: _friendSearchCtrl,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      onChanged: (val) {
+                        if (_isAddFriendMode) {
+                          ref
+                              .read(sharedNotifierProvider.notifier)
+                              .searchUsers(val);
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: _isAddFriendMode
+                            ? (l10n.languageCode == 'id'
+                                ? 'Cari nama atau username...'
+                                : 'Search name or username...')
+                            : (l10n.languageCode == 'id'
+                                ? 'Cari teman...'
+                                : 'Search friends...'),
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                        prefixIcon: Icon(
+                          _isAddFriendMode
+                              ? Icons.person_search_rounded
+                              : Icons.search_rounded,
+                          size: 18,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                        suffixIcon: _friendSearchQuery.isNotEmpty
+                            ? GestureDetector(
+                                onTap: () {
+                                  _friendSearchCtrl.clear();
+                                  if (_isAddFriendMode) {
+                                    ref
+                                        .read(sharedNotifierProvider.notifier)
+                                        .clearSearch();
+                                  }
+                                },
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 16,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 4),
-
-          if (state.pendingRequests.isNotEmpty) ...[
+          if (!_isAddFriendMode && state.pendingRequests.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Container(
@@ -1275,7 +1589,8 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                  border:
+                      Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -1292,7 +1607,11 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => context.push('/shared/friends'),
+                      onPressed: () {
+                        setState(() {
+                          _isAddFriendMode = true;
+                        });
+                      },
                       child: Text(
                         l10n.languageCode == 'id' ? 'Lihat Semua' : 'View All',
                         style: const TextStyle(fontSize: 12),
@@ -1304,81 +1623,7 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
             ),
             const SizedBox(height: 8),
           ],
-
-          Expanded(
-            child: filteredFriends.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.people_outline_rounded,
-                            size: 48, color: Colors.grey.withValues(alpha: 0.5)),
-                        const SizedBox(height: 10),
-                        Text(
-                          _friendSearchQuery.isNotEmpty
-                              ? (l10n.languageCode == 'id'
-                                  ? 'Tidak ada teman yang cocok'
-                                  : 'No matching friends found')
-                              : l10n.noFriendsYet,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _friendSearchQuery.isNotEmpty
-                              ? (l10n.languageCode == 'id'
-                                  ? 'Coba gunakan kata kunci pencarian yang lain.'
-                                  : 'Try using a different search keyword.')
-                              : (l10n.languageCode == 'id'
-                                  ? 'Tambahkan teman untuk berbagi ruangan transaksi dan budget bersama.'
-                                  : 'Add friends to share room transactions and budgets together.'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 88),
-                    itemCount: filteredFriends.length,
-                    itemBuilder: (context, idx) {
-                      final friend = filteredFriends[idx];
-                      final String name = friend['fullName'] ??
-                          friend['username'] ??
-                          friend['email'] ??
-                          'Friend';
-                      final String? username = friend['username'];
-                      final avatarUrl = friend['avatar'];
-
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          UserListTile(
-                            name: name,
-                            username: username,
-                            avatarUrl: avatarUrl,
-                            listBackground: friend['listBackground'] as String?,
-                            isDark: isDark,
-                            onTap: () {},
-                          ),
-                          Divider(
-                            height: 1,
-                            thickness: 0.5,
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.08)
-                                : Colors.black.withValues(alpha: 0.06),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-          ),
+          Expanded(child: bodyContent),
         ],
       ),
     );
@@ -2221,3 +2466,19 @@ class _SharedNavigationSkeleton extends StatelessWidget {
   }
 
 }
+
+class _FixedEndFloatFabLocation extends FloatingActionButtonLocation {
+  const _FixedEndFloatFabLocation();
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final double fabX = scaffoldGeometry.scaffoldSize.width -
+        scaffoldGeometry.floatingActionButtonSize.width -
+        kFloatingActionButtonMargin;
+    final double fabY = scaffoldGeometry.scaffoldSize.height -
+        scaffoldGeometry.floatingActionButtonSize.height -
+        kFloatingActionButtonMargin;
+    return Offset(fabX, fabY);
+  }
+}
+

@@ -54,8 +54,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _budgetPageController = PageController(viewportFraction: 0.93);
-    _savingsPageController = PageController(viewportFraction: 0.93);
+    _budgetPageController = PageController(viewportFraction: 0.89);
+    _savingsPageController = PageController(viewportFraction: 0.89);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final profile = await ref.read(profileProvider.future);
       final userId = profile['userId'] as String? ?? profile['id'] as String?;
@@ -118,6 +118,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final budgetsState = ref.watch(budgetsNotifierProvider);
     final savingsState = ref.watch(savingsNotifierProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = ref.watch(accentColorProvider);
     final notificationsState = ref.watch(notificationsNotifierProvider);
     final unreadCount = notificationsState.notifications
         .where((n) => !(n['isRead'] as bool? ?? false))
@@ -227,7 +228,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             itemBuilder: (context, index) {
                               Widget card;
                               if (index == budgetsState.budgets.length) {
-                                card = _buildAddBudgetCard(context, isDark);
+                                card = _buildAddBudgetCard(context, isDark, accentColor);
                               } else {
                                 final currencyCode = profileAsync
                                         .valueOrNull?['currency'] as String? ??
@@ -241,13 +242,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   currencySymbol: currencySymbol,
                                 );
                               }
-                              return Align(
-                                alignment: Alignment.topCenter,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 6),
-                                  child: card,
-                                ),
+                              return _buildCarouselItem(
+                                controller: _budgetPageController,
+                                index: index,
+                                child: card,
                               );
                             },
                           ),
@@ -276,7 +274,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             itemBuilder: (context, index) {
                               Widget card;
                               if (index == savingsState.goals.length) {
-                                card = _buildAddSavingsCard(context, isDark);
+                                card = _buildAddSavingsCard(context, isDark, accentColor);
                               } else {
                                 final currencyCode = profileAsync
                                         .valueOrNull?['currency'] as String? ??
@@ -290,13 +288,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   currencySymbol: currencySymbol,
                                 );
                               }
-                              return Align(
-                                alignment: Alignment.topCenter,
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 6),
-                                  child: card,
-                                ),
+                              return _buildCarouselItem(
+                                controller: _savingsPageController,
+                                index: index,
+                                child: card,
                               );
                             },
                           ),
@@ -915,7 +910,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildAddSavingsCard(BuildContext context, bool isDark) {
+  Widget _buildAddSavingsCard(BuildContext context, bool isDark, Color accentColor) {
     return GestureDetector(
       onTap: () => context.push('/savings/form'),
       child: Container(
@@ -928,7 +923,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               : Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppColors.secondary.withValues(alpha: 0.4),
+            color: accentColor.withValues(alpha: 0.35),
             style: BorderStyle.solid,
             width: 2,
           ),
@@ -939,12 +934,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.secondary.withValues(alpha: 0.12),
+                color: accentColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.add_rounded,
-                color: AppColors.secondary,
+                color: accentColor,
                 size: 24,
               ),
             ),
@@ -952,7 +947,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Text(
               l10n.addSavingsGoal,
               style: AppTypography.textTheme.titleMedium?.copyWith(
-                color: AppColors.secondary,
+                color: accentColor,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -962,7 +957,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildAddBudgetCard(BuildContext context, bool isDark) {
+  Widget _buildCarouselItem({
+    required PageController controller,
+    required int index,
+    required Widget child,
+  }) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, childWidget) {
+        double scale = 1.0;
+        double translationX = 0.0;
+
+        if (controller.hasClients && controller.position.haveDimensions) {
+          final page = controller.page ?? controller.initialPage.toDouble();
+          final pageOffset = page - index;
+          final diff = pageOffset.abs().clamp(0.0, 1.0);
+
+          scale = 1.0 - (diff * 0.08); // Scale from 1.0 (active) to 0.92 (inactive)
+          translationX = pageOffset * 6.0; // Subtle translation to maintain comfortable card spacing
+        } else {
+          final initialPage = controller.initialPage;
+          final pageOffset = initialPage.toDouble() - index;
+          final diff = pageOffset.abs().clamp(0.0, 1.0);
+
+          scale = 1.0 - (diff * 0.08);
+          translationX = pageOffset * 6.0;
+        }
+
+        return Transform.translate(
+          offset: Offset(translationX, 0),
+          child: Transform.scale(
+            scale: scale,
+            child: childWidget,
+          ),
+        );
+      },
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddBudgetCard(BuildContext context, bool isDark, Color accentColor) {
     return GestureDetector(
       onTap: () => context.push('/budgets/form'),
       child: Container(
@@ -975,7 +1015,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               : Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: accentColor.withValues(alpha: 0.35),
             style: BorderStyle.solid,
             width: 2,
           ),
@@ -986,12 +1026,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
+                color: accentColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.add_rounded,
-                color: AppColors.primary,
+                color: accentColor,
                 size: 24,
               ),
             ),
@@ -999,7 +1039,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Text(
               l10n.setBudget,
               style: AppTypography.textTheme.titleMedium?.copyWith(
-                color: AppColors.primary,
+                color: accentColor,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -1054,8 +1094,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildFeedbackCard(BuildContext context, bool isDark) {
-    final isId = l10n.languageCode == 'id';
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Container(
@@ -1117,7 +1155,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                isId ? 'Masukan & Saran' : 'Feedback & Ideas',
+                                l10n.feedbackBadgeTitle,
                                 style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w600,
@@ -1129,7 +1167,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          isId ? 'Ada Saran / Kendala?' : 'Have Ideas or Issues?',
+                          l10n.feedbackCardTitle,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1138,9 +1176,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          isId
-                              ? 'Bantu kami buat CuanBuddy lebih oke untukmu!'
-                              : 'Help us make CuanBuddy even better!',
+                          l10n.feedbackCardSubtitle,
                           style: TextStyle(
                             fontSize: 12.5,
                             color: isDark
@@ -1154,7 +1190,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              isId ? 'Kirim Feedback' : 'Send Feedback',
+                              l10n.sendFeedback,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,

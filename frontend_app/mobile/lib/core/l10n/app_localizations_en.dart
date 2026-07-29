@@ -1255,6 +1255,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'Help us improve CuanBuddy by sending your suggestions or bug reports.';
   @override
   String get sendFeedback => 'Send Feedback';
+  @override
+  String get yourRating => 'Your Rating';
+  @override
+  String get feedbackCategory => 'Feedback Category';
+  @override
+  String get yourMessage => 'Your Message';
+  @override
+  String get ratingVeryPoor => 'Very Poor';
+  @override
+  String get ratingPoor => 'Poor';
+  @override
+  String get ratingAverage => 'Average';
+  @override
+  String get ratingGood => 'Good';
+  @override
+  String get ratingVeryGood => 'Very Good';
+  @override
+  String get categoryGeneral => 'General';
+  @override
+  String get categoryBug => 'Bug Report';
+  @override
+  String get categoryFeatureRequest => 'New Feature';
+  @override
+  String get categoryUiUx => 'UI / Design';
+  @override
+  String get categoryQuestion => 'Help / Support';
+  @override
+  String get hintBug => 'Describe the bug or issue you encountered...';
+  @override
+  String get hintFeatureRequest =>
+      'Tell us about the new feature you would like to see...';
+  @override
+  String get hintUiUx =>
+      'Give feedback about design, layout, or user experience...';
+  @override
+  String get hintQuestion => 'Ask a question or request help...';
+  @override
+  String get feedbackCardTitle => 'Have Ideas or Issues?';
+  @override
+  String get feedbackCardSubtitle => 'Help us make CuanBuddy even better for you!';
+  @override
+  String get feedbackBadgeTitle => 'Feedback & Ideas';
 
   @override
   String get startMonth => 'Start Month';

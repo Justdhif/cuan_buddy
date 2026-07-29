@@ -9,7 +9,6 @@ import '../../../../core/providers/language_provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-import 'package:marquee/marquee.dart';
 
 class TransactionCalendar extends ConsumerStatefulWidget {
   const TransactionCalendar({super.key});
@@ -674,49 +673,19 @@ class _TransactionCalendarState extends ConsumerState<TransactionCalendar> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final amountStyle = TextStyle(
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      amount,
+                      style: TextStyle(
                         color: amountColor,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
-                      );
-
-                      final textPainter = TextPainter(
-                        text: TextSpan(text: amount, style: amountStyle),
-                        maxLines: 1,
-                        textDirection: TextDirection.ltr,
-                      )..layout(minWidth: 0, maxWidth: double.infinity);
-
-                      final isOverflowing = (textPainter.size.width + 4.0) > constraints.maxWidth;
-
-                      if (isOverflowing && constraints.maxWidth > 0) {
-                        return SizedBox(
-                          height: 18,
-                          width: constraints.maxWidth,
-                          child: Marquee(
-                            text: amount,
-                            style: amountStyle,
-                            scrollAxis: Axis.horizontal,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            blankSpace: 12.0,
-                            velocity: 25.0,
-                            pauseAfterRound: const Duration(seconds: 1),
-                            accelerationDuration: const Duration(milliseconds: 300),
-                            accelerationCurve: Curves.linear,
-                            decelerationDuration: const Duration(milliseconds: 300),
-                            decelerationCurve: Curves.easeOut,
-                          ),
-                        );
-                      } else {
-                        return Text(
-                          amount,
-                          style: amountStyle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        );
-                      }
-                    },
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
