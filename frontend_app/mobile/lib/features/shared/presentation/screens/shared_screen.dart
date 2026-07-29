@@ -8,6 +8,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/category_icon_shape.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
+import '../../../../core/providers/bottom_nav_behavior_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -889,11 +890,13 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(sharedNotifierProvider);
     final l10n = AppLocalizations.of(context);
+    final isNavBarVisible = ref.watch(bottomNavVisibilityProvider);
 
     final activeRoom = state.activeRoom;
     final bool isFriendsMode = _selectedRoomId == null;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
 
@@ -926,8 +929,10 @@ class _SharedScreenState extends ConsumerState<SharedScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: isFriendsMode
-          ? Padding(
-              padding: const EdgeInsets.only(bottom: 68),
+          ? AnimatedPadding(
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeInOutCubic,
+              padding: EdgeInsets.only(bottom: isNavBarVisible ? 86.0 : 16.0),
               child: GestureDetector(
                 onTap: () => context.push('/shared/friends'),
                 child: Container(

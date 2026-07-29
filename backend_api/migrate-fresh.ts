@@ -33,6 +33,10 @@ async function main() {
 
   console.log('\n🌱 Seeding database...');
   try {
+    execSync('npx tsx seed-test-user.ts', { stdio: 'inherit' });
+    execSync('npx tsx seed-friends.ts', { stdio: 'inherit' });
+    execSync('npx tsx seed-shared-rooms.ts', { stdio: 'inherit' });
+    execSync('npx tsx seed-achievement-data.ts', { stdio: 'inherit' });
     execSync('npx tsx seed.ts', { stdio: 'inherit' });
     console.log('✅ Database seeded successfully.');
   } catch (error) {

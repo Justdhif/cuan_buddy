@@ -67,3 +67,5 @@ final bottomNavBehaviorProvider =
     NotifierProvider<BottomNavBehaviorNotifier, BottomNavBehavior>(
   BottomNavBehaviorNotifier.new,
 );
+
+final bottomNavVisibilityProvider = StateProvider<bool>((ref) => true);

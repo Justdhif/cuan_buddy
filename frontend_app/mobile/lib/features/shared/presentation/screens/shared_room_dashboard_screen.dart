@@ -10,6 +10,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/providers/category_icon_shape_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/bottom_nav_behavior_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/shared_provider.dart';
 import '../../widgets/transaction_card.dart' as shared_tx;
@@ -316,8 +317,12 @@ class _SharedRoomDashboardScreenState
 
     if (onTap == null) return null;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 68),
+    final isNavBarVisible = ref.watch(bottomNavVisibilityProvider);
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeInOutCubic,
+      padding: EdgeInsets.only(bottom: isNavBarVisible ? 86.0 : 16.0),
       child: GestureDetector(
         onTap: onTap,
         child: Container(

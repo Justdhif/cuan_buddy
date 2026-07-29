@@ -7,6 +7,7 @@ import '../../../../core/l10n/app_localizations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_state_widgets.dart';
+import '../../../../core/providers/bottom_nav_behavior_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/transaction_provider.dart';
 import '../widgets/ai_voice_sheet.dart';
@@ -143,6 +144,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(allTransactionsProvider);
+    final isNavBarVisible = ref.watch(bottomNavVisibilityProvider);
     final viewportHeight = MediaQuery.of(context).size.height -
         kToolbarHeight -
         MediaQuery.of(context).padding.top -
@@ -263,8 +265,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen>
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 68),
+      floatingActionButton: AnimatedPadding(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeInOutCubic,
+        padding: EdgeInsets.only(bottom: isNavBarVisible ? 86.0 : 16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,

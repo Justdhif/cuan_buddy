@@ -55,7 +55,6 @@ async function seedData() {
   `;
 
   console.log('✅ Semua data dummy pencapaian berhasil dibuat!');
-  process.exit(0);
 }
 
 seedData().catch(console.error);

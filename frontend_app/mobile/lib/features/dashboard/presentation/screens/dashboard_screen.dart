@@ -31,6 +31,7 @@ import '../../../transactions/presentation/widgets/ai_voice_sheet.dart';
 import '../../../transactions/presentation/widgets/ai_scan_sheet.dart';
 import '../../../transactions/presentation/providers/transaction_provider.dart';
 import '../../../../core/providers/weather_provider.dart';
+import '../../../profile/presentation/widgets/feedback_sheet.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -305,6 +306,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     // ─── Bottom Navigation Buttons Group ───────────────────
                     SliverToBoxAdapter(
                       child: _buildBottomNavigationGroup(context, isDark),
+                    ),
+
+                    // ─── Feedback Card ─────────────────────────────────────
+                    SliverToBoxAdapter(
+                      child: _buildFeedbackCard(context, isDark),
                     ),
 
                     const SliverToBoxAdapter(child: SizedBox(height: 120)),
@@ -1043,6 +1049,159 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFeedbackCard(BuildContext context, bool isDark) {
+    final isId = l10n.languageCode == 'id';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    const Color(0xFF1E1B4B).withValues(alpha: 0.9),
+                    const Color(0xFF0F172A).withValues(alpha: 0.95),
+                  ]
+                : [
+                    const Color(0xFFEEF2FF),
+                    const Color(0xFFE0E7FF),
+                  ],
+          ),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: isDark ? 0.35 : 0.25),
+            width: 1.2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: isDark ? 0.15 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+          child: InkWell(
+            onTap: () => showFeedbackSheet(context),
+            borderRadius: BorderRadius.circular(22),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 14,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isId ? 'Masukan & Saran' : 'Feedback & Ideas',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          isId ? 'Ada Saran / Kendala?' : 'Have Ideas or Issues?',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          isId
+                              ? 'Bantu kami buat CuanBuddy lebih oke untukmu!'
+                              : 'Help us make CuanBuddy even better!',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isId ? 'Kirim Feedback' : 'Send Feedback',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/illustrations/feedback-illustration.jpg',
+                      width: 90,
+                      height: 90,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.rate_review_rounded,
+                            size: 36,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -441,7 +441,6 @@ async function seedSharedRooms() {
   }
 
   console.log('\n🎉 Shared Rooms Seeding successfully completed!');
-  process.exit(0);
 }
 
 seedSharedRooms().catch((err) => {

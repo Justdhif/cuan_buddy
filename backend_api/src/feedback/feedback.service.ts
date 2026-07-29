@@ -10,11 +10,30 @@ export class FeedbackService {
 
   constructor(@Inject(DATABASE_CONNECTION) private readonly db: any) {}
 
-  async createFeedback(userId: string, message: string) {
-    const [feedback] = await this.db.insert(feedbacks).values({
-      userId,
-      message,
-    }).returning();
+  async createFeedback(
+    userId: string,
+    data: {
+      message: string;
+      category?: string;
+      rating?: number;
+      deviceInfo?: string;
+      appVersion?: string;
+    },
+  ) {
+    const category = data.category || 'general';
+    const rating = data.rating ?? 5;
+
+    const [feedback] = await this.db
+      .insert(feedbacks)
+      .values({
+        userId,
+        message: data.message,
+        category,
+        rating,
+        deviceInfo: data.deviceInfo,
+        appVersion: data.appVersion,
+      })
+      .returning();
 
     let profile: any = null;
     let userDetail: any = null;
@@ -32,15 +51,23 @@ export class FeedbackService {
 
     const targetPhone = process.env.FONNTE_TARGET_PHONE;
     if (!targetPhone) {
-      this.logger.warn('FONNTE_TARGET_PHONE is not defined in environment. WhatsApp notification skipped.');
+      this.logger.warn(
+        'FONNTE_TARGET_PHONE is not defined in environment. WhatsApp notification skipped.',
+      );
       return feedback;
     }
 
-    const waDescription = `*Name:* ${profile?.fullName || 'Unknown'}\n` +
+    const ratingStars = '⭐'.repeat(rating);
+    const waDescription =
+      `*Category:* ${category.toUpperCase()}\n` +
+      `*Rating:* ${ratingStars} (${rating}/5)\n` +
+      `*Name:* ${profile?.fullName || 'Unknown'}\n` +
       `*Email:* ${userDetail?.email || 'Unknown'}\n` +
       `*Phone:* ${profile?.phoneNumber || 'Unknown'}\n` +
+      `*Device:* ${data.deviceInfo || 'Unknown'}\n` +
+      `*App Version:* ${data.appVersion || 'Unknown'}\n` +
       `*Time:* ${new Date().toUTCString()}\n\n` +
-      `*Message:*\n"${message}"`;
+      `*Message:*\n"${data.message}"`;
 
     const result = await sendWhatsAppMessage({
       phone: targetPhone,
@@ -49,7 +76,9 @@ export class FeedbackService {
     });
 
     if (!result.success) {
-      this.logger.error(`Failed to send WhatsApp message via Fonnte: ${result.reason}`);
+      this.logger.error(
+        `Failed to send WhatsApp message via Fonnte: ${result.reason}`,
+      );
     } else {
       this.logger.log(`Feedback WhatsApp sent successfully to ${targetPhone}`);
     }

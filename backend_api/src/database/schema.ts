@@ -180,6 +180,10 @@ export const feedbacks = pgTable('feedbacks', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
   message: text('message').notNull(),
+  category: text('category').default('general').notNull(),
+  rating: integer('rating').default(5).notNull(),
+  deviceInfo: text('device_info'),
+  appVersion: text('app_version'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

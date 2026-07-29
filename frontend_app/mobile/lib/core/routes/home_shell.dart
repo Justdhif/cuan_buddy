@@ -136,6 +136,12 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
 
     final showNavBar = navBehavior == BottomNavBehavior.alwaysVisible || _isNavBarVisible;
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && ref.read(bottomNavVisibilityProvider) != showNavBar) {
+        ref.read(bottomNavVisibilityProvider.notifier).state = showNavBar;
+      }
+    });
+
     return Scaffold(
       extendBody: true,
       body: Stack(

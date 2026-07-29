@@ -1,23 +1,80 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/l10n/app_localizations.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../providers/ai_provider.dart';
+
+class AiBackgroundPatternPainter extends CustomPainter {
+  final bool isDark;
+  final Color primaryColor;
+
+  AiBackgroundPatternPainter({
+    required this.isDark,
+    required this.primaryColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // 1. Ambient Glow Orbs
+    final glowPaint1 = Paint()
+      ..color = primaryColor.withAlpha(isDark ? 25 : 35)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 80);
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.15), 140, glowPaint1);
+
+    final glowPaint2 = Paint()
+      ..color = const Color(0xFF8B5CF6).withAlpha(isDark ? 20 : 25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 90);
+    canvas.drawCircle(Offset(size.width * 0.15, size.height * 0.65), 160, glowPaint2);
+
+    // 2. Dot Matrix Pattern Grid
+    final dotPaint = Paint()
+      ..color = (isDark ? Colors.white : primaryColor).withAlpha(isDark ? 12 : 18)
+      ..style = PaintingStyle.fill;
+
+    const spacing = 28.0;
+    for (double x = spacing / 2; x < size.width; x += spacing) {
+      for (double y = spacing / 2; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), 1.2, dotPaint);
+      }
+    }
+
+    // 3. Subtle Tech / Finance Accent Lines
+    final linePaint = Paint()
+      ..color = (isDark ? Colors.white : primaryColor).withAlpha(isDark ? 8 : 12)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    for (double i = -size.height; i < size.width + size.height; i += 120) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        linePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant AiBackgroundPatternPainter oldDelegate) {
+    return oldDelegate.isDark != isDark || oldDelegate.primaryColor != primaryColor;
+  }
+}
 
 class TypewriterText extends StatefulWidget {
   final String text;
   final TextStyle? style;
-  final Duration speed;
   final VoidCallback? onTick;
+  final VoidCallback? onFinished;
 
   const TypewriterText({
     super.key,
     required this.text,
     this.style,
-    this.speed = const Duration(milliseconds: 16),
     this.onTick,
+    this.onFinished,
   });
 
   @override
@@ -25,13 +82,13 @@ class TypewriterText extends StatefulWidget {
 }
 
 class _TypewriterTextState extends State<TypewriterText> {
-  int _charCount = 0;
+  int _displayLength = 0;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _startAnimation();
+    _startTyping();
   }
 
   @override
@@ -39,25 +96,35 @@ class _TypewriterTextState extends State<TypewriterText> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text) {
       _timer?.cancel();
-      _charCount = 0;
-      _startAnimation();
+      _displayLength = 0;
+      _startTyping();
     }
   }
 
-  void _startAnimation() {
-    if (widget.text.isEmpty) return;
-    _timer = Timer.periodic(widget.speed, (timer) {
+  void _startTyping() {
+    if (widget.text.isEmpty) {
+      widget.onFinished?.call();
+      return;
+    }
+
+    final int totalLength = widget.text.length;
+    final int step = totalLength > 400 ? 2 : 1;
+    final int intervalMs = totalLength > 400 ? 10 : 14;
+
+    _timer = Timer.periodic(Duration(milliseconds: intervalMs), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
       }
-      if (_charCount < widget.text.length) {
+
+      if (_displayLength < totalLength) {
         setState(() {
-          _charCount = (_charCount + 3).clamp(0, widget.text.length);
+          _displayLength = (_displayLength + step).clamp(0, totalLength);
         });
         widget.onTick?.call();
       } else {
         timer.cancel();
+        widget.onFinished?.call();
       }
     });
   }
@@ -70,9 +137,9 @@ class _TypewriterTextState extends State<TypewriterText> {
 
   @override
   Widget build(BuildContext context) {
-    final displayText = widget.text.substring(0, _charCount);
+    final substring = widget.text.substring(0, _displayLength);
     return Text(
-      displayText,
+      substring,
       style: widget.style,
     );
   }
@@ -174,6 +241,7 @@ class AiChatScreen extends ConsumerStatefulWidget {
 class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  String? _newlyArrivedMessageId;
 
   @override
   void dispose() {
@@ -298,14 +366,15 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     }
   }
 
-  void _scrollToBottom() {
+  void _scrollToBottomIfNearEnd() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeOut,
-        );
+        final maxScroll = _scrollController.position.maxScrollExtent;
+        final currentScroll = _scrollController.position.pixels;
+
+        if (maxScroll - currentScroll <= 160) {
+          _scrollController.jumpTo(maxScroll);
+        }
       }
     });
   }
@@ -315,6 +384,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   }
 
   void _handleStartNewChat(BuildContext context, bool isDark) {
+    setState(() {
+      _newlyArrivedMessageId = null;
+    });
     final success = ref.read(aiNotifierProvider.notifier).startNewChat();
     if (!success) {
       _showLimitReachedDialog(context, isDark);
@@ -555,6 +627,9 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                               ),
                               child: ListTile(
                                 onTap: () {
+                                  setState(() {
+                                    _newlyArrivedMessageId = null;
+                                  });
                                   ref
                                       .read(aiNotifierProvider.notifier)
                                       .selectConversation(conv.id);
@@ -710,8 +785,33 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
     );
 
     ref.listen(aiNotifierProvider, (prev, next) {
+      final bool conversationChanged = prev?.currentConversationId != next.currentConversationId;
+
+      if (conversationChanged) {
+        if (_newlyArrivedMessageId != null) {
+          setState(() {
+            _newlyArrivedMessageId = null;
+          });
+        }
+        return;
+      }
+
+      // Detect when a NEW response finishes loading from AI within the SAME active conversation
+      if (prev?.isLoading == true &&
+          next.isLoading == false &&
+          prev?.messages.length != null &&
+          next.messages.length > prev!.messages.length) {
+        if (next.messages.isNotEmpty && next.messages.last.role == 'assistant') {
+          final lastMsg = next.messages.last;
+          final msgKey = lastMsg.id ?? '${lastMsg.content.hashCode}_${next.messages.length - 1}';
+          setState(() {
+            _newlyArrivedMessageId = msgKey;
+          });
+        }
+      }
+
       if (prev?.messages.length != next.messages.length) {
-        _scrollToBottom();
+        _scrollToBottomIfNearEnd();
       }
     });
 
@@ -719,46 +819,13 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset(
-                'assets/illustrations/ai-illustration.png',
-                width: 32,
-                height: 32,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withAlpha(30),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.smart_toy_rounded,
-                        size: 20,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                aiState.currentConversationId != null
-                    ? activeConv.title
-                    : l10n.cuanBuddyAI,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        title: Text(
+          aiState.currentConversationId != null
+              ? activeConv.title
+              : l10n.cuanBuddyAI,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         actions: [
           IconButton(
@@ -773,14 +840,26 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
+          // 1. Background Tech/Finance Pattern Painter
+          Positioned.fill(
+            child: CustomPaint(
+              painter: AiBackgroundPatternPainter(
+                isDark: isDark,
+                primaryColor: AppColors.primary,
+              ),
+            ),
+          ),
+
+          // 2. Full-height Scrollable Content (spans underneath the floating input bar)
+          Positioned.fill(
             child: isEmptyConversation
                 ? _buildEmptyConversationState(context, isDark, isEnglish)
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(
+                        left: 16, right: 16, top: 16, bottom: 130),
                     itemCount: aiState.messages.length + (aiState.isLoading ? 1 : 0),
                     itemBuilder: (context, index) {
                       // Render animated 3-dot bouncing typing bubble for AI loading state
@@ -793,8 +872,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                 horizontal: 18, vertical: 14),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? AppColors.surfaceDark
-                                  : AppColors.surfaceLight,
+                                  ? AppColors.surfaceDark.withAlpha(220)
+                                  : AppColors.surfaceLight.withAlpha(230),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(16),
                                 topRight: Radius.circular(16),
@@ -818,8 +897,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                       final msg = aiState.messages[index];
                       final isUser = msg.role == 'user';
                       final displayContent = _cleanText(msg.content);
-                      final isLatestAssistantMessage =
-                          !isUser && index == aiState.messages.length - 1;
+                      final msgKey = msg.id ?? '${msg.content.hashCode}_$index';
+                      final bool isNewlyArrivedAssistantMsg =
+                          !isUser &&
+                          index == aiState.messages.length - 1 &&
+                          _newlyArrivedMessageId == msgKey;
 
                       return Align(
                         alignment:
@@ -835,8 +917,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                             color: isUser
                                 ? AppColors.primary
                                 : (isDark
-                                    ? AppColors.surfaceDark
-                                    : AppColors.surfaceLight),
+                                    ? AppColors.surfaceDark.withAlpha(220)
+                                    : AppColors.surfaceLight.withAlpha(230)),
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(16),
                               topRight: const Radius.circular(16),
@@ -850,14 +932,21 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                                         ? AppColors.borderDark
                                         : AppColors.borderLight),
                           ),
-                          child: isLatestAssistantMessage
+                          child: isNewlyArrivedAssistantMsg
                               ? TypewriterText(
                                   text: displayContent,
                                   style: AppTypography.textTheme.bodyMedium?.copyWith(
                                     color: isDark ? Colors.white : Colors.black87,
                                     height: 1.5,
                                   ),
-                                  onTick: _scrollToBottom,
+                                  onTick: _scrollToBottomIfNearEnd,
+                                  onFinished: () {
+                                    if (_newlyArrivedMessageId == msgKey) {
+                                      setState(() {
+                                        _newlyArrivedMessageId = null;
+                                      });
+                                    }
+                                  },
                                 )
                               : Text(
                                   displayContent,
@@ -873,51 +962,96 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                     },
                   ),
           ),
-          SafeArea(
+
+          // 3. Floating Glassmorphism Input Bar at Bottom (100% Transparent Wrapper)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildFloatingInputBar(context, isDark, isEnglish, l10n, aiState),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingInputBar(
+    BuildContext context,
+    bool isDark,
+    bool isEnglish,
+    AppLocalizations l10n,
+    AiState aiState,
+  ) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 12, top: 4),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.only(left: 16, right: 6, top: 6, bottom: 6),
               decoration: BoxDecoration(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                border: Border(
-                  top: BorderSide(
-                    color:
-                        isDark ? AppColors.borderDark : AppColors.borderLight,
-                  ),
+                color: isDark
+                    ? const Color(0xFF1E2A38).withAlpha(160)
+                    : Colors.white.withAlpha(190),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withAlpha(40)
+                      : Colors.white.withAlpha(160),
+                  width: 1.0,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(isDark ? 35 : 10),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  // 1. Multi-line Scrollable Text Field (Expandable 1 to 5 lines with hidden scrollbar)
                   Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: l10n.askAboutFinances,
-                        hintStyle: TextStyle(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 140, // Max height (~5 lines) before internal scrolling
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 1,
+                        maxLines: 5,
+                        textAlignVertical: TextAlignVertical.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.35,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: l10n.askAboutFinances,
+                          hintStyle: TextStyle(
+                            fontSize: 13.5,
                             color: isDark
                                 ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
+                                : AppColors.textSecondaryLight,
+                          ),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false,
+                          isDense: true,
+                          contentPadding: const EdgeInsets.only(top: 8, bottom: 8),
                         ),
-                        filled: true,
-                        fillColor: isDark
-                            ? AppColors.surfaceDark
-                            : AppColors.surfaceLight,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
                       ),
-                      onSubmitted: (text) {
-                        if (text.trim().isNotEmpty) {
-                          ref
-                              .read(aiNotifierProvider.notifier)
-                              .sendMessage(text.trim());
-                          _controller.clear();
-                        }
-                      },
                     ),
                   ),
                   const SizedBox(width: 8),
+
+                  // 2. Send Button Anchored at Bottom Right
                   GestureDetector(
                     onTap: () {
                       final text = _controller.text.trim();
@@ -926,115 +1060,109 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                         _controller.clear();
                       }
                     },
-                    child: CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      radius: 24,
-                      child: const Icon(Icons.send_rounded,
-                          color: Colors.white, size: 20),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_upward_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
+  String _getTimeBasedGreeting(String userName, bool isEnglish) {
+    final hour = DateTime.now().hour;
+    final name = userName.trim().isNotEmpty ? userName.trim() : 'CuanBuddy';
+    if (isEnglish) {
+      if (hour >= 4 && hour < 12) {
+        return 'Good morning, $name.';
+      } else if (hour >= 12 && hour < 17) {
+        return 'Good afternoon, $name.';
+      } else if (hour >= 17 && hour < 21) {
+        return 'Good evening, $name.';
+      } else {
+        return 'Good night, $name.';
+      }
+    } else {
+      if (hour >= 4 && hour < 11) {
+        return 'Selamat pagi, $name.';
+      } else if (hour >= 11 && hour < 15) {
+        return 'Selamat siang, $name.';
+      } else if (hour >= 15 && hour < 18) {
+        return 'Selamat sore, $name.';
+      } else {
+        return 'Selamat malam, $name.';
+      }
+    }
+  }
+
   Widget _buildEmptyConversationState(BuildContext context, bool isDark, bool isEnglish) {
     final questionItems = _getEmptyQuestionItems(isEnglish);
+    final profileAsync = ref.watch(profileProvider);
+    final profileData = profileAsync.value;
+    final userName = (profileData?['fullName'] ?? profileData?['name'] ?? profileData?['username'] ?? '').toString();
+    final greetingText = _getTimeBasedGreeting(userName, isEnglish);
+
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 130),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Hero AI Banner Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.surfaceDark
-                  : AppColors.primary.withAlpha(12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isDark
-                    ? AppColors.borderDark
-                    : AppColors.primary.withAlpha(30),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha(isDark ? 30 : 6),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // AI Illustration Image
-                Image.asset(
-                  'assets/illustrations/ai-illustration.png',
-                  width: 88,
-                  height: 88,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 76,
-                      height: 76,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withAlpha(30),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Icon(Icons.smart_toy_rounded,
-                            size: 40, color: AppColors.primary),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: const [
-                          Text(
-                            'Hi, CuanBuddy!',
-                            style: TextStyle(
-                              fontSize: 16.5,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(width: 4),
-                          Text('👋', style: TextStyle(fontSize: 16)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        isEnglish
-                            ? 'Ask me anything about your finances. I am ready to provide insights and top advice!'
-                            : 'Tanyakan apa saja tentang keuanganmu. Aku siap membantu memberi insight dan saran terbaik!',
-                        style: TextStyle(
-                          fontSize: 12,
-                          height: 1.4,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
-                      ),
-                    ],
+          const SizedBox(height: 36),
+
+          // 1. Centered AI Illustration (enlarged)
+          Center(
+            child: Image.asset(
+              'assets/illustrations/ai-illustration.png',
+              width: 150,
+              height: 150,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withAlpha(30),
+                    shape: BoxShape.circle,
                   ),
-                ),
-              ],
+                  child: Center(
+                    child: Icon(Icons.smart_toy_rounded,
+                        size: 56, color: AppColors.primary),
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(height: 16),
 
-          // 2. Question Cards List (NO "Pertanyaan Populer" or "Lihat semua" header!)
+          // 2. Centered Time-Based Greeting ("Selamat siang, DhiF.")
+          Text(
+            greetingText,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+              letterSpacing: -0.3,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // 3. Question Cards List (Clean open design)
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1049,11 +1177,11 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
+                        horizontal: 14, vertical: 13),
                     decoration: BoxDecoration(
                       color: isDark
-                          ? AppColors.surfaceDark
-                          : Colors.white,
+                          ? AppColors.surfaceDark.withAlpha(230)
+                          : Colors.white.withAlpha(240),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
                         color: isDark
@@ -1072,8 +1200,8 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                       children: [
                         // Icon Box
                         Container(
-                          width: 42,
-                          height: 42,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: isDark
                                 ? item.iconColor.withAlpha(40)
@@ -1083,36 +1211,19 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
                           child: Icon(
                             item.icon,
                             color: item.iconColor,
-                            size: 22,
+                            size: 20,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Text Title & Subtitle
+                        // Text Title
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                item.subtitle,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black87,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 6),

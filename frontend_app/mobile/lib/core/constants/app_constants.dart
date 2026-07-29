@@ -1,6 +1,7 @@
 class AppConstants {
   AppConstants._();
 
+  static const String appVersion = 'v1.0.0';
   static const String baseUrl = 'https://cuan-buddy-api.vercel.app/api';
   static const String weatherApiKey = '6a3d3c23f97ec8875d10e3c2e86bad59';
   static const String weatherApiBaseUrl = 'https://api.openweathermap.org/data/2.5';

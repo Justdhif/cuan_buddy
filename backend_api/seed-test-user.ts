@@ -88,7 +88,6 @@ async function seedTestUser() {
   }
 
   console.log('\n🎉 Selesai! Silakan login di aplikasi dengan email dan password tersebut.');
-  process.exit(0);
 }
 
 seedTestUser().catch((err) => {

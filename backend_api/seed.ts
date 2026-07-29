@@ -53,7 +53,6 @@ async function seed() {
   }
 
   console.log('✅ Seeding complete!');
-  process.exit(0);
 }
 
 seed().catch((err) => {

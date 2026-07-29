@@ -114,7 +114,7 @@ class AiNotifier extends StateNotifier<AiState> {
   Future<void> selectConversation(String conversationId) async {
     state = state.copyWith(
       currentConversationId: conversationId,
-      isLoading: true,
+      isConversationsLoading: true,
       error: null,
     );
 
@@ -134,12 +134,12 @@ class AiNotifier extends StateNotifier<AiState> {
 
       state = state.copyWith(
         messages: fetchedMessages,
-        isLoading: false,
+        isConversationsLoading: false,
       );
     } catch (e) {
       state = state.copyWith(
         error: e.toString(),
-        isLoading: false,
+        isConversationsLoading: false,
       );
     }
   }

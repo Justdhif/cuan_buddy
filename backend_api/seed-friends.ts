@@ -210,7 +210,6 @@ async function seedFriends() {
   }
 
   console.log('\n🎉 Seeding selesai! 10 teman dummy berhasil dibuat.');
-  process.exit(0);
 }
 
 seedFriends().catch((err) => {

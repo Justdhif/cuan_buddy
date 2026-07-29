@@ -13,8 +13,20 @@ class ProfileRepository {
     return response.data as Map<String, dynamic>;
   }
 
-  Future<void> submitFeedback(String message) async {
-    await _dio.post('/feedback', data: {'message': message});
+  Future<void> submitFeedback({
+    required String message,
+    String? category,
+    int? rating,
+    String? deviceInfo,
+    String? appVersion,
+  }) async {
+    await _dio.post('/feedback', data: {
+      'message': message,
+      if (category != null) 'category': category,
+      if (rating != null) 'rating': rating,
+      if (deviceInfo != null) 'deviceInfo': deviceInfo,
+      if (appVersion != null) 'appVersion': appVersion,
+    });
   }
 
   Future<Map<String, dynamic>> updateProfile({
