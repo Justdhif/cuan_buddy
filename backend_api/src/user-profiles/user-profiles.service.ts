@@ -100,12 +100,8 @@ export class UserProfilesService {
       throw new BadRequestException('Invalid OTP code.');
     }
 
-    // Success: Update the phone number in user profile & users table
+    // Success: Update the phone number in user_profiles (single source of truth for WA phone)
     await this.updateProfile(userId, { phoneNumber: phone });
-    await this.db
-      .update(users)
-      .set({ whatsappPhone: phone, updatedAt: new Date() })
-      .where(eq(users.id, userId));
 
     this.otpStore.delete(phone);
 

@@ -16,8 +16,6 @@ export const users = pgTable('users', {
   resetOtpExpiresAt: timestamp('reset_otp_expires_at'),
   lastLoginAt: timestamp('last_login_at'),
   fcmToken: text('fcm_token'),
-  waConnectOtp: text('wa_connect_otp'),
-  whatsappPhone: text('whatsapp_phone').unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -28,7 +26,8 @@ export const userProfiles = pgTable('user_profiles', {
   fullName: text('full_name'),
   username: text('username').unique(),
   avatar: text('avatar'),
-  phoneNumber: text('phone_number'),
+  phoneNumber: text('phone_number').unique(), // WhatsApp phone number (E.164 format without +, e.g. 628123456789)
+  waConnectOtp: text('wa_connect_otp'),       // Temporary 6-digit OTP for WA pairing
   birthDate: timestamp('birth_date'),
   gender: text('gender'),
   bio: text('bio'),

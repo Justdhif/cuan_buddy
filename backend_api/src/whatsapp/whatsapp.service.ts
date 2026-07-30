@@ -2,7 +2,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { eq, and } from 'drizzle-orm';
 import { DATABASE_CONNECTION } from '../database/database.module';
-import { users, wallets, categories } from '../database/schema';
+import { users, userProfiles, wallets, categories } from '../database/schema';
 import { TransactionsService } from '../transactions/transactions.service';
 import { AiService } from '../ai/ai.service';
 import { GroqService } from '../ai/groq.service';
@@ -43,9 +43,10 @@ export class WhatsappService {
       this.logger.log(`Received WA message from ${fromNumber}, type: ${msgType}`);
 
       // 1. Check if phone number is connected to a CuanBuddy user
-      const user = await this.db.query.users.findFirst({
-        where: eq(users.whatsappPhone, fromNumber),
+      const profile = await this.db.query.userProfiles.findFirst({
+        where: eq(userProfiles.phoneNumber, fromNumber),
       });
+      const userId = profile?.userId;
 
       // 2. Handle text messages
       if (msgType === 'text') {
@@ -53,7 +54,7 @@ export class WhatsappService {
         if (!textBody) return;
 
         // If not connected, check if it's an OTP connection attempt (6 digits)
-        if (!user) {
+        if (!userId) {
           if (/^\d{6}$/.test(textBody)) {
             await this.connectAccountViaOtp(fromNumber, textBody);
           } else {
@@ -65,32 +66,30 @@ export class WhatsappService {
           return;
         }
 
-        // Help command
+        // User connected — process commands/transactions
         if (textBody.toLowerCase() === 'help' || textBody.toLowerCase() === 'bantuan') {
           await this.sendTextMessage(
             fromNumber,
-            `💡 *Panduan CuanBuddy WA Bot*\n\n1. *Catat Transaksi Text:*\n   Cukup ketik kalimat santai, contoh:\n   • _Beli kopi 25rb_\n   • _Gaji bulanan 5jt_\n   • _Bayar listrik 150000_\n\n2. *Catat Transaksi Voice Note:*\n   Kirimkan pesan suara (voice note) berisi pengeluaran/pemasukan Anda!\n\n3. *Status Akun:*\n   Terhubung sebagai: *${user.email}*`,
+            `💡 *Panduan CuanBuddy WA Bot*\n\n1. *Catat Transaksi Teks:*\n   Ketik kalimat santai, contoh:\n   • _Beli kopi 25rb_\n   • _Gaji bulanan 5jt_\n   • _Bayar listrik 150000_\n\n2. *Catat Transaksi Voice Note:*\n   Kirim pesan suara berisi pengeluaran/pemasukan!\n\n3. Ketik *bantuan* untuk melihat panduan ini lagi.`,
           );
-          return;
+        } else {
+          await this.processTextTransaction(userId, fromNumber, textBody);
         }
-
-        // Process natural text via AI & record transaction
-        await this.processTextTransaction(user.id, fromNumber, textBody);
       }
 
       // 3. Handle Voice Note messages
       else if (msgType === 'audio') {
-        if (!user) {
+        if (!userId) {
           await this.sendTextMessage(
             fromNumber,
-            `⚠️ Nomor WhatsApp Anda belum terhubung. Kirimkan 6-digit OTP dari aplikasi CuanBuddy terlebih dahulu.`,
+            `👋 Nomor Anda belum terhubung ke CuanBuddy. Kirim kode OTP 6 digit untuk menghubungkan akun.`,
           );
           return;
         }
 
         const audioId = message.audio?.id;
         if (audioId) {
-          await this.processAudioTransaction(user.id, fromNumber, audioId);
+          await this.processAudioTransaction(userId, fromNumber, audioId);
         }
       }
     } catch (error) {
@@ -102,11 +101,11 @@ export class WhatsappService {
    * Pair WhatsApp phone number with CuanBuddy user via OTP
    */
   private async connectAccountViaOtp(fromNumber: string, otp: string): Promise<void> {
-    const user = await this.db.query.users.findFirst({
-      where: eq(users.waConnectOtp, otp),
+    const profile = await this.db.query.userProfiles.findFirst({
+      where: eq(userProfiles.waConnectOtp, otp),
     });
 
-    if (!user) {
+    if (!profile) {
       await this.sendTextMessage(
         fromNumber,
         `❌ Kode OTP (*${otp}*) tidak valid atau sudah kadaluarsa. Silakan ambil kode OTP baru di profil aplikasi CuanBuddy.`,
@@ -114,19 +113,22 @@ export class WhatsappService {
       return;
     }
 
-    // Connect user
+    // Connect user: save WA phone number and clear OTP
     await this.db
-      .update(users)
+      .update(userProfiles)
       .set({
-        whatsappPhone: fromNumber,
+        phoneNumber: fromNumber,
         waConnectOtp: null,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, user.id));
+      .where(eq(userProfiles.userId, profile.userId));
+
+    // Get user email for confirmation message
+    const user = await this.db.query.users.findFirst({ where: eq(users.id, profile.userId) });
 
     await this.sendTextMessage(
       fromNumber,
-      `🎉 *Selamat! Akun CuanBuddy Berhasil Terhubung!*\n\nAkun WhatsApp Anda kini terhubung dengan email: *${user.email}*.\n\nSekarang Anda bisa langsung mencatat pengeluaran/pemasukan dengan mengirim pesan teks biasa atau Voice Note di sini!\n\n_Ketik *help* untuk melihat bantuan._`,
+      `🎉 *Selamat! Akun CuanBuddy Berhasil Terhubung!*\n\nAkun WhatsApp Anda kini terhubung dengan email: *${user?.email}*.\n\nSekarang Anda bisa langsung mencatat pengeluaran/pemasukan dengan mengirim pesan teks biasa atau Voice Note di sini!\n\n_Ketik *help* untuk melihat bantuan._`,
     );
   }
 
@@ -333,9 +335,9 @@ Reply ONLY in JSON:
   async generateConnectOtp(userId: string): Promise<{ otp: string }> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await this.db
-      .update(users)
+      .update(userProfiles)
       .set({ waConnectOtp: otp, updatedAt: new Date() })
-      .where(eq(users.id, userId));
+      .where(eq(userProfiles.userId, userId));
     return { otp };
   }
 }
