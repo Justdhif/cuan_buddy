@@ -6,6 +6,6 @@ import { GroqService } from './groq.service';
 @Module({
   controllers: [AiController],
   providers: [AiService, GroqService],
-  exports: [AiService],
+  exports: [AiService, GroqService],
 })
 export class AiModule {}
