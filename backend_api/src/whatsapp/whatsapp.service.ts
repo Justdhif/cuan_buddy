@@ -25,12 +25,17 @@ export class WhatsappService {
    */
   async handleWebhookPayload(payload: any): Promise<void> {
     try {
+      this.logger.log(`Incoming WA Payload: ${JSON.stringify(payload)}`);
+
       const entry = payload?.entry?.[0];
       const changes = entry?.changes?.[0];
       const value = changes?.value;
       const message = value?.messages?.[0];
 
-      if (!message) return; // Not a message event (could be status update)
+      if (!message) {
+        this.logger.log(`Payload received but no messages array found (status update or echo)`);
+        return;
+      }
 
       const fromNumber = message.from; // User's WhatsApp Phone Number (E.164 without +, e.g. 628123456789)
       const msgType = message.type;
