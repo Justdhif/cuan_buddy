@@ -805,6 +805,9 @@ abstract class AppLocalizations {
   String get actualCumulativeLabel;
   String get idealBudgetPaceLabel;
   String get peakSpendingDaysHeatmap;
+  String get whatsappBotTitle;
+  String get whatsappBotDesc;
+  String get whatsappBotCta;
 }
 
 

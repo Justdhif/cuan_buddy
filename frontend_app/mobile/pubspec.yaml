@@ -81,7 +81,9 @@ flutter:
   assets:
     - assets/animations/
     - assets/icon/
+    - assets/icon/whatsapp-icon.png
     - assets/illustrations/
+    - assets/illustrations/whatsapp-bot-illustration.png
     - assets/wallpapers/banners/
 
   fonts:

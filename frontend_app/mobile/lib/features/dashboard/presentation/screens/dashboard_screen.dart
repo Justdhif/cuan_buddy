@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/utils/currency_formatter.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -180,7 +181,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         child: AiInsightCard(),
                       ),
                     ),
-
+                    _buildWhatsAppBotCard(context, isDark),
                     SliverToBoxAdapter(
                       child: _buildAiTransactionButtons(context, isDark),
                     ),
@@ -320,6 +321,179 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: _buildFixedTopHeader(context, ref, unreadCount, isDark),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWhatsAppBotCard(BuildContext context, bool isDark) {
+    final l10n = AppLocalizations.of(context);
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+        child: Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+                  : [Colors.white, const Color(0xFFF1F5F9)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFF25D366).withValues(alpha: isDark ? 0.25 : 0.15),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF25D366).withValues(alpha: isDark ? 0.04 : 0.02),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -20,
+                top: -20,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF25D366).withValues(alpha: isDark ? 0.08 : 0.04),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF25D366).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.circle,
+                                      color: Color(0xFF25D366),
+                                      size: 8,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'ONLINE',
+                                      style: TextStyle(
+                                        color: const Color(0xFF25D366),
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            l10n.whatsappBotTitle,
+                            style: AppTypography.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.whatsappBotDesc,
+                            style: AppTypography.textTheme.bodySmall?.copyWith(
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              try {
+                                final uri = Uri.parse('https://wa.me/6282113285557');
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (_) {
+                                try {
+                                  final fallback = Uri.parse('whatsapp://send?phone=6282113285557');
+                                  await launchUrl(fallback, mode: LaunchMode.externalApplication);
+                                } catch (_) {}
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF25D366),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF25D366).withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/icon/whatsapp-icon.png',
+                                    width: 18,
+                                    height: 18,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    l10n.whatsappBotCta,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        height: 110,
+                        alignment: Alignment.centerRight,
+                        child: Image.asset(
+                          'assets/illustrations/whatsapp-bot-illustration.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -577,7 +751,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Row(
         children: [
           Image.asset(
-            'assets/icon/app_icon.png',
+            'assets/icon/app_icon_transparent.png',
             width: 32,
             height: 32,
           ),

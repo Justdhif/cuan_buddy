@@ -88,7 +88,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Image.asset(
-                        'assets/icon/app_icon.png',
+                        'assets/icon/app_icon_transparent.png',
                         width: 120,
                         height: 120,
                       ),

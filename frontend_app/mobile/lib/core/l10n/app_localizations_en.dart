@@ -1616,5 +1616,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get idealBudgetPaceLabel => 'Ideal Budget Pace';
   @override
   String get peakSpendingDaysHeatmap => 'Peak Spending Days Heatmap';
+  @override
+  String get whatsappBotTitle => 'CuanBuddy WhatsApp Bot';
+  @override
+  String get whatsappBotDesc => 'Log transactions & consult financial planner instantly via WhatsApp!';
+  @override
+  String get whatsappBotCta => 'Chat Now';
 }
 

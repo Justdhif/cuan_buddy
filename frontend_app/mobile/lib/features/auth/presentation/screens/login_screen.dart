@@ -78,27 +78,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 52),
 
               Center(
-                child: Container(
+                child: Image.asset(
+                  'assets/icon/app_icon_transparent.png',
                   width: 90,
                   height: 90,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.45),
-                        blurRadius: 32,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(22),
-                    child: Image.asset(
-                      'assets/icon/app_icon.png',
-                      fit: BoxFit.cover,
-                    ),
-                  ),
                 ),
               ),
 

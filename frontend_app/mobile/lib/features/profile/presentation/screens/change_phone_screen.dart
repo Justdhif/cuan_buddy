@@ -18,6 +18,7 @@ class ChangePhoneScreen extends ConsumerStatefulWidget {
 }
 
 class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
+  String _selectedCountryCode = '+62';
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -35,6 +36,14 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
     _otpController.dispose();
     _timer?.cancel();
     super.dispose();
+  }
+
+  String get _fullPhoneNumber {
+    var number = _phoneController.text.trim();
+    if (number.startsWith('0')) {
+      number = number.substring(1);
+    }
+    return '';
   }
 
   void _startTimer() {
@@ -63,7 +72,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final l10n = AppLocalizations.of(context);
-    final phone = _phoneController.text.trim();
+    final phone = _fullPhoneNumber;
 
     setState(() {
       _isSendingOtp = true;
@@ -95,7 +104,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
         AppSnackbar.show(
           context,
           title: l10n.error,
-          message: 'Failed to send OTP: $e',
+          message: 'Failed to send OTP: ',
           type: SnackbarType.error,
         );
       }
@@ -107,7 +116,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
     if (code.length != 6) return;
 
     final l10n = AppLocalizations.of(context);
-    final phone = _phoneController.text.trim();
+    final phone = _fullPhoneNumber;
 
     setState(() {
       _isVerifying = true;
@@ -133,7 +142,7 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
         AppSnackbar.show(
           context,
           title: l10n.otpFailedTitle,
-          message: 'Failed to verify OTP: $e',
+          message: 'Failed to verify OTP: ',
           type: SnackbarType.error,
         );
       }
@@ -185,208 +194,225 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
             icon: const Icon(Icons.chevron_left_rounded),
             onPressed: () => Navigator.maybePop(context),
           ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        surfaceTintColor: Colors.transparent,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.changePhoneNumberSubtitle,
-                style: AppTypography.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                ),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          elevation: 0,
+        ),
+        bottomNavigationBar: GestureDetector(
+          onTap: _otpSent
+              ? (_isVerifying ? null : _verifyOtp)
+              : (_isSendingOtp ? null : _sendOtp),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                height: 64,
+                child: (_otpSent ? _isVerifying : _isSendingOtp)
+                    ? const Center(
+                        child: SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _otpSent ? Icons.check_circle_outline_rounded : Icons.send_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _otpSent ? l10n.verifyAndSave : l10n.sendOtpCode,
+                              style: AppTypography.textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF25D366).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF25D366).withValues(alpha: 0.3)),
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.changePhoneNumberSubtitle,
+                  style: AppTypography.textTheme.bodyMedium?.copyWith(
+                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  ),
                 ),
-                child: Row(
+                const SizedBox(height: 24),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF25D366)),
+                    SizedBox(
+                      width: 110,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedCountryCode,
+                        items: const [
+                          DropdownMenuItem(value: '+62', child: Text('+62 (ID)')),
+                          DropdownMenuItem(value: '+1', child: Text('+1 (US)')),
+                          DropdownMenuItem(value: '+60', child: Text('+60 (MY)')),
+                          DropdownMenuItem(value: '+65', child: Text('+65 (SG)')),
+                          DropdownMenuItem(value: '+61', child: Text('+61 (AU)')),
+                          DropdownMenuItem(value: '+44', child: Text('+44 (GB)')),
+                          DropdownMenuItem(value: '+81', child: Text('+81 (JP)')),
+                          DropdownMenuItem(value: '+82', child: Text('+82 (KR)')),
+                          DropdownMenuItem(value: '+86', child: Text('+86 (CN)')),
+                        ],
+                        onChanged: _otpSent
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedCountryCode = value;
+                                  });
+                                }
+                              },
+                        decoration: InputDecoration(
+                          labelText: 'Kode',
+                          labelStyle: TextStyle(
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.defaultPrimary, width: 2),
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          ),
+                          disabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight.withValues(alpha: 0.5)),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        'Menghubungkan nomor ini otomatis mengaktifkan CuanBuddy WhatsApp AI Bot untuk catat transaksi via chat/voice note!',
+                      child: TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        enabled: !_otpSent,
                         style: TextStyle(
-                          fontSize: 13,
-                          color: isDark ? Colors.white70 : Colors.black87,
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 16,
                         ),
+                        decoration: InputDecoration(
+                          labelText: l10n.whatsappPhoneNumber,
+                          hintText: '82113285557',
+                          labelStyle: TextStyle(
+                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.defaultPrimary, width: 2),
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          ),
+                          disabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight.withValues(alpha: 0.5)),
+                            borderRadius: const BorderRadius.all(Radius.circular(12)),
+                          ),
+                          prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.defaultPrimary),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return l10n.phoneNumberRequired;
+                          }
+                          return null;
+                        },
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                enabled: !_otpSent,
-                style: TextStyle(
-                  color: isDark ? Colors.white : Colors.black87,
-                  fontSize: 16,
-                ),
-                decoration: InputDecoration(
-                  labelText: l10n.whatsappPhoneNumber,
-                  hintText: 'e.g. +6282113285557',
-                  labelStyle: TextStyle(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                if (_otpSent) ...[
+                  const SizedBox(height: 24),
+                  const Divider(height: 1, thickness: 0.5),
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.enterOtpTitle,
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: AppColors.primary, width: 2),
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Pinput(
+                      controller: _otpController,
+                      length: 6,
+                      defaultPinTheme: defaultPinTheme,
+                      focusedPinTheme: focusedPinTheme,
+                      onCompleted: (_) => _verifyOtp(),
+                    ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  ),
-                  disabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight.withValues(alpha: 0.5)),
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  ),
-                  prefixIcon: Icon(Icons.phone_outlined, color: AppColors.primary),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return l10n.phoneNumberRequired;
-                  }
-                  if (!value.startsWith('+') && !RegExp(r'^[0-9]+$').hasMatch(value)) {
-                    return l10n.invalidPhoneNumberFormat;
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              if (!_otpSent) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isSendingOtp ? null : _sendOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      _secondsRemaining > 0
+                          ? 'Kirim ulang kode dalam ${_formatTimer(_secondsRemaining)}'
+                          : 'Tidak menerima kode?',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : Colors.black54,
                       ),
                     ),
-                    child: _isSendingOtp
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            l10n.sendOtpCode,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  if (_secondsRemaining == 0) ...[
+                    const SizedBox(height: 8),
+                    Center(
+                      child: TextButton(
+                        onPressed: _isSendingOtp ? null : _sendOtp,
+                        child: const Text(
+                          'Kirim Ulang',
+                          style: TextStyle(
+                            color: AppColors.defaultPrimary,
+                            fontWeight: FontWeight.bold,
                           ),
-                  ),
-                ),
-              ],
-              if (_otpSent) ...[
-                const SizedBox(height: 24),
-                const Divider(height: 1, thickness: 0.5),
-                const SizedBox(height: 24),
-                Text(
-                  l10n.enterOtpTitle,
-                  style: AppTypography.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: Pinput(
-                    controller: _otpController,
-                    length: 6,
-                    defaultPinTheme: defaultPinTheme,
-                    focusedPinTheme: focusedPinTheme,
-                    onCompleted: (_) => _verifyOtp(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Center(
-                  child: Text(
-                    _secondsRemaining > 0
-                        ? 'Kirim ulang kode dalam ${_formatTimer(_secondsRemaining)}'
-                        : 'Tidak menerima kode?',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                if (_secondsRemaining == 0) ...[
-                  const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 16),
                   Center(
                     child: TextButton(
-                      onPressed: _isSendingOtp ? null : _sendOtp,
+                      onPressed: () => setState(() => _otpSent = false),
                       child: Text(
-                        'Kirim Ulang',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        l10n.changePhoneNumberLink,
+                        style: const TextStyle(color: AppColors.defaultPrimary, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isVerifying ? null : _verifyOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isVerifying
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(
-                            l10n.verifyAndSave,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: TextButton(
-                    onPressed: () => setState(() => _otpSent = false),
-                    child: Text(
-                      l10n.changePhoneNumberLink,
-                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
