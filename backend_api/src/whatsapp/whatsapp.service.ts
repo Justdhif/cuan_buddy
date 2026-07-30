@@ -53,27 +53,20 @@ export class WhatsappService {
         const textBody = message.text?.body?.trim();
         if (!textBody) return;
 
-        // If not connected, check if it's an OTP connection attempt (6 digits)
-        if (!userId) {
-          if (/^\d{6}$/.test(textBody)) {
-            await this.connectAccountViaOtp(fromNumber, textBody);
-          } else {
-            await this.sendTextMessage(
-              fromNumber,
-              `👋 Selamat datang di *CuanBuddy WA Bot*!\n\nNomor Anda (*${fromNumber}*) belum terhubung ke akun CuanBuddy.\n\n📌 *Cara Menghubungkan Akun:*\n1. Buka aplikasi/web CuanBuddy.\n2. Buka menu Pengaturan Profil / Connect WA.\n3. Dapatkan 6-digit Kode OTP.\n4. Kirim 6-digit kode OTP tersebut ke chat WhatsApp ini.\n\n*Contoh kirim:* 123456`,
-            );
-          }
+        // Check if it's an OTP connection attempt (6 digits)
+        if (/^\d{6}$/.test(textBody) && !userId) {
+          await this.connectAccountViaOtp(fromNumber, textBody);
           return;
         }
 
-        // User connected — process commands/transactions
         if (textBody.toLowerCase() === 'help' || textBody.toLowerCase() === 'bantuan') {
+          const statusConnected = userId ? '🟢 *Akun Terhubung*' : '🔴 *Akun Belum Terhubung* (Bisa konsultasi umum)';
           await this.sendTextMessage(
             fromNumber,
-            `💡 *Panduan CuanBuddy WA Bot*\n\n1. *Catat Transaksi Teks:*\n   Ketik kalimat santai, contoh:\n   • _Beli kopi 25rb_\n   • _Gaji bulanan 5jt_\n   • _Bayar listrik 150000_\n\n2. *Catat Transaksi Voice Note:*\n   Kirim pesan suara berisi pengeluaran/pemasukan!\n\n3. Ketik *bantuan* untuk melihat panduan ini lagi.`,
+            `💡 *Panduan CuanBuddy WA Bot*\n\nStatus: ${statusConnected}\n\n1. *Konsultasi Perencanaan Keuangan:* (Bisa tanpa terhubung!)\n   Tanya saran alokasi gaji, cara hemat, investasi, dll.\n\n2. *Catat Transaksi / Cek Data CuanBuddy:* (Butuh Terhubung WA OTP)\n   Ketik misal: _Beli kopi 25rb_ atau _Berapa sisa uang saya?_\n\n📌 *Menghubungkan Akun:*\nKirim 6-digit kode OTP dari aplikasi CuanBuddy ke chat ini.`,
           );
         } else {
-          await this.processTextTransaction(userId, fromNumber, textBody);
+          await this.processTextTransaction(userId || null, fromNumber, textBody);
         }
       }
 
@@ -82,7 +75,7 @@ export class WhatsappService {
         if (!userId) {
           await this.sendTextMessage(
             fromNumber,
-            `👋 Nomor Anda belum terhubung ke CuanBuddy. Kirim kode OTP 6 digit untuk menghubungkan akun.`,
+            `🔒 *Fitur Pencatatan Voice Note Membutuhkan Akun CuanBuddy*\n\nNomor Anda (*${fromNumber}*) belum terhubung.\n\n📌 *Cara Menghubungkan:* Kirim 6-digit kode OTP dari aplikasi CuanBuddy ke chat WhatsApp ini.`,
           );
           return;
         }
@@ -133,78 +126,142 @@ export class WhatsappService {
   }
 
   /**
-   * Process Natural Text Transaction via AI
+   * Process Natural Text via AI: Classifies intent into "consultation" vs "transaction"
    */
-  private async processTextTransaction(userId: string, fromNumber: string, text: string): Promise<void> {
+  private async processTextTransaction(userId: string | null, fromNumber: string, text: string): Promise<void> {
     try {
-      // 1. Get user's base wallet
-      const [baseWallet] = await this.db
-        .select()
-        .from(wallets)
-        .where(and(eq(wallets.userId, userId), eq(wallets.isBaseCurrency, true)));
+      // 1. Get user's base wallet (if user is connected)
+      let baseWallet = null;
+      let targetWallet = null;
+      let cats: any[] = [];
 
-      const targetWallet = baseWallet || (await this.db.query.wallets.findFirst({ where: eq(wallets.userId, userId) }));
+      if (userId) {
+        const walletList = await this.db
+          .select()
+          .from(wallets)
+          .where(and(eq(wallets.userId, userId), eq(wallets.isBaseCurrency, true)));
+        baseWallet = walletList[0];
+        targetWallet = baseWallet || (await this.db.query.wallets.findFirst({ where: eq(wallets.userId, userId) }));
+        cats = targetWallet ? await this.db.select().from(categories).where(eq(categories.userId, userId)) : [];
+      }
 
-      if (!targetWallet) {
+      const categoryList = cats.map((c: any) => c.name).join(', ');
+
+      // 2. Prompt AI to detect intent & parse transaction if applicable
+      const classificationPrompt = `You are CuanBuddy's AI router and financial parser.
+Analyze this user WhatsApp message: "${text}"
+
+Available Categories: [${categoryList}]
+Default Currency: "${targetWallet?.currency || 'IDR'}"
+
+Task 1: Determine intent:
+- "transaction": User is recording/logging a spend or income (e.g. "Beli kopi 25rb", "Gaji 5jt", "Bayar kos 1.5jt", "dapat komisi 500k").
+- "consultation": User is asking a financial question, seeking financial advice, asking about their balance/wealth, chatting, or asking for financial consultation (e.g. "gimana cara atur keuangan?", "berapa saldo saya?", "saran investasi untuk saya", "halo").
+
+Task 2: If intent is "transaction", extract:
+- amount: number
+- type: "expense" or "income"
+- category: matched category name or "Uncategorized"
+- title: short title
+
+Reply strictly in JSON:
+{
+  "intent": "transaction" | "consultation",
+  "amount": 25000,
+  "type": "expense",
+  "category": "Food & Drink",
+  "title": "Beli Kopi"
+}`;
+
+      const rawClassifier = await this.groqService.chat([{ role: 'user', content: classificationPrompt }], 300);
+      const jsonMatch = rawClassifier.match(/\{.*?\}/s);
+
+      let intent = 'consultation';
+      let parsed: any = null;
+
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.intent === 'transaction' && parsed.amount && !isNaN(Number(parsed.amount))) {
+            intent = 'transaction';
+          }
+        } catch (e) {
+          intent = 'consultation';
+        }
+      }
+
+      // --- BRANCH 1: FINANCIAL CONSULTATION ---
+      if (intent === 'consultation') {
+        let dbContext = 'User has not connected their CuanBuddy account yet. Provide general professional financial consultation.';
+        if (userId) {
+          dbContext = await this.aiService.getUserFinancialDatabaseContext(userId);
+        }
+
+        const consultantSystemPrompt = `You are a Senior Financial Consultant & Certified Financial Planner (CFP) AI for CuanBuddy responding via WhatsApp.
+${userId ? "You have COMPLETE DIRECT ACCESS to the user's financial database records provided below." : "The user has not connected their CuanBuddy account yet. Provide general expert financial advice."}
+
+### PERSONA & ROLE:
+- You are a Senior Financial Consultant with deep expertise in personal finance, wealth management, cash flow analysis, budgeting, and investment strategies.
+- You provide professional, highly actionable, empathetic, and data-backed financial guidance.
+${userId ? "- ALWAYS analyze the user's REAL database figures (wallets, total net worth, income, expenses, category spending, budgets, savings goals, recent transactions) to give exact, customized advice." : "- Encourage user to link their CuanBuddy account using 6-digit OTP if they ask about their personal CuanBuddy balances or transaction records."}
+
+### WHATSAPP FORMATTING RULES (STRICT):
+- Format text cleanly for WhatsApp mobile screens.
+- Use single asterisks *bold* for bold text (DO NOT use double asterisks **).
+- Use underscores _italic_ for emphasis.
+- Use clean bullet points (•) or numbered lists (1., 2., 3.).
+- Keep paragraphs concise and easy to read.
+
+### LANGUAGE MATCHING MANDATE:
+- Detect the language of the user's prompt ("${text}") and respond 100% in the exact same language (Indonesian or English).
+
+User Financial Database Context:
+${dbContext}`;
+
+        const reply = await this.groqService.chat(
+          [
+            { role: 'system', content: consultantSystemPrompt },
+            { role: 'user', content: text },
+          ],
+          800,
+        );
+
+        // Sanitize any stray Markdown double asterisks for WhatsApp
+        const waCleanReply = reply.replace(/\*\*(.*?)\*\*/g, '*$1*');
+
+        await this.sendTextMessage(fromNumber, waCleanReply);
+        return;
+      }
+
+      // --- BRANCH 2: RECORD TRANSACTION ---
+      if (!userId) {
         await this.sendTextMessage(
           fromNumber,
-          `⚠️ Anda belum memiliki Dompet/Wallet di CuanBuddy. Silakan buat dompet terlebih dahulu di aplikasi.`,
+          `🔒 *Fitur Pencatatan Transaksi Membutuhkan Akun CuanBuddy*\n\nNomor WhatsApp Anda (*${fromNumber}*) belum terhubung ke CuanBuddy.\n\n📌 *Cara Menghubungkan Akun:*\n1. Buka aplikasi CuanBuddy.\n2. Ambil 6-digit kode OTP di Profil.\n3. Kirim 6-digit kode OTP tersebut ke chat ini.\n\n*Contoh:* 123456`,
         );
         return;
       }
 
-      // 2. Fetch categories for AI matching
-      const cats = await this.db.select().from(categories).where(eq(categories.userId, userId));
-      const categoryList = cats.map((c: any) => c.name).join(', ');
-
-      // 3. Prompt AI for extraction
-      const prompt = `You are an AI financial assistant parsing a WhatsApp message from a user trying to record a transaction.
-Extract transaction info from this text: "${text}"
-
-Available Categories: [${categoryList}]
-Default Currency: "${targetWallet.currency || 'IDR'}"
-
-Instructions:
-1. amount: Number value (e.g., "25rb" or "25k" -> 25000, "1.5jt" -> 1500000).
-2. type: "expense" or "income".
-3. category: Best matching category from the available list, or "Uncategorized".
-4. title: Short title (e.g. "Makan Siang", "Beli Kopi").
-5. note: Original text or extra details.
-
-Reply ONLY in JSON:
-{
-  "amount": 25000,
-  "type": "expense",
-  "category": "Food & Drink",
-  "title": "Beli Kopi",
-  "note": "${text}"
-}`;
-
-      const rawAi = await this.groqService.chat([{ role: 'user', content: prompt }], 200);
-      const jsonMatch = rawAi.match(/\{.*?\}/s);
-      if (!jsonMatch) throw new Error('AI extraction failed');
-
-      const parsed = JSON.parse(jsonMatch[0]);
-      if (!parsed.amount || isNaN(Number(parsed.amount))) {
+      if (!targetWallet) {
         await this.sendTextMessage(
           fromNumber,
-          `🤔 Maaf, CuanBuddy tidak menemukan nominal transaksi dalam pesan Anda: "${text}".\n\nContoh yang benar: _Beli kopi 25rb_ atau _Gaji 5jt_`,
+          `⚠️ Anda belum memiliki Dompet/Wallet di CuanBuddy. Silakan buat dompet terlebih dahulu di aplikasi CuanBuddy.`,
         );
         return;
       }
 
       // Find matching category ID
       const catMatch = cats.find(
-        (c: any) => c.name.toLowerCase() === (parsed.category || '').toLowerCase(),
+        (c: any) => c.name.toLowerCase() === (parsed?.category || '').toLowerCase(),
       );
 
       // Create transaction via TransactionsService
       const newTx = await this.transactionsService.create(userId, {
         walletId: targetWallet.id,
         categoryId: catMatch?.id || null,
-        title: parsed.title || text,
-        type: parsed.type === 'income' ? 'income' : 'expense',
-        amount: Number(parsed.amount),
+        title: parsed?.title || text,
+        type: parsed?.type === 'income' ? 'income' : 'expense',
+        amount: Number(parsed?.amount),
         exchangeRate: 1,
         date: new Date().toISOString(),
         note: `[Via WA Bot] ${text}`,
@@ -218,10 +275,10 @@ Reply ONLY in JSON:
         `✅ *Transaksi Berhasil Dicatat!* ${icon}\n\n• *Jenis:* ${typeLabel}\n• *Judul:* ${newTx.title}\n• *Nominal:* ${formatCurrency(Number(newTx.amount))}\n• *Kategori:* ${catMatch?.name || 'Uncategorized'}\n• *Dompet:* ${targetWallet.name}`,
       );
     } catch (err) {
-      this.logger.error('Failed to process text transaction:', err);
+      this.logger.error('Failed to process text message in WA bot:', err);
       await this.sendTextMessage(
         fromNumber,
-        `⚠️ Gagal mencatat transaksi. Pastikan format pesan memuat nominal yang jelas (contoh: *Beli kopi 25rb*).`,
+        `⚠️ Maaf, terjadi kendala saat memproses pesan Anda. Silakan coba lagi beberapa saat lagi.`,
       );
     }
   }

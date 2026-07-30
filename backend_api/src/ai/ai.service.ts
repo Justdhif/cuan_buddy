@@ -238,7 +238,7 @@ ${databaseContext}`;
   /**
    * Fetches comprehensive user financial database context across all tables.
    */
-  private async getUserFinancialDatabaseContext(userId: string): Promise<string> {
+  async getUserFinancialDatabaseContext(userId: string): Promise<string> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
