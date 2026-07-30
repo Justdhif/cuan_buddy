@@ -140,31 +140,17 @@ export class AnalyticsService {
 
     const currentScore = Math.min(Math.max(score, 0), 100);
 
-    // Calculate scoreHistory for past 7 months
+    // Calculate scoreHistory for past 7 months accurately based on actual monthly data
     const scoreHistory: Array<{ date: string; score: number; status: string; message: string }> = [];
     const now = new Date();
-    
-    // Fetch historical monthly aggregations for the past 7 months
-    const sevenMonthsAgo = new Date();
-    sevenMonthsAgo.setMonth(now.getMonth() - 7);
 
-    const monthlyTransactions = await this.db
-      .select({
-        month: sql<string>`TO_CHAR(date, 'YYYY-MM')`,
-        income: sql<number>`COALESCE(SUM(CASE WHEN type = 'income' THEN amount::numeric ELSE 0 END), 0)`,
-        expense: sql<number>`COALESCE(SUM(CASE WHEN type = 'expense' THEN amount::numeric ELSE 0 END), 0)`,
-      })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.userId, userId),
-          sql`date >= ${sevenMonthsAgo.toISOString()}`
-        )
-      )
-      .groupBy(sql`TO_CHAR(date, 'YYYY-MM')`)
-      .orderBy(sql`TO_CHAR(date, 'YYYY-MM') ASC`);
-
-    const getStatusAndMessage = (sc: number) => {
+    const getStatusAndMessage = (sc: number, hasTx: boolean) => {
+      if (!hasTx) {
+        return {
+          status: 'healthy',
+          message: 'Belum ada data transaksi pada bulan ini.',
+        };
+      }
       if (sc >= 80) {
         return {
           status: 'excellent',
@@ -183,63 +169,96 @@ export class AnalyticsService {
       }
     };
 
-    if (monthlyTransactions.length >= 3) {
-      for (const monthData of monthlyTransactions) {
-        let mScore = 50;
-        const mInc = Number(monthData.income);
-        const mExp = Number(monthData.expense);
-        if (mInc > 0 || mExp > 0) {
-          const ratio = mInc > 0 ? ((mInc - mExp) / mInc) * 100 : -20;
-          if (ratio > 20) mScore += 35;
-          else if (ratio > 0) mScore += 15;
-          else mScore -= 25;
-        } else {
-          mScore = currentScore;
-        }
-        if (overspentCount > 0) mScore -= 10;
-        
-        const finalScore = Math.min(Math.max(mScore, 10), 100);
-        const { status: sStatus, message: sMsg } = getStatusAndMessage(finalScore);
-        scoreHistory.push({
-          date: monthData.month,
-          score: finalScore,
-          status: sStatus,
-          message: sMsg,
-        });
-      }
-      // Guarantee current month's score as final point
-      if (scoreHistory.length > 0) {
-        scoreHistory[scoreHistory.length - 1].score = currentScore;
-        scoreHistory[scoreHistory.length - 1].status = status;
-        scoreHistory[scoreHistory.length - 1].message = message;
-      }
-    } else {
-      // Fallback 7-month dynamic progression leading to current month's score
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(now.getMonth() - i);
-        const monthStr = d.toISOString().slice(0, 7);
-        
-        let calculatedScore = currentScore;
-        if (i === 6) calculatedScore = Math.max(15, currentScore - 30);
-        else if (i === 5) calculatedScore = Math.min(95, currentScore + 25);
-        else if (i === 4) calculatedScore = Math.max(25, currentScore - 15);
-        else if (i === 3) calculatedScore = Math.min(90, currentScore + 10);
-        else if (i === 2) calculatedScore = Math.max(35, currentScore - 10);
-        else if (i === 1) calculatedScore = Math.max(45, currentScore - 5);
-        else calculatedScore = currentScore;
+    // Calculate real score for each of the last 7 months
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
-        const finalScore = Math.min(Math.max(calculatedScore, 0), 100);
-        const { status: sStatus, message: sMsg } = i === 0 
-          ? { status, message }
-          : getStatusAndMessage(finalScore);
-
+      if (i === 0) {
+        // Current month uses exact calculated score & status
         scoreHistory.push({
           date: monthStr,
-          score: finalScore,
-          status: sStatus,
-          message: sMsg,
+          score: currentScore,
+          status,
+          message,
         });
+      } else {
+        // Query monthly income and expense for monthStr
+        const [mSummary] = await this.db
+          .select({
+            totalIncome: sql<number>`COALESCE(SUM(CASE WHEN type = 'income' THEN amount::numeric ELSE 0 END), 0)`,
+            totalExpense: sql<number>`COALESCE(SUM(CASE WHEN type = 'expense' THEN amount::numeric ELSE 0 END), 0)`,
+          })
+          .from(transactions)
+          .where(
+            and(
+              eq(transactions.userId, userId),
+              sql`TO_CHAR(date, 'YYYY-MM') = ${monthStr}`
+            )
+          );
+
+        const mInc = Number(mSummary?.totalIncome || 0);
+        const mExp = Number(mSummary?.totalExpense || 0);
+        const hasTx = mInc > 0 || mExp > 0;
+
+        if (!hasTx) {
+          const { status: sStatus, message: sMsg } = getStatusAndMessage(100, false);
+          scoreHistory.push({
+            date: monthStr,
+            score: 100,
+            status: sStatus,
+            message: sMsg,
+          });
+        } else {
+          let mScore = 50;
+          const savingsRate = mInc > 0 ? ((mInc - mExp) / mInc) * 100 : -20;
+          if (savingsRate > 20) mScore += 30;
+          else if (savingsRate > 0) mScore += 10;
+          else mScore -= 20;
+
+          // Check monthly budget overspends
+          const mBudgets = await this.db.query.budgets.findMany({
+            where: and(eq(budgets.userId, userId), eq(budgets.monthYear, monthStr)),
+          });
+
+          if (mBudgets.length > 0) {
+            const mCatExpenses = await this.db
+              .select({
+                categoryId: transactions.categoryId,
+                total: sql<number>`SUM(amount::numeric)`,
+              })
+              .from(transactions)
+              .where(
+                and(
+                  eq(transactions.userId, userId),
+                  eq(transactions.type, 'expense'),
+                  sql`TO_CHAR(date, 'YYYY-MM') = ${monthStr}`
+                )
+              )
+              .groupBy(transactions.categoryId);
+
+            const mCatExpMap = mCatExpenses.reduce((acc: any, row: any) => {
+              acc[row.categoryId] = Number(row.total);
+              return acc;
+            }, {});
+
+            let mOverspentCount = 0;
+            for (const b of mBudgets) {
+              const spent = mCatExpMap[b.categoryId] || 0;
+              if (spent > Number(b.limitAmount)) mOverspentCount++;
+            }
+            if (mOverspentCount > 0) mScore -= 20 * mOverspentCount;
+          }
+
+          const finalScore = Math.min(Math.max(mScore, 0), 100);
+          const { status: sStatus, message: sMsg } = getStatusAndMessage(finalScore, true);
+          scoreHistory.push({
+            date: monthStr,
+            score: finalScore,
+            status: sStatus,
+            message: sMsg,
+          });
+        }
       }
     }
 
@@ -250,6 +269,7 @@ export class AnalyticsService {
       scoreHistory,
     };
   }
+
 
   async getSavingsProgress(userId: string) {
     const goals = await this.db
