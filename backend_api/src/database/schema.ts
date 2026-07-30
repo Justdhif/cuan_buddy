@@ -16,6 +16,8 @@ export const users = pgTable('users', {
   resetOtpExpiresAt: timestamp('reset_otp_expires_at'),
   lastLoginAt: timestamp('last_login_at'),
   fcmToken: text('fcm_token'),
+  waConnectOtp: text('wa_connect_otp'),
+  whatsappPhone: text('whatsapp_phone').unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

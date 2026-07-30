@@ -24,10 +24,12 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { RoomsModule } from './rooms/rooms.module';
 import { BordersModule } from './borders/borders.module';
+import { WhatsappModule } from './whatsapp/whatsapp.module';
 
 @Module({
   imports: [
     BordersModule,
+    WhatsappModule,
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
