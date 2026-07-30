@@ -7,5 +7,6 @@ import { AiModule } from '../ai/ai.module';
   imports: [AiModule],
   controllers: [TransactionsController],
   providers: [TransactionsService],
+  exports: [TransactionsService],
 })
 export class TransactionsModule {}
