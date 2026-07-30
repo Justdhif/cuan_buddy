@@ -36,11 +36,12 @@ export class WhatsappController {
    */
   @Post('webhook')
   async handleWebhook(@Body() payload: any, @Res() res: Response) {
-    // Acknowledge receipt immediately to Meta (200 OK)
-    res.status(HttpStatus.OK).send('EVENT_RECEIVED');
-
-    // Async processing in background (Serverless friendly)
-    void this.whatsappService.handleWebhookPayload(payload);
+    try {
+      await this.whatsappService.handleWebhookPayload(payload);
+    } catch (e) {
+      console.error('Webhook error:', e);
+    }
+    return res.status(HttpStatus.OK).send('EVENT_RECEIVED');
   }
 
   /**
