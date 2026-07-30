@@ -1595,4 +1595,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weatherFeelsLike => 'Feels like';
   @override
   String greetingWithName(String name) => 'Hi, $name! 👋';
+
+  @override
+  String get financialDetailAndBurnRate => 'Financial Detail & Burn Rate';
+  @override
+  String get safeDailySpendingLimit => 'Safe Daily Spending Limit';
+  @override
+  String get perDay => '/ day';
+  @override
+  String remainingDaysText(int days) => '$days days remaining';
+  @override
+  String totalUsedText(String used, String budget) =>
+      'Total Used: $used (Budget: $budget)';
+  @override
+  String get cumulativeDailySpendingLine => 'Cumulative Daily Spending Line';
+  @override
+  String get noTransactionDataPeriod => 'No transaction data for this period.';
+  @override
+  String get actualCumulativeLabel => 'Actual Cumulative';
+  @override
+  String get idealBudgetPaceLabel => 'Ideal Budget Pace';
+  @override
+  String get peakSpendingDaysHeatmap => 'Peak Spending Days Heatmap';
 }
+

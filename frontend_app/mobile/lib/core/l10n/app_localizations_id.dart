@@ -1602,4 +1602,27 @@ class AppLocalizationsId extends AppLocalizations {
   String get weatherFeelsLike => 'Terasa seperti';
   @override
   String greetingWithName(String name) => 'Hai, $name! 👋';
+
+  @override
+  String get financialDetailAndBurnRate => 'Detail Keuangan & Burn Rate';
+  @override
+  String get safeDailySpendingLimit => 'Batas Pengeluaran Harian Aman';
+  @override
+  String get perDay => '/ hari';
+  @override
+  String remainingDaysText(int days) => 'Sisa $days hari';
+  @override
+  String totalUsedText(String used, String budget) =>
+      'Total Terpakai: $used (Budget: $budget)';
+  @override
+  String get cumulativeDailySpendingLine => 'Tren Pengeluaran Harian Kumulatif';
+  @override
+  String get noTransactionDataPeriod => 'Belum ada data transaksi pada periode ini.';
+  @override
+  String get actualCumulativeLabel => 'Actual Cumulative';
+  @override
+  String get idealBudgetPaceLabel => 'Ideal Budget Pace';
+  @override
+  String get peakSpendingDaysHeatmap => 'Heatmap Hari Tersering Belanja (Peak Days)';
 }
+

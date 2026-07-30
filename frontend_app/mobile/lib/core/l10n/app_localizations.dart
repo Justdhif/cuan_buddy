@@ -793,7 +793,20 @@ abstract class AppLocalizations {
   String get weatherUnavailable;
   String get weatherFeelsLike;
   String greetingWithName(String name);
+
+  // ─── Daily Burn Rate Analytics Sheet ───
+  String get financialDetailAndBurnRate;
+  String get safeDailySpendingLimit;
+  String get perDay;
+  String remainingDaysText(int days);
+  String totalUsedText(String used, String budget);
+  String get cumulativeDailySpendingLine;
+  String get noTransactionDataPeriod;
+  String get actualCumulativeLabel;
+  String get idealBudgetPaceLabel;
+  String get peakSpendingDaysHeatmap;
 }
+
 
 class AppLocalizationsScope extends InheritedWidget {
   const AppLocalizationsScope({

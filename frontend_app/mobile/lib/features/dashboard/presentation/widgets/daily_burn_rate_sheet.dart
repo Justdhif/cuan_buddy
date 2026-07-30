@@ -118,9 +118,7 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.languageCode == 'id'
-                          ? 'Detail Keuangan & Burn Rate'
-                          : 'Financial Detail & Burn Rate',
+                      l10n.financialDetailAndBurnRate,
                       style: AppTypography.textTheme.titleMedium?.copyWith(
                         color: isDark
                             ? AppColors.textPrimaryDark
@@ -130,10 +128,12 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Periode: ${widget.monthYear}',
+                      '${l10n.languageCode == 'id' ? 'Periode' : 'Period'}: ${widget.monthYear}',
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white60 : Colors.black54,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -155,7 +155,7 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  'Gagal memuat data: ${err.toString()}',
+                  'Error: ${err.toString()}',
                   style: const TextStyle(color: Colors.red),
                 ),
               ),
@@ -322,26 +322,25 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
     final weekendVsWeekday =
         Map<String, dynamic>.from(data['weekendVsWeekday'] as Map? ?? {});
 
+    final cardBgColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final cardBorderColor = isDark
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.black.withValues(alpha: 0.08);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 1. Financial Health Score Card (if score provided)
         if (widget.score != null) _buildHealthCard(context, isDark, l10n),
 
-        // 2. Daily Safe Spend Card
+        // 2. Daily Safe Spend Card (Standard Sheet Card Styling)
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                  : [const Color(0xFFEEF2FF), const Color(0xFFE0E7FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: cardBgColor,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+              color: AppColors.primary.withValues(alpha: 0.35),
               width: 1.5,
             ),
           ),
@@ -350,12 +349,12 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withValues(alpha: 0.15),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_fire_department_rounded,
-                  color: Color(0xFF6366F1),
+                  color: AppColors.primary,
                   size: 28,
                 ),
               ),
@@ -365,30 +364,32 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.languageCode == 'id'
-                          ? 'Batas Pengeluaran Harian Aman'
-                          : 'Safe Daily Spending Limit',
+                      l10n.safeDailySpendingLimit,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white70 : Colors.black87,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$safeLimitFormatted / hari',
+                      '$safeLimitFormatted ${l10n.perDay}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF4338CA),
+                        color: isDark ? AppColors.textPrimaryDark : AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Sisa $remainingDays hari • Total Terpakai: $totalExpenseFormatted (Budget: $totalBudgetFormatted)',
+                      '${l10n.remainingDaysText(remainingDays as int)} • ${l10n.totalUsedText(totalExpenseFormatted, totalBudgetFormatted)}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? Colors.white60 : Colors.black54,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -404,9 +405,7 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              l10n.languageCode == 'id'
-                  ? 'Tren Pengeluaran Harian Kumulatif'
-                  : 'Cumulative Daily Spending Line',
+              l10n.cumulativeDailySpendingLine,
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -415,11 +414,11 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
             ),
             if (_selectedDayIndex != null && _selectedDayIndex! < days.length)
               Text(
-                'Tgl ${days[_selectedDayIndex!]['day']}: ${days[_selectedDayIndex!]['cumulativeExpenseFormatted']}',
-                style: const TextStyle(
+                '${l10n.languageCode == 'id' ? 'Tgl' : 'Day'} ${days[_selectedDayIndex!]['day']}: ${days[_selectedDayIndex!]['cumulativeExpenseFormatted']}',
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF6366F1),
+                  color: AppColors.primary,
                 ),
               ),
           ],
@@ -431,14 +430,22 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
           height: 180,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            color: cardBgColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.black12,
-            ),
+            border: Border.all(color: cardBorderColor),
           ),
           child: days.isEmpty
-              ? const Center(child: Text('Tidak ada data transaksi'))
+              ? Center(
+                  child: Text(
+                    l10n.noTransactionDataPeriod,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                )
               : LayoutBuilder(
                   builder: (context, constraints) {
                     return GestureDetector(
@@ -468,24 +475,36 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 12, height: 3, color: const Color(0xFF6366F1)),
+            Container(width: 12, height: 3, color: AppColors.primary),
             const SizedBox(width: 6),
-            Text('Actual Cumulative',
-                style: TextStyle(fontSize: 10, color: isDark ? Colors.white60 : Colors.black54)),
+            Text(
+              l10n.actualCumulativeLabel,
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+            ),
             const SizedBox(width: 16),
             Container(width: 12, height: 3, color: Colors.amber),
             const SizedBox(width: 6),
-            Text('Ideal Budget Pace',
-                style: TextStyle(fontSize: 10, color: isDark ? Colors.white60 : Colors.black54)),
+            Text(
+              l10n.idealBudgetPaceLabel,
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
 
         // 4. Peak Spending Heatmap Section
         Text(
-          l10n.languageCode == 'id'
-              ? 'Heatmap Hari Tersering Belanja (Peak Days)'
-              : 'Peak Spending Days Heatmap',
+          l10n.peakSpendingDaysHeatmap,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -498,9 +517,9 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              color: cardBgColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+              border: Border.all(color: cardBorderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,9 +527,24 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: peakSpendingDays.map((item) {
-                    final dayName = item['dayName']?.toString().substring(0, 3) ?? '';
+                    final rawName = item['dayName']?.toString() ?? '';
                     final percentage = (item['percentage'] as num? ?? 0).toInt();
                     final isPeak = percentage > 20;
+
+                    // Localize day name substring if needed
+                    String localizedDayName = rawName.length > 3 ? rawName.substring(0, 3) : rawName;
+                    if (l10n.languageCode == 'en') {
+                      const dayMap = {
+                        'Senin': 'Mon',
+                        'Selasa': 'Tue',
+                        'Rabu': 'Wed',
+                        'Kamis': 'Thu',
+                        'Jumat': 'Fri',
+                        'Sabtu': 'Sat',
+                        'Minggu': 'Sun',
+                      };
+                      localizedDayName = dayMap[rawName] ?? localizedDayName;
+                    }
 
                     return Column(
                       children: [
@@ -521,7 +555,9 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                             fontWeight: FontWeight.bold,
                             color: isPeak
                                 ? const Color(0xFFEF4444)
-                                : (isDark ? Colors.white70 : Colors.black87),
+                                : (isDark
+                                    ? AppColors.textSecondaryDark
+                                    : AppColors.textSecondaryLight),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -529,7 +565,9 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                           width: 28,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white10 : Colors.grey[200],
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.08)
+                                : Colors.grey[200],
                             borderRadius: BorderRadius.circular(6),
                           ),
                           alignment: Alignment.bottomCenter,
@@ -539,7 +577,7 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                               decoration: BoxDecoration(
                                 color: isPeak
                                     ? const Color(0xFFEF4444)
-                                    : const Color(0xFF6366F1),
+                                    : AppColors.primary,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                             ),
@@ -547,11 +585,13 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          dayName,
+                          localizedDayName,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : Colors.black87,
+                            color: isDark
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight,
                           ),
                         ),
                       ],
@@ -563,15 +603,15 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.lightbulb_outline_rounded,
                           size: 18,
-                          color: Color(0xFF6366F1),
+                          color: AppColors.primary,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -580,7 +620,9 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                             style: TextStyle(
                               fontSize: 11.5,
                               height: 1.3,
-                              color: isDark ? Colors.white70 : Colors.black87,
+                              color: isDark
+                                  ? AppColors.textSecondaryDark
+                                  : AppColors.textSecondaryLight,
                             ),
                           ),
                         ),
@@ -681,7 +723,7 @@ class _BurnRateLineChartPainter extends CustomPainter {
 
     // 2. Draw Actual Cumulative Expense Line
     final actualPaint = Paint()
-      ..color = const Color(0xFF6366F1)
+      ..color = AppColors.primary
       ..strokeWidth = 3.0
       ..style = PaintingStyle.stroke;
 
@@ -709,7 +751,7 @@ class _BurnRateLineChartPainter extends CustomPainter {
         ..color = Colors.white
         ..style = PaintingStyle.fill;
       final ringPaint = Paint()
-        ..color = const Color(0xFF6366F1)
+        ..color = AppColors.primary
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3;
 
