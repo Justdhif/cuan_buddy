@@ -148,26 +148,27 @@ export class AnalyticsService {
       if (!hasTx) {
         return {
           status: 'healthy',
-          message: 'Belum ada data transaksi pada bulan ini.',
+          message: 'No transaction data for this month.',
         };
       }
       if (sc >= 80) {
         return {
           status: 'excellent',
-          message: 'Keuangan sangat sehat! Tabungan teralokasi dengan baik.',
+          message: 'Your finances are looking great!',
         };
       } else if (sc >= 50) {
         return {
           status: 'healthy',
-          message: 'Kondisi keuangan stabil. Pertahankan kebiasaan hemat.',
+          message: 'Financial condition is stable. Keep saving.',
         };
       } else {
         return {
           status: 'warning',
-          message: 'Rasio pengeluaran tinggi atau anggaran melampaui batas.',
+          message: 'High expense ratio or budget exceeded.',
         };
       }
     };
+
 
     // Calculate real score for each of the last 7 months
     for (let i = 6; i >= 0; i--) {

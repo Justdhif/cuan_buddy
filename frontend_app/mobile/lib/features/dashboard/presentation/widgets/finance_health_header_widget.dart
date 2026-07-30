@@ -80,22 +80,57 @@ class _FinanceHealthHeaderWidgetState
 
   String _getStatusSubtitle(
       int score, String status, String message, AppLocalizations l10n) {
-    if (message.trim().isNotEmpty) {
-      return message;
+    final isEn = l10n.languageCode == 'en';
+    final msg = message.trim();
+
+    if (msg.isNotEmpty) {
+      if (isEn) {
+        if (msg.contains('Belum ada data transaksi')) {
+          return 'No transaction data for this month.';
+        }
+        if (msg.contains('Keuangan sangat sehat')) {
+          return 'Your finances are looking great!';
+        }
+        if (msg.contains('Kondisi keuangan stabil')) {
+          return 'Financial condition is stable. Keep saving.';
+        }
+        if (msg.contains('Rasio pengeluaran tinggi')) {
+          return 'High expense ratio or budget exceeded.';
+        }
+      } else {
+        if (msg.contains('Your finances are looking great')) {
+          return 'Keuangan sangat sehat! Tabungan teralokasi dengan baik.';
+        }
+        if (msg.contains('No transaction data')) {
+          return 'Belum ada data transaksi pada bulan ini.';
+        }
+        if (msg.contains('exceeded your budget')) {
+          return 'Pengeluaranmu melebihi anggaran kategori.';
+        }
+        if (msg.contains('spending more than you earn')) {
+          return 'Pengeluaranmu lebih besar daripada pemasukan.';
+        }
+        if (msg.contains('savings rate is low')) {
+          return 'Rasio tabunganmu rendah. Coba tingkatkan tabungan!';
+        }
+      }
+      return msg;
     }
+
     final st = status.toLowerCase();
     if (st == 'critical' || st == 'danger' || score < 50) {
-      return l10n.languageCode == 'id'
-          ? 'Pengeluaran tinggi atau rasio tabungan rendah.'
-          : 'High expenses or low savings rate detected.';
+      return isEn
+          ? 'High expenses or low savings rate detected.'
+          : 'Pengeluaran tinggi atau rasio tabungan rendah.';
     } else if (st == 'warning' || (score >= 50 && score < 80)) {
-      return l10n.languageCode == 'id'
-          ? 'Kondisi keuanganmu butuh perhatian.'
-          : 'Your financial health needs attention.';
+      return isEn
+          ? 'Your financial health needs attention.'
+          : 'Kondisi keuanganmu butuh perhatian.';
     } else {
       return l10n.financialHealthGoodSubtitle;
     }
   }
+
 
   Future<void> _showHealthDetailSheet(
     BuildContext context, {
