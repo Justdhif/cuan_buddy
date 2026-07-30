@@ -131,8 +131,8 @@ export class WhatsappService {
   private async processTextTransaction(userId: string | null, fromNumber: string, text: string): Promise<void> {
     try {
       // 1. Get user's base wallet (if user is connected)
-      let baseWallet = null;
-      let targetWallet = null;
+      let baseWallet: any = null;
+      let targetWallet: any = null;
       let cats: any[] = [];
 
       if (userId) {
@@ -317,7 +317,14 @@ ${dbContext}`;
         .from(wallets)
         .where(and(eq(wallets.userId, userId), eq(wallets.isBaseCurrency, true)));
 
-      const targetWallet = baseWallet || (await this.db.query.wallets.findFirst({ where: eq(wallets.userId, userId) }));
+      const targetWallet: any = baseWallet || (await this.db.query.wallets.findFirst({ where: eq(wallets.userId, userId) }));
+      if (!targetWallet) {
+        await this.sendTextMessage(
+          fromNumber,
+          `⚠️ Anda belum memiliki Dompet/Wallet di CuanBuddy. Silakan buat dompet terlebih dahulu di aplikasi CuanBuddy.`,
+        );
+        return;
+      }
 
       // 4. Save transaction
       const ext = voiceResult.extracted;
