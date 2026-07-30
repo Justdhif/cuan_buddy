@@ -375,8 +375,9 @@ class _DailyBurnRateSheetState extends ConsumerState<DailyBurnRateSheet> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$safeLimitFormatted ${l10n.perDay}',
+                      '$safeLimitFormatted ${l10n.perDayShort}',
                       style: TextStyle(
+
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: isDark ? AppColors.textPrimaryDark : AppColors.primary,

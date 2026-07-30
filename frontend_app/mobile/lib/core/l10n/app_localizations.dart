@@ -797,8 +797,8 @@ abstract class AppLocalizations {
   // ─── Daily Burn Rate Analytics Sheet ───
   String get financialDetailAndBurnRate;
   String get safeDailySpendingLimit;
-  String get perDay;
   String remainingDaysText(int days);
+
   String totalUsedText(String used, String budget);
   String get cumulativeDailySpendingLine;
   String get noTransactionDataPeriod;

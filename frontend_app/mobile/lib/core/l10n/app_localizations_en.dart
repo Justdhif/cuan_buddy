@@ -1601,9 +1601,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get safeDailySpendingLimit => 'Safe Daily Spending Limit';
   @override
-  String get perDay => '/ day';
-  @override
   String remainingDaysText(int days) => '$days days remaining';
+
   @override
   String totalUsedText(String used, String budget) =>
       'Total Used: $used (Budget: $budget)';

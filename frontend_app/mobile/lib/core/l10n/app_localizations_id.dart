@@ -1608,9 +1608,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get safeDailySpendingLimit => 'Batas Pengeluaran Harian Aman';
   @override
-  String get perDay => '/ hari';
-  @override
   String remainingDaysText(int days) => 'Sisa $days hari';
+
   @override
   String totalUsedText(String used, String budget) =>
       'Total Terpakai: $used (Budget: $budget)';
