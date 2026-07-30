@@ -100,11 +100,16 @@ export class UserProfilesService {
       throw new BadRequestException('Invalid OTP code.');
     }
 
-    // Success: Update the phone number in user profile
+    // Success: Update the phone number in user profile & users table
     await this.updateProfile(userId, { phoneNumber: phone });
+    await this.db
+      .update(users)
+      .set({ whatsappPhone: phone, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
     this.otpStore.delete(phone);
 
-    return { success: true, message: 'Phone number updated successfully' };
+    return { success: true, message: 'Phone number updated and WhatsApp connected successfully' };
   }
 
   // ─── Achievement: Get Unlocked Borders ───────────────────────────────────────

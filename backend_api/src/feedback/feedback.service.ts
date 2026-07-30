@@ -49,10 +49,10 @@ export class FeedbackService {
       this.logger.error('Failed to fetch user info for feedback enrichment', err);
     }
 
-    const targetPhone = process.env.FONNTE_TARGET_PHONE;
+    const targetPhone = process.env.WA_ADMIN_PHONE || process.env.FONNTE_TARGET_PHONE;
     if (!targetPhone) {
       this.logger.warn(
-        'FONNTE_TARGET_PHONE is not defined in environment. WhatsApp notification skipped.',
+        'WA_ADMIN_PHONE is not defined in environment. WhatsApp notification skipped.',
       );
       return feedback;
     }
@@ -77,7 +77,7 @@ export class FeedbackService {
 
     if (!result.success) {
       this.logger.error(
-        `Failed to send WhatsApp message via Fonnte: ${result.reason}`,
+        `Failed to send WhatsApp feedback notification: ${result.reason}`,
       );
     } else {
       this.logger.log(`Feedback WhatsApp sent successfully to ${targetPhone}`);

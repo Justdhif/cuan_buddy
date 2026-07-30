@@ -9,40 +9,46 @@ export async function sendWhatsAppMessage({
   title,
   description,
 }: SendWaOptions): Promise<{ success: boolean; reason?: string }> {
-  const fonnteApiKey = process.env.FONNTE_API_KEY;
-  if (!fonnteApiKey) {
-    return { success: false, reason: 'FONNTE_API_KEY is not defined in environment.' };
+  const phoneNumberId = process.env.WA_PHONE_NUMBER_ID;
+  const accessToken = process.env.WA_CLOUD_API_ACCESS_TOKEN;
+
+  if (!phoneNumberId || !accessToken) {
+    return { success: false, reason: 'WhatsApp Cloud API credentials (WA_PHONE_NUMBER_ID / WA_CLOUD_API_ACCESS_TOKEN) are not defined in environment.' };
   }
 
   const appVersion = process.env.CUAN_BUDDY_VERSION || '1.0.0';
   const appFooter = `CuanBuddy v${appVersion}`;
 
-  // Bold title and double space for application footer
+  // Formatted message text
   const messageText = `*${title}*\n${description}\n\n${appFooter}`;
 
-  // Clean phone number (remove spaces, +, -, etc.)
+  // Clean phone number to E.164 (e.g. 6282113285557)
   let cleanPhone = phone.replace(/[^0-9]/g, '');
   if (cleanPhone.startsWith('0')) {
     cleanPhone = '62' + cleanPhone.slice(1);
   }
 
   try {
-    const params = new URLSearchParams();
-    params.append('target', cleanPhone);
-    params.append('message', messageText);
-
-    const response = await fetch('https://api.fonnte.com/send', {
+    const url = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Authorization': fonnteApiKey,
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
-      body: params,
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        recipient_type: 'individual',
+        to: cleanPhone,
+        type: 'text',
+        text: { preview_url: false, body: messageText },
+      }),
     });
 
     const resData = await response.json();
 
-    if (!response.ok || !resData.status) {
-      return { success: false, reason: resData.reason || resData.detail || JSON.stringify(resData) };
+    if (!response.ok || resData.error) {
+      return { success: false, reason: resData.error?.message || JSON.stringify(resData) };
     }
 
     return { success: true };
@@ -50,3 +56,4 @@ export async function sendWhatsAppMessage({
     return { success: false, reason: error.message || error.toString() };
   }
 }
+

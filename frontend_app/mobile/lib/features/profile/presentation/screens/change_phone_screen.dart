@@ -203,7 +203,31 @@ class _ChangePhoneScreenState extends ConsumerState<ChangePhoneScreen> {
                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF25D366).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF25D366).withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF25D366)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Menghubungkan nomor ini otomatis mengaktifkan CuanBuddy WhatsApp AI Bot untuk catat transaksi via chat/voice note!',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
